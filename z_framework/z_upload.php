@@ -17,7 +17,7 @@
 
         public function upload($file, $uploadDir, $maxSize, $typeArray) {
 
-            $ref = $this->req->getModel("General")->getUniqueRef();
+            $ref = $this->req->getModel("z_general")->getUniqueRef();
 
             $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
             $target_file = $uploadDir . $ref . "." . $extension;

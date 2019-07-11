@@ -4,33 +4,30 @@
 		.login-error {
 			color: red;
 		}
-		a { 
-			color: black;
-			font-weight: bold;
-			text-decoration: underline;
-		}
 	</style>
 <?php } function body($opt) { ?>
-	<div class="row medium-7 large-5 align-center columns container-padded">
+
+	<div style="max-width: 1000px; margin: auto">
+		<h2>Login</h2>
 		<form onSubmit="return false;">
-			<div class="form-icons">
-				<h4>Skill-DB - login</h4>
-				<div id="login-error-label" class="login-error"></div>
-				<div class="input-group">
-					<span class="input-group-label">
-						<i class="fa fa-user"></i>
-					</span>
-					<input id="username" class="input-group-field" type="text" placeholder="Username">
+			<div id="login-error-label" class="login-error"></div>
+
+			<div class="input-group mb-2">
+				<div class="input-group-prepend">
+					<span class="input-group-text"><i class="fa fa-user"></i></span>
 				</div>
-				<div class="input-group">
-					<span class="input-group-label">
-						<i class="fa fa-key"></i>
-					</span>
-					<input id="password" class="input-group-field" type="password" placeholder="Password">
-				</div>
+				<input id="username" class="form-control" type="text" placeholder="Username">
 			</div>
-			<button onClick="login();" class="button expanded">Sign in</button>
-			<a href="<?php echo $opt["root"]; ?>login/forgot_password<?php if($opt["noLayout"] === "true") echo "?noLayout=true"; ?>">Forgot Password?</a>
+
+			<div class="input-group mb-2">
+				<div class="input-group-prepend">
+					<span class="input-group-text"><i class="fa fa-key"></i></span>
+				</div>
+				<input id="password" class="form-control" type="password" placeholder="Password">
+			</div>
+
+			<button onclick="login();" class="btn btn-primary">Sign in</button>
+			<a class="link" href="<?php echo $opt["root"]; ?>login/forgot_password<?php if($opt["noLayout"] === "true") echo "?noLayout=true"; ?>">Forgot Password?</a>
 		</form>
 	</div>
 

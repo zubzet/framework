@@ -6,27 +6,13 @@
      * Response => used to handle outgoing stuff
      */
 
-    class Request {
-
-        private $booter;
-
-        public function __construct($booter) {
-            $this->booter = $booter;
-        }
-
-        public function getZModels() {
-            return $this->booter->z_models;
-        }
-
-        public function getZRoot() {
-            return $this->booter->z_framework_root; 
-        }
+    class Request extends RequestResponseHandler {
 
         /**
          * Gets a get parameter
-         * @param string $key of the parameter
-         * @param string $default Default value
-         * @return array|string Content of the get value
+         * @param String $key of the parameter
+         * @param String $default Default value
+         * @return Array|String Content of the get value
          */
         public function getGet($key, $default = null) {
             if (isset($_GET[$key])) {
@@ -37,9 +23,9 @@
 
         /**
          * Gets a post parameter
-         * @param string $key of the parameter
-         * @param string $default Default value
-         * @return array|string Content of the post value
+         * @param String $key of the parameter
+         * @param String $default Default value
+         * @return Array|String Content of the post value
          */
         public function getPost($key, $default = null) {
             if (isset($_POST[$key])) {
@@ -54,7 +40,7 @@
          * @param String $default Default value
          * @return any Content of the Cookie
          */
-        public function getCookie($name, $default = null) {
+        public function getCookie($key, $default = null) {
             if (isset($_COOKIE[$key])) {
                 return $_COOKIE[$key];
             }
@@ -86,24 +72,18 @@
 
         /**
          * Gets the database communication stuff
-         * @return Model
+         * @return z_model
          */
         public function getModel() {
             return $this->booter->getModel(...func_get_args());
         }
 
         /**
-         * Gets the data of the user who requested.
+         * Gets the user who requested.
+         * @return User
          */
         public function getRequestingUser() {
-            return $this->booter->rqclient;
-        }
-
-        public function updateRequestingUser($id = null) {
-            $updates = $this->getModel("z_login", $this->getZRoot())->getUserById($id !== null ? $id : $this->getRequestingUser()["id"]);
-            foreach ($updates as $key => $value) {
-                if (isset($this->booter->rqclient[$key])) $this->booter->rqclient[$key] = $value;
-            }
+            return $this->booter->user;
         }
 
         public function getBooterSettings($key = null) {
@@ -118,22 +98,8 @@
             return $this->booter->rootFolder;
         }
 
-        /**
-         * Gets the permission level of the requesting user.
-         */
-        public function getReqeustingUserPermissionLevel() {
-            return $this->getRequestingUser()["permissionLevel"];
-        }
-
         public function updateErrorHandling($state) {
             $this->booter->updateErrorHandling($state);
-        }
-
-        public function getPermissionNameByLevel($level) {
-            $permissionLevelNames = $this->getModel("Employee")->getPermissionLevelNames();
-            foreach ($permissionLevelNames as $permissionLevelName) {
-                if ($permissionLevelName["value"] == $level) return $permissionLevelName["name"];
-            }
         }
 
         public function upload() {
@@ -141,5 +107,195 @@
             return new z_upload($this);
         }
 
+        public function checkPermission($permission) {
+            $user = $this->getRequestingUser();
+            if (!$user->isLoggedIn) {
+                $this->booter->executePath(["login", "index"]);
+                exit;
+            }
+            if (!$user->checkPermission($permission)) {
+                $this->booter->executePath(["error", "403"]);
+                exit;
+            }
+        }
+
+        /**
+         * Validates form data from the client
+         * @param String $method Method to use for checks ("POST"|"GET")
+         * @return Array|Boolean A list of errors or true
+         */
+        public function validateForm($fields, $data = null) {
+            $errors = [];
+
+            if ($data == null) {
+                $data = $_POST;
+            }
+
+            $formResult = new FormResult($this);
+            $formResult->fields = $fields;
+
+            foreach ($fields as $field) {
+                $name = $field->name;
+                foreach ($field->rules as $rule) {
+                    $type = $rule["type"];
+
+                    if ($type == "required") {
+                        if (!isset($data[$name]) || $data[$name] == "") {
+                            $errors[] = ["name" => $name, "type" => "required"];
+                        }
+                    } else if (isset($data[$name])) {
+                        $value = $data[$name];
+
+                        if ($type == "length") {
+                            $len = strlen($value);
+                            if ($len < $rule["min"] || $len > $rule["max"]) {
+                                $errors[] = ["name" => $name, "type" => "length"];
+                            }
+                        } else if ($type == "filter") {
+                            if (!filter_var($value, $rule["filter"])) {
+                                $errors[] = ["name" => $name, "type" => "filter"];
+                            }
+                        } else if ($type == "unique") {
+                            if (isset($rule["ignoreField"])) {
+                                if (!$this->booter->z_db->checkIfUnique($rule["table"], $rule["field"], $value, $rule["ignoreField"], $rule["ignoreValue"])) {
+                                    $errors[] = ["name" => $name, "type" => "unique"];
+                                }
+                            } else {
+                                if (!$this->booter->z_db->checkIfUnique($rule["table"], $rule["field"], $value)) {
+                                    $errors[] = ["name" => $name, "type" => "unique"];
+                                }
+                            }
+                        } else if ($type == "exist") {
+                            if (!$this->booter->z_db->checkIfExists($rule["table"], $rule["field"], $value)) {
+                                $errors[] = ["name" => $name, "type" => "exist"];
+                            }
+                        } else if ($type == "integer") {
+                            if (!filter_var($value, FILTER_VALIDATE_INT)) {
+                                $errors[] = ["name" => $name, "type" => "integer"];
+                            }
+                            $value = intval($value);
+                        } else if ($type == "range") {
+                            if ($value < $rule["min"] || $value > $rule["max"]) {
+                                $errors[] = ["name" => $name, "type" => "range"];
+                            }
+                        } else {
+                            $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unkown type
+                        }
+
+                        $field->value = $value;
+                    }
+                }
+
+            }
+
+            $formResult->errors = $errors;
+            $formResult->hasErrors = count($errors) > 0;
+            return $formResult;
+        }
+
+        /**
+         * Checks if the request contains form data. When it contains form data, methods like validateForm() can be used.
+         * @return Boolean
+         */
+        public function hasFormData() {
+            return isset($_POST["isFormData"]);
+        }
+
+        /**
+         * Checks if the request is a async ajax request of a type
+         * @param String $type
+         * @return Boolean
+         */
+        public function isAction($type) {
+            return ($this->getPost("action") == $type);
+        }
+
+        /**
+         * Validates a "Create Edit Delete" input
+         */
+        public function validateCED($name, $rules) {
+            $errors = [];
+
+            $result = new FormResult();
+
+            if (isset($_POST[$name])) {
+                $array = $_POST[$name];
+                foreach ($array as $i => $subform) {
+                    $subresult = $this->validateForm($rules, $subform);
+                    $suberrors = $subresult->errors;
+                    foreach ($suberrors as $suberror) {
+                        $suberror["subname"] = $suberror["name"];
+                        $suberror["name"] = $name;
+                        $suberror["index"] = $i;
+                        $errors[] = $suberror;
+                    }
+                }
+            } else {
+                $result->doNothing = true;
+            }
+            
+            $result->fields = $rules;
+            $result->hasErrors = count($errors) > 0;
+            $result->errors = $errors;
+            $result->name = $name;
+            return $result;
+        }
+
+    }
+
+    class FormResult {
+
+        function __construct()
+        {
+            $this->doNothing = false; //Set when no CED action is present
+            $this->hasErrors = false;
+            $this->errors = [];
+            $this->fields = [];
+        }
+    }
+
+    class FormField {
+        function __construct($name, $dbName = null) {
+            $this->rules = [];
+            $this->name = $name;
+            $this->dbField = $dbName ? $dbName : $name;
+            $this->dataType = "s";
+        }
+
+        function filter($filter) {
+            $this->rules[] = ["name" => $this->name, "type" => "filter", "filter" => $filter];
+            return $this;
+        }
+
+        function unique($table, $field, $ignoreField = null, $ignoreValue = null) {
+            $this->rules[] = ["name" => $this->name, "type" => "unique", "table" => $table, "field" => $field, "ignoreField" => $ignoreField, "ignoreValue" => $ignoreValue];
+            return $this;
+        }
+
+        function exists($table, $field) {
+            $this->rules[] = ["name" => $this->name, "type" => "exist", "table" => $table, "field" => $field];
+            return $this;
+        }
+
+        function required() {
+            $this->rules[] = ["name" => $this->name, "type" => "required"];
+            return $this;
+        }
+
+        function length($min, $max) {
+            $this->rules[] = ["name" => $this->name, "type" => "length", "min" => $min, "max" => $max];
+            return $this;
+        }
+
+        function integer() {
+            $this->rules[] = ["name" => $this->name, "type" => "integer"];
+            $this->dataType = "i";
+            return $this;
+        }
+
+        function range($min, $max) {
+            $this->rules[] = ["range" => $this->name, "type" => "range", "min" => $min, "max" => $max];
+            return $this;
+        }
     }
 ?>

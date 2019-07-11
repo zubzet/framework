@@ -3,9 +3,11 @@
     class z_model {
 
         protected $z_db;
+        protected $booter;
 
-        function __construct(&$z_db) {
+        function __construct(&$z_db, $booter) {
             $this->z_db =& $z_db;
+            $this->booter = $booter;
         }
 
         function exec() {
@@ -28,6 +30,10 @@
             return $this->z_db->getFullTable(...func_get_args());
         }
 
+        function getTableWhere() {
+            return $this->z_db->getTableWhere(...func_get_args());
+        }
+
         function countTableEntries() {
             return $this->z_db->countTableEntries(...func_get_args());
         }
@@ -40,11 +46,6 @@
             return $this->z_db->countResults(...func_get_args());
         }
 
-        function getRQClient() {
-            if (!isset($this->z_db->rqclient["id"])) return ["id" => -1, "id_exec" => -1];
-            return $this->z_db->rqclient;
-        }
-
         function getLogCategoryIdByName($name) {
             $sql = "SELECT `id` FROM `interaction_log_category` WHERE LOWER(`name`) = LOWER(?)";
             $this->exec($sql, "s", $name);
@@ -52,10 +53,18 @@
         }
 
         function logAction($categoryId, $text, $value = null) {
-            $employeeId = (isset($this->getRQClient()["id"]) ? $this->getRQClient()["id"] : null);
-            $employeeId_exec = $this->getRQClient()["id_exec"];
-            $sql = "INSERT INTO `interaction_log`(`categoryId`, `employeeId`, `employeeId_exec`, `text`, `value`) VALUES (?, ?, ?, ?, ?)";
-            $this->exec($sql, "iiisi", $categoryId, $employeeId, $employeeId_exec, $text, $value);
+            $user = $this->booter->user;
+
+            $userId = $user->userId;
+            $userId_exec = $user->execUserId;
+
+            $sql = "INSERT INTO `interaction_log`(`categoryId`, `userId`, `userId_exec`, `text`, `value`) VALUES (?, ?, ?, ?, ?)";
+            $this->exec($sql, "iiisi", $categoryId, $userId, $userId_exec, $text, $value);
+        }
+
+        function logActionByCategory($categoryName, $text, $value = null) {
+            $catId = $this->getLogCategoryIdByName($categoryName);
+            $this->logAction($catId, $text, $value);
         }
 
     }

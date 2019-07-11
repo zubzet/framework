@@ -142,7 +142,7 @@ body {
 			</div>
 			<h2>
         It seems like you don't have the permissions to visit this page!<br><br><br>
-        <a href="<?php echo $opt["root"]; ?>">Take me back to SKDB</a>
+        <a href="<?php echo $opt["root"]; ?>">Take me back to my Website</a>
       </h2>
 		</div>
 	</div>

@@ -6,18 +6,13 @@
 		.login-error {
 			color: red;
 		}
-		a {
-			color: black;
-			font-weight: bold;
-			text-decoration: underline;
-		}
 	</style>
 <?php } function body($opt) { ?>
 
 	<div class="row medium-7 large-5 align-center columns container-padded">
 		<form onSubmit="return false;">
 			<div class="form-icons">
-				<h4>Skill-DB - Forgot password</h4>
+				<h4>Forgot password</h4>
 				<div id="login-error-label" class="login-error"></div>
 				<div class="input-group">
 					<span class="input-group-label">
@@ -27,7 +22,7 @@
 				</div>
 			</div>
 			<button onClick="check();" class="button expanded">Send me an email</button>
-			<a href="<?php echo $opt["root"]; ?><?php if($opt["noLayout"] === "true") echo "?noLayout=true"; ?>">Back to the Login</a>
+			<a class="link" href="<?php echo $opt["root"]; ?><?php if($opt["noLayout"] === "true") echo "?noLayout=true"; ?>">Back to the Login</a>
 		</form>
     </div>
 

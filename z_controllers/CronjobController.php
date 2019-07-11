@@ -2,8 +2,6 @@
 
     class CronjobController {
 
-            public static $permissionLevel = -1;
-
             public function action_index($req, $res) {
                 //Remove the max executin time
                 set_time_limit(-1);
@@ -95,8 +93,7 @@
             //Cannot redeclare body() (previously declared in D:\XAMPP\htdocs\skdb-application\z_views\email_update_skills.php:1) in <b>D:\XAMPP\htdocs\skdb-application\z_views\email_update_skills.php</b> on line <b>23</b><br />
             private function mass_send_emails($res, $req, array $user_ids, $subject, $document, $options) {
                 foreach ($user_ids as $id) {
-                    $meta = $req->getModel("Employee")->getMetaById($id);
-                    $options["firstName"] = $meta["firstName"];
+                    $meta = $req->getModel("user")->getMetaById($id);
                     $res->sendEmailToUser($id, $subject, $document, $options);
                 }
             }

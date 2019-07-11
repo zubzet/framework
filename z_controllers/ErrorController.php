@@ -2,8 +2,6 @@
 
 	class ErrorController {
 
-        public static $permissionLevel = -1;
-
         public function action_404($req, $res) {
             $res->render("404.php", [], "empty");
         }

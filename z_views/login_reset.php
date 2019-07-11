@@ -18,7 +18,7 @@
 	<div class="row medium-7 large-5 align-center columns container-padded">
         <form action="" method="post" id="form">
             <div class="form-icons">
-                <h4>Skill-DB - Password reset</h4>
+                <h4>Password reset</h4>
                 <div class="input-group">
                     <span class="input-group-label">
                         <i class="fa fa-key"></i>

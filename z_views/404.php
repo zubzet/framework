@@ -142,7 +142,7 @@ body {
 			</div>
 			<h2>
         The page you requested couldn't be found!<br><br><br>
-        <a href="<?php echo $opt["root"]; ?>">Take me back to SKDB</a>
+        <a href="<?php echo $opt["root"]; ?>">Take me back to my Website</a>
       </h2>
 		</div>
 	</div>

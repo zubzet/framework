@@ -8,91 +8,94 @@
 
     $opt = [];
 
-    class Response {
-
-        private $booter;
-        private $z_views;
-
-        public function __construct($booter) {
-            $this->booter = $booter;
-            $this->z_views = $this->booter->z_views;
-        }
-
-        public function getZViews() {
-            return $this->booter->z_views;
-        }
-
-        public function getZRoot() {
-            return $this->booter->z_framework_root; 
-        }
+    class Response extends RequestResponseHandler {
                 
         /**
          * Shows a document to the user
          * @param string $document Path to the view
          * @param string $params assosiative array with values to replace in the view
          */
-        public function render($document, $opt = [], $layout = "default") {
+        public function render($document, $opt = [], $layout = "layout/default") {
 
-            if (file_exists($this->z_views.$document)) {
+            $viewPath = $this->booter->getViewPath($document);
+
+            if ($viewPath !== false) {
 
                 //Set default parameter values
                 $opt["root"] = $this->booter->rootFolder;
-                if (!isset($opt["title"])) $opt["title"] = "Skill-DB ACOPA";
+                if (!isset($opt["title"])) $opt["title"] = "Your Website";
 
                 //logged in user information
-                $opt["user"] = $this->booter->rqclient;
+                $opt["user"] = $this->booter->user;
+
+                $opt["layout_essentials"] = function($opt) {
+                    include "layout_essentials.php";
+                };
 
                 $userLang = "en";
                 if (isset($opt["overwrite_lang"])) {
                     $userLang = $opt["overwrite_lang"];
                 } else {
-                    if (isset($this->booter->rqclient["languageId"])) {
-                        $userLang = $this->booter->getModel("General")->getLanguageById($this->booter->rqclient["languageId"])["value"];
-                    }
+                    $userLang = $this->booter->user->language["value"];
                 }
                 $userLang = strtolower($userLang);
 
                 $opt["layout_lang"] = $userLang;
 
                 //Log view
-                $catId = $this->booter->getModel("General")->getLogCategoryIdByName("view");
-                $user = isset($opt["user"]["id"]) ? $opt["user"]["id"] : "annonymous";
-                $this->booter->getModel("General")->logAction($catId, "URL viewed (User ID: ".$user." ,URL: ".$_SERVER['REQUEST_URI'].")", $document);
+                $catId = $this->booter->getModel("z_general")->getLogCategoryIdByName("view");
+                $user = $this->booter->user->userId;
+                $this->booter->getModel("z_general")->logAction($catId, "URL viewed (User ID: ".$user." ,URL: ".$_SERVER['REQUEST_URI'].")", $document);
 
                 //Load the document
-                include($this->z_views.$document);
+                include($viewPath);
+
+                global $langStorage;
+                $langStorage = array();
 
                 if (function_exists("getLangArray") || isset($getLangArray)) {
-                    $GLOBALS["lang"] = isset($getLangArray) ? $getLangArray() : getlangArray();
-                    foreach($GLOBALS["lang"] as $key => $val) {
-                        if (strtolower($key) == $key) continue;
-                        unset($GLOBALS["lang"][$key]);
-                        $GLOBALS["lang"][strtolower($key)] = $val;
-                    }
-                    $GLOBALS["userLangVal"] = $userLang;
-
-                    //Translating the page
-                    $opt["lang"] = function($key, $echo = true) {
-                        if (!isset($GLOBALS["lang"][$GLOBALS["userLangVal"]])) $GLOBALS["userLangVal"] = "en";
-                        if (isset($GLOBALS["lang"][$GLOBALS["userLangVal"]][$key])) {
-                            if ($echo) echo $GLOBALS["lang"][$GLOBALS["userLangVal"]][$key];
-                            else return $GLOBALS["lang"][$GLOBALS["userLangVal"]][$key];
-                        } else {
-                            if (isset($GLOBALS["lang"]["en"][$key])) {
-                                if ($echo) echo $GLOBALS["lang"]["en"][$key];
-                                else return $GLOBALS["lang"]["en"][$key];
-                            } else {
-                                if ($echo) echo $key;
-                                else return $key;
-                            }
-                        }
-                    };
+                    $arr = isset($getLangArray) ? $getLangArray() : getlangArray();
                     
+                    foreach($arr["en"] as $key => $val) {
+                        if (isset($arr[$userLang][$key])) {
+                            $langStorage[strtolower($key)] = $arr[$userLang][$key];
+                        } else {
+                            $langStorage[strtolower($key)] = $arr["en"][$key];
+                        }
+                    }
                 }
                 
                 //Load the head and other standard layout
-                include($this->z_views."layout/".$layout.".php");
+                include($this->booter->getViewPath($layout));
 
+                if (function_exists("getLangArrayLayout") || isset($getLangArrayLayout)) {
+                    $arr = isset($getLangArrayLayout) ? $getLangArrayLayout() : getlangArrayLayout();
+                    
+                    foreach($arr["en"] as $key => $val) {
+                        if (isset($arr[$userLang][$key])) {
+                            $langStorage[strtolower($key)] = $arr[$userLang][$key];
+                        } else {
+                            $langStorage[strtolower($key)] = $arr["en"][$key];
+                        }
+                    }
+                }
+
+                $opt["lang"] = function($key, $echo = true) {
+                    global $langStorage;
+                    $out = "";
+                    if (isset($langStorage[$key])) {
+                        $out = $langStorage[$key];
+                    } else {
+                        $out = $key;
+                    }
+                    if ($echo) {
+                        echo $out;
+                    }
+                    return $out;
+                };
+
+                layout($opt, function($opt) { body($opt); }, function($opt) { head($opt); });
+                
             } else {
                 $this->reroute(["error", "404"]);
             }
@@ -120,26 +123,6 @@
             $html2pdf->output($name, $dlOpt);
 
         }
-
-        public function renderCV($userId, $langValue = "en", $langId = 0) {
-
-            $langId = $langValue === null ? $langId : $this->booter->getModel("General")->getLanguageByValue($langValue);
-            $langId = $langId === null ? 0 : $langId;
-
-            $pp = $this->booter->getModel("CV")->getProfilePictureByEmployeeId($userId)[0];
-            $pp_link = $this->getBooterSettings("uploadFolder").$pp["reference"].".".$pp["extension"];
-
-            $this->booter->getModel("CV")->addGeneration($userId);
-            $this->renderPDF("layout/cv_layout.php", [
-                "references" => $this->booter->getModel("Reference")->getByEmployeeIdAndLanguageId($userId, $langId),
-                "user_information" => $this->booter->getModel("Employee")->getMetaById($userId),
-                "personal_information" => $this->booter->getModel("PersonalInformation")->getByEmployeeIdAndLanguageId($userId, $langId),
-                "education" => $this->booter->getModel("Education")->getByPersonalInformationId($this->booter->getModel("PersonalInformation")->getByEmployeeIdAndLanguageId($userId, $langId)["id"]),
-                "professional_history" => $this->booter->getModel("ProfessionalHistory")->getByPersonalInformationId($this->booter->getModel("PersonalInformation")->getByEmployeeIdAndLanguageId($userId, $langId)["id"]),
-                "company_info" => $this->booter->getModel("Company")->getInfo(), //Could be wrong
-                "profile_picture" => $pp_link
-            ]);
-        } 
 
         /**
          * Sends a simple text. Use only for debug reasons!
@@ -193,7 +176,7 @@
         }
 
         function generateRestError($code, $message) {
-            $model = $this->booter->getModel("general");
+            $model = $this->booter->getModel("z_general");
             $model->logAction($model->getLogCategoryIdByName("resterror"), "Rest error (Code: $code): $message", $code);
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
@@ -233,28 +216,162 @@
             $headers .= "From: SKDB <".$this->booter->dedicated_mail.">\r\n";
             $headers .= "X-Mailer: PHP ". phpversion();
 
-            //Send the mai
+            //Send the mail
             return mail($to, $subject, $content, $headers);
         }
 
         function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "email") {
-            $target = $this->booter->getModel("z_login", $this->getZRoot())->getUserById($userId);
-            $language = $this->booter->getModel("General")->getLanguageById($target["languageId"])["value"];
+            $target = $this->booter->getModel("z_user")->getUserById($userId);
+            $language = $this->booter->getModel("z_general")->getLanguageById($target["languageId"])["value"];
             $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
 
-        function loginAs($employeeId, $employee_exec = null) {
-            if($employee_exec === null) $employee_exec = $employeeId;
-            $token = $this->booter->getModel("z_login", $this->booter->z_framework_root)->createLoginToken($employeeId, $employee_exec);
+        function loginAs($userId, $user_exec = null) {
+            if($user_exec === null) $user_exec = $userId;
+            $token = $this->booter->getModel("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
             $this->setCookie("skdb_login_token", $token, time() + ($this->booter->settings["loginTimeoutSeconds"]), "/");
 
-            if ($employeeId == $employee_exec) {
-                $this->booter->getModel("General")->logAction($this->booter->getModel("General")->getLogCategoryIdByName("login"), "User $employee_exec logged in as $employeeId", $employee_exec);
+            if ($userId == $user_exec) {
+                $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
             } else {
-                $this->booter->getModel("General")->logAction($this->booter->getModel("General")->getLogCategoryIdByName("loginas"), "User $employee_exec logged in.", $employee_exec);
+                $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("loginas"), "User $user_exec logged in.", $user_exec);
             }
         }
 
+        /**
+         * Generates a generic error
+         */
+        function error() {
+            $this->generateRest(["result" => "error"]);
+        }
+
+        /**
+         * Sends an error array generated by validateForm() from Request. Exit
+         * @param Array $errors The error array.
+         */
+        function formErrors($errors) {
+            $this->generateRest(["result" => "formErrors", "formErrors" => array_merge(...func_get_args())]);
+        }
+
+        /**
+         * Sends a success message to the client. Exit
+         */
+        function success() {
+            $this->generateRest(["result" => "success"]);
+        }
+
+        /**
+         * Logs the user out
+         */
+        function logout() {
+            $user = $this->booter->user;
+            if ($user->isLoggedIn) {
+                $this->booter->getModel("z_general")->logActionByCategory("logout", "User logged out (" . $user->fields["email"] . ")", $user->fields["email"]);
+                $this->unsetCookie("skdb_login_token");
+                $this->rerouteUrl();
+            }
+        }
+
+        /**
+         * Updates a database row by a user filled form
+         */
+        function updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult) {
+            $db = $this->booter->z_db;
+            $vals = [];
+            $sql = "UPDATE $table SET";
+            $types = "";
+
+            for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
+                $field = $validationResult->fields[$i];
+                $sql .= " ". $field->dbField . " = ?, ";
+                $types .= $field->dataType;
+                $vals[] = $field->value;
+            }
+
+            $field = $validationResult->fields[$i];
+            $sql .= " ". $field->dbField . " = ?";
+            $types .= $field->dataType;
+            $vals[] = $field->value;
+            
+            $sql .= " WHERE $pkField = ?;";
+            $types .= $pkType;
+            $vals[] = $pkValue;
+
+            $db->exec($sql, $types, ...$vals);
+        }
+
+        /**
+         * Executes a "Create Edit Delete"
+         * @param String $table The name of the affected table in the database
+         * @param FormResult $validationResult the result of a validated CED
+         * @param Array $fix Fixed values. For example fix user id not set by the client
+         */
+        function doCED($table, $validationResult, $fix = []) {
+            if ($validationResult->doNothing) return;
+
+            $db = $this->booter->z_db;
+            $name = $validationResult->name;
+
+            foreach ($_POST[$name] as $item) {
+                $z = $item["Z"];
+
+                if ($z == "create") {
+                    $types = "";
+                    $fields = [];
+                    $values = [];
+                    $sqlValues = [];
+                    foreach ($validationResult->fields as $field) {
+                        $types .= $field->dataType;
+                        $fields[] = $field->name;
+                        $sqlValues[] = "?";
+                        $values[] = $item[$field->name];
+                    }
+                    foreach ($fix as $k => $f) {
+                        $sqlValues[] = "?";
+                        $values[] = $f;
+                        $fields[] = $k;
+                        $types.="s";
+                    }
+
+                    $fields = implode(",", $fields);
+                    $sqlValues = implode(",", $sqlValues);
+
+                    $sql = "INSERT INTO $table ($fields) VALUES ($sqlValues)";
+                    $db->exec($sql, $types, ...$values);
+                } else if ($z == "edit") {
+                    $types = "";
+                    $values = [];
+                    $dbId = $item["dbId"];
+                    if (!isset($dbId)) {
+                        $this->error();
+                    }
+
+                    $sql = "UPDATE $table SET";
+                    for ($i = 0; $i < count($validationResult->fields); $i++) {
+                        $field = $validationResult->fields[$i];
+
+                        $types .= $field->dataType;
+                        $values[] = $item[$field->name];
+                        $sql .= " " . $field->name . " = ?";
+
+                        if ($i < (count($validationResult->fields) - 1)) {
+                            $sql .= ",";
+                        }
+                    }
+
+                    $types .= "i";
+                    $values[] = $dbId;
+                    $sql .= " WHERE id = ?";
+                    $db->exec($sql, $types, ...$values);
+                } else if ($z == "delete") {
+                    $sql = "UPDATE $table SET active = 0 WHERE id = ?";
+                    $db->exec($sql, "i", $item["dbId"]);
+                } else {
+                    $this->error();
+                }
+            }
+
+        }
     }
 
 ?>

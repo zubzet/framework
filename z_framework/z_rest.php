@@ -7,8 +7,8 @@
         function __construct($data, $urlParts) {
             $this->data = [
                 'meta' => [
-                    "endpoint" => "SKDB REST API",
-                    "request" => implode($urlParts, "/"),
+                    "endpoint" => "Your Websites REST API",
+                    "request" => implode("/", $urlParts),
                     "timestamp" => time()
                 ]
             ];

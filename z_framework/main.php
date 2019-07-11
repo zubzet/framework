@@ -17,10 +17,6 @@
         private $defaultIndex;
         public $showErrors;
         public $rootFolder;
-        public $rqclient = [
-            "isLoggedIn" => false,
-            "permissionLevel" => -1
-        ];
         public $maxReroutes = 10;
         public $reroutes = 0;
         public $z_framework_root = "z_framework/";
@@ -28,6 +24,8 @@
         public $z_models = "z_models/";
         public $z_views = "z_views/";
         public $config_file = "z_config/z_settings.ini";
+
+        public $user;
 
         //Parse all the options as vars and instantiate the z_db
         //and establish the db connection
@@ -82,14 +80,23 @@
 
             //Import of the z_db
             require_once $this->z_framework_root.'z_db.php';
-            $this->z_db = new z_db($this->conn, $this->rqclient);
+            $this->z_db = new z_db($this->conn, $this);
+
+            //Import the standard controller;
+            require_once $this->z_framework_root.'z_controller.php';
 
             //Import the standard model
             require_once $this->z_framework_root.'z_model.php';
 
             //RR System
+            require_once $this->z_framework_root."z_requestResponseHandler.php";
             require_once $this->z_framework_root."z_response.php";
             require_once $this->z_framework_root."z_request.php";
+
+            //User
+            require_once $this->z_framework_root.'z_user.php';
+            $this->user = new User($this);
+            $this->user->identify();
         }
 
         public function updateErrorHandling($state = null) {
@@ -161,23 +168,15 @@
             $controller = str_replace("-", "_", $controller);
             
             try {
+                $controllerFile = null;
                 if (file_exists($this->z_controllers . $controller . ".php")) {
+                    $controllerFile = $this->z_controllers . $controller . ".php";
+                } else if (file_exists($this->z_framework_root . "default/controllers/" . $controller . ".php")) {
+                    $controllerFile = $this->z_framework_root . "default/controllers/" . $controller . ".php";
+                }
 
-                    include_once($this->z_controllers . $controller . ".php");
-                    //requires login?
-                    if(isset($controller::$permissionLevel) ? $controller::$permissionLevel !== -1 : 2) {
-                        $this->rqclient = $this->checkLogin();
-                        if (!$this->rqclient["isLoggedIn"]) {
-                            //if not logged in
-                            return $this->executePath(["login", "index"]);
-                        } else {
-                            //else check permission level
-                            if ($controller::$permissionLevel > $this->rqclient["permissionLevel"]) {
-                                return $this->executePath(["error", "403"]);
-                            }
-                        }
-                    }
-
+                if ($controllerFile !== null) {
+                    include_once($controllerFile);
                 } else {
                     return $this->executePath(["error", "404"]);
                 }
@@ -206,36 +205,30 @@
             });
         }
 
-        private function checkLogin() {
-            //check if the token is valid and not too old
-
-            if (!isset($_COOKIE["skdb_login_token"]) || empty($_COOKIE["skdb_login_token"])) {
-                return ["isLoggedIn" => false, "permissionLevel" => -1];
-            }
-
-            $tokenResult = $this->getModel("z_login", $this->z_framework_root)->validateCookie($_COOKIE["skdb_login_token"]);
-            $rquserid = $tokenResult["employeeId"];
-            $id_exec = $tokenResult["employeeId_exec"];
-
-            if ($rquserid !== false) {
-                $user = $this->getModel("z_login", $this->z_framework_root)->getUserById($rquserid);
-                if ($user !== false) {
-                    //Adding additional non database information to the rqclient
-                    return array_merge($user, ["isLoggedIn" => true, "id_exec" => $id_exec]);
-                }
-            }
-            
-            return ["isLoggedIn" => false, "permissionLevel" => -1];
-        }
-
         private $modelCache = [];
         public function getModel($model, $dir = null) {
             $model .= "Model";
+            $path = ($dir == null ? $this->z_models : $dir)."$model.php";
             if (!isset($this->modelCache[$model])) {
-                require_once ($dir == null ? $this->z_models : $dir)."$model.php";
-                $this->modelCache[$model] = new $model($this->z_db);
+                if (file_exists($path)) {
+                    require_once $path;
+                } else {
+                    $path = $this->z_framework_root . "default/models/" . $model . ".php";
+                    if (file_exists($path)) {
+                        require_once $path;
+                    } else {
+                        throw new Exception("Model: $model does not exist!");
+                    }
+                }                
+                $this->modelCache[$model] = new $model($this->z_db, $this);
             }
             return $this->modelCache[$model];
+        }
+
+        public function getViewPath($document) {
+            if (file_exists($this->z_views.$document)) return $this->z_views.$document;
+            if (file_exists($this->z_framework_root."default/views/".$document)) return $this->z_framework_root."default/views/".$document;
+            return false;
         }
 
         private function rest($options) {
