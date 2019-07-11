@@ -1,0 +1,30 @@
+ALREADY IN THE DB:
+First Name
+Last Name
+Expertise
+
+NEEDED:
+Adress_planet
+Adress_country
+Adress_state
+Adress_city
+Adress_zip
+Adress_street
+Adress_number
+email
+web
+tel
+Position
+mobil
+fax
+date of birth
+Nationallity
+professional history
+    start date
+    end date / due
+    title
+    position
+education
+    date of Graduation
+    title
+    short description (text inputbox)
