@@ -1,6 +1,0 @@
-notes:
-Request->getCookie
-(z_rest: 11 parameter order)
-admin/add_user labels vertauscht
-
-add_user error translation missing

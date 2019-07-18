@@ -1,1 +1,0 @@
-<?php function layout($opt, $body, $head) { } ?>
