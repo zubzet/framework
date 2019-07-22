@@ -6,13 +6,16 @@
      * Response => used to handle outgoing stuff
      */
 
+    /**
+     * Base class for Response and Request
+     */
     class Request extends RequestResponseHandler {
 
         /**
          * Gets a get parameter
-         * @param String $key of the parameter
-         * @param String $default Default value
-         * @return Array|String Content of the get value
+         * @param string $key of the parameter
+         * @param string $default Default value
+         * @return Array|string Content of the get value
          */
         public function getGet($key, $default = null) {
             if (isset($_GET[$key])) {
@@ -23,9 +26,9 @@
 
         /**
          * Gets a post parameter
-         * @param String $key of the parameter
-         * @param String $default Default value
-         * @return Array|String Content of the post value
+         * @param string $key of the parameter
+         * @param string $default Default value
+         * @return Array|string Content of the post value
          */
         public function getPost($key, $default = null) {
             if (isset($_POST[$key])) {
@@ -36,8 +39,8 @@
 
         /**
          * Gets a cookie
-         * @param String $key of the parameter
-         * @param String $default Default value
+         * @param string $key of the parameter
+         * @param string $default Default value
          * @return any Content of the Cookie
          */
         public function getCookie($key, $default = null) {
@@ -80,24 +83,40 @@
 
         /**
          * Gets the user who requested.
-         * @return User
+         * @return User Object of the requesting user
          */
         public function getRequestingUser() {
             return $this->booter->user;
         }
 
+        /**
+         * Gets the relative path to the config file of the framework
+         * @return string Relative path to the config file
+         */
         public function getConfigFile() {
             return $this->booter->config_file;
         }
 
+        /**
+         * Gets the path to the root folder of the project.
+         * @return string Path to the root folder
+         */
         public function getRootFolder() {
             return $this->booter->rootFolder;
         }
 
+        /**
+         * Updates the error handling state.
+         * @param int $state Error state. See: z_framework::updateErrorHandling($state)
+         */
         public function updateErrorHandling($state) {
             $this->booter->updateErrorHandling($state);
         }
 
+        /**
+         * Creates an upload object that handles the rest of the upload.
+         * @return z_upload A new instance of the z_upload class
+         */
         public function upload() {
             require_once $this->getZRoot()."z_upload.php";
             return new z_upload($this);
@@ -106,7 +125,7 @@
         /**
          * Checks if the current has a permission. If the user is not logged in, it will be redirected to the login page. 
          * If the user is logged in but does not have the permission, it will be redirected to 403.
-         * @param String $permission Permission to check for
+         * @param string $permission Permission to check for
          */
         public function checkPermission($permission) {
             $user = $this->getRequestingUser();
@@ -123,8 +142,9 @@
 
         /**
          * Validates form data from the client
-         * @param String $method Method to use for checks ("POST"|"GET")
-         * @return Array|Boolean A list of errors or true
+         * @param FormField[] $fields Array of fields with the validation rules
+         * @param array $data Input for the validation. $_GET or $_POST can be used here as parameters
+         * @return array|boolean A list of errors or true
          */
         public function validateForm($fields, $data = null) {
             $errors = [];
@@ -197,7 +217,7 @@
 
         /**
          * Checks if the request contains form data. When it contains form data, methods like validateForm() can be used.
-         * @return Boolean
+         * @return bool
          */
         public function hasFormData() {
             return isset($_POST["isFormData"]);
@@ -205,8 +225,8 @@
 
         /**
          * Checks if the request is a async ajax request of a type
-         * @param String $type
-         * @return Boolean
+         * @param string $type Type of the request. Request is send via Z.js => Z.Request.action()
+         * @return bool True if request of type
          */
         public function isAction($type) {
             return ($this->getPost("action") == $type);
@@ -214,8 +234,9 @@
 
         /**
          * Validates a "Create Edit Delete" input
-         * @param String $name Name of the input field
-         * @param Array $rules Array of rules for validating
+         * @param string $name Name of the input field
+         * @param object $rules Array of rules for validating
+         * @return FormResult Result of the validation. Needed to perform response actions
          */
         public function validateCED($name, $rules) {
             $errors = [];
@@ -247,8 +268,34 @@
 
     }
 
+    /**
+     * Holds the result of a validation of a form
+     */
     class FormResult {
 
+        /**
+         * @var bool $doNothing When set, no CED action will be performed when this object is given into one.
+         */
+        public $doNothing;
+
+        /**
+         * @var bool $hasErrors Set when the input data was invalid
+         */
+        public $hasErrors;
+
+        /**
+         * @var object[] $errors Holds the errors of the validation
+         */
+        public $errors;
+
+        /**
+         * @var FormField[] $fields Array of the validated fields.
+         */
+        public $fields;
+
+        /**
+         * Creates a new FormResult object
+         */
         function __construct()
         {
             $this->doNothing = false; //Set when no CED action is present
@@ -258,7 +305,36 @@
         }
     }
 
+    /**
+     * Represents an input field of a form on the server side
+     */
     class FormField {
+
+        /**
+         * @var object[] $rules Array of rules that specify how to validate this form field.
+         */
+        public $rules;
+
+        /**
+         * @var string $name Name of the input in the post request
+         */
+        public $name;
+
+        /**
+         * @var string $dbField Name of the field in the database
+         */
+        public $dbField;
+
+        /**
+         * @var string $dataType Datatype needed for prepared statements (s/i...)
+         */
+        public $dataType;
+
+        /**
+         * Creates a form field representation
+         * @param string $name Name of the field. Should match the name in the post header
+         * @param string $dbName Name of the field in the database. If not set it will be equal to the name
+         */
         function __construct($name, $dbName = null) {
             $this->rules = [];
             $this->name = $name;
@@ -266,37 +342,100 @@
             $this->dataType = "s";
         }
 
+        /**
+         * Adds a filter rule
+         * 
+         * Creates an error when a filter fails. Available are all filter_var compatibles.
+         * 
+         * @param int $filter A valid php filter
+         * @return FormField Returns itself to allow chaining
+         */
         function filter($filter) {
             $this->rules[] = ["name" => $this->name, "type" => "filter", "filter" => $filter];
             return $this;
         }
 
+        /**
+         * Adds a unique rule
+         * 
+         * This rule checks if a dataset with specific value already exist.  
+         * A set to ignore can also be specified. An error will be created when the set exists.
+         * 
+         * @param string $table Tablename in the database
+         * @param string $field Fieldname in the table
+         * @param string $ignoreField name of the field in which the ignore value is
+         * @param string $ignoreValue value of the dataset that should be ignored
+         * @return FormField Returns itself to allow chaining
+         */
         function unique($table, $field, $ignoreField = null, $ignoreValue = null) {
             $this->rules[] = ["name" => $this->name, "type" => "unique", "table" => $table, "field" => $field, "ignoreField" => $ignoreField, "ignoreValue" => $ignoreValue];
             return $this;
         }
 
+        /**
+         * Adds a exists rule
+         * 
+         * This rule checks if a dataset with specific value already exist.  
+         * A set to ignore can also be specified. An error will be created when the set does not exists.
+         * 
+         * @param string $table Tablename in the database
+         * @param string $field Fieldname in the table
+         * @return FormField Returns itself to allow chaining
+         */
         function exists($table, $field) {
             $this->rules[] = ["name" => $this->name, "type" => "exist", "table" => $table, "field" => $field];
             return $this;
         }
 
+        /**
+         * Adds a required rule
+         * 
+         * With this rule an error is created when no input for this field is given.
+         * 
+         * @return FormField Returns itself to allow chaining
+         */
         function required() {
             $this->rules[] = ["name" => $this->name, "type" => "required"];
             return $this;
         }
 
+        /**
+         * Adds a length rule
+         * 
+         * This rule will create an error when the input is to long or to short
+         * 
+         * @param int $min Minimum number of chars
+         * @param int $max Maximum number of chars
+         * @return FormField Returns itself to allow chaining
+         */
         function length($min, $max) {
             $this->rules[] = ["name" => $this->name, "type" => "length", "min" => $min, "max" => $max];
             return $this;
         }
 
+        /**
+         * Adds a integer rule
+         * 
+         * This rule will create an error when the input was not an value that could be parsed to an integer.
+         * Also this function sets the type of the field to "i".
+         * 
+         * @return FormField Returns itself to allow chaining
+         */
         function integer() {
             $this->rules[] = ["name" => $this->name, "type" => "integer"];
             $this->dataType = "i";
             return $this;
         }
 
+        /**
+         * Adds a range rule
+         * 
+         * This rule checks if the input as a number is in a range. If the number is not in the range, an error will be created.
+         * 
+         * @param float $min Min allowed value
+         * @param float $max Max allowed value
+         * @return FormField Returns itself to allow chaining
+         */
         function range($min, $max) {
             $this->rules[] = ["range" => $this->name, "type" => "range", "min" => $min, "max" => $max];
             return $this;

@@ -1,4 +1,9 @@
-<?php return ["head" => function($opt) { ?> <!-- File header -->
+<?php 
+/**
+ * The user select view. Only accessible with permission
+ */
+
+return ["head" => function($opt) { ?> <!-- File header -->
 
 <?php }, "body" => function($opt) { ?> <!-- File body -->	
     <h2><?php $opt["lang"]("edit_user"); ?></h2>

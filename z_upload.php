@@ -1,20 +1,55 @@
 <?php
+    /**
+     * This file holds the upload class
+     */
 
+    /**
+     * Class that handles file uploads
+     */
     class z_upload {
-
+        
+        /** @var string $ref Reference */
         public $ref;
+
+        /** @var string $mime MIME-Type */
         public $mime;
+
+        /** @var string $srcName Source name of the uploading file */
         public $srcName;
+
+        /** @var string $extension File extension of the uploading file */
         public $extension;
+
+        /** @var int $size Size of the uploading file in bytes*/
         public $size;
+
+        /** @var string $filePath Path to the uploading file */
         public $filePath;  
+
+        /** @var int $fileId File Id */
         public $fileId;
 
+        /** @var Request $req Request object of the current request*/
         private $req;
+
+        /**
+         * Creates the upload object
+         */
         function __construct($req) {
             $this->req = $req;
         }
 
+       /**
+        * Uploads a file to an uplaod folder
+        *
+        * This function will handle file uploads for you and make sure the type and the size are as defined. It also handles the movement to an upload folder. Be sure to change upload_max_filesize and post_max_size in you php.ini
+        *
+        * @param string $file The file attribute from POST. Example $_POST["profile_picture"]
+        * @param string $uploadDir The path to which the file will be uploaded
+        * @param string $maxSize The maximum size of the file. Use the dfiend constants like FILE_SIZE_2MB
+        * @param string[] $typeArray An array of allowed filetypes like ["jpg", "png"]
+        * @return int The result of the upload. This could be something like UPLOAD_SUCCESS or UPLOAD_ERROR_TOO_BIG
+        */
         public function upload($file, $uploadDir, $maxSize, $typeArray) {
 
             $ref = $this->req->getModel("z_general")->getUniqueRef();
@@ -38,19 +73,50 @@
 
         }
 
+        /**
+        * Uploads a file, which must be an image
+        *
+        * An implementation of the upload method with an iamge filter. This function will handle file uploads for you and make sure the type and the size are as defined. It also handles the movement to an upload folder. Be sure to change upload_max_filesize and post_max_size in you php.ini
+        *
+        * @param string $file The file attribute from POST. Example $_POST["profile_picture"]
+        * @param string $uploadDir The path to which the file will be uploaded
+        * @param string $maxSize The maximum size of the file. Use the dfiend constants like FILE_SIZE_2MB
+        * @return int The result of the upload. This could be something like UPLOAD_SUCCESS or UPLOAD_ERROR_TOO_BIG
+        */
         public function image($file, $uploadDir, $maxSize = FILE_SIZE_2MB) {
             return $this->upload($file, $uploadDir, $maxSize, 
                 ["jpg", "jpeg", "gif", "png"]
             );
         }
 
+
+       /**
+        * Uploads a file, which must be a video
+        *
+        * An implementation of the upload method with a video filter. This function will handle file uploads for you and make sure the type and the size are as defined. It also handles the movement to an upload folder. Be sure to change upload_max_filesize and post_max_size in you php.ini
+        *
+        * @param string $file The file attribute from POST. Example $_POST["recording"]
+        * @param string $uploadDir The path to which the file will be uploaded
+        * @param string $maxSize The maximum size of the file. Use the dfiend constants like FILE_SIZE_100MB
+        * @return int The result of the upload. This could be something like UPLOAD_SUCCESS or UPLOAD_ERROR_TOO_BIG
+        */
         public function video($file, $uploadDir, $maxSize = FILE_SIZE_100MB) {
             return $this->upload($file, $uploadDir, $maxSize, 
                 ["mp4", "m4a", "m4v", "mov", "3gp", "ogg", "webm", "flv"]
             );
         }
 
-        public function audio($file, $uploadDir, $maxSize = FILE_SIZE_2MB) {
+       /**
+        * Uploads a file, which must be an audio
+        *
+        * An implementation of the upload method with a audio filter. This function will handle file uploads for you and make sure the type and the size are as defined. It also handles the movement to an upload folder. Be sure to change upload_max_filesize and post_max_size in you php.ini
+        *
+        * @param string $file The file attribute from POST. Example $_POST["voice_rec"]
+        * @param string $uploadDir The path to which the file will be uploaded
+        * @param string $maxSize The maximum size of the file. Use the dfiend constants like FILE_SIZE_10MB
+        * @return int The result of the upload. This could be something like UPLOAD_SUCCESS or UPLOAD_ERROR_TOO_BIG
+        */
+        public function audio($file, $uploadDir, $maxSize = FILE_SIZE_10MB) {
             return $this->upload($file, $uploadDir, $maxSize, 
                 ["mp3", "wav", "wma", "ogg", "m4a"]
             );

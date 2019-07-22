@@ -1,4 +1,9 @@
-<?php return ["head" => function($opt) { ?> <!-- File header -->
+<?php 
+/**
+ * The instance settings view. Only accessible with permission
+ */
+
+return ["head" => function($opt) { ?> <!-- File header -->
 
     <script>
         function confirmSave() {

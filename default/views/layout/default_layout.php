@@ -1,4 +1,9 @@
-<?php return [
+<?php 
+/**
+ * The default layout
+ */
+
+return [
     "lang" => [
         "de_formal" => [
             "administration" => "Verwaltung",

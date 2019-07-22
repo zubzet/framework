@@ -1,5 +1,7 @@
 <?php 
     /**
+     * This file contains the ZController
+     * 
      * Permissions used here:
      *  admin.panel
      *  admin.cfg
@@ -14,8 +16,17 @@
      *  admin.su
      */
 
+    /**
+     * The ZController contains actions for the admin dashboard / panel
+     */
     class ZController extends z_controller {
 
+        /**
+         * Serves an empty index page with the admin layout
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_index($req, $res) {
             $req->checkPermission("admin.panel");
             $res->render("z_empty.php", [
@@ -23,6 +34,12 @@
             ], "layout/z_admin_layout.php");
         }
 
+        /**
+         * Action for the instance configuration
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_cfg_instance($req, $res) {
             $req->checkPermission("admin.cfg");
 
@@ -47,6 +64,12 @@
             ], "layout/z_admin_layout.php");
         }
 
+        /**
+         * Action for adding a user
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_add_user($req, $res) {
             $req->checkPermission("admin.user.add");
 
@@ -79,6 +102,12 @@
             
         }
 
+        /**
+         * Action for editing a user
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         function action_edit_user($req, $res) {
             $req->checkPermission("admin.user.list");
 
@@ -126,6 +155,12 @@
             }
         }
 
+        /**
+         * Action for logging in as someone else
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         function action_login_as($req, $res) {
             $req->checkPermission("admin.su");
 
@@ -136,6 +171,12 @@
             }
         }
 
+        /**
+         * Action for the role configuration page
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         function action_roles($req, $res) {
             $req->checkPermission("admin.roles.list");
 
@@ -186,6 +227,12 @@
 
         }
 
+        /**
+         * Action for seeing the logs
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         function action_log($req, $res) {
             $req->checkPermission("admin.log");
 

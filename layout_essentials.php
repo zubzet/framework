@@ -1,6 +1,15 @@
-<?php function essentialsHead($opt) { ?>
+<?php 
+/**
+ * This file holds essential parts fot the framework that will be pasted into the layout.
+ */
+
+/**
+ * Call this to paste the essential head part of a page into the layout
+ * @param object $opt Object holding options for rendering
+ */
+function essentialsHead($opt) { ?>
     <script src="https://pagecdn.io/lib/jquery/3.4.1/jquery.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
-    <script><?php include("z_framework/default/assets/Z.js"); ?></script>
+    <script src="<?php echo $opt["root"] ?>assets/js/Z.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css" rel="stylesheet">
@@ -13,7 +22,12 @@
     </script>
 <?php } ?>
 
-<?php function essentialsBody($opt) { ?>
+<?php 
+/**
+ * Call this to paste the essential body part of a page into the layout
+ * @param object $opt Object holding options for rendering
+ */
+function essentialsBody($opt) { ?>
     <!-- TOKEN EXPIRED MESSAGE -->
     <?php if($opt["user"]->isLoggedIn) { ?>
     <style>

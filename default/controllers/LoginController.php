@@ -1,6 +1,17 @@
 <?php 
+    /**
+     * This file holds the login controller
+     */
+
+    /**
+     * The Login controller handles all login/logout stuff
+     */
     class LoginController {
 
+        /**
+         * Gets the IP adress of the requesting client
+         * @return string The Ip Adress of the requesting client. "UNKOWN" when it could not be determined.
+         */
         private function get_client_ip_env() {
             $ipaddress = '';
             if (getenv('HTTP_CLIENT_IP'))
@@ -21,7 +32,19 @@
             return $ipaddress;
         }
 
+        /**
+         * @var bool $action_index_sitemap If set to true the action_index will appear in the sitemap
+         */
         public static $action_index_sitemap = true;
+
+        /**
+         * The index action
+         * 
+         * It will be called when no action is specified
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_index($req, $res) {
 
             //Check if user has entert information
@@ -99,11 +122,26 @@
             }
         }
 
+        /**
+         * Logs out the requesting user.
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_logout($req, $res) {
             $res->logout();
         }
         
+        
+        /**
+         * @var bool $action_forgot_password_sitemap If set to true the action_forgot_password will appear in the sitemap
+         */
         public static $action_forgot_password_sitemap = true;
+
+        /**
+         * Serves the forgot password page and resets the a users password
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_forgot_password($req, $res) {
 
             $action = $req->getParameters(0, 1);
@@ -148,6 +186,14 @@
             ], "layout/min_layout.php");
         }
 
+        /**
+         * Serves the page where the user can reset its password
+         * 
+         * For access the user needs a code he usally gets per mail. This code will also identify the user so he does not need to be logged in to reset his password
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_reset($req, $res) {
             
             $code = $req->getParameters(0, 1);
@@ -186,12 +232,26 @@
             }
         }
 
-        //Alias for newbies
+        /**
+         * Redirects the user to the password reset page
+         * 
+         * This action is used for user who create their password for the first time
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_create_password($req, $res) {
             $res->reroute(["login", "reset"]);
         }
 
-        //For later account settings use
+        /**
+         * Redirects the user to the password reset page
+         * 
+         * This action is used for user who wat to change their password but did not forgot it.
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_change_password($req, $res) {
             $res->reroute(["login", "reset"]);
         }

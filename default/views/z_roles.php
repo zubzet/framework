@@ -1,4 +1,9 @@
-<?php return ["head" => function($opt) { ?> <!-- File header -->
+<?php 
+/**
+ * The role editor view. Only accessible with permission
+ */
+
+return ["head" => function($opt) { ?> <!-- File header -->
 
 <?php }, "body" => function($opt) { ?> <!-- File body -->	
 

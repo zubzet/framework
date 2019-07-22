@@ -1,4 +1,9 @@
-<?php return [ "head" => function($opt) { ?>
+<?php 
+/**
+ * The 404 Error view
+ */
+
+return [ "head" => function($opt) { ?>
     <style>
 
     * {

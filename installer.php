@@ -1,4 +1,8 @@
 <?php
+    /**
+     * Installer script. Call it directly by opening the url to the file path in a web browser.
+     */
+
     set_time_limit(-1);
 
     $msg = "";
@@ -104,6 +108,8 @@
             mkdir("../z_views");
             mkdir("../z_controllers");
             mkdir("../uploads");
+            mkdir("../assets");
+            mkdir("../assets/js");
             
             //Create config file
             file_put_contents("../z_config/z_settings.ini", $configText);
@@ -111,6 +117,7 @@
             //Creating entrance
             copy("install/index.php", "../index.php");
             copy("install/.htaccess", "../.htaccess");
+            copy("default/assets/Z.js", "../assets/js/Z.js");
 
             //Composer shit
             echo "Downloading composer installer...<br>";
@@ -126,7 +133,9 @@
         }
     }
 
-    //Helper for inserting values in inputs without making errors / warning
+    /**
+     * Helper for inserting values in inputs without making errors / warning
+     */
     function value($name) {
         if (isset($_POST[$name])) {
             echo $_POST[$name];

@@ -1,34 +1,85 @@
 <?php
+    /**
+     * Also known as booter 
+     */
+
+    /**
+     * First class that is instantiated at a request
+     */
     class z_framework {
 
+        /** @var string $rootDirectory Path to the root */
         private $rootDirectory;
+
+        /** @var string $host Name of the host of this page */
         private $host;
-        private $document;
+
+        /** @var string $root Path to the root relative to the hostname */
         private $root;
+
+        /** @var string $url URL to reach this page */
         private $url;
+
+        /** @var mysqli $host Database connection object */
         private $conn;
+
+        /** @var string $dbhost Hostname of the machine on that the database lives */
         private $dbhost;
+
+        /** @var string $dbusername Username for the database connection */
         private $dbusername;
+
+        /** @var string $dbpassword Password for the database connection */
         private $dbpassword;
+
+        /** @var string $dbname Name of the database */
         private $dbname;
+
+        /** @var string $default Name of the controller when no specific is selected */
         private $defaultIndex;
+
+        /** @var string[] $urlParts Exploded url */
         public $urlParts;
+
+        /** @var array $settings Stores the z_framework settings */
         public $settings;
+
+        /** @var z_db $z_db Database proxy object  */
         public $z_db;
+
+        /** @var int $showErrors Defines what errors should be shown */
         public $showErrors;
+
+        /** @var string $rootFolder Path to the root folder */
         public $rootFolder;
+
+        /** @var int $maxReroutes Number of reroutes controller can do before abort */
         public $maxReroutes = 10;
+
+        /** @var int $reroutes Number of how many times this request war rerouted */
         public $reroutes = 0;
+
+        /** @var string $z_framework_root Directory where the framework stuff lives */
         public $z_framework_root = "z_framework/";
+
+        /** @var string $z_cnontrollers Directory in which the controllers live */
         public $z_controllers = "z_controllers/";
+
+        /** @var string $z_models Directory in which the models live in */
         public $z_models = "z_models/";
+
+        /** @var string $z_views Directory of the views */
         public $z_views = "z_views/";
+
+        /** @var string $config_file Path to the config file */
         public $config_file = "z_config/z_settings.ini";
 
+        /** @var User $user The requesting user */
         public $user;
 
-        //Parse all the options as vars and instantiate the z_db
-        //and establish the db connection
+        /**
+         * Parses all the options as vars and instantiate the z_db and establish the db connection
+         */
         function __construct($params = []) {
 
             $param_keys = [
@@ -103,6 +154,10 @@
             $this->user->identify();
         }
 
+        /**
+         * Updates the error handling state
+         * @param Number $state
+         */
         public function updateErrorHandling($state = null) {
             //State or attribute check
             $this->showErrors = ($state != null ? $state : $this->showErrors);
@@ -126,8 +181,10 @@
             }
         }
 
-        //Used to parse the url into parts and parameters
-        //Format: root/class/method/parameter/parmameter/...
+        /**
+         * Used to parse the url into parts and parameters
+         * Format: root/class/method/parameter/parmameter/...
+         */
         private function parseUrl() {
             $path = parse_url($this->url, PHP_URL_PATH);
             $path = ltrim($path, '/');
@@ -143,7 +200,9 @@
             return $urlParts;
         }
 
-        //The Execution of the requested action
+        /** 
+         * The Execution of the requested action 
+         */
         public function execute() {
             $this->executePath($this->urlParts);
         }
@@ -196,6 +255,9 @@
             }
         }
 
+        /**
+         * Decodes all data send via post. Decode method can be determined on the prefix of the value
+         */
         private function decodePost() {
             array_walk_recursive($_POST, function(&$item) {
                 if(substr($item, 0, 10) == "<#decb64#>") {
@@ -209,7 +271,15 @@
             });
         }
 
+        /** @var z_Model[] Stores all already used models for this request */
         private $modelCache = [];
+
+        /**
+         * Returns a model
+         * @param string $model Name of the model
+         * @param string $dir Set this when the model is stored in a specific directory
+         * @return z_Model The model
+         */
         public function getModel($model, $dir = null) {
             $model .= "Model";
             $path = ($dir == null ? $this->z_models : $dir)."$model.php";
@@ -229,27 +299,42 @@
             return $this->modelCache[$model];
         }
 
+        /**
+         * Returns the path of a view. If the view does not exists, this function will fallback to the framework defaults
+         * @param string $document Filename of the view
+         * @return string Relative path to the view file
+         */
         public function getViewPath($document) {
             if (file_exists($this->z_views.$document)) return $this->z_views.$document;
             if (file_exists($this->z_framework_root."default/views/".$document)) return $this->z_framework_root."default/views/".$document;
             return $this->z_framework_root."default/views/500.php";
         }
 
+        /**
+         * Answers this request with a rest
+         */
         private function rest($options) {
             require_once $this->z_framework_root.'z_rest.php';
             $rest = new Rest($options, $this->urlParts);
             $rest->execute();
         }
 
-        //close the db connection on exit
+        /**
+         * Closes the database connection on exit
+         */
         function __destruct() {
             if (isset($this->conn)) $this->conn->close();
         }
 
     }
 
-    //HELPER Functions
+    //Helper functions
 
+    /**
+     * Helper function to get the caller of a function
+     * @param int $depth Index of the callstack from back to front
+     * @return any The caller
+     */
     function getCaller($depth = 1) {
         return debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3)[$depth + 1]['function'];
     }

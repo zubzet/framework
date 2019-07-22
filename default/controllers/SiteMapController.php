@@ -1,6 +1,23 @@
 <?php 
+    /**
+     * This file holds the sitemap controller
+     */
+
+    /**
+     * The sitemap controller generates sitemaps and serves them to the client
+     *
+     * This class has only the index action
+     */
     class SitemapController {
 
+        /**
+         * Index action of the sitemap controller
+         * 
+         * This controller does not have any other actions
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
         public function action_index($req, $res) {
 
             $routes = [];

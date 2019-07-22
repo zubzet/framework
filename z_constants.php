@@ -1,5 +1,11 @@
 <?php
+    /**
+     * Constants for use in the entire Framework
+     */
 
+    /**
+     * Value for an succeeded upload
+     */
     const UPLOAD_SUCCESS = 0;
     const UPLOAD_ERROR_TOO_BIG = 1;
     const UPLOAD_ERROR_WRONG_TYPE = 2;

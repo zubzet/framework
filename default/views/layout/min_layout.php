@@ -1,4 +1,9 @@
-<?php return ["layout" => function($opt, $body, $head) { ?>
+<?php 
+/**
+ * A minimum layout
+ */
+
+return ["layout" => function($opt, $body, $head) { ?>
     <!doctype html>
     <html class="no-js" lang="en">
         <head>

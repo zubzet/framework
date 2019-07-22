@@ -1,4 +1,9 @@
-<?php return [ "head" => function() { ?> <!-- File header -->
+<?php 
+/**
+ * The index view
+ */
+
+return [ "head" => function() { ?> <!-- File header -->
 
 
 <?php }, "body" => function($opt) { ?> <!-- File body -->	

@@ -6,14 +6,21 @@
      * Response => used to handle outgoing stuff
      */
 
+    /**
+     * @var object $opt Holds options needed for rendering
+     */
     $opt = [];
 
+    /**
+     * The response class handles functions used by controllers to respond to requests
+     */
     class Response extends RequestResponseHandler {
         
         /**
          * Shows a document to the user
          * @param string $document Path to the view
-         * @param string $params assosiative array with values to replace in the view
+         * @param string $opt assosiative array with values to replace in the view
+         * @param string $layout The path to the layout to use
          */
         public function render($document, $opt = [], $layout = "layout/default.php") {
 
@@ -113,6 +120,7 @@
          * @param string $document Path to the view
          * @param array $opt Array of data to use by the view
          * @param string $name name of the output file
+         * @param string $dlOpt Html2Pdf opts
          * @param array $pdfOptions PDF options (see Html2Pdf constructor)
          */
         public function renderPDF($document, $opt, $name = "CV.pdf", $dlOpt = "I", $pdfOptions = ['P', 'A4', 'en', true, 'UTF-8', array(20, 20, 20, 5)]) {
@@ -143,6 +151,7 @@
 
         /**
          * Reroutes to another action
+         * @param string[] $path Path to where to reroute to
          */
         public function reroute($path = []) {
             $this->booter->executePath($path);
@@ -150,6 +159,8 @@
 
         /**
          * Reroutes at the users client
+         * @param string $url
+         * @param string $root
          */
         public function rerouteUrl($url = "", $root = null) {
             if ($root === null) $root = $this->booter->rootFolder;
@@ -159,7 +170,7 @@
 
         /**
          * Sets an cookie
-         * @param any See: setcookie
+         * @param any $args See: setcookie
          */
         public function setCookie() {
             setcookie(...func_get_args());
@@ -167,6 +178,8 @@
 
         /**
          * Removes a cookie at the client
+         * @param string $name Name of the cookie
+         * @param string $path Path of the server
          */
         public function unsetCookie($name, $path = "/") {
             unset($_COOKIE[$name]);
@@ -175,7 +188,7 @@
 
         /**
          * Gets a new rest object
-         * @param Array $payload data
+         * @param object $payload data
          */
         private function getNewRest($payload) {
             require_once $this->booter->z_framework_root.'z_rest.php';
@@ -184,8 +197,8 @@
 
         /**
          * Generates a rest object
-         * @param Array $payload data
-         * @param Boolean $die
+         * @param object $payload data
+         * @param bool $die
          */
         function generateRest($payload, $die = true) {
             if (@$payload["result"] == "error") $this->generateRestError("ergc", getCaller(1));
@@ -194,8 +207,8 @@
 
         /**
          * Generates a rest error object
-         * @param String $code Code
-         * @param String $message Error Message
+         * @param string $code Code
+         * @param string $message Error Message
          */
         function generateRestError($code, $message) {
             $model = $this->booter->getModel("z_general");
@@ -205,12 +218,12 @@
 
         /**
          * Sends an email to an address
-         * @param String $to Mail address
-         * @param String $subject Subject of the mail
-         * @param String $document View
-         * @param String $language Language identifier
-         * @param Array $options Options to use in the view
-         * @param String $layout Layout
+         * @param string $to Mail address
+         * @param string $subject Subject of the mail
+         * @param string $document View
+         * @param string $lang Language identifier ("EN", "DE_Formal"...)
+         * @param object $options Options to use in the view
+         * @param string $layout Layout
          */
         function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
 
@@ -254,10 +267,10 @@
         /**
          * Sends an email to a user
          * @param int $userId id of the target user
-         * @param String $subject Subject of the mail
-         * @param String $document View of the mail
-         * @param Array $options Options for use in the view
-         * @param String $layout Layout to use
+         * @param string $subject Subject of the mail
+         * @param string $document View of the mail
+         * @param object $options Options for use in the view
+         * @param string $layout Layout to use
          */
         function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "email") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
@@ -291,7 +304,7 @@
 
         /**
          * Sends an error array generated by validateForm() from Request. Exit
-         * @param Array $errors The error array.
+         * @param object[] $errors The error array.
          */
         function formErrors($errors) {
             $this->generateRest(["result" => "formErrors", "formErrors" => array_merge(...func_get_args())]);
@@ -318,16 +331,21 @@
 
         /**
          * Logs something
-         * @param String $categoryName Name of the log category in the database
-         * @param String $text Log Text
+         * @param string $categoryName Name of the log category in the database
+         * @param string $text Log Text
          * @param int $value Log Value
          */
         function log($categoryName, $text, $value) {
-            return $this->booter->getModel("z_general")->logActionByCategory($categoryName, $text, $value);
+            $this->booter->getModel("z_general")->logActionByCategory($categoryName, $text, $value);
         }
 
         /**
          * Updates a database row by a user filled form
+         * @param string $table Tablename in the database
+         * @param string $pkField Name of the field in the database of the primary key
+         * @param string $pkType Type of the primary field ("s"/"i"...)
+         * @param string $pkValue Value of the primary key in the row to change
+         * @param ValidationResult $validationResult Result of a validation
          */
         function updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult) {
             $db = $this->booter->z_db;
@@ -356,7 +374,7 @@
 
         /**
          * Executes a "Create Edit Delete"
-         * @param String $table The name of the affected table in the database
+         * @param string $table The name of the affected table in the database
          * @param FormResult $validationResult the result of a validated CED
          * @param Array $fix Fixed values. For example fix user id not set by the client
          */

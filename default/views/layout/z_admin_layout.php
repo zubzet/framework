@@ -1,4 +1,9 @@
-<?php return [
+<?php 
+/**
+ * The layout for the admin panel
+ */
+
+return [
     "lang" => [
         "de_formal" => [
             "administration" => "Verwaltung",

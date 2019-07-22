@@ -1,4 +1,9 @@
-<?php return ["head" => function($opt) { ?> <!-- File header -->
+<?php 
+/**
+ * The edit user view. Only accessible with permission
+ */
+
+return ["head" => function($opt) { ?> <!-- File header -->
 
 <?php }, "body" => function($opt) { ?> <!-- File body -->	
 

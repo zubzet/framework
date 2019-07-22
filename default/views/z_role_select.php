@@ -1,4 +1,9 @@
-<?php return ["head" => function($opt) { ?> <!-- File header -->
+<?php 
+/**
+ * The view to create or select a role to edit. Only accessible with permission
+ */
+
+return ["head" => function($opt) { ?> <!-- File header -->
 
 <?php }, "body" => function($opt) { ?> <!-- File body -->	
 
