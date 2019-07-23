@@ -4,7 +4,7 @@
      */
 
     /**
-     * Value for an succeeded upload
+     * Value for a succeeded upload
      */
     const UPLOAD_SUCCESS = 0;
     const UPLOAD_ERROR_TOO_BIG = 1;

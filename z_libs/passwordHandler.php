@@ -100,7 +100,7 @@
         }
 
         /**
-         * Cretes a password object out of a raw password
+         * Creates a password object out of a raw password
          * @param string $userInput The raw password
          * @return array The generated password object
          */

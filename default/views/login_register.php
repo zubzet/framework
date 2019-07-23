@@ -1,6 +1,6 @@
 <?php 
 /**
- * The login view
+ * The register view
  */
 
 return ["head" => function($opt) { ?>
@@ -13,7 +13,7 @@ return ["head" => function($opt) { ?>
 <?php }, "body" => function($opt) { ?>
 
 	<div style="max-width: 1000px; margin: auto">
-		<h2>Login</h2>
+		<h2>Register</h2>
 		<form onSubmit="return false;">
 			<div id="login-error-label" class="login-error"></div>
 
@@ -21,26 +21,34 @@ return ["head" => function($opt) { ?>
 				<div class="input-group-prepend">
 					<span class="input-group-text"><i class="fa fa-user"></i></span>
 				</div>
-				<input id="username" class="form-control" type="text" placeholder="Username">
+				<input id="username" class="form-control" type="email" placeholder="your@email.tld" autocomplete="new-password">
 			</div>
 
 			<div class="input-group mb-2">
 				<div class="input-group-prepend">
 					<span class="input-group-text"><i class="fa fa-key"></i></span>
 				</div>
-				<input id="password" class="form-control" type="password" placeholder="Password">
+				<input id="password" class="form-control" type="password" placeholder="Password" autocomplete="new-password">
 			</div>
 
-			<button onclick="login();" class="btn btn-primary">Sign in</button>
-			<a class="link" href="<?php echo $opt["root"]; ?>login/forgot_password">Forgot Password?</a>
+			<div class="input-group mb-2">
+				<div class="input-group-prepend">
+					<span class="input-group-text"><i class="fa fa-key"></i></span>
+				</div>
+				<input id="password-confirm" class="form-control" type="password" placeholder="Confirm Password" autocomplete="new-password">
+			</div>
+
+			<button onclick="register();" class="btn btn-primary">Sign Up</button>
+			<a class="link" href="<?php echo $opt["root"]; ?>login/">Login?</a>
 		</form>
 	</div>
 
 	<div class="loading" id="loading" style="display: none;">Loading&#8230;</div>
 
 	<script>
-		function login() {
-			Z.Presets.Login("username", "password", "login-error-label");
+		function register() {
+			Z.Presets.Register("username", "password", "password-confirm", "login-error-label");
 		}
+
 	</script>
 <?php }]; ?>

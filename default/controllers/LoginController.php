@@ -55,7 +55,7 @@
                 
                 //Username not found
                 if ($user === false) {
-                    die("Username or password is wrong");
+                    $res->error("Username or password is wrong");
                 }
                 
                 //Password handler import
@@ -64,7 +64,7 @@
                 //REGISTER
                 $bypass = false;
                 if ($user["password"] == NULL) {
-                    die("Your account is not activated yet. If you can not find the activation mail, use the forgot password function.");
+                    $res->error("Your account is not activated yet. If you can not find the activation mail, use the forgot password function.");
                 }
                 
                 //Max login tries
@@ -100,17 +100,17 @@
                     //Log
                     $req->getModel("z_general")->logActionByCategory("SecurityAlert", "Too many login tries. Account temporarily locked. (user ID: $user[id])", $user["id"]);
 
-                    die("Too many login tries. Try again later.");
+                    $res->error("Too many login tries. Try again later.");
                 }
 
                 //Check the password
                 if (passwordHandler::checkPassword($req->getPost("password"), $user["password"], $user["salt"])) {
                     $res->loginAs($user["id"]);
-                    die("successful");
+                    $res->success();
                 } else {
                     //Add login try
                     $req->getModel("z_login", $req->getZRoot())->newLoginTry($user["id"]);
-                    die("Username or password is wrong");
+                    $res->error("Username or password is wrong");
                 }
 
             } else {
@@ -130,7 +130,45 @@
         public function action_logout($req, $res) {
             $res->logout();
         }
-        
+
+        /**
+         * @var bool $action_register_sitemap If set to true the action_register will appear in the sitemap
+         */
+        public static $action_register_sitemap = true;
+
+        /**
+         * Controls the view for registering as a user
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
+        public function action_register($req, $res) {
+
+            
+            if ($req->isAction("register")) {
+
+                $formResult = $req->validateForm([
+                    (new FormField("email"))      -> required() -> filter(FILTER_VALIDATE_EMAIL) -> unique("z_user", "email"),
+                    (new FormField("password"))   -> required() -> length(3, 64)
+                ]);
+
+                if ($formResult->hasErrors) {
+                    $res->error("There were problems with your input!");
+                } else {
+                    require_once $req->getZRoot().'z_libs/passwordHandler.php';
+                    if ($req->getModel("z_user", $res->getZRoot())->add(
+                        $req->getPost("email"),
+                        0,
+                        $req->getPost("password")
+                    ) == false) {
+                        $res->error();
+                    } else {
+                        $res->success();
+                    }
+                }
+            }
+
+            $res->render("login_register.php", [], "layout/min_layout.php");
+        }
         
         /**
          * @var bool $action_forgot_password_sitemap If set to true the action_forgot_password will appear in the sitemap

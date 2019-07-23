@@ -201,7 +201,7 @@
          * @param bool $die
          */
         function generateRest($payload, $die = true) {
-            if (@$payload["result"] == "error") $this->generateRestError("ergc", getCaller(1));
+            //if (@$payload["result"] == "error") $this->generateRestError("ergc", getCaller(1));
             $this->getNewRest($payload)->execute($die);
         }
 
@@ -297,9 +297,10 @@
 
         /**
          * Generates a generic error
+         * @param string $message An error message
          */
-        function error() {
-            $this->generateRest(["result" => "error"]);
+        function error($message = "") {
+            $this->generateRest(["result" => "error", "message" => $message]);
         }
 
         /**

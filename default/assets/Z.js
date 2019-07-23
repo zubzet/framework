@@ -18,6 +18,30 @@ Z = {
     saved: "Saved!",
     saveError: "Error while saving",
     unsaved: "Unsaved Changes"
+  },
+  Presets: {
+    Login(nameElementId, passwordElementId, errorLabel) {
+      var eName = document.getElementById(nameElementId);
+      var ePassword = document.getElementById(passwordElementId);
+      Z.Request.action('login', {name: eName.value, password: ePassword.value}, (res) => {  
+        if (res.result == "success") { 
+          window.location.reload() 
+        } else {
+          document.getElementById(errorLabel).innerHTML = res.message;
+        }
+      });
+    },
+    Register(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId) {
+      var eName = document.getElementById(nameElementId);
+      var ePassword = document.getElementById(passwordElementId);
+      var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
+      if (ePassword.value != ePasswordConfirm.value) { alert("The password are not the same!"); return; }
+      Z.Request.action('register', {email: eName.value, password: ePassword.value}, (res) => {
+        if (res.result == "error") {
+          document.getElementById(errorLabelId).innerHTML = res.message;
+        }
+      });
+    }
   }
 }
 

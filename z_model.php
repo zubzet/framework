@@ -45,7 +45,7 @@
          * @param ...string $params to insert in the prepared statement
          * @return any result
          */
-        function exec($query, $types, $params) {
+        function exec($query, $types = "", $params = null) {
             $res = $this->z_db->exec(...func_get_args());
             $this->lastInsertId = $this->z_db->getInsertId(...func_get_args());
             return $res;
