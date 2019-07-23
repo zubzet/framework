@@ -142,7 +142,6 @@
          * @param Response $res The response object
          */
         public function action_register($req, $res) {
-
             
             if ($req->isAction("register")) {
 

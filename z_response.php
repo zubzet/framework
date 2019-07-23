@@ -104,9 +104,9 @@
                 };
 
                 
-                $opt["generateResourceLink"] = function($url, $root = false) {
+                $opt["generateResourceLink"] = function($url, $root = true) {
                     $v = $this->getBooterSettings("assetVersion");
-                    echo (($root ? $this->getBooterSettings("rootDirectory") : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
+                    echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
                 };
                 
                 $layout["layout"]($opt, $view["body"], $view["head"]);
