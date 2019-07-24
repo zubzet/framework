@@ -247,8 +247,8 @@
                 return $this->executePath(["error", "500"]);
             }
 
+            $CTRL_obj = new $controller();
             if (method_exists($controller, $method)) {
-                $CTRL_obj = new $controller();
                 return $CTRL_obj->{$method}(new Request($this), new Response($this));
             } else {
                 //Checks if the fallback method exists before rerouting to the 404 page
