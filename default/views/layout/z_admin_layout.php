@@ -7,6 +7,7 @@ return [
     "lang" => [
         "de_formal" => [
             "administration" => "Verwaltung",
+            "update" => "Framework Update",
             "instance" => "Instanz",
             "log_statistics" => "Log / Statistik",
             "edit_user" => "Benutzer bearbeiten",
@@ -23,6 +24,7 @@ return [
         ], 
         "en" => [
             "administration" => "Administration",
+            "update" => "Framework Update",
             "instance" => "Instance",
             "log_statistics" => "Log / Statistics",
             "edit_user" => "Edit User",
@@ -124,6 +126,7 @@ return [
                         <div class="list-group mb-1">
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/cfg_instance"><i class="fa fa-wrench"></i><?php $opt["lang"]("instance"); ?></a>
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/log"><i class="fa fa-file"></i><?php $opt["lang"]("log_statistics"); ?></a>
+                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/update"><i class="fa fa-download"></i><?php $opt["lang"]("update"); ?></a>
                         </div>
                         <div class="list-group mb-1">
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/edit_user"><i class="fa fa-user-edit"></i><?php $opt["lang"]("edit_user"); ?></a>

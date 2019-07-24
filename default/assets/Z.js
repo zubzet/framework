@@ -26,7 +26,7 @@ Z = {
       Z.Request.action('login', {name: eName.value, password: ePassword.value}, (res) => {  
         if (res.result == "success") { 
           if (redirect == "") {
-            window.location.reload() 
+            window.location.reload();
           } else {
             window.location.href = redirect;
           }

@@ -4,7 +4,6 @@
      * 
      * Permissions used here:
      *  admin.panel
-     *  admin.cfg
      *  admin.user.list
      *  admin.user.add
      *  admin.user.edit
@@ -14,6 +13,8 @@
      *  admin.roles.delete
      *  admin.log
      *  admin.su
+     *  admin.danger.cfg
+     *  admin.danger.update
      */
 
     /**
@@ -41,7 +42,7 @@
          * @param Response $res The response object
          */
         public function action_cfg_instance($req, $res) {
-            $req->checkPermission("admin.cfg");
+            $req->checkPermission("admin.danger.cfg");
 
             if ($req->getPost("Save", false) !== false) {
                 unset($_POST["Save"]);
@@ -292,6 +293,31 @@
 
             $res->render("z_log.php", [
                 "log_categories" => $req->getModel("z_statistics", $res->getZRoot())->getLogCategories()
+            ], "layout/z_admin_layout.php");
+        }
+
+        /**
+         * Update action
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
+        function action_update($req, $res) {
+            $req->checkPermission("admin.danger.update");
+
+            $installedVersion = file_get_contents(".z_framework");
+            $kernelVersion = file_get_contents("z_framework/cv.txt");
+
+            if ($req->isAction("update")) {
+                if ($kernelVersion > $installedVersion) {
+                    include("z_framework/updater.php");
+                }
+                $res->generateRest(["result" => "success", "log" => $log]);
+            }
+
+            $res->render("z_update.php", [
+                "installed_version" => $installedVersion,
+                "kernel_version" => $kernelVersion
             ], "layout/z_admin_layout.php");
         }
 
