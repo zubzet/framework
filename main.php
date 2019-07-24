@@ -251,8 +251,15 @@
                 $CTRL_obj = new $controller();
                 return $CTRL_obj->{$method}(new Request($this), new Response($this));
             } else {
-                return $this->executePath(["error", "404"]);
+                //Checks if the fallback method exists before rerouting to the 404 page
+                $method = "action_fallback";
+                if (method_exists($controller, $method)) {
+                    return $CTRL_obj->{$method}(new Request($this), new Response($this));
+                } else {
+                    return $this->executePath(["error", "404"]);
+                }
             }
+            
         }
 
         /**
