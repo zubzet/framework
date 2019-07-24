@@ -20,18 +20,22 @@ Z = {
     unsaved: "Unsaved Changes"
   },
   Presets: {
-    Login(nameElementId, passwordElementId, errorLabel) {
+    Login(nameElementId, passwordElementId, errorLabel, redirect = "") {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       Z.Request.action('login', {name: eName.value, password: ePassword.value}, (res) => {  
         if (res.result == "success") { 
-          window.location.reload() 
+          if (redirect == "") {
+            window.location.reload() 
+          } else {
+            window.location.href = redirect;
+          }
         } else {
           document.getElementById(errorLabel).innerHTML = res.message;
         }
       });
     },
-    Register(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId) {
+    Register(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "") {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
@@ -39,6 +43,12 @@ Z = {
       Z.Request.action('register', {email: eName.value, password: ePassword.value}, (res) => {
         if (res.result == "error") {
           document.getElementById(errorLabelId).innerHTML = res.message;
+        } else if (res.result == "success") {
+          if (redirect == "") {
+            window.location.reload();
+          } else {
+            window.location.href = redirect;
+          }
         }
       });
     }

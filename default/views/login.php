@@ -33,6 +33,7 @@ return ["head" => function($opt) { ?>
 
 			<button onclick="login();" class="btn btn-primary">Sign in</button>
 			<a class="link" href="<?php echo $opt["root"]; ?>login/forgot_password">Forgot Password?</a>
+			<a class="link" href="<?php echo $opt["root"]; ?>login/register">Don't have a account?</a>
 		</form>
 	</div>
 
@@ -40,7 +41,7 @@ return ["head" => function($opt) { ?>
 
 	<script>
 		function login() {
-			Z.Presets.Login("username", "password", "login-error-label");
+			Z.Presets.Login("username", "password", "login-error-label", "<?php echo $opt["root"]; ?>");
 		}
 	</script>
 <?php }]; ?>

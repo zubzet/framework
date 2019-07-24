@@ -47,8 +47,8 @@ return ["head" => function($opt) { ?>
 
 	<script>
 		function register() {
-			Z.Presets.Register("username", "password", "password-confirm", "login-error-label");
+			Z.Presets.Register("username", "password", "password-confirm", "login-error-label", "<?php echo $opt["root"]; ?>");
 		}
-
 	</script>
+	
 <?php }]; ?>
