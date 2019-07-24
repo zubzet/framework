@@ -171,9 +171,9 @@ if (isset($_POST["db-host"])) {
         copy("install/index.php", "../index.php");
         copy("install/.htaccess", "../.htaccess");
         copy("default/assets/Z.js", "../assets/js/Z.js");
-        copy("default/assets/bootstrap.min.css", "../assets/css/bootstrap.min.css");
-        copy("default/assets/loadCircle.css", "../assets/css/loadCircle.css");
-        copy("default/assets/font-awesome.css", "../assets/css/font-awesome.css");
+        copy("default/assets/css/bootstrap.min.css", "../assets/css/bootstrap.min.css");
+        copy("default/assets/css/loadCircle.css", "../assets/css/loadCircle.css");
+        copy("default/assets/css/font-awesome.css", "../assets/css/font-awesome.css");
         copy("cv.txt", "../.z_framework");
 
         //Composer shit
