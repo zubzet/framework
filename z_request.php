@@ -167,6 +167,8 @@
                     if ($type == "required") {
                         if (!isset($data[$name]) || $data[$name] == "") {
                             $errors[] = ["name" => $name, "type" => "required"];
+                        } else {
+                            $value = $data[$name];
                         }
                     } else if (isset($data[$name])) {
                         $value = $data[$name];
@@ -334,6 +336,11 @@
         public $dataType;
 
         /**
+         * @var boolean $isRequired If set, the value is required. This is saved outside the rules to array becaue other rules may need access to this value to work properly
+         */
+        public $isRequired;
+
+        /**
          * Creates a form field representation
          * @param string $name Name of the field. Should match the name in the post header
          * @param string $dbName Name of the field in the database. If not set it will be equal to the name
@@ -341,8 +348,9 @@
         function __construct($name, $dbName = null) {
             $this->rules = [];
             $this->name = $name;
-            $this->dbField = $dbName ? $dbName : $name;
+            $this->dbField = isset($dbName) ? $dbName : $name;
             $this->dataType = "s";
+            $this->isRequired = false;
         }
 
         /**
@@ -399,6 +407,7 @@
          */
         function required() {
             $this->rules[] = ["name" => $this->name, "type" => "required"];
+            $this->isRequired = true;
             return $this;
         }
 

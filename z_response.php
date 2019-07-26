@@ -308,7 +308,8 @@
          * @param object[] $errors The error array.
          */
         function formErrors($errors) {
-            $this->generateRest(["result" => "formErrors", "formErrors" => array_merge(...func_get_args())]);
+            $errors = array_filter(func_get_args(), function($var) { return is_array($var); });
+            $this->generateRest(["result" => "formErrors", "formErrors" => array_merge(...$errors)]);
         }
 
         /**

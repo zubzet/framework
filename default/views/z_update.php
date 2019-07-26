@@ -59,21 +59,21 @@ return ["head" => function($opt) { ?> <!-- File header -->
 <?php }, "lang" => [
         "de_formal" => [
             "update" => "Update",
-            "installed_version" => "Installierte Version",
-            "kernel_version" => "Kernel Version",
-            "do_update" => "Updaten auf Kernel Version",
+            "installed_version" => "Projekt Version",
+            "kernel_version" => "Framework Version",
+            "do_update" => "Updaten auf Framework Version",
             "no_update_needed" => "Es wird kein update benötigt.",
             "update_complete" => "Update Fertiggestellt!",
             "update_kernel" => "Um den Kern des Frameworks zu aktualisieren muss manuell eine neue Version heruntergeladen werden oder wenn er als Git submodule eingefügt wurde gepullt werden."
         ], 
         "en" => [
             "update" => "Update",
-            "installed_version" => "Installed version",
-            "kernel_version" => "Kernel version",
-            "do_update" => "Update to kernel version",
+            "installed_version" => "Project version",
+            "kernel_version" => "Framework version",
+            "do_update" => "Update to framework version",
             "no_update_needed" => "No update is needed.",
             "update_complete" => "Update completed!",
-            "update_kernel" => "Pull the submodule with git or download the new source manually to update the kernel."
+            "update_kernel" => "Pull the submodule with git or download the new source manually to update the framework."
         ]
     ]
 ];
