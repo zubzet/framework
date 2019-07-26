@@ -156,6 +156,7 @@ if (isset($_POST["db-host"])) {
 
         chdir("../");
         require("z_framework/updater.php");
+        chdir("./z_framework");
 
         //Composer shit
         $log .= "Downloading composer installer...<br>";
