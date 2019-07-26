@@ -154,31 +154,8 @@ if (isset($_POST["db-host"])) {
             . "forgotPasswordTimeSpan = 60 minutes\n"
             . "assetVersion=1";
 
-        //Create default folder structure
-        createDirectory("../z_config");
-        createDirectory("../z_models");
-        createDirectory("../z_views");
-        createDirectory("../z_controllers");
-        createDirectory("../uploads");
-        createDirectory("../assets");
-        createDirectory("../assets/js");
-        createDirectory("../assets/css");
-        createDirectory("../assets/css/font-awesome");
-
-        //Create config file
-        file_put_contents("../z_config/z_settings.ini", $configText);
-
-        //Creating entrance
-        copy("install/index.php", "../index.php");
-        copy("install/.htaccess", "../.htaccess");
-        copy("default/assets/js/Z.js", "../assets/js/Z.js");
-        copy("default/assets/js/jquery.min.js", "../assets/js/jquery.min.js");
-        copy("default/assets/js/bootstrap.min.js", "../assets/js/bootstrap.min.js");
-        copy("default/assets/css/bootstrap.min.css", "../assets/css/bootstrap.min.css");
-        copy("default/assets/css/loadCircle.css", "../assets/css/loadCircle.css");
-        copy("default/assets/css/font-awesome.css", "../assets/css/font-awesome.css");
-        copy("default/assets/css/font-awesome/all.min.css", "../assets/css/font-awesome/all.min.css");
-        copy("cv.txt", "../.z_framework");
+        chdir("../");
+        require("z_framework/updater.php");
 
         //Composer shit
         $log .= "Downloading composer installer...<br>";
