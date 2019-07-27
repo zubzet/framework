@@ -4,7 +4,7 @@
      */
 
     /**
-     * Class that handles file uploads
+     * Class that handles file uploads and checking types
      */
     class z_upload {
         
