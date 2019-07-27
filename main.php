@@ -1,6 +1,6 @@
 <?php
     /**
-     * Also known as booter 
+     * Also known as the booter 
      */
 
     /**
