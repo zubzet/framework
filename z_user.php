@@ -84,7 +84,7 @@
         }
 
         /**
-         * Checks if a user has a permission
+         * Checks if a user has a given permission
          * @param string $permission Name of the permission
          * @return bool True when the permission is given
          */
