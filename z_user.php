@@ -4,7 +4,7 @@
      */
 
     /**
-     * User class can hold user information
+     * The User class holds information about the user
      */
     class User {
 
