@@ -157,6 +157,7 @@ if (isset($_POST["db-host"])) {
             . "assetVersion=1";
 
         chdir("../");
+        file_put_contents("z_config/z_settings.ini", $configText);
         require("z_framework/updater.php");
         chdir("./z_framework");
 
