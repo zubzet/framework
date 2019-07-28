@@ -4,7 +4,7 @@
      */
 
     /**
-     * Class that handles file uploads
+     * Class that handles file uploads and checking types
      */
     class z_upload {
         
@@ -51,6 +51,8 @@
         * @return int The result of the upload. This could be something like UPLOAD_SUCCESS or UPLOAD_ERROR_TOO_BIG
         */
         public function upload($file, $uploadDir, $maxSize, $typeArray) {
+
+            if (empty($file) || !isset($file["name"]) || $file === null) return UPLOAD_ERROR_NO_FILE;
 
             $ref = $this->req->getModel("z_general")->getUniqueRef();
 

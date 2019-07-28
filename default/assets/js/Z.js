@@ -226,12 +226,13 @@ class ZCEDItem {
 
 class ZForm {
 
-  constructor(options = {doReload: true, dom: null}) {
+  constructor(options = {doReload: true, dom: null, saveHook: null}) {
     this.fields = {};
     this.options = options;
     this.ceds = [];
 
     this.doReload = options.doReload || false;
+    this.saveHook = options.saveHook;
 
     this.dom = document.createElement("div");
 
@@ -280,6 +281,10 @@ class ZForm {
       }
 
       if (json.result == "success") {
+        if (this.saveHook) {
+          this.saveHook(json);
+        }
+
         if (this.doReload) window.location.reload();
         this.hint("alert-success", Z.Lang.saved);
       } else if (json.result == "formErrors") {

@@ -109,6 +109,10 @@
                     echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
                 };
                 
+                //Makes $body and $head optional
+                if(!isset($view["body"])) $view["body"] = function(){};
+                if(!isset($view["head"])) $view["head"] = function(){};
+                    
                 $layout["layout"]($opt, $view["body"], $view["head"]);
             } else {
                 $this->reroute(["error", "404"]);
@@ -308,7 +312,8 @@
          * @param object[] $errors The error array.
          */
         function formErrors($errors) {
-            $this->generateRest(["result" => "formErrors", "formErrors" => array_merge(...func_get_args())]);
+            $errors = array_filter(func_get_args(), function($var) { return is_array($var); });
+            $this->generateRest(["result" => "formErrors", "formErrors" => array_merge(...$errors)]);
         }
 
         /**

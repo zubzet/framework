@@ -10,6 +10,7 @@
     const UPLOAD_ERROR_TOO_BIG = 1;
     const UPLOAD_ERROR_WRONG_TYPE = 2;
     const UPLOAD_ERROR_NOT_MOVED = 3;
+    const UPLOAD_ERROR_NO_FILE = 4;
 
     const FILE_SIZE_1MB = 1048576;
     const FILE_SIZE_2MB = 2097152;
