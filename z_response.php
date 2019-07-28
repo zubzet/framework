@@ -181,7 +181,8 @@
         }
 
         /**
-         * Sets an cookie
+         * Sets a cookie just like the standard PHP function. (Passthrough)
+         * See: https://www.php.net/manual/en/function.setcookie.php
          * @param any $args See: setcookie
          */
         public function setCookie() {
