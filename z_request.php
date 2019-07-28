@@ -218,6 +218,11 @@
                             if ($value < $rule["min"] || $value > $rule["max"]) {
                                 $errors[] = ["name" => $name, "type" => "range"];
                             }
+                        } else if ($type == "date") { 
+                            $d = DateTime::createFromFormat($rule["format"], $value);
+                            if ($d && $d->format($format) === $date) {
+                                $errors[] = ["name" => $name, "type" => "date"];
+                            }
                         } else {
                             $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unkown type
                         }
@@ -375,7 +380,11 @@
          * @return FormField Returns itself to allow chaining
          */
         function filter($filter) {
-            $this->rules[] = ["name" => $this->name, "type" => "filter", "filter" => $filter];
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "filter", 
+                "filter" => $filter
+            ];
             return $this;
         }
 
@@ -392,7 +401,14 @@
          * @return FormField Returns itself to allow chaining
          */
         function unique($table, $field, $ignoreField = null, $ignoreValue = null) {
-            $this->rules[] = ["name" => $this->name, "type" => "unique", "table" => $table, "field" => $field, "ignoreField" => $ignoreField, "ignoreValue" => $ignoreValue];
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "unique", 
+                "table" => $table, 
+                "field" => $field, 
+                "ignoreField" => $ignoreField, 
+                "ignoreValue" => $ignoreValue
+            ];
             return $this;
         }
 
@@ -407,7 +423,12 @@
          * @return FormField Returns itself to allow chaining
          */
         function exists($table, $field) {
-            $this->rules[] = ["name" => $this->name, "type" => "exist", "table" => $table, "field" => $field];
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "exist", 
+                "table" => $table, 
+                "field" => $field
+            ];
             return $this;
         }
 
@@ -419,7 +440,10 @@
          * @return FormField Returns itself to allow chaining
          */
         function required() {
-            $this->rules[] = ["name" => $this->name, "type" => "required"];
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "required"
+            ];
             $this->isRequired = true;
             return $this;
         }
@@ -434,7 +458,12 @@
          * @return FormField Returns itself to allow chaining
          */
         function length($min, $max) {
-            $this->rules[] = ["name" => $this->name, "type" => "length", "min" => $min, "max" => $max];
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "length", 
+                "min" => $min, 
+                "max" => $max
+            ];
             return $this;
         }
 
@@ -447,7 +476,10 @@
          * @return FormField Returns itself to allow chaining
          */
         function integer() {
-            $this->rules[] = ["name" => $this->name, "type" => "integer"];
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "integer"
+            ];
             $this->dataType = "i";
             return $this;
         }
@@ -462,7 +494,29 @@
          * @return FormField Returns itself to allow chaining
          */
         function range($min, $max) {
-            $this->rules[] = ["range" => $this->name, "type" => "range", "min" => $min, "max" => $max];
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "range", 
+                "min" => $min, 
+                "max" => $max
+            ];
+            return $this;
+        }
+
+        /**
+         * Adds a date rule
+         * 
+         * This rule checks if the inputed value adheres to a given date format
+         * 
+         * @param string $format The tested date format
+         * @return FormField Returns itself to allow chaining
+         */
+        function date($format = "Y-m-d") {
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "date", 
+                "format" => $format
+            ];
             return $this;
         }
     }
