@@ -87,7 +87,7 @@
         */
         public function image($file, $uploadDir, $maxSize = FILE_SIZE_2MB) {
             return $this->upload($file, $uploadDir, $maxSize, 
-                ["jpg", "jpeg", "gif", "png"]
+                ["jpg", "jpeg", "png", "bmp"]
             );
         }
 
@@ -104,7 +104,7 @@
         */
         public function video($file, $uploadDir, $maxSize = FILE_SIZE_100MB) {
             return $this->upload($file, $uploadDir, $maxSize, 
-                ["mp4", "m4a", "m4v", "mov", "3gp", "ogg", "webm", "flv"]
+                ["mp4", "m4a", "m4v", "mov", "3gp", "ogg", "webm", "flv", "mkv", "avi", "wmv"]
             );
         }
 
@@ -120,7 +120,7 @@
         */
         public function audio($file, $uploadDir, $maxSize = FILE_SIZE_10MB) {
             return $this->upload($file, $uploadDir, $maxSize, 
-                ["mp3", "wav", "wma", "ogg", "m4a"]
+                ["mp3", "wav", "wma", "ogg", "m4a", "aiff", "aac"]
             );
         }
 
