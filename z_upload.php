@@ -52,6 +52,8 @@
         */
         public function upload($file, $uploadDir, $maxSize, $typeArray) {
 
+            if (empty($file) || !isset($file["name"]) || $file === null) return UPLOAD_ERROR_NO_FILE;
+
             $ref = $this->req->getModel("z_general")->getUniqueRef();
 
             $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));

@@ -38,6 +38,19 @@
         }
 
         /**
+         * Gets a posted file
+         * @param string $key The name of the file
+         * @param string $default Default value if the file is not posted
+         * @return Array|string The posted file
+         */
+        public function getFile($key, $default = null) {
+            if (isset($_FILES[$key])) {
+                return $_FILES[$key];
+            }
+            return $default;
+        }
+
+        /**
          * Gets a cookie
          * @param string $key of the parameter
          * @param string $default Default value
