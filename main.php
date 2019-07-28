@@ -96,7 +96,7 @@
 
             //Config file
             if (!file_exists($this->config_file)) {
-                include("z_installer.php");
+                require_once "z_framework/installer.php";
                 //Open installer
                 exit;
             }
