@@ -109,6 +109,9 @@
                     echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
                 };
                 
+                if(!isset($view["body"])) $view["body"] = function(){};
+                if(!isset($view["head"])) $view["head"] = function(){};
+                    
                 $layout["layout"]($opt, $view["body"], $view["head"]);
             } else {
                 $this->reroute(["error", "404"]);
