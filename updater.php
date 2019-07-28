@@ -17,6 +17,7 @@
     $log = "Updating...<br>";
 
     $newVersion = file_get_contents("z_framework/cv.txt");
+    if(!file_exists(".z_framework")) file_put_contents(".z_framework", 0);
     $currentVersion = file_get_contents(".z_framework");
     $log .= "Current version: $currentVersion<br>";
     $log .= "New version: $newVersion<br>";
@@ -33,6 +34,7 @@
     createDirectoryUpdater("assets/js");
     createDirectoryUpdater("assets/css");
     createDirectoryUpdater("assets/css/webfonts");
+    createDirectoryUpdater("assets/css/font-awesome");
     $log .= "All directories created...<br>";
 
     $log .= "Copy files...<br>";
