@@ -103,7 +103,6 @@
                     return $out;
                 };
 
-                
                 $opt["generateResourceLink"] = function($url, $root = true) {
                     $v = $this->getBooterSettings("assetVersion");
                     echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
@@ -156,9 +155,18 @@
         /**
          * Reroutes to another action
          * @param string[] $path Path to where to reroute to
+         * @param bool $alias true if this reroute acts as an alias
          */
-        public function reroute($path = []) {
-            $this->booter->executePath($path);
+        public function reroute($path = [], $alias = false) {
+            if(!$alias) {
+                $this->booter->executePath($path);
+            } else {
+                $parts = array_values($this->booter->urlParts);
+                foreach ($path as $i => $path_part) {
+                    $parts[$i] = $path_part;
+                }
+                $this->booter->executePath($parts);
+            }
         }
 
         /**
@@ -173,7 +181,8 @@
         }
 
         /**
-         * Sets an cookie
+         * Sets a cookie just like the standard PHP function. (Passthrough)
+         * See: https://www.php.net/manual/en/function.setcookie.php
          * @param any $args See: setcookie
          */
         public function setCookie() {

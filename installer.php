@@ -28,6 +28,8 @@ function createDirectory($dirname)
 
 if (isset($_POST["db-host"])) {
 
+    if(strlen($_POST["admin-password"]) < 3) $msg = "The password has to be at least three characters long.";
+
     if (empty($_POST["db-host"]) || empty($_POST["db-database"]) || empty($_POST["host"]) || empty($_POST["root"]) || empty($_POST["admin-email"]) || empty($_POST["admin-password"])) {
         $msg = "Please fill in all fields";
     }
@@ -156,6 +158,7 @@ if (isset($_POST["db-host"])) {
 
         chdir("../");
         require("z_framework/updater.php");
+        file_put_contents("z_config/z_settings.ini", $configText);
         chdir("./z_framework");
 
         //Composer shit

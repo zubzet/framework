@@ -46,10 +46,20 @@
                                 $is_public = $req->getBooterSettings("sitemapPublicDefault");
                             }
 
-                            if($is_public) $routes[] = [
-                                "class" => str_replace("Controller", "", $class_name),
-                                "method" => str_replace("action_", "", $method)
-                            ];
+                            if($method == "action_fallback" && is_array($is_public)) {
+                                foreach($is_public as $possible_link) {
+                                    $routes[] = [
+                                        "class" => str_replace("Controller", "", $class_name),
+                                        "method" => $possible_link
+                                    ];
+                                }
+                            } else if($is_public) {
+                                $routes[] = [
+                                    "class" => str_replace("Controller", "", $class_name),
+                                    "method" => str_replace("action_", "", $method)
+                                ];
+                            }
+
                         }
  
                     }
