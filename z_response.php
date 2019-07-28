@@ -109,6 +109,7 @@
                     echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
                 };
                 
+                //Makes $body and $head optional
                 if(!isset($view["body"])) $view["body"] = function(){};
                 if(!isset($view["head"])) $view["head"] = function(){};
                     
