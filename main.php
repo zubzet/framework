@@ -224,6 +224,7 @@
             
             if (isset($parts[1])) {
                 $method = "action_" . strtolower($parts[1]);
+                $method = str_replace(".", "§2E", $method);
             } else {
                 $method = "action_index";
             }
