@@ -183,7 +183,7 @@
                         } else {
                             $value = $data[$name];
                         }
-                    } else if (isset($data[$name])) {
+                    } else if (!empty($data[$name])) {
                         $value = $data[$name];
 
                         if ($type == "length") {
@@ -228,6 +228,8 @@
                         }
 
                         $field->value = $value;
+                    } else {
+                        $field->value = null;
                     }
                 }
 
