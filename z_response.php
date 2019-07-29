@@ -370,17 +370,17 @@
 
             for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
                 $field = $validationResult->fields[$i];
-                $sql .= " ". $field->dbField . " = ?, ";
+                $sql .= " `". $field->dbField . "` = ?, ";
                 $types .= $field->dataType;
                 $vals[] = $field->value;
             }
 
             $field = $validationResult->fields[$i];
-            $sql .= " ". $field->dbField . " = ?";
+            $sql .= " `". $field->dbField . "` = ?";
             $types .= $field->dataType;
             $vals[] = $field->value;
             
-            $sql .= " WHERE $pkField = ?;";
+            $sql .= " WHERE `$pkField` = ?;";
             $types .= $pkType;
             $vals[] = $pkValue;
 

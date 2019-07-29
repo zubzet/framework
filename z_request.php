@@ -160,7 +160,7 @@
          * Validates form data from the client
          * @param FormField[] $fields Array of fields with the validation rules
          * @param array $data Input for the validation. $_GET or $_POST can be used here as parameters
-         * @return array|boolean A list of errors or true
+         * @return FormResult A result to work with
          */
         public function validateForm($fields, $data = null) {
             $errors = [];

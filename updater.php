@@ -46,7 +46,9 @@
     copy("z_framework/default/assets/css/bootstrap.min.css", "assets/css/bootstrap.min.css");
     copy("z_framework/default/assets/css/loadCircle.css", "assets/css/loadCircle.css");
     copy("z_framework/default/assets/css/font-awesome/all.min.css", "assets/css/font-awesome/all.min.css");
-    copy("z_framework/default/assets/css/bootstrap.min.css", "assets/css/bootstrap.min.css");
+    if (!file_exists("assets/css/bootstrap.min.css")) { //Don't overwrite to keep themes
+        copy("z_framework/default/assets/css/bootstrap.min.css", "assets/css/bootstrap.min.css");
+    }
     copy("z_framework/default/assets/css/loadCircle.css", "assets/css/loadCircle.css");
 
     $faDir = scandir("z_framework/default/assets/css/webfonts");
