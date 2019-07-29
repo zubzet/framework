@@ -14,6 +14,7 @@ function essentialsHead($opt) { ?>
     <link href="<?php echo $opt["root"] ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?php echo $opt["root"] ?>assets/css/font-awesome/all.min.css" rel="stylesheet">
     <script>
+        //ToDo: make this better
         Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
         Z.Lang.submit = "<?php $opt["lang"]("form_submit") ?>",
         Z.Lang.saved = "<?php $opt["lang"]("form_saved") ?>",

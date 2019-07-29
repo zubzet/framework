@@ -17,7 +17,16 @@ Z = {
     submit: "Submit",
     saved: "Saved!",
     saveError: "Error while saving",
-    unsaved: "Unsaved Changes"
+    unsaved: "Unsaved Changes",
+    error_filter: "Your input does not have the correct pattern!",
+    error_length: "Your input it too long or too short. It should have between [0] and [1] characters.",
+    error_required: "Please fill in this field",
+    error_range: "The number is too large to too small. It must be between [0] and [1].",
+    error_unique: "This already exists!",
+    error_exist: "This does not exist!",
+    error_integer: "This is not an integer",
+    error_date: "Please give a correct date!",
+    error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!"
   },
   Presets: {
     Login(nameElementId, passwordElementId, errorLabel, redirect = "") {
@@ -433,7 +442,15 @@ class ZFormField {
   }
 
   markInvalid(error) {
-    this.errorLabel.innerHTML = error.type; //ToDo: make translateable
+    var text = Z.Lang["error_" + error.type];
+
+    if (error.info) {
+      for (var i = 0; i < error.info.length; i++) {
+        text = text.replace("[" + i + "]", error.info[i]);
+      }
+    }
+
+    this.errorLabel.innerHTML = text;
     this.input.setCustomValidity(error.type);
     this.input.classList.add("is-invalid");
   }

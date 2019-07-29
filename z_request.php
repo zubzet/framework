@@ -183,13 +183,13 @@
                         } else {
                             $value = $data[$name];
                         }
-                    } else if (!empty($data[$name])) {
+                    } else if (!empty($data[$name]) || $data[$name] == "0") {
                         $value = $data[$name];
 
                         if ($type == "length") {
                             $len = strlen($value);
                             if ($len < $rule["min"] || $len > $rule["max"]) {
-                                $errors[] = ["name" => $name, "type" => "length"];
+                                $errors[] = ["name" => $name, "type" => "length", "info" => [$rule["min"], $rule["max"]]];
                             }
                         } else if ($type == "filter") {
                             if (!filter_var($value, $rule["filter"])) {
@@ -216,7 +216,7 @@
                             $value = intval($value);
                         } else if ($type == "range") {
                             if ($value < $rule["min"] || $value > $rule["max"]) {
-                                $errors[] = ["name" => $name, "type" => "range"];
+                                $errors[] = ["name" => $name, "type" => "range", "info" => [$rule["min"], $rule["max"]]];
                             }
                         } else if ($type == "date") { 
                             $d = DateTime::createFromFormat($rule["format"], $value);
