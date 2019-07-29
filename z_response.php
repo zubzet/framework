@@ -365,7 +365,7 @@
         function updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult) {
             $db = $this->booter->z_db;
             $vals = [];
-            $sql = "UPDATE $table SET";
+            $sql = "UPDATE `$table` SET";
             $types = "";
 
             for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
