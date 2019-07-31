@@ -139,5 +139,47 @@
             return $out;
         }
 
+        /**
+         * Verifies an users mail address
+         * @param string $token. The token from the url the user clicked on.
+         */
+        function verifyUser($token) {
+            if (!$token) return false;
+
+            $sql = "SELECT * FROM `z_email_verify` WHERE token = ?";
+            $this->exec($sql, "s", $token);
+            $result = $this->resultToLine();
+
+            if (!$result) {
+                return false;
+            }
+
+            $endTime = strtotime($result["end"]);
+            $now = date("Y-m-d H:i:s");
+            if ($now > $endTime) {
+                return false;
+            }
+
+            $sql = "UPDATE z_email_verify SET active = 0 WHERE id = ?";
+            $this->exec($sql, "i", $result["id"]);
+
+            $sql = "UPDATE z_user SET verified = ? WHERE id = ?";
+            $this->exec($sql, "si", $now, $result["user"]);
+
+            return true;
+        }
+
+        /**
+         * Creates an email verify token and puts it into the database
+         * @param int $userId;
+         */
+        function createVerifyToken($userId) {
+            $token = uniqid("v_");
+            $endDate = date('Y-m-d H:i:s', strtotime('+1 day'));
+            $sql = "INSERT INTO `z_email_verify`(token, user, end) VALUES (?, ?, ?)";
+            $this->exec($sql, "sis", $token, $userId, $endDate);
+            return $token;
+        }
+
     }
 ?>

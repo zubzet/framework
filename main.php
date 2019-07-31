@@ -14,8 +14,8 @@
         /** @var string $host Name of the host of this page */
         private $host;
 
-        /** @var string $root Path to the root relative to the hostname */
-        private $root;
+        /** @var string $root Absolute path to the page */
+        public $root;
 
         /** @var string $url URL to reach this page */
         private $url;

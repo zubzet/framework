@@ -6,7 +6,7 @@
     /**
      * The Login controller handles all login/logout stuff
      */
-    class LoginController {
+    class LoginController extends z_controller {
 
         /**
          * Gets the IP adress of the requesting client
@@ -60,11 +60,10 @@
                 
                 //Password handler import
                 require_once $req->getZRoot().'z_libs/passwordHandler.php';
-        
-                //REGISTER
-                $bypass = false;
-                if ($user["password"] == NULL) {
-                    $res->error("Your account is not activated yet. If you can not find the activation mail, use the forgot password function.");
+
+                if ($user["verified"] == NULL) {
+                    $link = $req->booter->rootFolder . "login/verify";
+                    $res->error("Your account is not activated yet. Click <a href='$link'>here</a> to activate it.");
                 }
                 
                 //Max login tries
@@ -153,15 +152,24 @@
                 if ($formResult->hasErrors) {
                     $res->error("There were problems with your input!");
                 } else {
+                    $userModel = $req->getModel("z_user");
                     require_once $req->getZRoot().'z_libs/passwordHandler.php';
-                    if ($req->getModel("z_user", $res->getZRoot())->add(
+
+                    $userId = $userModel->add(
                         $req->getPost("email"),
                         0,
                         $req->getPost("password")
-                    ) == false) {
-                        $res->error();
-                    } else {
+                    );
+                    
+                    if ($userId) {
+                        $token = $userModel->createVerifyToken($userId);
+
+                        $url = $res->booter->root . "login/verify/" . $token;
+                        $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/email_layout.php");
+
                         $res->success();
+                    } else {
+                        $res->error();
                     }
                 }
             }
@@ -267,6 +275,23 @@
                 ], "layout/min_layout.php");
 
             }
+        }
+
+        /**
+         * Used to verify mails
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
+        public function action_verify($req, $res) {
+            $code = $req->getParameters(0, 1);
+            $model = $req->getModel("z_user");
+            $success = $model->verifyUser($code);
+
+            $res->render("login_verify.php", [
+                "title" => "Email verification",
+                "success" => $success
+            ], "layout/min_layout.php");
         }
 
         /**

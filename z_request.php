@@ -219,8 +219,7 @@
                                 $errors[] = ["name" => $name, "type" => "range", "info" => [$rule["min"], $rule["max"]]];
                             }
                         } else if ($type == "date") { 
-                            $d = DateTime::createFromFormat($rule["format"], $value);
-                            if ($d && $d->format($format) === $date) {
+                            if (strtotime($value)) {
                                 $errors[] = ["name" => $name, "type" => "date"];
                             }
                         } else {

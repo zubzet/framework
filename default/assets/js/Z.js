@@ -8,7 +8,15 @@ Z = {
         method: "POST",
         data: Object.assign(data, {action: action})
       }).done((data) => {
-        handler(JSON.parse(data));
+        var dat = null;
+        try {
+          dat = JSON.parse(data);
+        } catch (e) {
+          console.error("Please show this to a developer: ", data);
+        }
+        if (dat != null) {
+          handler(dat);
+        }
       });
     }
   },

@@ -13,7 +13,7 @@ return ["head" => function($opt) { ?>
 <?php }, "body" => function($opt) { ?>
 
 	<div style="max-width: 1000px; margin: auto">
-		<h2>Register</h2>
+		<h2>Sign up</h2>
 		<form onSubmit="return false;">
 			<div id="login-error-label" class="login-error"></div>
 
@@ -47,7 +47,7 @@ return ["head" => function($opt) { ?>
 
 	<script>
 		function register() {
-			Z.Presets.Register("username", "password", "password-confirm", "login-error-label", "<?php echo $opt["root"]; ?>");
+			Z.Presets.Signup("username", "password", "password-confirm", "login-error-label", "<?php echo $opt["root"]; ?>");
 		}
 	</script>
 	

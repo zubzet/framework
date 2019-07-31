@@ -267,10 +267,11 @@
             $this->render($document, $options, $layout);
             $content = ob_get_clean();
 
+            $sender = $this->getBooterSettings("pageName");
             //Generate the headers
             $headers  = "MIME-Version: 1.0\r\n";
             $headers .= "Content-type: text/html; charset=utf-8\r\n";
-            $headers .= "From: SKDB <".$this->booter->dedicated_mail.">\r\n";
+            $headers .= "From: $sender <".$this->booter->dedicated_mail.">\r\n";
             $headers .= "X-Mailer: PHP ". phpversion();
 
             //Send the mail
@@ -384,6 +385,40 @@
             $types .= $pkType;
             $vals[] = $pkValue;
 
+            $db->exec($sql, $types, ...$vals);
+        }
+
+        /**
+         * Inserts a set into the database with data from a form
+         * @param string $table Tablename in the database
+         * @param ValidationResult $validationResult Result of a validation
+         */
+        function insertDatabase($table, $validationResult) {
+            $db = $this->booter->z_db;
+            $vals = [];
+
+            $sqlParams = "(";
+            $sqlValues = "(";
+
+            $types = "";
+
+            for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
+                $field = $validationResult->fields[$i];
+                $sqlParams .= ("`" . $field->dbField . "`, ");
+                $sqlValues .= "?, ";
+                $types .= $field->dataType;
+                $vals[] = $field->value;
+            }
+            $field = $validationResult->fields[$i];
+            $types .= $field->dataType;
+            $vals[] = $field->value;
+
+            $sqlParams .= ("`" . $field->dbField . "`");
+            $sqlValues .= "?";
+            $sqlValues .= ")";
+            $sqlParams .= ")";
+
+            $sql = "INSERT INTO `$table` $sqlParams VALUES $sqlValues";
             $db->exec($sql, $types, ...$vals);
         }
 

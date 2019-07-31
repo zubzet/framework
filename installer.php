@@ -30,11 +30,12 @@ if (isset($_POST["db-host"])) {
 
     if(strlen($_POST["admin-password"]) < 3) $msg = "The password has to be at least three characters long.";
 
-    if (empty($_POST["db-host"]) || empty($_POST["db-database"]) || empty($_POST["host"]) || empty($_POST["root"]) || empty($_POST["admin-email"]) || empty($_POST["admin-password"])) {
+    if (empty($_POST["db-host"]) || empty($_POST["db-database"]) || empty($_POST["host"]) || empty($_POST["root"]) || empty($_POST["admin-email"]) || empty($_POST["admin-password"]) || empty($_POST["page-name"])) {
         $msg = "Please fill in all fields";
     }
 
     if ($msg == "") {
+        $pageName = $_POST["page-name"];
         $dbHost = $_POST["db-host"];
         $dbUser = $_POST["db-user"];
         $dbPassword = $_POST["db-password"];
@@ -155,12 +156,18 @@ if (isset($_POST["db-host"])) {
             . "maxLoginTriesPerTimespan = 5\n"
             . "forgotPasswordTimeSpan = 60 minutes\n"
             . "sitemapPublicDefault = false\n"
-            . "assetVersion=1";
+            . "assetVersion=1\n"
+            . "pageName=$pageName";
 
         chdir("../");
         require("z_framework/updater.php");
         file_put_contents("z_config/z_settings.ini", $configText);
         chdir("./z_framework");
+
+        //Hard-Verify admin accounts mail
+        $mysqli = new mysqli($dbHost, $dbUser, $dbPassword, $dbDatabase);
+        $mysqli->query("UPDATE `z_user` SET verified = '2000-01-01' WHERE id = $adminUserId");
+        $mysqli->close();
 
         //Composer shit
         $log .= "Downloading composer installer...<br>";
@@ -336,6 +343,12 @@ function value($name)
                                                         ?>
 
     <form action="" method="post">
+        <h2>Pagename</h2>
+        <p>The page name will be visible to the user as the sender of mails or in the title of error pages.</p>
+        <div class="input-group">
+            <label for="page-name">Name</label>
+            <input id="page-name" name="page-name" type="text" placeholder="Page123" value="<?php value("page-name"); ?>">
+        </div>
         <h2>Database</h2>
         <div class="input-group">
             <label for="db-host">DB Host</label>
