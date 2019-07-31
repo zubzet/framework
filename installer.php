@@ -154,6 +154,7 @@ if (isset($_POST["db-host"])) {
             . "maxLoginTriesTimespan = 3 minutes\n"
             . "maxLoginTriesPerTimespan = 5\n"
             . "forgotPasswordTimeSpan = 60 minutes\n"
+            . "sitemapPublicDefault = false\n"
             . "assetVersion=1";
 
         chdir("../");

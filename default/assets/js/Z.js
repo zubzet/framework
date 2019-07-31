@@ -44,12 +44,12 @@ Z = {
         }
       });
     },
-    Register(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "") {
+    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "") {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
       if (ePassword.value != ePasswordConfirm.value) { alert("The password are not the same!"); return; }
-      Z.Request.action('register', {email: eName.value, password: ePassword.value}, (res) => {
+      Z.Request.action('signup', {email: eName.value, password: ePassword.value}, (res) => {
         if (res.result == "error") {
           document.getElementById(errorLabelId).innerHTML = res.message;
         } else if (res.result == "success") {

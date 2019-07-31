@@ -141,9 +141,9 @@
          * @param Request $req The request object
          * @param Response $res The response object
          */
-        public function action_register($req, $res) {
+        public function action_signup($req, $res) {
             
-            if ($req->isAction("register")) {
+            if ($req->isAction("signup")) {
 
                 $formResult = $req->validateForm([
                     (new FormField("email"))      -> required() -> filter(FILTER_VALIDATE_EMAIL) -> unique("z_user", "email"),
@@ -166,7 +166,7 @@
                 }
             }
 
-            $res->render("login_register.php", [], "layout/min_layout.php");
+            $res->render("login_signup.php", [], "layout/min_layout.php");
         }
         
         /**
