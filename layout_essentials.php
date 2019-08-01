@@ -11,15 +11,16 @@ function essentialsHead($opt) { ?>
     <script src="<?php echo $opt["root"] ?>assets/js/jquery.min.js"></script>
     <script src="<?php echo $opt["root"] ?>assets/js/Z.js"></script>
     <script src="<?php echo $opt["root"] ?>assets/js/bootstrap.min.js"></script>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
     <link href="<?php echo $opt["root"] ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?php echo $opt["root"] ?>assets/css/font-awesome/all.min.css" rel="stylesheet">
     <script>
         //ToDo: make this better
-        Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
+        /*Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
         Z.Lang.submit = "<?php $opt["lang"]("form_submit") ?>",
         Z.Lang.saved = "<?php $opt["lang"]("form_saved") ?>",
         Z.Lang.saveError = "<?php $opt["lang"]("form_save_error") ?>",
-        Z.Lang.unsaved = "<?php $opt["lang"]("form_unsaved_changes") ?>"
+        Z.Lang.unsaved = "<?php $opt["lang"]("form_unsaved_changes") ?>"*/
     </script>
 <?php } ?>
 

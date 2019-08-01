@@ -259,6 +259,7 @@ class ZForm {
     this.dom.appendChild(this.alert);
 
     this.inputSpace = document.createElement("div");
+    this.inputSpace.classList.add("row");
     this.dom.appendChild(this.inputSpace);
 
     this.buttonSubmit = document.createElement("button");
@@ -324,6 +325,7 @@ class ZForm {
     field.on('change', () => {
       this.hint("alert-warning", Z.Lang.unsaved);
     });
+    bsCustomFileInput.init();
   }
 
   createCED(blueprint) {
@@ -336,6 +338,12 @@ class ZForm {
     var field = new ZFormField(options);
     this.addField(field);
     return field;
+  }
+
+  createEmpty(size = 12) {
+    var div = document.createElement("div");
+    div.classList.add("col-0", "col-md-" + size);
+    this.inputSpace.appendChild(div);
   }
 
   addSeperator() {
@@ -379,23 +387,38 @@ class ZFormField {
     this.autofill = options.autofill || false;
 
     this.dom = document.createElement("div");
+    this.dom.classList.add("col", "col-12");
 
     this.label = document.createElement("label");
     this.label.innerHTML = this.text;
     this.label.setAttribute("for", "input-" + zInputIndex);
     this.dom.appendChild(this.label);
 
-    if (this.type != "select") {
+    var customDiv = null;
+    if (this.type == "file") {
+      customDiv = document.createElement("div");
+      customDiv.classList.add("custom-file");
       this.input = document.createElement("input");
       this.input.setAttribute("type", this.type);
-    } else {
+      this.input.classList.add("custom-file-input");
+      var l = document.createElement("label");
+      l.innerHTML = "---";
+      l.classList.add("custom-file-label", "text-truncate");
+      customDiv.appendChild(l);
+      customDiv.appendChild(this.input);
+    } else if (this.type == "select") {
       this.input = document.createElement("select");
       var option = document.createElement("option");
       option.setAttribute("disabled", true);
       option.setAttribute("selected", true);
       option.setAttribute("value", "");
       option.innerHTML = "---";
-      this.input.appendChild(option);
+      this.input.appendChild(option);     
+    } else if (this.type == "textarea") {
+      this.input = document.createElement("textarea");
+    } else {
+      this.input = document.createElement("input");
+      this.input.setAttribute("type", this.type);
     }
     this.input.classList.add("form-control");
     this.input.setAttribute("name", this.name);
@@ -412,7 +435,11 @@ class ZFormField {
       this.value = options.value;
     }
 
-    this.dom.appendChild(this.input);
+    if (customDiv) {
+      this.dom.appendChild(customDiv);
+    } else {
+      this.dom.appendChild(this.input);
+    }
 
     if (this.hint) {
       this.hintText = document.createElement("span");
@@ -443,6 +470,11 @@ class ZFormField {
 
   set value(value) {
     this.input.value = value;
+  }
+
+  //Width in 1/12 units
+  setWidth(units) {
+    this.dom.classList.add("col-md-" + units);
   }
 
   on() {
