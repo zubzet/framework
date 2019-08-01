@@ -142,9 +142,9 @@
          */
         function checkIfUnique($table, $field, $value, $ignoreField = null, $ignoreValue = null) {
             if ($ignoreField == null) {
-                $this->exec("SELECT " . $field . " FROM ". $table . " WHERE " . $field . " = ?", "s", $value);
+                $this->exec("SELECT `" . $field . "` FROM `". $table . "` WHERE `" . $field . "` = ?", "s", $value);
             } else {
-                $this->exec("SELECT " . $field . " FROM ". $table . " WHERE " . $field . " = ? AND " . $ignoreField . " <> ?", "ss", $value, $ignoreValue);
+                $this->exec("SELECT `" . $field . "` FROM `". $table . "` WHERE `" . $field . "` = ? AND `" . $ignoreField . "` <> ?", "ss", $value, $ignoreValue);
             }
             return ($this->result->num_rows == 0);
         }
@@ -160,7 +160,7 @@
          * @return bool True when exists
          */
         function checkIfExists($table, $field, $value) {
-            $this->exec("SELECT " . $field . " FROM ". $table . " WHERE " . $field . " = ?", "s", $value);
+            $this->exec("SELECT `" . $field . "` FROM `". $table . "` WHERE `" . $field . "` = ?", "s", $value);
             return ($this->result->num_rows > 0);
         }
 
