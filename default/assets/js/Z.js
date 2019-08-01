@@ -380,7 +380,7 @@ class ZFormField {
     this.name = options.name;
     this.isRequired = options.required;
     this.type = options.type;
-    this.text = options.text;
+    this.text = options.text || "&nbsp;";
     this.hint = options.hint;
     this.placeholder = options.placeholder;
     this.default = options.default;
@@ -406,6 +406,7 @@ class ZFormField {
       l.classList.add("custom-file-label", "text-truncate");
       customDiv.appendChild(l);
       customDiv.appendChild(this.input);
+      this.input.classList.add("form-control");
     } else if (this.type == "select") {
       this.input = document.createElement("select");
       var option = document.createElement("option");
@@ -413,14 +414,21 @@ class ZFormField {
       option.setAttribute("selected", true);
       option.setAttribute("value", "");
       option.innerHTML = "---";
+      this.input.classList.add("form-control");
       this.input.appendChild(option);     
     } else if (this.type == "textarea") {
       this.input = document.createElement("textarea");
+      this.input.classList.add("form-control");
+    } else if (this.type == "button") { 
+      this.input = document.createElement("button");
+      this.input.innerHTML = options.value;
+      var style = options.style || "btn-primary";
+      this.input.classList.add("btn", style, "w-100");
     } else {
       this.input = document.createElement("input");
       this.input.setAttribute("type", this.type);
+      this.input.classList.add("form-control");
     }
-    this.input.classList.add("form-control");
     this.input.setAttribute("name", this.name);
     this.input.setAttribute("id", "input-" + zInputIndex);
     if (!this.autofill) {
@@ -433,6 +441,10 @@ class ZFormField {
 
     if (options.value) {
       this.value = options.value;
+    }
+
+    if (options.width) {
+      this.setWidth(options.width);
     }
 
     if (customDiv) {

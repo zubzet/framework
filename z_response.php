@@ -420,6 +420,8 @@
 
             $sql = "INSERT INTO `$table` $sqlParams VALUES $sqlValues";
             $db->exec($sql, $types, ...$vals);
+            
+            return $db->getInsertId();
         }
 
         /**
