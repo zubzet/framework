@@ -85,6 +85,7 @@ class ZCED { //Create, edit, delete
     this.blueprint = blueprint;
 
     this.dom = document.createElement("div");
+    this.dom.classList.add("col", "col-12");
 
     var label = document.createElement("label");
     label.innerHTML = blueprint.text;
