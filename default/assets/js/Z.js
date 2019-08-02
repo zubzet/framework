@@ -34,7 +34,8 @@ Z = {
     error_exist: "This does not exist!",
     error_integer: "This is not an integer",
     error_date: "Please give a correct date!",
-    error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!"
+    error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
+    choose_file: "Choose file"
   },
   Presets: {
     Login(nameElementId, passwordElementId, errorLabel, redirect = "") {
@@ -392,6 +393,9 @@ class ZFormField {
 
     this.label = document.createElement("label");
     this.label.innerHTML = this.text;
+    if (this.options.required) {
+      this.label.innerHTML += "<span class='text-danger'>*</span>";
+    }
     this.label.setAttribute("for", "input-" + zInputIndex);
     this.dom.appendChild(this.label);
 
@@ -403,7 +407,7 @@ class ZFormField {
       this.input.setAttribute("type", this.type);
       this.input.classList.add("custom-file-input");
       var l = document.createElement("label");
-      l.innerHTML = "---";
+      l.innerHTML = options.customFileInputText || Z.Lang.choose_file;
       l.classList.add("custom-file-label", "text-truncate");
       customDiv.appendChild(l);
       customDiv.appendChild(this.input);
@@ -446,6 +450,12 @@ class ZFormField {
 
     if (options.width) {
       this.setWidth(options.width);
+    }
+
+    if (options.attributes) {
+      for (var k in options.attributes) {
+        this.input.setAttribute(k, options.attributes[k]);
+      }
     }
 
     if (customDiv) {
