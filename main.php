@@ -168,6 +168,8 @@
 
                 //Custom error function (even triggers for warnings)
                 set_error_handler(function($severity, $message, $file, $line) {
+                    throw new Exception();
+
                     if (error_reporting() & $severity) {
                         throw new ErrorException($message, 0, $severity, $file, $line);
                     }
@@ -249,17 +251,21 @@
                 return $this->executePath(["error", "500"]);
             }
 
-            $CTRL_obj = new $controller();
-            if (method_exists($controller, $method)) {
-                return $CTRL_obj->{$method}(new Request($this), new Response($this));
-            } else {
-                //Checks if the fallback method exists before rerouting to the 404 page
-                $method = "action_fallback";
+            try {
+                $CTRL_obj = new $controller();
                 if (method_exists($controller, $method)) {
                     return $CTRL_obj->{$method}(new Request($this), new Response($this));
                 } else {
-                    return $this->executePath(["error", "404"]);
+                    //Checks if the fallback method exists before rerouting to the 404 page
+                    $method = "action_fallback";
+                    if (method_exists($controller, $method)) {
+                        return $CTRL_obj->{$method}(new Request($this), new Response($this));
+                    } else {
+                        return $this->executePath(["error", "404"]);
+                    }
                 }
+            } catch(Exception $e) {
+                return $this->executePath(["error", "500"]);
             }
             
         }

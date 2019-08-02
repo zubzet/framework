@@ -162,10 +162,7 @@
                     );
                     
                     if ($userId) {
-                        $token = $userModel->createVerifyToken($userId);
-
-                        $url = $res->booter->root . "login/verify/" . $token;
-                        $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/email_layout.php");
+                        $this->send_verify_mail($req, $res, $userId);
 
                         $res->success();
                     } else {
@@ -285,8 +282,17 @@
          */
         public function action_verify($req, $res) {
             $code = $req->getParameters(0, 1);
+
             $model = $req->getModel("z_user");
             $success = $model->verifyUser($code);
+
+            if (isset($_POST["mail"])) {
+                $user = $model->getUserBy();
+
+                if (isset($user)) {
+                    $this->send_verify_mail($req, $res, $user["id"]);
+                }
+            }
 
             $res->render("login_verify.php", [
                 "title" => "Email verification",
@@ -316,6 +322,14 @@
          */
         public function action_change_password($req, $res) {
             $res->reroute(["login", "reset"]);
+        }
+
+        private function send_verify_mail($req, $res, $userId) {
+            $userModel = $req->getModel("z_user");
+
+            $token = $userModel->createVerifyToken($userId);
+            $url = $res->booter->root . "login/verify/" . $token;
+            $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/email_layout.php");
         }
 
     }

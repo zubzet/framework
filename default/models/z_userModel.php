@@ -27,6 +27,21 @@
         }
 
         /**
+         * Returns a user row of the database, selected by the users email address
+         * @param string $email Email of the user from who we want the data about
+         * @return any[] The dataset
+         */
+        function getUserByEmail($email) {
+            $query = "SELECT * FROM `z_user` WHERE `email`=?";
+            $this->exec($query, "s", $email);
+            
+            if ($this->getResult()->num_rows > 0) {
+                return $this->getResult()->fetch_assoc(); 
+            }
+            return false;
+        }
+
+        /**
          * Returns all userdata from the database
          * @return any[][] The table as a two dimensional array
          */

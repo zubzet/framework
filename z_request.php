@@ -219,7 +219,7 @@
                                 $errors[] = ["name" => $name, "type" => "range", "info" => [$rule["min"], $rule["max"]]];
                             }
                         } else if ($type == "date") { 
-                            if (strtotime($value)) {
+                            if (strtotime($value) == false) {
                                 $errors[] = ["name" => $name, "type" => "date"];
                             }
                         } else {

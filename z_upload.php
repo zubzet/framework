@@ -40,7 +40,7 @@
         }
 
        /**
-        * Uploads a file to an uplaod folder
+        * Uploads a file to an upload folder
         *
         * This function will handle file uploads for you and make sure the type and the size are as defined. It also handles the movement to an upload folder. Be sure to change upload_max_filesize and post_max_size in you php.ini
         *

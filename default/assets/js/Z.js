@@ -115,15 +115,22 @@ class ZCED { //Create, edit, delete
 
   getPostString() {
     var str = "";
-    var index = 0;
     for (var i = 0; i < this.items.length; i++) {
       var item = this.items[i];
       var out = item.getPostString(this.name, i);
       if (!out) continue;
       str += "&" + out;
-      index++;
     }
     return str;
+  }
+
+  getFormData(data) {
+
+    for (var i = 0; i < this.items.length; i++) {
+      var item = this.items[i];
+      item.getFormData(data, this.name, i);
+    }
+
   }
 
   createItem() {
@@ -221,6 +228,30 @@ class ZCEDItem {
     return str;
   }
 
+  getFormData(data, name, index) {
+    var key = name + "[" + index + "]";
+
+    if (this.deleted) {
+      if (this.dbId == -1) return "";
+      modifier = "delete";
+    } else {
+      if (this.dbId == -1) {
+        modifier = "create";
+      } else {
+        modifier = "edit";
+      }
+    }
+    data.set(key + "[Z]", + modifier);
+
+    if (this.dbId != -1) data.set(key + "[dbId]", this.dbId);
+
+    for (var k in this.fields) {
+      var field = this.fields[k];
+      data.set(key + "[" + field.name + "]", "<#decURI#>" + encodeURIComponent(field.value));
+    }
+    return str;
+  }
+
   markInvalid(error) {
     this.fields[error.subname].markInvalid(error);
   }
@@ -266,7 +297,10 @@ class ZForm {
 
     this.buttonSubmit = document.createElement("button");
     this.buttonSubmit.innerHTML = Z.Lang.submit;
-    this.buttonSubmit.addEventListener("click", this.send.bind(this));
+    var that = this;
+    this.buttonSubmit.addEventListener("click", function(e) {
+      that.send();
+    });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
 
@@ -283,14 +317,32 @@ class ZForm {
     return postString;
   }
 
-  send() {
-    var postString = this.getPostString();
+  getFormData() {
+    var data = new FormData();
+    data.set("isFormData", 1);
 
-    console.log("Sending post: ", postString);
+    for (var k in this.fields) {
+      var f = this.fields[k];
+      f.getFormData(data);
+      f.markValid();
+    }
+    return data;
+  }
+
+  send() {
+    var data = this.getFormData();
+
+    for (var pair of data.entries()) {
+      console.log(pair[0]+ ', ' + pair[1]); 
+    }
 
     $.ajax({
       method: "POST",
-      data: postString
+      enctype: 'multipart/form-data',
+      cache: false,
+      contentType: false,
+      data: data,
+      processData: false
     }).done((data) => {
       var json;
       console.log(data);
@@ -541,5 +593,9 @@ class ZFormField {
 
   getPostString() {
     return this.name + "=<#decURI#>" + encodeURIComponent(this.value);
+  }
+
+  getFormData(data) {
+    data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
   }
 }
