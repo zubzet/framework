@@ -69,13 +69,13 @@
     $mysqli = new mysqli($cfg["dbhost"], $cfg["dbusername"], $cfg["dbpassword"], $cfg["dbname"]);
     if ($mysqli->errno) die ($mysqli->error);
 
-    $log .= "Updating database...";
+    $log .= "Updating database...<br>";
     //It errors when coloumn already exists. Can be ignored
     $mysqli->query("ALTER TABLE z_user ADD verified TIMESTAMP NULL");
     $mysqli->query("CREATE TABLE `zdb`.`z_email_verify` ( `id` INT NOT NULL AUTO_INCREMENT , `token` VARCHAR(255) NOT NULL , `user` INT NOT NULL , `end` DATETIME NOT NULL , `active` INT NOT NULL DEFAULT '1' , `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
 
     $mysqli->close();
-    $log .= "Database should be up to date now!";
+    $log .= "Database should be up to date now!<br>";
 
     if (empty($cfg["pageName"])) {
         file_put_contents("z_config/z_settings.ini", "\npageName = Your Website", FILE_APPEND);
