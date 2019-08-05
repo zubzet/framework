@@ -133,9 +133,9 @@
          * Creates an upload object that handles the rest of the upload.
          * @return z_upload A new instance of the z_upload class
          */
-        public function upload() {
+        public function upload($file, $uploadDir, $maxSize, $typeArray) {
             require_once $this->getZRoot()."z_upload.php";
-            return new z_upload($this);
+            return (new z_upload($this))->upload($file, $uploadDir, $maxSize, $typeArray);
         }
 
         /**

@@ -58,7 +58,7 @@
 
             $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
             $target_file = $uploadDir . $ref . "." . $extension;
-            
+
             if (!in_array($extension, $typeArray)) return UPLOAD_ERROR_WRONG_TYPE;
             if ($file["size"] > $maxSize) return UPLOAD_ERROR_TOO_BIG;
             if (move_uploaded_file($file["tmp_name"], $target_file) === false) return UPLOAD_ERROR_NOT_MOVED;
@@ -68,7 +68,7 @@
             $this->srcName = basename($file["name"]);
             $this->extension = $extension;
             $this->size = $file["size"];
-            $this->filePath = $target_file;  
+            $this->filePath = $target_file;
             $this->fileId = $this->req->getModel("z_file", $this->req->getZRoot())->add($this->ref, $this->mime, $this->srcName, $this->extension, $this->size);
 
             return UPLOAD_SUCCESS;
