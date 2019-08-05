@@ -160,8 +160,9 @@ if (isset($_POST["db-host"])) {
             . "pageName=$pageName";
 
         chdir("../");
-        require("z_framework/updater.php");
+        mkdir("z_config/");
         file_put_contents("z_config/z_settings.ini", $configText);
+        require("z_framework/updater.php");
         chdir("./z_framework");
 
         //Hard-Verify admin accounts mail
