@@ -200,6 +200,15 @@
         }
 
         /**
+         * Creates an upload object that handles the rest of the upload.
+         * @return z_upload A new instance of the z_upload class
+         */
+        public function upload() {
+            require_once $this->getZRoot()."z_upload.php";
+            return new z_upload($this);
+        }
+
+        /**
          * Gets a new rest object
          * @param object $payload data
          */
@@ -394,6 +403,16 @@
          * @param ValidationResult $validationResult Result of a validation
          */
         function insertDatabase($table, $validationResult) {
+
+            //First check for file uploads
+            foreach ($validationResult->fields as $field) {
+                if ($field->isFile) {
+                    $upload = $this->upload();
+                    if ($upload->upload($_FILES[$field->dbField], "uploads", $field->fileMaxSize, $field->fileTypes)) return false;
+                }
+            }
+
+            //then do other stuff for normal database activity
             $db = $this->booter->z_db;
             $vals = [];
 

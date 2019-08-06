@@ -597,7 +597,9 @@ class ZFormField {
 
   getFormData(data) {
     if (this.type == "file") {
-      data.append(this.name, this.input.files[0], this.value);
+      if (this.input.files[0]) {
+        data.append(this.name, this.input.files[0], this.value);
+      }
     } else {
       data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
     }

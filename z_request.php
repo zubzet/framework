@@ -90,14 +90,6 @@
         }
 
         /**
-         * Gets the database communication stuff
-         * @return z_model
-         */
-        public function getModel() {
-            return $this->booter->getModel(...func_get_args());
-        }
-
-        /**
          * Gets the user who requested.
          * @return User Object of the requesting user
          */
@@ -127,15 +119,6 @@
          */
         public function updateErrorHandling($state) {
             $this->booter->updateErrorHandling($state);
-        }
-
-        /**
-         * Creates an upload object that handles the rest of the upload.
-         * @return z_upload A new instance of the z_upload class
-         */
-        public function upload($file, $uploadDir, $maxSize, $typeArray) {
-            require_once $this->getZRoot()."z_upload.php";
-            return (new z_upload($this))->upload($file, $uploadDir, $maxSize, $typeArray);
         }
 
         /**
@@ -221,6 +204,15 @@
                         } else if ($type == "date") { 
                             if (strtotime($value) == false) {
                                 $errors[] = ["name" => $name, "type" => "date"];
+                            }
+                        } else if ($type == "file") {
+                            if (isset($_FILES[$name])) {
+                                $file = $_FILES[$name];
+                                if ($file["size"] > $rule["maxSize"]) {
+                                    $errors[] = ["name" => $name, "type" => "file_to_big"];
+                                }
+                            } else {
+                                $errors[] = ["name" => $name, "type" => "file"];
                             }
                         } else {
                             $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unkown type
@@ -376,6 +368,7 @@
             $this->dataType = "s";
             $this->isRequired = false;
             $this->value = null;
+            $this->isFile = false;
         }
 
         /**
@@ -523,6 +516,27 @@
                 "name" => $this->name, 
                 "type" => "date", 
                 "format" => $format
+            ];
+            return $this;
+        }
+
+        /**
+         * Rule for validating file uploads. This rule must also be set when automatic uploads in insertDatabase is needed.
+         * 
+         * @param integer $maxSize The maximum allowed file size. Constants for this are available.
+         * @param string[] $types Accepted file types
+         * @return FormField Returns itself to allow chaining
+         */
+        function file($maxSize, $types) {
+            $this->isFile = true;
+            $this->fileMaxSize = $maxSize;
+            $this->fileTypes = $types;
+
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "file", 
+                "types" => $types,
+                "maxSize" => $maxSize
             ];
             return $this;
         }

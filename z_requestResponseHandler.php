@@ -46,6 +46,14 @@
         }
 
         /**
+         * Gets the database communication stuff
+         * @return z_model
+         */
+        public function getModel() {
+            return $this->booter->getModel(...func_get_args());
+        }
+
+        /**
          * Gets a booter settings
          * @param String $key Key of the settings
          * @return Any Value of the key
