@@ -242,7 +242,7 @@ class ZCEDItem {
         modifier = "edit";
       }
     }
-    data.set(key + "[Z]", + modifier);
+    data.set(key + "[Z]", modifier);
 
     if (this.dbId != -1) data.set(key + "[dbId]", this.dbId);
 
