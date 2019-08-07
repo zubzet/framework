@@ -44,7 +44,6 @@
     copy("z_framework/default/assets/js/jquery.min.js", "assets/js/jquery.min.js");
     copy("z_framework/default/assets/js/bootstrap.min.js", "assets/js/bootstrap.min.js");
     copy("z_framework/default/assets/js/bs-custom-file-input.js", "assets/js/bs-custom-file-input.js");
-    copy("z_framework/default/assets/css/bootstrap.min.css", "assets/css/bootstrap.min.css");
     copy("z_framework/default/assets/css/loadCircle.css", "assets/css/loadCircle.css");
     copy("z_framework/default/assets/css/font-awesome/all.min.css", "assets/css/font-awesome/all.min.css");
     if (!file_exists("assets/css/bootstrap.min.css")) { //Don't overwrite to keep themes
