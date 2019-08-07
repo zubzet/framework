@@ -410,6 +410,7 @@
                     $upload = $this->upload();
                     $uploadCode = $upload->upload($_FILES[$field->name], "uploads/", $field->fileMaxSize, $field->fileTypes);
                     if ($uploadCode) $this->error("Upload error: " . $uploadCode);
+                    $field->value = $upload->fileId;
                 }
             }
 
