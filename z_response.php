@@ -408,7 +408,8 @@
             foreach ($validationResult->fields as $field) {
                 if ($field->isFile) {
                     $upload = $this->upload();
-                    if ($upload->upload($_FILES[$field->dbField], "uploads", $field->fileMaxSize, $field->fileTypes)) return false;
+                    $uploadCode = $upload->upload($_FILES[$field->name], "uploads/", $field->fileMaxSize, $field->fileTypes);
+                    if ($uploadCode) $this->error("Upload error: " . $uploadCode);
                 }
             }
 

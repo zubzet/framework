@@ -161,7 +161,8 @@
                     $type = $rule["type"];
 
                     if ($type == "required") {
-                        if (!isset($data[$name]) || $data[$name] == "") {
+                        
+                        if (!((isset($data[$name]) && $data[$name] != "" ) || isset($_FILES[$name]))) {
                             $errors[] = ["name" => $name, "type" => "required"];
                         } else {
                             $value = $data[$name];
