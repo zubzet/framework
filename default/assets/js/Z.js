@@ -230,6 +230,7 @@ class ZCEDItem {
 
   getFormData(data, name, index) {
     var key = name + "[" + index + "]";
+    var modifier;
 
     if (this.deleted) {
       if (this.dbId == -1) return "";
@@ -241,7 +242,7 @@ class ZCEDItem {
         modifier = "edit";
       }
     }
-    data.set(key + "[Z]", + modifier);
+    data.set(key + "[Z]", modifier);
 
     if (this.dbId != -1) data.set(key + "[dbId]", this.dbId);
 
@@ -249,7 +250,6 @@ class ZCEDItem {
       var field = this.fields[k];
       data.set(key + "[" + field.name + "]", "<#decURI#>" + encodeURIComponent(field.value));
     }
-    return str;
   }
 
   markInvalid(error) {
