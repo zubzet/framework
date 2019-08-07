@@ -348,7 +348,7 @@ class ZForm {
       console.log(data);
       try {
         json = JSON.parse(data);
-      } catch {
+      } catch (e) {
         json = {result: "error"};
       }
 
