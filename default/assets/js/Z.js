@@ -292,7 +292,7 @@ class ZForm {
     this.dom.appendChild(this.alert);
 
     this.inputSpace = document.createElement("div");
-    this.inputSpace.classList.add("row");
+    this.inputSpace.classList.add("form-group");
     this.dom.appendChild(this.inputSpace);
 
     this.buttonSubmit = document.createElement("button");
@@ -303,6 +303,10 @@ class ZForm {
     });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
+
+    this.currentRowLength = 12;
+    this.currentRow = null;
+    this.rows = [];
 
     if (options.dom) document.getElementById(options.dom).appendChild(this.dom);
   }
@@ -372,14 +376,27 @@ class ZForm {
 
   addField(field) {
 
+
     if (field.type == "CED") this.doReload = true;
 
     this.fields[field.name] = field;
-    this.inputSpace.appendChild(field.dom);
     field.on('change', () => {
       this.hint("alert-warning", Z.Lang.unsaved);
     });
     bsCustomFileInput.init();
+
+    if (field.width + this.currentRowLength > 12) {
+      var group = document.createElement("div");
+      group.classList.add("form-group");
+      this.currentRow = document.createElement("div");
+      this.currentRow.classList.add("form-row");
+      group.appendChild(this.currentRow);
+      this.inputSpace.appendChild(group);
+      this.currentRowLength = 0;
+    }
+
+    this.currentRow.appendChild(field.dom);
+    this.currentRowLength += field.width;
   }
 
   createCED(blueprint) {
@@ -441,12 +458,13 @@ class ZFormField {
     this.autofill = options.autofill || false;
 
     this.dom = document.createElement("div");
-    this.dom.classList.add("col", "col-12");
+    this.dom.classList.add("col");
 
     this.label = document.createElement("label");
     this.label.innerHTML = this.text;
     if (this.options.required) {
       this.label.innerHTML += "<span class='text-danger'>*</span>";
+      this.label.classList.add("input-required");
     }
     this.label.setAttribute("for", "input-" + zInputIndex);
     this.dom.appendChild(this.label);
@@ -502,6 +520,8 @@ class ZFormField {
 
     if (options.width) {
       this.setWidth(options.width);
+    } else {
+      this.setWidth(12);
     }
 
     if (options.attributes) {
@@ -549,6 +569,7 @@ class ZFormField {
 
   //Width in 1/12 units
   setWidth(units) {
+    this.width = units;
     this.dom.classList.add("col-md-" + units);
   }
 
