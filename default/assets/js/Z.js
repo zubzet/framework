@@ -93,7 +93,7 @@ class ZCED { //Create, edit, delete
     this.dom.appendChild(label);
 
     this.itemDom = document.createElement("div");
-    this.itemDom.classList.add("card", "bg-secondary");
+    this.itemDom.classList.add("bg-secondary", "pt-1", "pb-1");
     this.dom.appendChild(this.itemDom);
 
     this.listeners = {};
@@ -489,7 +489,7 @@ class ZFormField {
     this.input.setAttribute("name", this.name);
     this.input.setAttribute("id", "input-" + zInputIndex);
     if (!this.autofill) {
-      this.input.setAttribute("autocomplete", "new-password")
+      this.input.setAttribute("autocomplete", "new-password");
     }
 
     if (this.placeholder) {
