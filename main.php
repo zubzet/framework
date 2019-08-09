@@ -264,7 +264,11 @@
                     }
                 }
             } catch(Exception $e) {
-                return $this->executePath(["error", "500"]);
+                if ($this->showErrors != 0) {
+                    throw $e;
+                } else {
+                    return $this->executePath(["error", "500"]);
+                }
             }
             
         }
