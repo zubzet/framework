@@ -22,7 +22,7 @@
          * @param string $opt assosiative array with values to replace in the view
          * @param string $layout The path to the layout to use
          */
-        public function render($document, $opt = [], $layout = "layout/default.php") {
+        public function render($document, $opt = [], $layout = "layout/default_layout.php") {
 
             $viewPath = $this->booter->getViewPath($document);
 
@@ -35,7 +35,7 @@
                 //logged in user information
                 $opt["user"] = $this->booter->user;
 
-                include "layout_essentials.php";
+                include_once "layout_essentials.php";
                 $opt["layout_essentials_body"] = function($opt) {
                     essentialsBody($opt);
                 };
