@@ -286,18 +286,23 @@
             $model = $req->getModel("z_user");
             $success = $model->verifyUser($code);
 
-            if (isset($_POST["mail"])) {
-                $user = $model->getUserBy();
+            if (isset($_POST["email"])) {
+                $user = $model->getUserByEmail($_POST["email"]);
 
-                if (isset($user)) {
+                if (!empty($user)) {
                     $this->send_verify_mail($req, $res, $user["id"]);
                 }
+
+                $res->render("login_verify_wait.php", [
+                    "title" => "Email verification",
+                ], "layout/min_layout.php");
+            } else {
+                $res->render("login_verify.php", [
+                    "title" => "Email verification",
+                    "success" => $success
+                ], "layout/min_layout.php");
             }
 
-            $res->render("login_verify.php", [
-                "title" => "Email verification",
-                "success" => $success
-            ], "layout/min_layout.php");
         }
 
         /**
