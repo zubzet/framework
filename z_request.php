@@ -166,6 +166,7 @@
                             $errors[] = ["name" => $name, "type" => "required"];
                         } else {
                             $value = $data[$name];
+                            $field->value = $value; //Require needs to be the first rule or this line could break something!
                         }
                     } else if (!empty($data[$name]) || $data[$name] == "0") {
                         $value = $data[$name];
