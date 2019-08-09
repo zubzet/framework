@@ -402,7 +402,7 @@
          * @param string $table Tablename in the database
          * @param ValidationResult $validationResult Result of a validation
          */
-        function insertDatabase($table, $validationResult) {
+        function insertDatabase($table, $validationResult, $fixed) {
 
             //First check for file uploads
             foreach ($validationResult->fields as $field) {
@@ -418,28 +418,30 @@
             $db = $this->booter->z_db;
             $vals = [];
 
-            $sqlParams = "(";
-            $sqlValues = "(";
+            $sqlParams = [];
+            $sqlValues = [];
 
             $types = "";
 
-            for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
+            foreach ($fixed as $col => $val) {
+                $sqlParams[] = "`$col`";
+                $types .= "s";
+                $sqlValues[] = "?";
+                $vals[] = $val;
+            }
+
+            for ($i = 0; $i < count($validationResult->fields); $i++) {
                 $field = $validationResult->fields[$i];
-                $sqlParams .= ("`" . $field->dbField . "`, ");
-                $sqlValues .= "?, ";
+                $sqlParams[] = ("`" . $field->dbField . "`");
+                $sqlValues[] = "?";
                 $types .= $field->dataType;
                 $vals[] = $field->value;
             }
-            $field = $validationResult->fields[$i];
-            $types .= $field->dataType;
-            $vals[] = $field->value;
 
-            $sqlParams .= ("`" . $field->dbField . "`");
-            $sqlValues .= "?";
-            $sqlValues .= ")";
-            $sqlParams .= ")";
+            $sqlCmdParams = implode(",", $sqlParams);
+            $sqlCmdValues = implode(",", $sqlValues);
 
-            $sql = "INSERT INTO `$table` $sqlParams VALUES $sqlValues";
+            $sql = "INSERT INTO `$table` ($sqlCmdParams) VALUES ($sqlCmdValues)";
             $db->exec($sql, $types, ...$vals);
             
             return $db->getInsertId();
