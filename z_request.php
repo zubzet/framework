@@ -155,11 +155,14 @@
             $formResult = new FormResult($this);
             $formResult->fields = $fields;
 
+            
             foreach ($fields as $field) {
                 $name = $field->name;
+                $field->value = $data[$name]??null;
+                
                 foreach ($field->rules as $rule) {
                     $type = $rule["type"];
-
+                    
                     if ($type == "required") {
                         
                         if (!((isset($data[$name]) && $data[$name] != "" ) || isset($_FILES[$name]))) {
