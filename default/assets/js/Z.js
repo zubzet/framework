@@ -85,8 +85,6 @@ class ZCED { //Create, edit, delete
     this.zform = null;
     this.blueprint = blueprint;
 
-    this.width = 12;
-
     this.dom = document.createElement("div");
     this.dom.classList.add("col", "col-12");
 
@@ -127,10 +125,12 @@ class ZCED { //Create, edit, delete
   }
 
   getFormData(data) {
-
+    var index = 0;
     for (var i = 0; i < this.items.length; i++) {
       var item = this.items[i];
-      item.getFormData(data, this.name, i);
+      if (item.getFormData(data, this.name, index)) {
+        index++;
+      }
     }
 
   }
@@ -197,9 +197,7 @@ class ZCEDItem {
     buttonRemove.addEventListener("click", () => { 
       this.ced.emit("change");
       this.dom.classList.add("d-none");
-      if (this.dbId != -1) {
-        this.deleted = true;
-      }
+      this.deleted = true;
     });
     buttonRemove.innerHTML = "✕";
     buttonRemove.classList.add("btn", "btn-danger");
@@ -235,7 +233,7 @@ class ZCEDItem {
     var modifier;
 
     if (this.deleted) {
-      if (this.dbId == -1) return "";
+      if (this.dbId == -1) return false;
       modifier = "delete";
     } else {
       if (this.dbId == -1) {
@@ -252,6 +250,8 @@ class ZCEDItem {
       var field = this.fields[k];
       data.set(key + "[" + field.name + "]", "<#decURI#>" + encodeURIComponent(field.value));
     }
+
+    return true;
   }
 
   markInvalid(error) {
