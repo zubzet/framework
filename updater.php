@@ -71,7 +71,7 @@
     $log .= "Updating database...<br>";
     //It errors when coloumn already exists. Can be ignored
     $mysqli->query("ALTER TABLE z_user ADD verified TIMESTAMP NULL");
-    $mysqli->query("CREATE TABLE `zdb`.`z_email_verify` ( `id` INT NOT NULL AUTO_INCREMENT , `token` VARCHAR(255) NOT NULL , `user` INT NOT NULL , `end` DATETIME NOT NULL , `active` INT NOT NULL DEFAULT '1' , `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
+    $mysqli->query("CREATE TABLE `z_email_verify` ( `id` INT NOT NULL AUTO_INCREMENT , `token` VARCHAR(255) NOT NULL , `user` INT NOT NULL , `end` DATETIME NOT NULL , `active` INT NOT NULL DEFAULT '1' , `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
 
     $mysqli->close();
     $log .= "Database should be up to date now!<br>";
