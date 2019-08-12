@@ -76,10 +76,18 @@
     $mysqli->close();
     $log .= "Database should be up to date now!<br>";
 
-    if (empty($cfg["pageName"])) {
+    if (!isset($cfg["pageName"])) {
         file_put_contents("z_config/z_settings.ini", "\npageName = Your Website", FILE_APPEND);
     }
-
+    if (!isset($cfg["mail_smtp"])) {
+        file_put_contents("z_config/z_settings.ini", "\nmail_smtp = ", FILE_APPEND);
+    }
+    if (!isset($cfg["mail_user"])) {
+        file_put_contents("z_config/z_settings.ini", "\nmail_user = ", FILE_APPEND);
+    }
+    if (!isset($cfg["mail_password"])) {
+        file_put_contents("z_config/z_settings.ini", "\nmail_password = ", FILE_APPEND);
+    }
     
     //Composer shit
     $log .= "Downloading composer installer...<br>";

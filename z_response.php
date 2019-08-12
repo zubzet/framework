@@ -112,7 +112,7 @@
                 //Makes $body and $head optional
                 if(!isset($view["body"])) $view["body"] = function(){};
                 if(!isset($view["head"])) $view["head"] = function(){};
-                    
+                
                 $layout["layout"]($opt, $view["body"], $view["head"]);
             } else {
                 $this->reroute(["error", "404"]);
@@ -249,9 +249,8 @@
          * @param string $layout Layout
          */
         function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
-
             //Import the email template
-            $template = $this->getZViews() . "layout/".$layout.".php";
+            $template = $this->booter->getViewPath($layout);
             if (!file_exists($template)) return false;
     
             //Overwrite the language
@@ -276,16 +275,42 @@
             ob_start();
             $this->render($document, $options, $layout);
             $content = ob_get_clean();
+            ob_end_clean();
 
+            $from = $this->getBooterSettings("mail_user");
             $sender = $this->getBooterSettings("pageName");
-            //Generate the headers
-            $headers  = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type: text/html; charset=utf-8\r\n";
-            $headers .= "From: $sender <".$this->booter->dedicated_mail.">\r\n";
-            $headers .= "X-Mailer: PHP ". phpversion();
 
-            //Send the mail
-            return mail($to, $subject, $content, $headers);
+            require 'vendor/phpmailer/phpmailer/src/Exception.php';
+            require 'vendor/phpmailer/phpmailer/src/PHPMailer.php';
+            require 'vendor/phpmailer/phpmailer/src/SMTP.php';
+
+            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
+            try {
+                //Server settings
+                $mail->SMTPDebug = 0;                                       
+                $mail->isSMTP();                                            // Set mailer to use SMTP
+                $mail->Host       = $this->getBooterSettings("mail_smtp");  // Specify main and backup SMTP servers
+                $mail->SMTPAuth   = true;
+                $mail->Username   = $this->getBooterSettings("mail_user");  
+                $mail->Password   = $this->getBooterSettings("mail_password");
+                $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
+                $mail->Port       = 587;                                    // TCP port to connect to
+            
+                //Recipients
+                $mail->setFrom($from, $from);
+                $mail->addAddress($to, $to);
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = $subject;
+                $mail->Body    = $content;
+                $mail->AltBody = $content;
+            
+                $mail->send();
+            } catch (Exception $e) {
+                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            }
         }
 
         /**
