@@ -170,17 +170,6 @@ if (isset($_POST["db-host"])) {
         $mysqli->query("UPDATE `z_user` SET verified = '2000-01-01' WHERE id = $adminUserId");
         $mysqli->close();
 
-        //Composer shit
-        $log .= "Downloading composer installer...<br>";
-        copy('https://getcomposer.org/installer', './../composer-setup.php');
-        $log .= "Executing composer installer...<br>";
-        exec('cd ./../ && php composer-setup.php');
-        $log .= "Deleting composer installer...<br>";
-        unlink("./../composer-setup.php");
-        $log .= "Getting html2pdf with composer<br>";
-        exec('cd ./../ && php composer.phar require spipu/html2pdf');
-        $log .= "Finished!<br>";
-
         echo $log;
     }
 }

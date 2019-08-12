@@ -80,6 +80,20 @@
         file_put_contents("z_config/z_settings.ini", "\npageName = Your Website", FILE_APPEND);
     }
 
+    
+    //Composer shit
+    $log .= "Downloading composer installer...<br>";
+    copy('https://getcomposer.org/installer', './composer-setup.php');
+    $log .= "Executing composer installer...<br>";
+    exec('cd ./ && php composer-setup.php');
+    $log .= "Deleting composer installer...<br>";
+    unlink("./composer-setup.php");
+    $log .= "Getting html2pdf with composer<br>";
+    exec('cd ./ && php composer.phar require spipu/html2pdf');
+    $log .= "Getting phpmailer with composer<br>";
+    exec('cd ./ && php composer.phar require phpmailer/phpmailer');
+    $log .= "Finished!<br>";
+
     file_put_contents(".z_framework", $newVersion);
 
 ?>
