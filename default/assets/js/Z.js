@@ -85,6 +85,8 @@ class ZCED { //Create, edit, delete
     this.zform = null;
     this.blueprint = blueprint;
 
+    this.width = 12;
+
     this.dom = document.createElement("div");
     this.dom.classList.add("col", "col-12");
 

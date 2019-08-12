@@ -29,6 +29,7 @@
             if ($viewPath !== false) {
 
                 //Set default parameter values
+                $opt["request"] = $this;
                 $opt["root"] = $this->booter->rootFolder;
                 if (!isset($opt["title"])) $opt["title"] = "Your Website";
 

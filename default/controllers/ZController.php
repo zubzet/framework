@@ -309,6 +309,7 @@
             $kernelVersion = file_get_contents("z_framework/cv.txt");
 
             if ($req->isAction("update")) {
+                $log = "";
                 if ($kernelVersion > $installedVersion) {
                     include("z_framework/updater.php");
                 }
