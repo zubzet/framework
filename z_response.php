@@ -427,7 +427,7 @@
          * Inserts a set into the database with data from a form
          * @param string $table Tablename in the database
          * @param ValidationResult $validationResult Result of a validation
-         * @param array Fixed values to add to the database that were not in the Formresult
+         * @param array Some values to add to the database that were not in the Formresult
          */
         function insertDatabase($table, $validationResult, $fixed = []) {
 
