@@ -19,11 +19,11 @@ Z = {
         }
       });
     },
-    local(action, subaction, data, handler) {
+    root(action, subaction, data, handler = null) {
       $.ajax({
         method: "POST",
         data: Object.assign(data, {action: subaction}),
-        url: Z.Request.root + action
+        url: Z.Request.rootPath + action
       }).done((data) => {
         var dat = null;
         try {
@@ -31,12 +31,12 @@ Z = {
         } catch (e) {
           console.error("Please show this to a developer: ", data);
         }
-        if (dat != null) {
+        if (dat != null && handler) {
           handler(dat);
         }
       });
     },
-    root: ""
+    rootPath: ""
   },
   Lang: {
     addElement: "+",
@@ -59,7 +59,7 @@ Z = {
     Login(nameElementId, passwordElementId, errorLabel, redirect = "") {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
-      Z.Request.local('login', 'login', {name: eName.value, password: ePassword.value}, (res) => {  
+      Z.Request.root('login', 'login', {name: eName.value, password: ePassword.value}, (res) => {  
         if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -76,7 +76,7 @@ Z = {
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
       if (ePassword.value != ePasswordConfirm.value) { alert("The password are not the same!"); return; }
-      Z.Request.local('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
+      Z.Request.root('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
         if (res.result == "error") {
           document.getElementById(errorLabelId).innerHTML = res.message;
         } else if (res.result == "success") {
