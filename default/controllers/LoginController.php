@@ -334,7 +334,7 @@
 
             $token = $userModel->createVerifyToken($userId);
             $url = $res->booter->root . "login/verify/" . $token;
-            $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/email_layout.php");
+            $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/mail_layout.php");
         }
 
     }
