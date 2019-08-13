@@ -305,7 +305,7 @@
                 $mail->isHTML(true);
                 $mail->Subject = $subject;
                 $mail->Body    = $content;
-                $mail->AltBody = $content;
+                $mail->AltBody = strip_tags(str_replace("<br>", "\n\r", $content));
             
                 $mail->send();
             } catch (Exception $e) {
@@ -427,8 +427,9 @@
          * Inserts a set into the database with data from a form
          * @param string $table Tablename in the database
          * @param ValidationResult $validationResult Result of a validation
+         * @param array Fixed values to add to the database that were not in the Formresult
          */
-        function insertDatabase($table, $validationResult, $fixed) {
+        function insertDatabase($table, $validationResult, $fixed = []) {
 
             //First check for file uploads
             foreach ($validationResult->fields as $field) {
