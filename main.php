@@ -77,6 +77,12 @@
         /** @var User $user The requesting user */
         public $user;
 
+        /** @var string[] $ControllerStack All visted controllers as an array */
+        public $ControllerStack = [];
+
+        /** @var string[] $ActionStack All visted actions as an array */
+        public $ActionStack = [];
+        
         /**
          * Parses all the options as vars and instantiate the z_db and establish the db connection
          */
@@ -250,6 +256,10 @@
                 return $this->executePath(["error", "500"]);
             }
 
+            //Update values
+            $this->ControllerStack[] = $controller;
+            $this->ActionStack[] = $method;
+            
             try {
                 $CTRL_obj = new $controller();
                 if (method_exists($controller, $method)) {
@@ -258,6 +268,7 @@
                     //Checks if the fallback method exists before rerouting to the 404 page
                     $method = "action_fallback";
                     if (method_exists($controller, $method)) {
+                        $this->ActionStack[] = $method;
                         return $CTRL_obj->{$method}(new Request($this), new Response($this));
                     } else {
                         return $this->executePath(["error", "404"]);
