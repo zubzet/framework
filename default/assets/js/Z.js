@@ -626,11 +626,11 @@ class ZFormField {
     for (var data of optData) {
       var option = document.createElement("option");
       option.innerHTML = data.text;
-      option.setAttribute("value", data.value);
+      if (this.options.value) {
+        option.setAttribute("value", data.value);
+        this.value = this.options.value;
+      }
       this.input.appendChild(option);
-    }
-    if (this.options.value) {
-      this.value = this.options.value;
     }
   }
 
