@@ -154,6 +154,26 @@
         }
 
         /**
+         * Sends a file to the user and forces him to show the file in the browser if possible. Useful for sending files the user has no access to.
+         * @param string $path Path to the file.
+         * @param string $filename Name to show at the client. Do not use the internal server path!
+         * @param string $type Type of the file
+         */
+        public function showFile($path, $filename = "unkown", $type = "application/pdf") {
+            $url = $path;
+            $content = file_get_contents($url);
+        
+            header('Content-Type: ' . $type);
+            header('Content-Length: ' . strlen($content));
+            header('Content-Disposition: inline; filename="'. $filename. '"');
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
+            ini_set('zlib.output_compression','0');
+        
+            die($content);
+        }
+
+        /**
          * Reroutes to another action
          * @param string[] $path Path to where to reroute to
          * @param bool $alias true if this reroute acts as an alias
