@@ -15,11 +15,11 @@
          * @param String $text_field Row that is shown to the client as text
          */
         public function makeFood($table, $value_field, $text_field) {
-            $str = "[";
+            $str = [];
             foreach ($table as $row) {
-                $str .= '{ value: "' . $row[$value_field] . '", text: "' . $row[$text_field] . '"},';
+                $str[] = '{ "value": "' . $row[$value_field] . '", "text": "' . $row[$text_field] . '"}';
             }
-            return $str . "]";
+            return "[" . implode(",", $str) . "]";
         }
 
         /**
