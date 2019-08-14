@@ -361,6 +361,17 @@
             $this->errors = [];
             $this->fields = [];
         }
+
+        /**
+         * Gets a validated input value
+         * @param string $name Name of the field to get the value from
+         */
+        function getValue($name) {
+            foreach ($this->fields as $field) {
+                if ($field->name == $name) return $field->value;
+            }
+            return null;
+        }
     }
 
     /**
