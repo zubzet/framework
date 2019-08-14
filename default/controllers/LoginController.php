@@ -150,7 +150,7 @@
                 ]);
 
                 if ($formResult->hasErrors) {
-                    $res->error("There were problems with your input!");
+                    $res->error("This email is not allowed!");
                 } else {
                     $userModel = $req->getModel("z_user");
                     require_once $req->getZRoot().'z_libs/passwordHandler.php';
