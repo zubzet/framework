@@ -88,7 +88,10 @@
     if (!isset($cfg["mail_password"])) {
         file_put_contents("z_config/z_settings.ini", "\nmail_password = ", FILE_APPEND);
     }
-    
+    if (!isset($cfg["registerRoleId"])) {
+        file_put_contents("z_config/z_settings.ini", "\nregisterRoleId = -1", FILE_APPEND);
+    }
+
     //Composer shit
     $log .= "Downloading composer installer...<br>";
     copy('https://getcomposer.org/installer', './composer-setup.php');

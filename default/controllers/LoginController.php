@@ -162,8 +162,13 @@
                     );
                     
                     if ($userId) {
+                        if($req->getBooterSettings("registerRoleId") != -1) {
+                            $userModel->addRoleToUserByRoleId(
+                                $userId, 
+                                $req->getBooterSettings("registerRoleId")
+                            );
+                        }
                         $this->send_verify_mail($req, $res, $userId);
-
                         $res->success();
                     } else {
                         $res->error();

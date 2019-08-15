@@ -157,6 +157,7 @@ if (isset($_POST["db-host"])) {
             . "forgotPasswordTimeSpan = 60 minutes\n"
             . "sitemapPublicDefault = false\n"
             . "assetVersion=1\n"
+            . "registerRoleId = -1\n"
             . "pageName=$pageName";
 
         chdir("../");
