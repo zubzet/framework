@@ -159,6 +159,7 @@ class ZCED { //Create, edit, delete
     var item = new ZCEDItem(this.blueprint);
     this.addItem(item);
     this.emit("change");
+    return item;
   }
 
   addItem(item) {
@@ -619,19 +620,23 @@ class ZFormField {
     this.input.classList.remove("is-invalid");
   }
 
-  feedData(optData) {
+  feedData(optData, clear = true) {
     if (this.type != "select") {
       console.warn("Do not feed select data to non select input!");
     }
+
+    if (clear) {
+      this.input.innerHTML = "";
+    }
+
     for (var data of optData) {
       var option = document.createElement("option");
       option.innerHTML = data.text;
-      if (this.options.value) {
-        option.setAttribute("value", data.value);
-        this.value = this.options.value;
-      }
+      option.setAttribute("value", data.value);
       this.input.appendChild(option);
     }
+    
+    this.value = this.value; //Trigger the setter
   }
 
   getPostString() {
