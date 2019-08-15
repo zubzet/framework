@@ -43,7 +43,7 @@ Z = {
     submit: "Submit",
     saved: "Saved!",
     saveError: "Error while saving",
-    unsaved: "Unsaved Changes",
+    unsaved: "There are unsaved changes",
     error_filter: "Your input does not have the correct pattern!",
     error_length: "Your input it too long or too short. It should have between [0] and [1] characters.",
     error_required: "Please fill in this field",
@@ -310,7 +310,7 @@ class ZForm {
     this.dom = document.createElement("div");
 
     this.alert = document.createElement("div");
-    this.alert.classList.add("alert", "d-none");
+    this.alert.classList.add("alert", "d-none", "sticky-top");
     this.lastAlertClass = "a";
     this.dom.appendChild(this.alert);
 
@@ -522,6 +522,10 @@ class ZFormField {
       this.input.innerHTML = options.value;
       var style = options.style || "btn-primary";
       this.input.classList.add("btn", style, "w-100");
+    } else if (this.type == "hidden") {
+      this.input = document.createElement("input");
+      this.input.setAttribute("type", "hidden");
+      this.dom.classList.add("d-none");
     } else {
       this.input = document.createElement("input");
       this.input.setAttribute("type", this.type);
@@ -544,7 +548,11 @@ class ZFormField {
     if (options.width) {
       this.setWidth(options.width);
     } else {
-      this.setWidth(12);
+      if (this.type == "hidden") {
+        this.setWidth(0);
+      } else {
+        this.setWidth(12);
+      }
     }
 
     if (options.attributes) {
@@ -612,6 +620,8 @@ class ZFormField {
     this.errorLabel.innerHTML = text;
     this.input.setCustomValidity(error.type);
     this.input.classList.add("is-invalid");
+
+    this.dom.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
   }
 
   markValid() {
@@ -626,7 +636,7 @@ class ZFormField {
     }
 
     if (clear) {
-      this.input.innerHTML = "";
+      this.input.innerHTML = '<option value="">---</option>';
     }
 
     for (var data of optData) {
@@ -636,7 +646,9 @@ class ZFormField {
       this.input.appendChild(option);
     }
     
-    this.value = this.value; //Trigger the setter
+    if (this.options.value) {
+      this.value = this.options.value;
+    }
   }
 
   getPostString() {
