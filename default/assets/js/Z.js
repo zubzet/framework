@@ -197,7 +197,13 @@ class ZCEDItem {
   constructor(blueprint) {
 
     this.dom = document.createElement("div");
-    this.dom.classList.add("card", "m-1", "p-1");
+    
+    if (blueprint.compact) {
+      this.dom.classList.add("row");
+    } else {
+      this.dom.classList.add("card", "m-1", "p-1")
+    }
+
     this.fields = {};
     this.blueprint = blueprint;
     this.ced = null;
@@ -222,7 +228,16 @@ class ZCEDItem {
     });
     buttonRemove.innerHTML = "✕";
     buttonRemove.classList.add("btn", "btn-danger");
+
     this.dom.appendChild(buttonRemove);
+
+    if (blueprint.compact) {
+      var removeWrapper = document.createElement("div");
+      removeWrapper.classList.add("col-md-1", "col");
+      buttonRemove.classList.add("btn-block");
+      removeWrapper.appendChild(buttonRemove);
+      this.dom.appendChild(removeWrapper);
+    }
   }
 
   getPostString(name, index) {
@@ -580,6 +595,10 @@ class ZFormField {
 
     if (options.food) {
       this.feedData(options.food);
+    }
+
+    if (options.compact) {
+      this.label.classList.add("d-none");
     }
 
   }
