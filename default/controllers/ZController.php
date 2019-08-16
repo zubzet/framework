@@ -8,7 +8,7 @@
      *  admin.user.add
      *  admin.user.edit
      *  admin.roles.list
-     *  admin.roles.screate
+     *  admin.roles.create
      *  admin.roles.edit
      *  admin.roles.delete
      *  admin.log
