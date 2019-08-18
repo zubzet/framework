@@ -12,7 +12,7 @@
         private $rootDirectory;
 
         /** @var string $host Name of the host of this page */
-        private $host;
+        public $host;
 
         /** @var string $root Absolute path to the page */
         public $root;

@@ -31,7 +31,9 @@
                 //Set default parameter values
                 $opt["request"] = $this;
                 $opt["root"] = $this->booter->rootFolder;
-                if (!isset($opt["title"])) $opt["title"] = "Your Website";
+                $opt["host"] = $this->booter->host;
+
+                if (!isset($opt["title"])) $opt["title"] = $this->getBooterSettings("pageName");
 
                 //logged in user information
                 $opt["user"] = $this->booter->user;
@@ -318,8 +320,8 @@
                 $mail->Port       = 587;                                    // TCP port to connect to
             
                 //Recipients
-                $mail->setFrom($from, $from);
-                $mail->addAddress($to, $to);
+                $mail->setFrom($from, $this->getBooterSettings("pageName"));
+                $mail->addAddress($to);
 
                 // Content
                 $mail->isHTML(true);
