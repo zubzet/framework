@@ -131,6 +131,10 @@ class ZCED { //Create, edit, delete
         this.addItem(item);
       }
     }
+
+    if (blueprint.compact) {
+      this.itemDom.classList.add("container");
+    }
   }
 
   getPostString() {
