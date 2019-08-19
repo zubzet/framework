@@ -39,7 +39,7 @@ Z = {
     rootPath: ""
   },
   Lang: {
-    addElement: "+",
+    addElement: '<i class="fas fa-plus"></i>',
     submit: "Submit",
     saved: "Saved!",
     saveError: "Error while saving",
