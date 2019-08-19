@@ -239,6 +239,7 @@ class ZCEDItem {
       var removeWrapper = document.createElement("div");
       removeWrapper.classList.add("col-md-1", "col");
       buttonRemove.classList.add("btn-block");
+      this.dom.classList.add("form-row");
       removeWrapper.appendChild(buttonRemove);
       this.dom.appendChild(removeWrapper);
     }
