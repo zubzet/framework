@@ -41,6 +41,7 @@
     copy("z_framework/install/index.php", "index.php");
     copy("z_framework/install/.htaccess", ".htaccess");
     copy("z_framework/default/assets/js/Z.js", "assets/js/Z.js");
+    copy("z_framework/default/assets/js/chart.min.js", "assets/js/chart.min.js");
     copy("z_framework/default/assets/js/jquery.min.js", "assets/js/jquery.min.js");
     copy("z_framework/default/assets/js/bootstrap.min.js", "assets/js/bootstrap.min.js");
     copy("z_framework/default/assets/js/bs-custom-file-input.js", "assets/js/bs-custom-file-input.js");
