@@ -768,6 +768,7 @@ class ZForm {
  * @property {object} attributes List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
  * @property {Food} food Food for selects or autocomepletes
  * @property {boolean} compact Sets the compact mode. In compact mode, the label is hidden
+ * @property {string} prepend Content to put in front of the input. Units are usally put there
  */
 
 /**
@@ -915,6 +916,20 @@ class ZFormField {
       this.dom.appendChild(customDiv);
     } else {
       this.dom.appendChild(this.input);
+    }
+
+    if (options.prepend) {
+      var groupWrapper = document.createElement("div");
+      groupWrapper.classList.add("input-group");
+      var prependDiv = document.createElement("div");
+      prependDiv.classList.add("input-group-prepend");
+      var prependSpan = document.createElement("span");
+      prependSpan.classList.add("input-group-text");
+      prependSpan.innerHTML = options.prepend;
+      prependDiv.appendChild(prependSpan);
+      groupWrapper.appendChild(prependDiv);
+      groupWrapper.appendChild(this.input);
+      this.dom.appendChild(groupWrapper);
     }
 
     if (this.hint) {
