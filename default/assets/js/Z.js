@@ -529,6 +529,7 @@ class ZForm {
 
     this.alert = document.createElement("div");
     this.alert.classList.add("alert", "d-none", "sticky-top");
+    this.alert.style.top = "60px";
     this.lastAlertClass = "a";
     this.dom.appendChild(this.alert);
 
@@ -1011,7 +1012,7 @@ class ZFormField {
       this.input.innerHTML = '<option value="">---</option>';
     }
 
-    for (var data of optData) {
+    for (var data of food) {
       var option = document.createElement("option");
       option.innerHTML = data.text;
       option.setAttribute("value", data.value);
