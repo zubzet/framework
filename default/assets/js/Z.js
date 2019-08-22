@@ -1034,7 +1034,7 @@ class ZFormField {
       this.input.appendChild(option);
     }
     
-    if (this.options.value) {
+    if (this.options.value !== undefined) {
       this.value = this.options.value;
     }
   }
