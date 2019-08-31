@@ -14,10 +14,10 @@
          * @param String $value_field Row that is used as value
          * @param String $text_field Row that is shown to the client as text
          */
-        public function makeFood($table, $value_field, $text_field) {
+        public function makeFood($table, $value_field, $text_field, $opional_text_field = null) {
             $str = [];
             foreach ($table as $row) {
-                $str[] = '{ "value": "' . $row[$value_field] . '", "text": "' . $row[$text_field] . '"}';
+                $str[] = '{ "value": "' . $row[$value_field] . '", "text": "' . $row[$text_field] . ($opional_text_field != null ? " " . $row[$opional_text_field] : '') . '"}';
             }
             return "[" . implode(",", $str) . "]";
         }
