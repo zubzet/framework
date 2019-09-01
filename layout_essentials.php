@@ -9,12 +9,13 @@
  */
 function essentialsHead($opt) { ?>
     <script src="<?php echo $opt["root"] ?>assets/js/jquery.min.js"></script>
-    <script src="<?php echo $opt["root"] ?>assets/js/Z.js"></script>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>
     <script src="<?php echo $opt["root"] ?>assets/js/bootstrap.min.js"></script>
     <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
     <link href="<?php echo $opt["root"] ?>assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?php echo $opt["root"] ?>assets/css/font-awesome/all.min.css" rel="stylesheet">
     <script>
+        Z.Request.rootPath = "<?php echo $opt["root"]; ?>";
         //ToDo: make this better
         /*Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
         Z.Lang.submit = "<?php $opt["lang"]("form_submit") ?>",

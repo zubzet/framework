@@ -36,7 +36,7 @@ return ["head" => function($opt) { ?>
 
 	<script>
 		function login() {
-			Z.Presets.Login("username", "password", "login-error-label", "<?php echo $opt["root"]; ?>");
+			Z.Presets.Login("username", "password", "login-error-label", "");
 		}
 	</script>
 <?php }]; ?>

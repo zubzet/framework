@@ -41,6 +41,7 @@
     copy("z_framework/install/index.php", "index.php");
     copy("z_framework/install/.htaccess", ".htaccess");
     copy("z_framework/default/assets/js/Z.js", "assets/js/Z.js");
+    copy("z_framework/default/assets/js/chart.min.js", "assets/js/chart.min.js");
     copy("z_framework/default/assets/js/jquery.min.js", "assets/js/jquery.min.js");
     copy("z_framework/default/assets/js/bootstrap.min.js", "assets/js/bootstrap.min.js");
     copy("z_framework/default/assets/js/bs-custom-file-input.js", "assets/js/bs-custom-file-input.js");
@@ -71,14 +72,39 @@
     $log .= "Updating database...<br>";
     //It errors when coloumn already exists. Can be ignored
     $mysqli->query("ALTER TABLE z_user ADD verified TIMESTAMP NULL");
-    $mysqli->query("CREATE TABLE `zdb`.`z_email_verify` ( `id` INT NOT NULL AUTO_INCREMENT , `token` VARCHAR(255) NOT NULL , `user` INT NOT NULL , `end` DATETIME NOT NULL , `active` INT NOT NULL DEFAULT '1' , `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
+    $mysqli->query("CREATE TABLE `z_email_verify` ( `id` INT NOT NULL AUTO_INCREMENT , `token` VARCHAR(255) NOT NULL , `user` INT NOT NULL , `end` DATETIME NOT NULL , `active` INT NOT NULL DEFAULT '1' , `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
 
     $mysqli->close();
     $log .= "Database should be up to date now!<br>";
 
-    if (empty($cfg["pageName"])) {
+    if (!isset($cfg["pageName"])) {
         file_put_contents("z_config/z_settings.ini", "\npageName = Your Website", FILE_APPEND);
     }
+    if (!isset($cfg["mail_smtp"])) {
+        file_put_contents("z_config/z_settings.ini", "\nmail_smtp = ", FILE_APPEND);
+    }
+    if (!isset($cfg["mail_user"])) {
+        file_put_contents("z_config/z_settings.ini", "\nmail_user = ", FILE_APPEND);
+    }
+    if (!isset($cfg["mail_password"])) {
+        file_put_contents("z_config/z_settings.ini", "\nmail_password = ", FILE_APPEND);
+    }
+    if (!isset($cfg["registerRoleId"])) {
+        file_put_contents("z_config/z_settings.ini", "\nregisterRoleId = -1", FILE_APPEND);
+    }
+
+    //Composer shit
+    $log .= "Downloading composer installer...<br>";
+    copy('https://getcomposer.org/installer', './composer-setup.php');
+    $log .= "Executing composer installer...<br>";
+    exec('cd ./ && php composer-setup.php');
+    $log .= "Deleting composer installer...<br>";
+    unlink("./composer-setup.php");
+    $log .= "Getting html2pdf with composer<br>";
+    exec('cd ./ && php composer.phar require spipu/html2pdf');
+    $log .= "Getting phpmailer with composer<br>";
+    exec('cd ./ && php composer.phar require phpmailer/phpmailer');
+    $log .= "Finished!<br>";
 
     file_put_contents(".z_framework", $newVersion);
 

@@ -29,8 +29,11 @@
             if ($viewPath !== false) {
 
                 //Set default parameter values
+                $opt["request"] = $this;
                 $opt["root"] = $this->booter->rootFolder;
-                if (!isset($opt["title"])) $opt["title"] = "Your Website";
+                $opt["host"] = $this->booter->host;
+
+                if (!isset($opt["title"])) $opt["title"] = $this->getBooterSettings("pageName");
 
                 //logged in user information
                 $opt["user"] = $this->booter->user;
@@ -111,7 +114,7 @@
                 //Makes $body and $head optional
                 if(!isset($view["body"])) $view["body"] = function(){};
                 if(!isset($view["head"])) $view["head"] = function(){};
-                    
+                
                 $layout["layout"]($opt, $view["body"], $view["head"]);
             } else {
                 $this->reroute(["error", "404"]);
@@ -150,6 +153,26 @@
          */
         public function send($text) {
             echo $text;
+        }
+
+        /**
+         * Sends a file to the user and forces him to show the file in the browser if possible. Useful for sending files the user has no access to.
+         * @param string $path Path to the file.
+         * @param string $filename Name to show at the client. Do not use the internal server path!
+         * @param string $type Type of the file
+         */
+        public function showFile($path, $filename = "unkown", $type = "application/pdf") {
+            $url = $path;
+            $content = file_get_contents($url);
+        
+            header('Content-Type: ' . $type);
+            header('Content-Length: ' . strlen($content));
+            header('Content-Disposition: inline; filename="'. $filename. '"');
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
+            ini_set('zlib.output_compression','0');
+        
+            die($content);
         }
 
         /**
@@ -248,9 +271,8 @@
          * @param string $layout Layout
          */
         function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
-
             //Import the email template
-            $template = $this->getZViews() . "layout/".$layout.".php";
+            $template = $this->booter->getViewPath($layout);
             if (!file_exists($template)) return false;
     
             //Overwrite the language
@@ -275,16 +297,42 @@
             ob_start();
             $this->render($document, $options, $layout);
             $content = ob_get_clean();
+            ob_end_clean();
 
+            $from = $this->getBooterSettings("mail_user");
             $sender = $this->getBooterSettings("pageName");
-            //Generate the headers
-            $headers  = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type: text/html; charset=utf-8\r\n";
-            $headers .= "From: $sender <".$this->booter->dedicated_mail.">\r\n";
-            $headers .= "X-Mailer: PHP ". phpversion();
 
-            //Send the mail
-            return mail($to, $subject, $content, $headers);
+            require 'vendor/phpmailer/phpmailer/src/Exception.php';
+            require 'vendor/phpmailer/phpmailer/src/PHPMailer.php';
+            require 'vendor/phpmailer/phpmailer/src/SMTP.php';
+
+            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
+            try {
+                //Server settings
+                $mail->SMTPDebug = 0;                                       
+                $mail->isSMTP();                                            // Set mailer to use SMTP
+                $mail->Host       = $this->getBooterSettings("mail_smtp");  // Specify main and backup SMTP servers
+                $mail->SMTPAuth   = true;
+                $mail->Username   = $this->getBooterSettings("mail_user");  
+                $mail->Password   = $this->getBooterSettings("mail_password");
+                $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
+                $mail->Port       = 587;                                    // TCP port to connect to
+            
+                //Recipients
+                $mail->setFrom($from, $this->getBooterSettings("pageName"));
+                $mail->addAddress($to);
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = $subject;
+                $mail->Body    = $content;
+                $mail->AltBody = strip_tags(str_replace("<br>", "\n\r", $content));
+            
+                $mail->send();
+            } catch (Exception $e) {
+                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            }
         }
 
         /**
@@ -401,8 +449,9 @@
          * Inserts a set into the database with data from a form
          * @param string $table Tablename in the database
          * @param ValidationResult $validationResult Result of a validation
+         * @param array Some values to add to the database that were not in the Formresult
          */
-        function insertDatabase($table, $validationResult) {
+        function insertDatabase($table, $validationResult, $fixed = []) {
 
             //First check for file uploads
             foreach ($validationResult->fields as $field) {
@@ -418,28 +467,30 @@
             $db = $this->booter->z_db;
             $vals = [];
 
-            $sqlParams = "(";
-            $sqlValues = "(";
+            $sqlParams = [];
+            $sqlValues = [];
 
             $types = "";
 
-            for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
+            foreach ($fixed as $col => $val) {
+                $sqlParams[] = "`$col`";
+                $types .= "s";
+                $sqlValues[] = "?";
+                $vals[] = $val;
+            }
+
+            for ($i = 0; $i < count($validationResult->fields); $i++) {
                 $field = $validationResult->fields[$i];
-                $sqlParams .= ("`" . $field->dbField . "`, ");
-                $sqlValues .= "?, ";
+                $sqlParams[] = ("`" . $field->dbField . "`");
+                $sqlValues[] = "?";
                 $types .= $field->dataType;
                 $vals[] = $field->value;
             }
-            $field = $validationResult->fields[$i];
-            $types .= $field->dataType;
-            $vals[] = $field->value;
 
-            $sqlParams .= ("`" . $field->dbField . "`");
-            $sqlValues .= "?";
-            $sqlValues .= ")";
-            $sqlParams .= ")";
+            $sqlCmdParams = implode(",", $sqlParams);
+            $sqlCmdValues = implode(",", $sqlValues);
 
-            $sql = "INSERT INTO `$table` $sqlParams VALUES $sqlValues";
+            $sql = "INSERT INTO `$table` ($sqlCmdParams) VALUES ($sqlCmdValues)";
             $db->exec($sql, $types, ...$vals);
             
             return $db->getInsertId();

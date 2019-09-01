@@ -69,7 +69,7 @@
          * Converts the result of the last query into an array and returns it
          * @return any[][] Results of the last query as two dimensional array
          */
-        function resultToarray($out = []) {
+        function resultToArray($out = []) {
             while ($row = $this->result->fetch_assoc()) {
                 array_push($out, $row);             
             }

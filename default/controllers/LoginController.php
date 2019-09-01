@@ -150,7 +150,7 @@
                 ]);
 
                 if ($formResult->hasErrors) {
-                    $res->error("There were problems with your input!");
+                    $res->error("This email is not allowed!");
                 } else {
                     $userModel = $req->getModel("z_user");
                     require_once $req->getZRoot().'z_libs/passwordHandler.php';
@@ -162,8 +162,13 @@
                     );
                     
                     if ($userId) {
+                        if($req->getBooterSettings("registerRoleId") != -1) {
+                            $userModel->addRoleToUserByRoleId(
+                                $userId, 
+                                $req->getBooterSettings("registerRoleId")
+                            );
+                        }
                         $this->send_verify_mail($req, $res, $userId);
-
                         $res->success();
                     } else {
                         $res->error();
@@ -286,18 +291,23 @@
             $model = $req->getModel("z_user");
             $success = $model->verifyUser($code);
 
-            if (isset($_POST["mail"])) {
-                $user = $model->getUserBy();
+            if (isset($_POST["email"])) {
+                $user = $model->getUserByEmail($_POST["email"]);
 
-                if (isset($user)) {
+                if (!empty($user)) {
                     $this->send_verify_mail($req, $res, $user["id"]);
                 }
+
+                $res->render("login_verify_wait.php", [
+                    "title" => "Email verification",
+                ], "layout/min_layout.php");
+            } else {
+                $res->render("login_verify.php", [
+                    "title" => "Email verification",
+                    "success" => $success
+                ], "layout/min_layout.php");
             }
 
-            $res->render("login_verify.php", [
-                "title" => "Email verification",
-                "success" => $success
-            ], "layout/min_layout.php");
         }
 
         /**
@@ -329,7 +339,7 @@
 
             $token = $userModel->createVerifyToken($userId);
             $url = $res->booter->root . "login/verify/" . $token;
-            $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/email_layout.php");
+            $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/mail_layout.php");
         }
 
     }

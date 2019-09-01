@@ -26,7 +26,7 @@
         function __construct($data, $urlParts) {
             $this->data = [
                 'meta' => [
-                    "endpoint" => "Your Websites REST API",
+                    "endpoint" => "REST API",
                     "request" => implode("/", $urlParts),
                     "timestamp" => time()
                 ]

@@ -138,6 +138,16 @@
         }
 
         /**
+         * Add a role to a user
+         * @param int $userId The id of the user itended to recieve the role
+         * @param int $roleId The id of the role to be added
+         */
+        function addRoleToUserByRoleId($userId, $roleId) {
+            $sql = "INSERT INTO `z_user_role`(`role`, `user`) VALUES (?, ?)";
+            $this->exec($sql, "ii", $roleId, $userId);
+        }
+
+        /**
          * Gets all permissions a specific user has
          * 
          * @param int $userId Id of the target user

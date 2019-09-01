@@ -19,8 +19,9 @@ return ["head" => function($opt) { ?> <!-- File header -->
             var ced = form.createCED({
                 name: "roles",
                 text: "<?php $opt["lang"]("roles"); ?>",
+                compact: true,
                 fields: [
-                    { name: "role", type: "select", text: "<?php $opt["lang"]("role"); ?>", food: <?php echo $opt["roles"]; ?> }
+                    { name: "role", type: "select", text: "<?php $opt["lang"]("role"); ?>", food: <?php echo $opt["roles"]; ?>, compact: true, width: 11 }
                 ],
                 value: <?php echo $opt["user_roles"]; ?>
             });

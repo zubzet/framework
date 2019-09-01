@@ -18,12 +18,14 @@ return ["head" => function($opt) { ?>
     <?php } else { ?>
         <div class="mb-2">
             You are missing the verification mail? Send Again!
-            <div class="input-group">
-                <input id="input-email" class="form-control" type="email" placeholder="Your Email">
-                <div class="input-group-append">
-                    <button class="btn btn-primary">Send</button>
+            <form action="" method="POST">
+                <div class="input-group">
+                    <input name="email" id="input-email" class="form-control" type="email" placeholder="Your Email">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     <?php } ?>
 		<a href="<?php echo $opt["root"]; ?>login/" class="btn btn-primary">To the login</a>

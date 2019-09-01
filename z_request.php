@@ -64,6 +64,44 @@
         }
 
         /**
+         * Returns a list of all visted controllers
+         * @return string[] All visted controllers as an array
+         */
+        public function getControllerStack() {
+            return $this->booter->ControllerStack;
+        }
+
+        /**
+         * Returns the last controller visited before the current one
+         * @return string The last controller visited before the current one
+         */
+        public function getLastController() {
+            if(isset($this->booter->ControllerStack[count($this->booter->ControllerStack) - 2])) {
+                return $this->booter->ControllerStack[count($this->booter->ControllerStack) - 2];
+            }
+            return false;
+        }
+
+        /**
+         * Returns a list of all visted actions
+         * @return string[] All visted actions as an array
+         */
+        public function getActionStack() {
+            return $this->booter->ActionStack;
+        }
+
+        /**
+         * Returns the last action visited before the current one
+         * @return string The last action visited before the current one
+         */
+        public function getPreAction() {
+            if(isset($this->booter->ActionStack[count($this->booter->ActionStack) - 2])) {
+                return $this->booter->ActionStack[count($this->booter->ActionStack) - 2];
+            }
+            return false;
+        }
+
+        /**
          * Gets the url parameters (including the leading controller and action) specified by the path.
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @param int $length The amount of array elements that will be returned at the set offset. If null, every element will be returned
@@ -323,6 +361,17 @@
             $this->hasErrors = false;
             $this->errors = [];
             $this->fields = [];
+        }
+
+        /**
+         * Gets a validated input value
+         * @param string $name Name of the field to get the value from
+         */
+        function getValue($name) {
+            foreach ($this->fields as $field) {
+                if ($field->name == $name) return $field->value;
+            }
+            return null;
         }
     }
 

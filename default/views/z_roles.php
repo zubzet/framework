@@ -18,8 +18,9 @@ return ["head" => function($opt) { ?> <!-- File header -->
             var ced = form.createCED({
                 name: "permissions",
                 text: "<?php $opt["lang"]("permissions"); ?>",
+                compact: true,
                 fields: [
-                    { name: "name", type: "text", text: "<?php $opt["lang"]("permission"); ?>"}
+                    { name: "name", type: "text", text: "<?php $opt["lang"]("permission"); ?>", width: 11, compact: true}
                 ],
                 value: <?php echo $opt["permissions"]; ?>
             });

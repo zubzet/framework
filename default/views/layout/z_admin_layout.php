@@ -123,14 +123,26 @@ return [
                     <button class="btn btn-primary d-md-none btn-block mb-2" data-toggle="collapse" data-target="#navbar"><i class="fa fa-bars"></i></button>
                     <div id="navbar" class="collapse show">
                         <div class="list-group mb-1">
-                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/cfg_instance"><i class="fa fa-wrench"></i><?php $opt["lang"]("instance"); ?></a>
-                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/log"><i class="fa fa-file"></i><?php $opt["lang"]("log_statistics"); ?></a>
-                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/update"><i class="fa fa-download"></i><?php $opt["lang"]("update"); ?></a>
+                            <?php if($opt["user"]->checkPermission("admin.danger.cfg")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/cfg_instance"><i class="fa fa-wrench"></i><?php $opt["lang"]("instance"); ?></a>
+                            <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.log")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/log"><i class="fa fa-file"></i><?php $opt["lang"]("log_statistics"); ?></a>
+                            <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.danger.update")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/update"><i class="fa fa-download"></i><?php $opt["lang"]("update"); ?></a>
+                            <?php } ?>
                         </div>
                         <div class="list-group mb-1">
-                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/edit_user"><i class="fa fa-user-edit"></i><?php $opt["lang"]("edit_user"); ?></a>
-                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/add_user"><i class="fa fa-user-plus"></i></i><?php $opt["lang"]("add_user"); ?></a>
-                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/roles"><i class="fa fa-user-tag"></i><?php $opt["lang"]("roles"); ?></a>
+                            <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/edit_user"><i class="fa fa-user-edit"></i><?php $opt["lang"]("edit_user"); ?></a>
+                            <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.user.add")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/add_user"><i class="fa fa-user-plus"></i></i><?php $opt["lang"]("add_user"); ?></a>
+                            <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.roles.list")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>z/roles"><i class="fa fa-user-tag"></i><?php $opt["lang"]("roles"); ?></a>
+                            <?php } ?>
                         </div>
                         <div class="list-group mb-1">
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?php echo $opt["root"]; ?>login/logout"><i class="fa fa-sign-out-alt"></i><?php $opt["lang"]("logout"); ?></a>
