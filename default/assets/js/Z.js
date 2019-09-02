@@ -794,6 +794,8 @@ class ZFormField {
     this.default = options.default;
     this.autofill = options.autofill || false;
 
+    this.optgroup = null;
+
     this.dom = document.createElement("div");
     this.dom.classList.add("col");
 
@@ -1028,11 +1030,24 @@ class ZFormField {
     }
 
     for (var data of food) {
-      var option = document.createElement("option");
-      option.innerHTML = data.text;
-      option.setAttribute("value", data.value);
-      this.input.appendChild(option);
+      if(data.type == undefined || data.type == "option") {
+        var option = document.createElement("option");
+        option.innerHTML = data.text;
+        option.setAttribute("value", data.value);
+        if(this.optgroup != null) {
+          this.optgroup.appendChild(option);
+        } else {
+          this.input.appendChild(option);
+        }
+      } else if(data.type == "optgroup") {
+        if(this.optgroup != null) this.input.appendChild(this.optgroup);
+        this.optgroup = document.createElement("optgroup");
+        this.optgroup.setAttribute("label", data.text);
+        this.input.appendChild(this.optgroup);
+      }
     }
+
+    if(this.optgroup != null) this.input.appendChild(this.optgroup);
     
     if (this.options.value !== undefined) {
       this.value = this.options.value;
