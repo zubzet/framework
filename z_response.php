@@ -385,9 +385,12 @@
 
         /**
          * Sends a success message to the client. Exit
+         * @param mixed[] $playload An optional payload that will be added to the result
          */
-        function success() {
-            $this->generateRest(["result" => "success"]);
+        function success($playload = []) {
+            $result = ["result" => "success"];
+            $result = array_merge($result, $playload);
+            $this->generateRest($result);
         }
 
         /**

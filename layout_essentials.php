@@ -53,6 +53,7 @@ function essentialsBody($opt) { ?>
         <p class="lead text-center"><?php $opt["lang"]("token_expired_explanation"); ?></p>
         <iframe id="loginFrame" class="login-frame" width="100%"></iframe>
     </div>
+    
     <script>
         var timedOut = false;
 

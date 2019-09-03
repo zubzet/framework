@@ -187,7 +187,7 @@
             $errors = [];
 
             if ($data == null) {
-                $data = $_POST;
+                $data = array_merge($_POST, $_FILES);
             }
 
             $formResult = new FormResult($this);
