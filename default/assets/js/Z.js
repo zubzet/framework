@@ -17,6 +17,11 @@
 Z = {
 
   /**
+   * Debug mode
+   */
+  debug: false,
+
+  /**
    * Holds form actions
    */
   Forms: {
@@ -591,7 +596,7 @@ class ZForm {
     var data = this.getFormData();
 
     for (var pair of data.entries()) {
-      console.log(pair[0]+ ', ' + pair[1]); 
+      if(this.debug) console.log(pair[0]+ ', ' + pair[1]); 
     }
 
     $.ajax({
@@ -603,7 +608,9 @@ class ZForm {
       processData: false
     }).done((data) => {
       var json;
-      console.log(data);
+
+      if(this.debug) console.log(data);
+      
       try {
         json = JSON.parse(data);
       } catch (e) {
