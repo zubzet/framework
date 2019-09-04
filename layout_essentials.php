@@ -8,6 +8,7 @@
  * @param object $opt Object holding options for rendering
  */
 function essentialsHead($opt) { ?>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/popper.min.js"); ?>"></script>
     <script src="<?php echo $opt["root"] ?>assets/js/jquery.min.js"></script>
     <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>
     <script src="<?php echo $opt["root"] ?>assets/js/bootstrap.min.js"></script>

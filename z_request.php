@@ -128,6 +128,19 @@
         }
 
         /**
+         * Works like getParameters and decodes a SEO optimized URL. Example: test.com/episodes/this-is-some-text-64 The 64 is an id
+         * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
+         * @return string[] [id, text] of the url
+         */
+        public function getReadableParameter($offset = 0) {
+            $param = $this->getParameters($offset, 1);
+            $param = explode("-", $param);
+            $id = $param[count($param) - 1];
+            array_pop($param);
+            return ["id" => $id, "text" => implode("-", $param)];
+        }
+
+        /**
          * Gets the user who requested.
          * @return User Object of the requesting user
          */
