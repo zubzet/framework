@@ -22,7 +22,13 @@
     $log .= "Current version: $currentVersion<br>";
     $log .= "New version: $newVersion<br>";
 
-    if ($newVersion == $currentVersion) die ("No update needed!");
+    if ($newVersion == $currentVersion) {
+        if(isset($argv[1]) && $argv[1] == "ignore-version") {
+            $log .= "No update needed, but this has been ignored.<br>";
+        } else {
+            die ("No update needed!");
+        }
+    }
 
     $log .= "Creating directories...<br>";
     createDirectoryUpdater("z_config");
@@ -92,6 +98,12 @@
     }
     if (!isset($cfg["registerRoleId"])) {
         file_put_contents("z_config/z_settings.ini", "\nregisterRoleId = -1", FILE_APPEND);
+    }
+    if (!isset($cfg["anonymous_language"])) {
+        file_put_contents("z_config/z_settings.ini", "\nanonymous_language = en", FILE_APPEND);
+    }
+    if (!isset($cfg["anonymous_available_languages"])) {
+        file_put_contents("z_config/z_settings.ini", "\nanonymous_available_languages = en, de", FILE_APPEND);
     }
 
     //Composer shit
