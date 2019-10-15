@@ -14,7 +14,7 @@ function essentialsHead($opt) { ?>
     <script src="<?php echo $opt["root"] ?>assets/js/bootstrap.min.js"></script>
     <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
     <link href="<?php echo $opt["root"] ?>assets/css/bootstrap.min.css" rel="stylesheet">
-    <link href="<?php echo $opt["root"] ?>assets/css/font-awesome/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script>
         Z.Request.rootPath = "<?php echo $opt["root"]; ?>";
         //ToDo: make this better

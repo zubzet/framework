@@ -84,6 +84,7 @@
                 $arr = isset($layout["lang"]) ? $layout["lang"] : [];
                 if (!isset($arr["en"])) $arr["en"] = [];
 
+                //ToDo: Document $arr["en"]
                 foreach($arr["en"] as $key => $val) {
                     if (isset($arr[$userLang][$key])) {
                         $langStorage[strtolower($key)] = $arr[$userLang][$key];

@@ -22,7 +22,13 @@
     $log .= "Current version: $currentVersion<br>";
     $log .= "New version: $newVersion<br>";
 
-    if ($newVersion == $currentVersion) die ("No update needed!");
+    if ($newVersion == $currentVersion) {
+        if(isset($argv[1]) && $argv[1] == "ignore-version") {
+            $log .= "No update needed, but this has been ignored.<br>";
+        } else {
+            die ("No update needed!");
+        }
+    }
 
     $log .= "Creating directories...<br>";
     createDirectoryUpdater("z_config");
@@ -43,6 +49,7 @@
     copy("z_framework/default/assets/js/Z.js", "assets/js/Z.js");
     copy("z_framework/default/assets/js/chart.min.js", "assets/js/chart.min.js");
     copy("z_framework/default/assets/js/jquery.min.js", "assets/js/jquery.min.js");
+    copy("z_framework/default/assets/js/popper.min.js", "assets/js/popper.min.js");
     copy("z_framework/default/assets/js/bootstrap.min.js", "assets/js/bootstrap.min.js");
     copy("z_framework/default/assets/js/bs-custom-file-input.js", "assets/js/bs-custom-file-input.js");
     copy("z_framework/default/assets/css/loadCircle.css", "assets/css/loadCircle.css");
@@ -91,6 +98,12 @@
     }
     if (!isset($cfg["registerRoleId"])) {
         file_put_contents("z_config/z_settings.ini", "\nregisterRoleId = -1", FILE_APPEND);
+    }
+    if (!isset($cfg["anonymous_language"])) {
+        file_put_contents("z_config/z_settings.ini", "\nanonymous_language = en", FILE_APPEND);
+    }
+    if (!isset($cfg["anonymous_available_languages"])) {
+        file_put_contents("z_config/z_settings.ini", "\nanonymous_available_languages = en, de", FILE_APPEND);
     }
 
     //Composer shit
