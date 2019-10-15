@@ -8,17 +8,21 @@
  * @param object $opt Object holding options for rendering
  */
 function essentialsHead($opt) { ?>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/popper.min.js"); ?>"></script>
     <script src="<?php echo $opt["root"] ?>assets/js/jquery.min.js"></script>
-    <script src="<?php echo $opt["root"] ?>assets/js/Z.js"></script>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>
     <script src="<?php echo $opt["root"] ?>assets/js/bootstrap.min.js"></script>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
     <link href="<?php echo $opt["root"] ?>assets/css/bootstrap.min.css" rel="stylesheet">
-    <link href="<?php echo $opt["root"] ?>assets/css/font-awesome/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script>
-        Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
+        Z.Request.rootPath = "<?php echo $opt["root"]; ?>";
+        //ToDo: make this better
+        /*Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
         Z.Lang.submit = "<?php $opt["lang"]("form_submit") ?>",
         Z.Lang.saved = "<?php $opt["lang"]("form_saved") ?>",
         Z.Lang.saveError = "<?php $opt["lang"]("form_save_error") ?>",
-        Z.Lang.unsaved = "<?php $opt["lang"]("form_unsaved_changes") ?>"
+        Z.Lang.unsaved = "<?php $opt["lang"]("form_unsaved_changes") ?>"*/
     </script>
 <?php } ?>
 
@@ -50,6 +54,7 @@ function essentialsBody($opt) { ?>
         <p class="lead text-center"><?php $opt["lang"]("token_expired_explanation"); ?></p>
         <iframe id="loginFrame" class="login-frame" width="100%"></iframe>
     </div>
+    
     <script>
         var timedOut = false;
 

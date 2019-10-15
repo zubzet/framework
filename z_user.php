@@ -32,7 +32,7 @@
          * 
          * Array with the keys "id" and "value".
          */
-        public $language = ["id" => 0, "value" => "EN"]; //ToDo: Insert default language here
+        public $language = []; //ToDo: Insert default language here
 
         /**
          * @var any[] $fields Holds the dataset from the database of this user
@@ -64,6 +64,7 @@
         public function identify() {
             if (!isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
                 $this->isLoggedIn = false;
+                $this->chooseNonLoginLanguage();
                 return;
             }
 
@@ -81,6 +82,37 @@
                 }
             }
 
+            $this->chooseNonLoginLanguage();
+
+        }
+
+        private function chooseNonLoginLanguage() {
+            if(empty($this->language) && !in_array($this->booter->settings["anonymous_language"], ["", " ", "  ", "\t"])) {
+                $lang;
+                if(isset($_COOKIE["z_lang"]) && !isset($_GET["lang"])){
+                    $lang = $_COOKIE["z_lang"]; 
+                } else {
+                    $default = str_replace(" ", "", $this->booter->settings["anonymous_language"]);
+                    $lang = isset($_GET["lang"]) && strlen($_GET["lang"]) == 2 ? $_GET["lang"] : substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+                    
+                    $availableLang = []; 
+                    foreach (explode(",", str_replace(" ", "", $this->booter->settings["anonymous_available_languages"])) as $langCode) {
+                        $availableLang[] = $langCode;
+                    }
+                    $lang = in_array($lang, $availableLang) ? $lang : $default;
+                    
+                    setcookie("z_lang", $lang);
+                }
+                $this->language = [
+                    "value" => $lang,
+                    "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang)
+                ];
+            } else {
+                $this->language = [
+                    "value" => "EN",
+                    "id" => 0
+                ];
+            }
         }
 
         /**

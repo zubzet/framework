@@ -6,7 +6,7 @@
     /**
      * The Login controller handles all login/logout stuff
      */
-    class LoginController {
+    class LoginController extends z_controller {
 
         /**
          * Gets the IP adress of the requesting client
@@ -60,11 +60,10 @@
                 
                 //Password handler import
                 require_once $req->getZRoot().'z_libs/passwordHandler.php';
-        
-                //REGISTER
-                $bypass = false;
-                if ($user["password"] == NULL) {
-                    $res->error("Your account is not activated yet. If you can not find the activation mail, use the forgot password function.");
+
+                if ($user["verified"] == NULL) {
+                    $link = $req->booter->rootFolder . "login/verify";
+                    $res->error("Your account is not activated yet. Click <a href='$link'>here</a> to activate it.");
                 }
                 
                 //Max login tries
@@ -141,9 +140,9 @@
          * @param Request $req The request object
          * @param Response $res The response object
          */
-        public function action_register($req, $res) {
+        public function action_signup($req, $res) {
             
-            if ($req->isAction("register")) {
+            if ($req->isAction("signup")) {
 
                 $formResult = $req->validateForm([
                     (new FormField("email"))      -> required() -> filter(FILTER_VALIDATE_EMAIL) -> unique("z_user", "email"),
@@ -151,22 +150,33 @@
                 ]);
 
                 if ($formResult->hasErrors) {
-                    $res->error("There were problems with your input!");
+                    $res->error("This email is not allowed!");
                 } else {
+                    $userModel = $req->getModel("z_user");
                     require_once $req->getZRoot().'z_libs/passwordHandler.php';
-                    if ($req->getModel("z_user", $res->getZRoot())->add(
+
+                    $userId = $userModel->add(
                         $req->getPost("email"),
                         0,
                         $req->getPost("password")
-                    ) == false) {
-                        $res->error();
-                    } else {
+                    );
+                    
+                    if ($userId) {
+                        if($req->getBooterSettings("registerRoleId") != -1) {
+                            $userModel->addRoleToUserByRoleId(
+                                $userId, 
+                                $req->getBooterSettings("registerRoleId")
+                            );
+                        }
+                        $this->send_verify_mail($req, $res, $userId);
                         $res->success();
+                    } else {
+                        $res->error();
                     }
                 }
             }
 
-            $res->render("login_register.php", [], "layout/min_layout.php");
+            $res->render("login_signup.php", [], "layout/min_layout.php");
         }
         
         /**
@@ -270,6 +280,37 @@
         }
 
         /**
+         * Used to verify mails
+         * 
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
+        public function action_verify($req, $res) {
+            $code = $req->getParameters(0, 1);
+
+            $model = $req->getModel("z_user");
+            $success = $model->verifyUser($code);
+
+            if (isset($_POST["email"])) {
+                $user = $model->getUserByEmail($_POST["email"]);
+
+                if (!empty($user)) {
+                    $this->send_verify_mail($req, $res, $user["id"]);
+                }
+
+                $res->render("login_verify_wait.php", [
+                    "title" => "Email verification",
+                ], "layout/min_layout.php");
+            } else {
+                $res->render("login_verify.php", [
+                    "title" => "Email verification",
+                    "success" => $success
+                ], "layout/min_layout.php");
+            }
+
+        }
+
+        /**
          * Redirects the user to the password reset page
          * 
          * This action is used for user who create their password for the first time
@@ -291,6 +332,14 @@
          */
         public function action_change_password($req, $res) {
             $res->reroute(["login", "reset"]);
+        }
+
+        private function send_verify_mail($req, $res, $userId) {
+            $userModel = $req->getModel("z_user");
+
+            $token = $userModel->createVerifyToken($userId);
+            $url = $res->booter->root . "login/verify/" . $token;
+            $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/mail_layout.php");
         }
 
     }

@@ -64,6 +64,44 @@
         }
 
         /**
+         * Returns a list of all visted controllers
+         * @return string[] All visted controllers as an array
+         */
+        public function getControllerStack() {
+            return $this->booter->ControllerStack;
+        }
+
+        /**
+         * Returns the last controller visited before the current one
+         * @return string The last controller visited before the current one
+         */
+        public function getLastController() {
+            if(isset($this->booter->ControllerStack[count($this->booter->ControllerStack) - 2])) {
+                return $this->booter->ControllerStack[count($this->booter->ControllerStack) - 2];
+            }
+            return false;
+        }
+
+        /**
+         * Returns a list of all visted actions
+         * @return string[] All visted actions as an array
+         */
+        public function getActionStack() {
+            return $this->booter->ActionStack;
+        }
+
+        /**
+         * Returns the last action visited before the current one
+         * @return string The last action visited before the current one
+         */
+        public function getPreAction() {
+            if(isset($this->booter->ActionStack[count($this->booter->ActionStack) - 2])) {
+                return $this->booter->ActionStack[count($this->booter->ActionStack) - 2];
+            }
+            return false;
+        }
+
+        /**
          * Gets the url parameters (including the leading controller and action) specified by the path.
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @param int $length The amount of array elements that will be returned at the set offset. If null, every element will be returned
@@ -90,11 +128,16 @@
         }
 
         /**
-         * Gets the database communication stuff
-         * @return z_model
+         * Works like getParameters and decodes a SEO optimized URL. Example: test.com/episodes/this-is-some-text-64 The 64 is an id
+         * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
+         * @return string[] [id, text] of the url
          */
-        public function getModel() {
-            return $this->booter->getModel(...func_get_args());
+        public function getReadableParameter($offset = 0) {
+            $param = $this->getParameters($offset, 1);
+            $param = explode("-", $param);
+            $id = $param[count($param) - 1];
+            array_pop($param);
+            return ["id" => $id, "text" => implode("-", $param)];
         }
 
         /**
@@ -130,15 +173,6 @@
         }
 
         /**
-         * Creates an upload object that handles the rest of the upload.
-         * @return z_upload A new instance of the z_upload class
-         */
-        public function upload() {
-            require_once $this->getZRoot()."z_upload.php";
-            return new z_upload($this);
-        }
-
-        /**
          * Checks if the current has a permission. If the user is not logged in, it will be redirected to the login page. 
          * If the user is logged in but does not have the permission, it will be redirected to 403.
          * @param string $permission Permission to check for
@@ -160,36 +194,41 @@
          * Validates form data from the client
          * @param FormField[] $fields Array of fields with the validation rules
          * @param array $data Input for the validation. $_GET or $_POST can be used here as parameters
-         * @return array|boolean A list of errors or true
+         * @return FormResult A result to work with
          */
         public function validateForm($fields, $data = null) {
             $errors = [];
 
             if ($data == null) {
-                $data = $_POST;
+                $data = array_merge($_POST, $_FILES);
             }
 
             $formResult = new FormResult($this);
             $formResult->fields = $fields;
 
+            
             foreach ($fields as $field) {
                 $name = $field->name;
+                $field->value = $data[$name]??null;
+                
                 foreach ($field->rules as $rule) {
                     $type = $rule["type"];
-
+                    
                     if ($type == "required") {
-                        if (!isset($data[$name]) || $data[$name] == "") {
+                        
+                        if (!((isset($data[$name]) && $data[$name] != "" ) || isset($_FILES[$name]))) {
                             $errors[] = ["name" => $name, "type" => "required"];
                         } else {
                             $value = $data[$name];
+                            $field->value = $value; //Require needs to be the first rule or this line could break something!
                         }
-                    } else if (isset($data[$name])) {
+                    } else if (!empty($data[$name]) || $data[$name] == "0") {
                         $value = $data[$name];
 
                         if ($type == "length") {
                             $len = strlen($value);
                             if ($len < $rule["min"] || $len > $rule["max"]) {
-                                $errors[] = ["name" => $name, "type" => "length"];
+                                $errors[] = ["name" => $name, "type" => "length", "info" => [$rule["min"], $rule["max"]]];
                             }
                         } else if ($type == "filter") {
                             if (!filter_var($value, $rule["filter"])) {
@@ -216,18 +255,28 @@
                             $value = intval($value);
                         } else if ($type == "range") {
                             if ($value < $rule["min"] || $value > $rule["max"]) {
-                                $errors[] = ["name" => $name, "type" => "range"];
+                                $errors[] = ["name" => $name, "type" => "range", "info" => [$rule["min"], $rule["max"]]];
                             }
                         } else if ($type == "date") { 
-                            $d = DateTime::createFromFormat($rule["format"], $value);
-                            if ($d && $d->format($format) === $date) {
+                            if (strtotime($value) == false) {
                                 $errors[] = ["name" => $name, "type" => "date"];
+                            }
+                        } else if ($type == "file") {
+                            if (isset($_FILES[$name])) {
+                                $file = $_FILES[$name];
+                                if ($file["size"] > $rule["maxSize"]) {
+                                    $errors[] = ["name" => $name, "type" => "file_to_big"];
+                                }
+                            } else {
+                                $errors[] = ["name" => $name, "type" => "file"];
                             }
                         } else {
                             $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unkown type
                         }
 
                         $field->value = $value;
+                    } else {
+                        $field->value = null;
                     }
                 }
 
@@ -326,6 +375,17 @@
             $this->errors = [];
             $this->fields = [];
         }
+
+        /**
+         * Gets a validated input value
+         * @param string $name Name of the field to get the value from
+         */
+        function getValue($name) {
+            foreach ($this->fields as $field) {
+                if ($field->name == $name) return $field->value;
+            }
+            return null;
+        }
     }
 
     /**
@@ -359,6 +419,11 @@
         public $isRequired;
 
         /**
+         * @var any $value The validated value
+         */
+        public $value;
+
+        /**
          * Creates a form field representation
          * @param string $name Name of the field. Should match the name in the post header
          * @param string $dbName Name of the field in the database. If not set it will be equal to the name
@@ -369,6 +434,8 @@
             $this->dbField = isset($dbName) ? $dbName : $name;
             $this->dataType = "s";
             $this->isRequired = false;
+            $this->value = null;
+            $this->isFile = false;
         }
 
         /**
@@ -516,6 +583,27 @@
                 "name" => $this->name, 
                 "type" => "date", 
                 "format" => $format
+            ];
+            return $this;
+        }
+
+        /**
+         * Rule for validating file uploads. This rule must also be set when automatic uploads in insertDatabase is needed.
+         * 
+         * @param integer $maxSize The maximum allowed file size. Constants for this are available.
+         * @param string[] $types Accepted file types
+         * @return FormField Returns itself to allow chaining
+         */
+        function file($maxSize, $types) {
+            $this->isFile = true;
+            $this->fileMaxSize = $maxSize;
+            $this->fileTypes = $types;
+
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "file", 
+                "types" => $types,
+                "maxSize" => $maxSize
             ];
             return $this;
         }

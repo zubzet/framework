@@ -27,6 +27,21 @@
         }
 
         /**
+         * Returns a user row of the database, selected by the users email address
+         * @param string $email Email of the user from who we want the data about
+         * @return any[] The dataset
+         */
+        function getUserByEmail($email) {
+            $query = "SELECT * FROM `z_user` WHERE `email`=?";
+            $this->exec($query, "s", $email);
+            
+            if ($this->getResult()->num_rows > 0) {
+                return $this->getResult()->fetch_assoc(); 
+            }
+            return false;
+        }
+
+        /**
          * Returns all userdata from the database
          * @return any[][] The table as a two dimensional array
          */
@@ -123,6 +138,16 @@
         }
 
         /**
+         * Add a role to a user
+         * @param int $userId The id of the user itended to recieve the role
+         * @param int $roleId The id of the role to be added
+         */
+        function addRoleToUserByRoleId($userId, $roleId) {
+            $sql = "INSERT INTO `z_user_role`(`role`, `user`) VALUES (?, ?)";
+            $this->exec($sql, "ii", $roleId, $userId);
+        }
+
+        /**
          * Gets all permissions a specific user has
          * 
          * @param int $userId Id of the target user
@@ -137,6 +162,48 @@
                 $out[] = $perm["name"];
             }
             return $out;
+        }
+
+        /**
+         * Verifies an users mail address
+         * @param string $token. The token from the url the user clicked on.
+         */
+        function verifyUser($token) {
+            if (!$token) return false;
+
+            $sql = "SELECT * FROM `z_email_verify` WHERE token = ?";
+            $this->exec($sql, "s", $token);
+            $result = $this->resultToLine();
+
+            if (!$result) {
+                return false;
+            }
+
+            $endTime = strtotime($result["end"]);
+            $now = date("Y-m-d H:i:s");
+            if ($now > $endTime) {
+                return false;
+            }
+
+            $sql = "UPDATE z_email_verify SET active = 0 WHERE id = ?";
+            $this->exec($sql, "i", $result["id"]);
+
+            $sql = "UPDATE z_user SET verified = ? WHERE id = ?";
+            $this->exec($sql, "si", $now, $result["user"]);
+
+            return true;
+        }
+
+        /**
+         * Creates an email verify token and puts it into the database
+         * @param int $userId;
+         */
+        function createVerifyToken($userId) {
+            $token = uniqid("v_");
+            $endDate = date('Y-m-d H:i:s', strtotime('+1 day'));
+            $sql = "INSERT INTO `z_email_verify`(token, user, end) VALUES (?, ?, ?)";
+            $this->exec($sql, "sis", $token, $userId, $endDate);
+            return $token;
         }
 
     }

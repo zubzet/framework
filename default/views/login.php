@@ -5,17 +5,12 @@
 
 return ["head" => function($opt) { ?>
 	<link rel="stylesheet" href="<?php echo $opt["root"]; ?>assets/css/loadCircle.css">
-	<style>
-		.login-error {
-			color: red;
-		}
-	</style>
 <?php }, "body" => function($opt) { ?>
 
 	<div style="max-width: 1000px; margin: auto">
 		<h2>Login</h2>
 		<form onSubmit="return false;">
-			<div id="login-error-label" class="login-error"></div>
+			<div id="login-error-label" class="text-danger"></div>
 
 			<div class="input-group mb-2">
 				<div class="input-group-prepend">
@@ -33,7 +28,7 @@ return ["head" => function($opt) { ?>
 
 			<button onclick="login();" class="btn btn-primary">Sign in</button>
 			<a class="link" href="<?php echo $opt["root"]; ?>login/forgot_password">Forgot Password?</a>
-			<a class="link" href="<?php echo $opt["root"]; ?>login/register">Don't have a account?</a>
+			<a class="link" href="<?php echo $opt["root"]; ?>login/signup">Don't have a account?</a>
 		</form>
 	</div>
 
@@ -41,7 +36,7 @@ return ["head" => function($opt) { ?>
 
 	<script>
 		function login() {
-			Z.Presets.Login("username", "password", "login-error-label", "<?php echo $opt["root"]; ?>");
+			Z.Presets.Login("username", "password", "login-error-label", "");
 		}
 	</script>
 <?php }]; ?>

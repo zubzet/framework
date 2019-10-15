@@ -26,21 +26,21 @@
         /** @var string $filePath Path to the uploading file */
         public $filePath;  
 
-        /** @var int $fileId File Id */
+        /** @var int $fileId File Id, set after upload */
         public $fileId;
 
         /** @var Request $req Request object of the current request*/
-        private $req;
+        private $res;
 
         /**
          * Creates the upload object
          */
-        function __construct($req) {
-            $this->req = $req;
+        function __construct($res) {
+            $this->res = $res;
         }
 
        /**
-        * Uploads a file to an uplaod folder
+        * Uploads a file to an upload folder
         *
         * This function will handle file uploads for you and make sure the type and the size are as defined. It also handles the movement to an upload folder. Be sure to change upload_max_filesize and post_max_size in you php.ini
         *
@@ -54,11 +54,11 @@
 
             if (empty($file) || !isset($file["name"]) || $file === null) return UPLOAD_ERROR_NO_FILE;
 
-            $ref = $this->req->getModel("z_general")->getUniqueRef();
+            $ref = $this->res->getModel("z_general")->getUniqueRef();
 
             $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
             $target_file = $uploadDir . $ref . "." . $extension;
-            
+
             if (!in_array($extension, $typeArray)) return UPLOAD_ERROR_WRONG_TYPE;
             if ($file["size"] > $maxSize) return UPLOAD_ERROR_TOO_BIG;
             if (move_uploaded_file($file["tmp_name"], $target_file) === false) return UPLOAD_ERROR_NOT_MOVED;
@@ -68,8 +68,8 @@
             $this->srcName = basename($file["name"]);
             $this->extension = $extension;
             $this->size = $file["size"];
-            $this->filePath = $target_file;  
-            $this->fileId = $this->req->getModel("z_file", $this->req->getZRoot())->add($this->ref, $this->mime, $this->srcName, $this->extension, $this->size);
+            $this->filePath = $target_file;
+            $this->fileId = $this->res->getModel("z_file", $this->res->getZRoot())->add($this->ref, $this->mime, $this->srcName, $this->extension, $this->size);
 
             return UPLOAD_SUCCESS;
 

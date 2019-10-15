@@ -12,10 +12,10 @@
         private $rootDirectory;
 
         /** @var string $host Name of the host of this page */
-        private $host;
+        public $host;
 
-        /** @var string $root Path to the root relative to the hostname */
-        private $root;
+        /** @var string $root Absolute path to the page */
+        public $root;
 
         /** @var string $url URL to reach this page */
         private $url;
@@ -77,6 +77,12 @@
         /** @var User $user The requesting user */
         public $user;
 
+        /** @var string[] $ControllerStack All visted controllers as an array */
+        public $ControllerStack = [];
+
+        /** @var string[] $ActionStack All visted actions as an array */
+        public $ActionStack = [];
+        
         /**
          * Parses all the options as vars and instantiate the z_db and establish the db connection
          */
@@ -168,6 +174,7 @@
 
                 //Custom error function (even triggers for warnings)
                 set_error_handler(function($severity, $message, $file, $line) {
+
                     if (error_reporting() & $severity) {
                         throw new ErrorException($message, 0, $severity, $file, $line);
                     }
@@ -224,6 +231,7 @@
             
             if (isset($parts[1])) {
                 $method = "action_" . strtolower($parts[1]);
+                $method = str_replace(".", "§2E", $method);
             } else {
                 $method = "action_index";
             }
@@ -248,16 +256,29 @@
                 return $this->executePath(["error", "500"]);
             }
 
-            $CTRL_obj = new $controller();
-            if (method_exists($controller, $method)) {
-                return $CTRL_obj->{$method}(new Request($this), new Response($this));
-            } else {
-                //Checks if the fallback method exists before rerouting to the 404 page
-                $method = "action_fallback";
+            //Update values
+            $this->ControllerStack[] = $controller;
+            $this->ActionStack[] = $method;
+            
+            try {
+                $CTRL_obj = new $controller();
                 if (method_exists($controller, $method)) {
                     return $CTRL_obj->{$method}(new Request($this), new Response($this));
                 } else {
-                    return $this->executePath(["error", "404"]);
+                    //Checks if the fallback method exists before rerouting to the 404 page
+                    $method = "action_fallback";
+                    if (method_exists($controller, $method)) {
+                        $this->ActionStack[] = $method;
+                        return $CTRL_obj->{$method}(new Request($this), new Response($this));
+                    } else {
+                        return $this->executePath(["error", "404"]);
+                    }
+                }
+            } catch(Exception $e) {
+                if ($this->showErrors != 0) {
+                    throw $e;
+                } else {
+                    return $this->executePath(["error", "500"]);
                 }
             }
             

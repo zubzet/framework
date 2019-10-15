@@ -24,11 +24,11 @@
          * @return any[][] The datasets from the database in an array
          */
         function getLogTableByCategories($start, $end, array $categories) {
-            $sql = "SELECT i.*
-                    FROM `z_interaction_log` AS i
-                    LEFT JOIN `z_user` AS e
+            $sql = "SELECT i.*, e.email as `name`, e_exec.email as `name_exec`
+                    FROM `z_interaction_log` i
+                    LEFT JOIN `z_user` e
                     ON i.`userId` = e.`id`
-                    LEFT JOIN `z_user` AS e_exec
+                    LEFT JOIN `z_user` e_exec
                     ON i.`userId_exec` = e_exec.`id`
                     WHERE i.`created` >= ? 
                     AND i.`created` <= ? 
