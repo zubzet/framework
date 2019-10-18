@@ -29,7 +29,8 @@
             if ($viewPath !== false) {
 
                 //Set default parameter values
-                $opt["request"] = $this;
+                $opt["response"] = $this;
+                $opt["request"] = $this->booter->req;
                 $opt["root"] = $this->booter->rootFolder;
                 $opt["host"] = $this->booter->host;
 

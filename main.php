@@ -82,6 +82,20 @@
 
         /** @var string[] $ActionStack All visted actions as an array */
         public $ActionStack = [];
+
+        /** @var Response $res A reference to an instance of the Response class */
+        public $res;
+
+        /** @var Request $req A reference to an instance of the Request class */
+        public $req;
+
+        /** @var array[] $action_pattern_replacement Replacement patterns for action names */
+        public $action_pattern_replacement = [
+            ["-", "_"], 
+            ["ä", "ae"], 
+            ["ö", "oe"], 
+            ["ü", "ue"]
+        ];
         
         /**
          * Parses all the options as vars and instantiate the z_db and establish the db connection
@@ -236,8 +250,13 @@
                 $method = "action_index";
             }
             
-            $method = str_replace("-", "_", $method);
-            $controller = str_replace("-", "_", $controller);
+            $method = urldecode($method);
+            $controller = urldecode($controller);
+
+            foreach ($this->action_pattern_replacement as $apr) {
+                $method = str_replace($apr[0], $apr[1], $method);
+                $controller = str_replace($apr[0], $apr[1], $controller);
+            }
             
             try {
                 $controllerFile = null;
@@ -262,14 +281,16 @@
             
             try {
                 $CTRL_obj = new $controller();
+                $this->req = new Request($this);
+                $this->res = new Response($this);
                 if (method_exists($controller, $method)) {
-                    return $CTRL_obj->{$method}(new Request($this), new Response($this));
+                    return $CTRL_obj->{$method}($this->req, $this->res);
                 } else {
                     //Checks if the fallback method exists before rerouting to the 404 page
                     $method = "action_fallback";
                     if (method_exists($controller, $method)) {
                         $this->ActionStack[] = $method;
-                        return $CTRL_obj->{$method}(new Request($this), new Response($this));
+                        return $CTRL_obj->{$method}($this->req, $this->res);
                     } else {
                         return $this->executePath(["error", "404"]);
                     }
