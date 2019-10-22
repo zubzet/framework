@@ -24,6 +24,8 @@ function essentialsHead($opt) { ?>
         Z.Lang.saveError = "<?php $opt["lang"]("form_save_error") ?>",
         Z.Lang.unsaved = "<?php $opt["lang"]("form_unsaved_changes") ?>"*/
     </script>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <?php } ?>
 
 <?php 
