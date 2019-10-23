@@ -264,7 +264,7 @@
                             $value = $data[$name];
                             $field->value = $value; //Require needs to be the first rule or this line could break something!
                         }
-                    } else if (!empty($data[$name]) || $data[$name] == "0") {
+                    } else if (isset($data[$name]) && (!empty($data[$name]) || $data[$name] == "0")) {
                         $value = $data[$name];
 
                         if ($type == "length") {
@@ -289,6 +289,14 @@
                         } else if ($type == "exist") {
                             if (!$this->booter->z_db->checkIfExists($rule["table"], $rule["field"], $value)) {
                                 $errors[] = ["name" => $name, "type" => "exist"];
+                            }
+                        } else if ($type == "regex") {
+                            $tmp_value = $value;
+                            foreach ($rule["exceptions"] as $exception) {
+                                $tmp_value = str_replace($exception, "", $tmp_value);
+                            }
+                            if (!preg_replace($rule["expression"], "", $tmp_value) != $tmp_value) {
+                                $errors[] = ["name" => $name, "type" => "regex"];
                             }
                         } else if ($type == "integer") {
                             if (!filter_var($value, FILTER_VALIDATE_INT)) {
@@ -649,5 +657,23 @@
             ];
             return $this;
         }
+
+        /**
+         * Adds a regular expression to a field
+         * 
+         * @param string $expression The regex expression
+         * @param string[] $exceptions An array of the regex excepted characters
+         * @return FormField Returns itself to allow chaining
+         */
+        function regex($expression, $exceptions = []) {
+            $this->rules[] = [
+                "name" => $this->name, 
+                "type" => "regex", 
+                "expression" => $expression,
+                "exceptions" => $exceptions
+            ];
+            return $this;
+        }
+
     }
 ?>

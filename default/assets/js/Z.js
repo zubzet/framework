@@ -104,8 +104,10 @@ Z = {
     error_range: "The number is too large to too small. It must be between [0] and [1].",
     error_unique: "This already exists!",
     error_exist: "This does not exist!",
-    error_integer: "This is not an integer",
+    error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
+    //ToDo: Add custom errors and translating
+    error_regex: "The input does not meet the required pattern!",
     error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
     choose_file: "Choose file"
   },
@@ -522,13 +524,15 @@ class ZForm {
    * @param {string} options.dom Id of a dom element to append this form automatically to
    * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
    */
-  constructor(options = {doReload: true, dom: null, saveHook: null}) {
+  constructor(options = {doReload: true, dom: null, saveHook: null, hidehints: false}) {
     this.fields = {};
     this.options = options;
     this.ceds = [];
 
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
+
+    this.hidehints = options.hidehints;
 
     this.dom = document.createElement("div");
 
@@ -711,6 +715,7 @@ class ZForm {
    * @returns {void}
    */
   hint(alertClass, content) {
+    if(this.hidehints) return;
     this.alert.classList.remove("d-none", this.lastAlertClass);
     this.alert.classList.add(alertClass);
     this.lastAlertClass = alertClass;
