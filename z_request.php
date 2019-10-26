@@ -151,6 +151,8 @@
                     //Remove paths and www subdomains to prevent errors
                     function cleanHostname($hostname) {
                         $hostname = trim($hostname, '/');
+                        $hostname = str_replace('http://', '', $hostname);
+                        $hostname = str_replace('https://', '', $hostname);
                         return preg_replace('/^www\./', '', $hostname);
                     }
                     if(cleanHostname($recaptcha->hostname) !== cleanHostname($this->getBooterSettings("host"))) {
