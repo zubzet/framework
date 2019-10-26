@@ -8,13 +8,22 @@
  * @param object $opt Object holding options for rendering
  */
 function essentialsHead($opt) { ?>
+
     <script src="<?php $opt["generateResourceLink"]("assets/js/popper.min.js"); ?>"></script>
-    <script src="<?php echo $opt["root"] ?>assets/js/jquery.min.js"></script>
-    <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>
-    <script src="<?php echo $opt["root"] ?>assets/js/bootstrap.min.js"></script>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/jquery.min.js"); ?>"></script>
+    
+    <script src="<?php $opt["generateResourceLink"]("assets/js/bootstrap.min.js"); ?>"></script>
     <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
-    <link href="<?php echo $opt["root"] ?>assets/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
+    <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>
+
+    <link href="<?php $opt["generateResourceLink"]("assets/css/bootstrap.min.css"); ?>" rel="stylesheet">
+    
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/all.min.css") ?>">
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/brands.min.css") ?>">
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/v4-shims.min.css") ?>">
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/fontawesome.min.css") ?>">
+
     <script>
         Z.Request.rootPath = "<?php echo $opt["root"]; ?>";
         //ToDo: make this better
@@ -24,8 +33,10 @@ function essentialsHead($opt) { ?>
         Z.Lang.saveError = "<?php $opt["lang"]("form_save_error") ?>",
         Z.Lang.unsaved = "<?php $opt["lang"]("form_unsaved_changes") ?>"*/
     </script>
+
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
 <?php } ?>
 
 <?php 
