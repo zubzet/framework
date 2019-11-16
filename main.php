@@ -92,6 +92,7 @@
         /** @var array[] $action_pattern_replacement Replacement patterns for action names */
         public $action_pattern_replacement = [
             ["-", "_"], 
+            [".", "§2E"],
             ["ä", "ae"], 
             ["ö", "oe"], 
             ["ü", "ue"]
@@ -245,8 +246,6 @@
             
             if (isset($parts[1])) {
                 $method = "action_" . strtolower($parts[1]);
-                $method = str_replace(".", "§2E", $method);
-                $method = str_replace("-", "§2D", $method);
             } else {
                 $method = "action_index";
             }
@@ -258,7 +257,7 @@
                 $method = str_replace($apr[0], $apr[1], $method);
                 $controller = str_replace($apr[0], $apr[1], $controller);
             }
-            
+
             try {
                 $controllerFile = null;
                 if (file_exists($this->z_controllers . $controller . ".php")) {
