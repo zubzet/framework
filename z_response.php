@@ -359,7 +359,7 @@
         function loginAs($userId, $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
             $token = $this->booter->getModel("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
-            $this->setCookie("z_login_token", $token, time() + ($this->booter->settings["loginTimeoutSeconds"]), "/");
+            $this->setCookie("z_login_token", $token, time() + intval($this->booter->settings["loginTimeoutSeconds"]), "/");
 
             if ($userId == $user_exec) {
                 $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
