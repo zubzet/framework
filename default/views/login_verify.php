@@ -28,6 +28,6 @@ return ["head" => function($opt) { ?>
             </form>
         </div>
     <?php } ?>
-		<a href="<?php echo $opt["root"]; ?>login/" class="btn btn-primary">To the login</a>
+		<a href="<?php echo $opt["root"].$opt["login"]; ?>" class="btn btn-primary">To the login</a>
 	</div>
 <?php }]; ?>

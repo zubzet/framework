@@ -145,14 +145,23 @@ Z = {
      * @param {string} errorLabelId ID if the DOM elemnt to show errors in
      * @param {string} redirect URL to redirect to after a successfull signup
      */
-    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "") {
+    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "", alertErrors = false) {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
-      if (ePassword.value != ePasswordConfirm.value) { alert("The password are not the same!"); return; }
+      if (ePassword.value != ePasswordConfirm.value) { 
+        if(alertErrors) {
+          alert("The password are not the same!"); 
+          return; 
+        } else {
+          document.getElementById(errorLabelId).innerHTML = "The password are not the same!"; 
+          return;
+        }
+      }
       Z.Request.root('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
         if (res.result == "error") {
           document.getElementById(errorLabelId).innerHTML = res.message;
+          if(alertErrors) alert(res.message);
         } else if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();

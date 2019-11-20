@@ -304,7 +304,9 @@
             } else {
                 $res->render("login_verify.php", [
                     "title" => "Email verification",
-                    "success" => $success
+                    "success" => $success,
+                    //ToDo: Needs to be edited
+                    "login" => "index"
                 ], "layout/min_layout.php");
             }
 
