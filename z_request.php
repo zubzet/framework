@@ -91,6 +91,14 @@
         }
 
         /**
+         * Returns the current URL
+         * @return string The actual URL that was requested including parameters and host
+         */
+        public function getCurrentURL() {
+            return $this->booter->host.$this->booter->url;
+        }
+
+        /**
          * Returns the last action visited before the current one
          * @return string The last action visited before the current one
          */

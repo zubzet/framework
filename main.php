@@ -18,7 +18,7 @@
         public $root;
 
         /** @var string $url URL to reach this page */
-        private $url;
+        public $url;
 
         /** @var mysqli $host Database connection object */
         private $conn;
