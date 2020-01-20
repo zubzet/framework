@@ -61,7 +61,7 @@ if (isset($_POST["db-host"])) {
         $log .= "Creating database...<br>";
         $timeBefore = microtime(true);
 
-        $mysqli->query("DROP DATABASE IF EXISTS $dbDatabase");
+        //NEEEEIN: $mysqli->query("DROP DATABASE IF EXISTS $dbDatabase");
         $mysqli->query("CREATE DATABASE IF NOT EXISTS $dbDatabase");
 
         $mysqli->select_db($dbDatabase);
