@@ -168,7 +168,7 @@
                     }
                 }
 
-                //ToDo: Add a time limit
+                //TODO: Add a time limit
 
                 // Take action based on the score returned:
                 return $recaptcha->score;

@@ -26,7 +26,7 @@ function essentialsHead($opt) { ?>
 
     <script>
         Z.Request.rootPath = "<?php echo $opt["root"]; ?>";
-        //ToDo: make this better
+        //TODO: make this better
         /*Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
         Z.Lang.submit = "<?php $opt["lang"]("form_submit") ?>",
         Z.Lang.saved = "<?php $opt["lang"]("form_saved") ?>",

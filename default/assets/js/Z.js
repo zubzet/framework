@@ -106,7 +106,7 @@ Z = {
     error_exist: "This does not exist!",
     error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
-    //ToDo: Add custom errors and translating
+    //TODO: Add custom errors and translating
     error_regex: "The input does not meet the required pattern!",
     error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
     choose_file: "Choose file"
@@ -133,7 +133,37 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          document.getElementById(errorLabel).innerHTML = res.message;
+          if(document.getElementById(errorLabel).innerHTML == res.message) {
+            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          } else {
+            document.getElementById(errorLabel).innerHTML = res.message;
+            $('#'+errorLabel).slideDown(300);
+          }
+        }
+      });
+    },
+    /**
+     * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
+     * @param {string} unameemailElementId ID of the dom element for the name/email input
+     * @param {string} errorLabel ID of the dom element to show errors in
+     * @param {string} redirect URL to redirect after a successful login
+     */
+    ForgotPassword(unameemailElementId, errorLabel, redirect = "") {
+      var eUnameemail = document.getElementById(unameemailElementId);
+      Z.Request.root('login/forgot_password', 'forgot_password', {unameemail: eUnameemail.value}, (res) => {  
+        if (res.result == "success") {
+          if (redirect == "") {
+            window.location.reload();
+          } else {
+            window.location.href = redirect;
+          }
+        } else {
+          if(document.getElementById(errorLabel).innerHTML == res.message) {
+            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          } else {
+            document.getElementById(errorLabel).innerHTML = res.message;
+            $('#'+errorLabel).slideDown(300);
+          }
         }
       });
     },
@@ -154,7 +184,12 @@ Z = {
           alert("The password are not the same!"); 
           return; 
         } else {
-          document.getElementById(errorLabelId).innerHTML = "The password are not the same!"; 
+          if(document.getElementById(errorLabel).innerHTML == "The password are not the same!") {
+            $('#'+errorLabelId).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          } else {
+            document.getElementById(errorLabel).innerHTML = "The password are not the same!";
+            $('#'+errorLabelId).slideDown(300);
+          }
           return;
         }
       }

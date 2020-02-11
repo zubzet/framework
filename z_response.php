@@ -85,7 +85,7 @@
                 $arr = isset($layout["lang"]) ? $layout["lang"] : [];
                 if (!isset($arr["en"])) $arr["en"] = [];
 
-                //ToDo: Document $arr["en"]
+                //TODO: Document $arr["en"]
                 foreach($arr["en"] as $key => $val) {
                     if (isset($arr[$userLang][$key])) {
                         $langStorage[strtolower($key)] = $arr[$userLang][$key];
@@ -345,7 +345,7 @@
          * @param object $options Options for use in the view
          * @param string $layout Layout to use
          */
-        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "email") {
+        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
             $language = $this->booter->getModel("z_general")->getLanguageById($target["languageId"])["value"];
             $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);

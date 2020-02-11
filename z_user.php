@@ -32,7 +32,7 @@
          * 
          * Array with the keys "id" and "value".
          */
-        public $language = []; //ToDo: Insert default language here
+        public $language = []; //TODO: Insert default language here
 
         /**
          * @var any[] $fields Holds the dataset from the database of this user
