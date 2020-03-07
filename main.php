@@ -328,7 +328,7 @@
          * Returns a model
          * @param string $model Name of the model
          * @param string $dir Set this when the model is stored in a specific directory
-         * @return z_Model The model
+         * @return z_model The model
          */
         public function getModel($model, $dir = null) {
             $model .= "Model";
