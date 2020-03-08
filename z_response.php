@@ -112,6 +112,10 @@
                     $v = $this->getBooterSettings("assetVersion");
                     echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
                 };
+
+                $opt["echo"] = function($val) {
+                    echo nl2br(htmlspecialchars($val));
+                };
                 
                 //Makes $body and $head optional
                 if(!isset($view["body"])) $view["body"] = function(){};
@@ -462,6 +466,8 @@
             foreach ($validationResult->fields as $field) {
                 if ($field->isFile) {
                     $upload = $this->upload();
+                    if(!isset($_FILES[$field->name])) continue; //TODO: Might take required into account
+                    //TODO: Should use the uploads folder
                     $uploadCode = $upload->upload($_FILES[$field->name], "uploads/", $field->fileMaxSize, $field->fileTypes);
                     if ($uploadCode) $this->error("Upload error: " . $uploadCode);
                     $field->value = $upload->fileId;

@@ -229,13 +229,15 @@
          * If the user is logged in but does not have the permission, it will be redirected to 403.
          * @param string $permission Permission to check for
          */
-        public function checkPermission($permission) {
+        public function checkPermission($permission, $boolResult = false) {
             $user = $this->getRequestingUser();
             if (!$user->isLoggedIn) {
+                if($boolResult) return false;
                 $this->booter->executePath(["login", "index"]);
                 exit;
             }
             if (!$user->checkPermission($permission)) {
+                if($boolResult) return false;
                 $this->booter->executePath(["error", "403"]);
                 exit;
             }
