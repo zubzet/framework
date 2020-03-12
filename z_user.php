@@ -93,7 +93,7 @@
                     $lang = $_COOKIE["z_lang"]; 
                 } else {
                     $default = str_replace(" ", "", $this->booter->settings["anonymous_language"]);
-                    $lang = isset($_GET["lang"]) && strlen($_GET["lang"]) == 2 ? $_GET["lang"] : substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+                    $lang = isset($_GET["lang"]) && strlen($_GET["lang"]) == 2 ? $_GET["lang"] : (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2) : $default);
                     
                     $availableLang = []; 
                     foreach (explode(",", str_replace(" ", "", $this->booter->settings["anonymous_available_languages"])) as $langCode) {
