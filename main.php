@@ -142,7 +142,7 @@
             //processing the url
             $this->rootFolder = "/".$this->rootDirectory;
             $this->root = $this->host . "/" . $this->rootDirectory;
-            $this->url = (empty($options["url"]) ? $_SERVER['REQUEST_URI'] : $options["url"]);
+            $this->url = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "cli");
             $this->urlParts = $this->parseUrl();
 
             //Database connection
@@ -225,8 +225,12 @@
 
         /** 
          * The Execution of the requested action 
+         * @param Array $customUrlParts exmaple: ["panel", "index"]
          */
-        public function execute() {
+        public function execute($customUrlParts = null) {
+            if(isset($customUrlParts)) {
+                $this->urlParts = $customUrlParts;
+            }
             $this->executePath($this->urlParts);
         }
 
