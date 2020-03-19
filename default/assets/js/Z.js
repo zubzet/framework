@@ -31,6 +31,7 @@ Z = {
      * @param {boolean} options.doReload Should the form reload after submit? This is automatically set to true when using a CED in the form
      * @param {string} options.dom Id of a dom element to append this form automatically to
      * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
+     * @param {formErrorHook} options.formErrorHook Function that gets called only on formErrors
      */
     create(options) { return new ZForm(options); },
   },
@@ -99,7 +100,7 @@ Z = {
     saveError: "Error while saving",
     unsaved: "There are unsaved changes",
     error_filter: "Your input does not have the correct pattern!",
-    error_length: "Your input it too long or too short. It should have between [0] and [1] characters.",
+    error_length: "Your input is too long or too short. It should have between [0] and [1] characters.",
     error_required: "Please fill in this field",
     error_range: "The number is too large to too small. It must be between [0] and [1].",
     error_unique: "This already exists!",
@@ -556,6 +557,11 @@ class ZCEDItem {
  * @param {object} data Data that comes back from the server after submiting.
  */
 
+ /**
+ * @callback formErrorHook
+ * @param {object} data Data that comes back from the server after submiting.
+ */
+
 /**
  * Class that handles all automatic form logic
  */
@@ -567,14 +573,16 @@ class ZForm {
    * @param {boolean} options.doReload Should the form reload after submit? This is automatically set to true when using a CED in the form
    * @param {string} options.dom Id of a dom element to append this form automatically to
    * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
+   * @param {formErrorHook} options.formErrorHook Function that is only called on form errors
    */
-  constructor(options = {doReload: true, dom: null, saveHook: null, hidehints: false}) {
+  constructor(options = {doReload: true, dom: null, saveHook: null, formErrorHook:null, hidehints: false}) {
     this.fields = {};
     this.options = options;
     this.ceds = [];
 
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
+    this.formErrorHook = options.formErrorHook;
 
     this.hidehints = options.hidehints;
 
@@ -674,7 +682,12 @@ class ZForm {
         this.hint("alert-success", Z.Lang.saved);
       } else if (json.result == "formErrors") {
         for (var error of json.formErrors) {
-          this.fields[error.name].markInvalid(error);
+          if(this.fields[error.name]) {
+            this.fields[error.name].markInvalid(error);
+          }
+        }
+        if (this.formErrorHook) {
+          this.formErrorHook(json);
         }
       } else if (json.result == "error") {
         this.hint("alert-danger", Z.Lang.saveError);
