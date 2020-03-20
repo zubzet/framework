@@ -279,9 +279,9 @@
             $this->ActionStack[] = $method;
             
             try {
-                $CTRL_obj = new $controller();
                 $this->req = new Request($this);
                 $this->res = new Response($this);
+                $CTRL_obj = new $controller($this->req, $this->res);
                 if (method_exists($controller, $method)) {
                     return $CTRL_obj->{$method}($this->req, $this->res);
                 } else {
