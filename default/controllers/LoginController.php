@@ -63,7 +63,7 @@
 
                 if ($user["verified"] == NULL) {
                     $link = $req->booter->rootFolder . "login/verify";
-                    $res->error("Your account is not activated yet. Click <a href='$link'>here</a> to activate it.");
+                    $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
                 }
                 
                 //Max login tries
@@ -191,8 +191,7 @@
          */
         public function action_forgot_password($req, $res) {
 
-            $action = $req->getParameters(0, 1);
-            if ($action == "check") {
+            if ($req->getParameters(0, 1) == "check" || $req->isAction("forgot_password")) {
 
                 $user = $req->getModel("z_login")->getUserByLogin($req->getPost("unameemail"));
 
@@ -209,8 +208,8 @@
                     $res->sendEmailToUser(
                         $user["id"],
                         [
-                            "en" => "SKDB Password Reset",
-                            "DE_Formal" => "SKD Passwort Zurücksetzten"
+                            "en" => "Password Reset",
+                            "DE_Formal" => "Passwort Zurücksetzten"
                         ],
                         "email_password_reset.php", 
                         [
@@ -304,7 +303,9 @@
             } else {
                 $res->render("login_verify.php", [
                     "title" => "Email verification",
-                    "success" => $success
+                    "success" => $success,
+                    //TODO: Needs to be edited
+                    "login" => "index"
                 ], "layout/min_layout.php");
             }
 

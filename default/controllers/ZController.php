@@ -254,7 +254,7 @@
                 } elseif ($format == "csv") { //csv
 
                     header("Content-type: text/csv");
-                    header("Content-Disposition: attachment; filename=SKDB_Log_".date("D_M_d_Y_G:i").".csv");
+                    header("Content-Disposition: attachment; filename=ZIT_Log_".date("D_M_d_Y_G:i").".csv");
                     header("Pragma: no-cache");
                     header("Expires: 0");
 
@@ -278,7 +278,7 @@
                 } else { //txt - might need a name
 
                     header('Content-Type:text/plain');
-                    header("Content-Disposition: inline; filename=SKDB_Log_".date("D_M_d_Y_G:i").".txt");
+                    header("Content-Disposition: inline; filename=ZIT_Log_".date("D_M_d_Y_G:i").".txt");
 
                     foreach ($data as $i => $row) {
                         echo $row["created"] . ": ";

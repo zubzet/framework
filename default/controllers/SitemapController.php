@@ -68,6 +68,13 @@
                 }
             }
 
+            foreach ($routes as $key => $route) {
+                $routes[$key] = [
+                    "class" => strtolower($route["class"]),
+                    "method" => strtolower($route["method"])
+                ];
+            }
+
             header("Content-type: text/xml");
 
             echo '<?xml version="1.0" encoding="UTF-8"?>'."\n";
@@ -78,8 +85,8 @@
                 echo "\t\t<loc>";
                 echo $req->getBooterSettings("host")."/";
                 echo $req->getBooterSettings("rootDirectory");
-                echo "$route[class]/";
-                if($route["method"] != "index") {
+                if(strtolower($route["class"]) != "index" || (strtolower($route["class"]) == "index" && strtolower($route["method"]) != "index")) echo "$route[class]/";
+                if(strtolower($route["method"]) != "index") {
                     echo "$route[method]/";
                 }
                 echo "</loc>\n";

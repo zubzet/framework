@@ -56,9 +56,14 @@
          * @param string $passwordString The raw users password. Not hashed! It will be hashed in this function
          * @return int The id of the new created user
          */
-        function add($email, $language, $passwordString = null) {
-            $query = "INSERT INTO `z_user`(`email`, `languageId`) VALUES (?,?)";
-            $this->exec($query, "ss", $email, $language);
+        function add($email, $language, $passwordString = null, $verified = null) {
+            if($verified === null) {
+                $query = "INSERT INTO `z_user`(`email`, `languageId`) VALUES (?, ?)";
+                $this->exec($query, "ss", $email, $language);
+            } else {
+                $query = "INSERT INTO `z_user`(`email`, `languageId`, `verified`) VALUES (?, ?, ?)";
+                $this->exec($query, "sss", $email, $language, $verified);
+            }
             $insertId = $this->getInsertId();
 
             //Log

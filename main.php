@@ -18,7 +18,7 @@
         public $root;
 
         /** @var string $url URL to reach this page */
-        private $url;
+        public $url;
 
         /** @var mysqli $host Database connection object */
         private $conn;
@@ -82,6 +82,21 @@
 
         /** @var string[] $ActionStack All visted actions as an array */
         public $ActionStack = [];
+
+        /** @var Response $res A reference to an instance of the Response class */
+        public $res;
+
+        /** @var Request $req A reference to an instance of the Request class */
+        public $req;
+
+        /** @var array[] $action_pattern_replacement Replacement patterns for action names */
+        public $action_pattern_replacement = [
+            ["-", "_"], 
+            [".", "§2E"],
+            ["ä", "ae"], 
+            ["ö", "oe"], 
+            ["ü", "ue"]
+        ];
         
         /**
          * Parses all the options as vars and instantiate the z_db and establish the db connection
@@ -127,7 +142,7 @@
             //processing the url
             $this->rootFolder = "/".$this->rootDirectory;
             $this->root = $this->host . "/" . $this->rootDirectory;
-            $this->url = (empty($options["url"]) ? $_SERVER['REQUEST_URI'] : $options["url"]);
+            $this->url = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "cli");
             $this->urlParts = $this->parseUrl();
 
             //Database connection
@@ -168,24 +183,19 @@
         public function updateErrorHandling($state = null) {
             //State or attribute check
             $this->showErrors = ($state != null ? $state : $this->showErrors);
-
             //custom error handler or standard
             if ($this->showErrors > 1) {
-
                 //Custom error function (even triggers for warnings)
                 set_error_handler(function($severity, $message, $file, $line) {
-
                     if (error_reporting() & $severity) {
                         throw new ErrorException($message, 0, $severity, $file, $line);
                     }
                 });
-                
             } else {
                 //Standard Exception Handling on / off
                 ini_set('display_errors', $this->showErrors);
                 ini_set('display_startup_errors', $this->showErrors);
                 error_reporting($this->showErrors == 1 ? E_ALL : 0);
-
             }
         }
 
@@ -210,8 +220,12 @@
 
         /** 
          * The Execution of the requested action 
+         * @param Array $customUrlParts exmaple: ["panel", "index"]
          */
-        public function execute() {
+        public function execute($customUrlParts = null) {
+            if(isset($customUrlParts)) {
+                $this->urlParts = $customUrlParts;
+            }
             $this->executePath($this->urlParts);
         }
 
@@ -231,14 +245,18 @@
             
             if (isset($parts[1])) {
                 $method = "action_" . strtolower($parts[1]);
-                $method = str_replace(".", "§2E", $method);
             } else {
                 $method = "action_index";
             }
             
-            $method = str_replace("-", "_", $method);
-            $controller = str_replace("-", "_", $controller);
-            
+            $method = urldecode($method);
+            $controller = urldecode($controller);
+
+            foreach ($this->action_pattern_replacement as $apr) {
+                $method = str_replace($apr[0], $apr[1], $method);
+                $controller = str_replace($apr[0], $apr[1], $controller);
+            }
+
             try {
                 $controllerFile = null;
                 if (file_exists($this->z_controllers . $controller . ".php")) {
@@ -252,7 +270,7 @@
                 } else {
                     return $this->executePath(["error", "404"]);
                 }
-            } catch (Exeption $e) {
+            } catch (Exception $e) {
                 return $this->executePath(["error", "500"]);
             }
 
@@ -262,14 +280,16 @@
             
             try {
                 $CTRL_obj = new $controller();
+                $this->req = new Request($this);
+                $this->res = new Response($this);
                 if (method_exists($controller, $method)) {
-                    return $CTRL_obj->{$method}(new Request($this), new Response($this));
+                    return $CTRL_obj->{$method}($this->req, $this->res);
                 } else {
                     //Checks if the fallback method exists before rerouting to the 404 page
                     $method = "action_fallback";
                     if (method_exists($controller, $method)) {
                         $this->ActionStack[] = $method;
-                        return $CTRL_obj->{$method}(new Request($this), new Response($this));
+                        return $CTRL_obj->{$method}($this->req, $this->res);
                     } else {
                         return $this->executePath(["error", "404"]);
                     }
@@ -307,7 +327,7 @@
          * Returns a model
          * @param string $model Name of the model
          * @param string $dir Set this when the model is stored in a specific directory
-         * @return z_Model The model
+         * @return z_model The model
          */
         public function getModel($model, $dir = null) {
             $model .= "Model";

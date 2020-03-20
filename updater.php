@@ -6,12 +6,34 @@
     /**
      * Helper for creating directories
      */
-    function createDirectoryUpdater($dirname)
-    {
+    function createDirectoryUpdater($dirname) {
         global $log;
         if (!file_exists($dirname)) {
             mkdir($dirname);
         }
+    }
+
+    function getDirContents($dir, &$results = []){
+
+        if($results == []) $results = [
+            "files" => [],
+            "folders" => []
+        ];
+
+        $files = scandir($dir);
+    
+        foreach($files as $key => $value){
+            $path = $dir."/".$value;
+            if(!is_dir($path)) {
+                $parts = explode("/", $path);
+                $results["files"][] = $path;
+            } else if($value != "." && $value != "..") {
+                getDirContents($path, $results);
+                $results["folders"][] = $path;
+            }
+        }
+    
+        return $results;
     }
 
     $log = "Updating...<br>";
@@ -37,33 +59,28 @@
     createDirectoryUpdater("z_controllers");
     createDirectoryUpdater("uploads");
     createDirectoryUpdater("assets");
-    createDirectoryUpdater("assets/js");
-    createDirectoryUpdater("assets/css");
-    createDirectoryUpdater("assets/css/webfonts");
-    createDirectoryUpdater("assets/css/font-awesome");
+
+    $copy_tasks = getDirContents("z_framework/default/assets");
+    $copy_tasks["folders"] = array_reverse($copy_tasks["folders"]);
+    foreach($copy_tasks["folders"] as $folder) {
+        $folder = str_replace("z_framework/default/", "", $folder);
+        createDirectoryUpdater($folder);
+    }
+
     $log .= "All directories created...<br>";
 
     $log .= "Copy files...<br>";
     copy("z_framework/install/index.php", "index.php");
     copy("z_framework/install/.htaccess", ".htaccess");
-    copy("z_framework/default/assets/js/Z.js", "assets/js/Z.js");
-    copy("z_framework/default/assets/js/chart.min.js", "assets/js/chart.min.js");
-    copy("z_framework/default/assets/js/jquery.min.js", "assets/js/jquery.min.js");
-    copy("z_framework/default/assets/js/popper.min.js", "assets/js/popper.min.js");
-    copy("z_framework/default/assets/js/bootstrap.min.js", "assets/js/bootstrap.min.js");
-    copy("z_framework/default/assets/js/bs-custom-file-input.js", "assets/js/bs-custom-file-input.js");
-    copy("z_framework/default/assets/css/loadCircle.css", "assets/css/loadCircle.css");
-    copy("z_framework/default/assets/css/font-awesome/all.min.css", "assets/css/font-awesome/all.min.css");
-    if (!file_exists("assets/css/bootstrap.min.css")) { //Don't overwrite to keep themes
-        copy("z_framework/default/assets/css/bootstrap.min.css", "assets/css/bootstrap.min.css");
-    }
-    copy("z_framework/default/assets/css/loadCircle.css", "assets/css/loadCircle.css");
 
-    $faDir = scandir("z_framework/default/assets/css/webfonts");
-    foreach ($faDir as $filename) {
-        if (in_array($filename, [".", ".."])) continue;
-        $log .= "Font awesome file: " . $filename . "<br>";
-        copy("z_framework/default/assets/css/webfonts/" . $filename, "assets/css/webfonts/" . $filename);
+    foreach($copy_tasks["files"] as $file) {
+        $file_copy = str_replace("z_framework/default/", "", $file);
+        $parts = explode("/", $file);
+        $file_name = $parts[count($parts) - 1];
+        if($file_name != "bootstrap.min.css" || ($file_name == "bootstrap.min.css" && !file_exists("assets/css/bootstrap.min.css"))) {
+            $log .= $file_copy;
+            copy($file, $file_copy);
+        }
     }
 
     $log .= "All files copied!<br>";

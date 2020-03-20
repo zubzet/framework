@@ -29,7 +29,8 @@
             if ($viewPath !== false) {
 
                 //Set default parameter values
-                $opt["request"] = $this;
+                $opt["response"] = $this;
+                $opt["request"] = $this->booter->req;
                 $opt["root"] = $this->booter->rootFolder;
                 $opt["host"] = $this->booter->host;
 
@@ -60,7 +61,7 @@
                 $catId = $this->booter->getModel("z_general")->getLogCategoryIdByName("view");
                 $user = $this->booter->user->userId;
 
-                $this->booter->getModel("z_general")->logAction($catId, "URL viewed (User ID: ".$user." ,URL: ".$_SERVER['REQUEST_URI'].")", $document);
+                $this->booter->getModel("z_general")->logAction($catId, "URL viewed (User ID: ".$user." ,URL: ".(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "console").")", $document);
 
                 //Load the document
                 $view = include($viewPath);
@@ -84,7 +85,7 @@
                 $arr = isset($layout["lang"]) ? $layout["lang"] : [];
                 if (!isset($arr["en"])) $arr["en"] = [];
 
-                //ToDo: Document $arr["en"]
+                //TODO: Document $arr["en"]
                 foreach($arr["en"] as $key => $val) {
                     if (isset($arr[$userLang][$key])) {
                         $langStorage[strtolower($key)] = $arr[$userLang][$key];
@@ -110,6 +111,10 @@
                 $opt["generateResourceLink"] = function($url, $root = true) {
                     $v = $this->getBooterSettings("assetVersion");
                     echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
+                };
+
+                $opt["echo"] = function($val) {
+                    echo nl2br(htmlspecialchars($val));
                 };
                 
                 //Makes $body and $head optional
@@ -262,6 +267,8 @@
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
 
+        private $mailer;
+
         /**
          * Sends an email to an address
          * @param string $to Mail address
@@ -298,16 +305,17 @@
             ob_start();
             $this->render($document, $options, $layout);
             $content = ob_get_clean();
-            ob_end_clean();
+            if (ob_get_contents()) ob_end_clean();
 
             $from = $this->getBooterSettings("mail_user");
             $sender = $this->getBooterSettings("pageName");
 
-            require 'vendor/phpmailer/phpmailer/src/Exception.php';
-            require 'vendor/phpmailer/phpmailer/src/PHPMailer.php';
-            require 'vendor/phpmailer/phpmailer/src/SMTP.php';
+            require_once 'vendor/autoload.php';
 
-            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+            if(empty($this->mailer)) {
+                $this->mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+            }
+            $mail = $this->mailer;
 
             try {
                 //Server settings
@@ -344,9 +352,10 @@
          * @param object $options Options for use in the view
          * @param string $layout Layout to use
          */
-        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "email") {
+        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
-            $language = $this->booter->getModel("z_general")->getLanguageById($target["languageId"])["value"];
+            $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
+            $language = isset($langObj["value"]) ? $langObj["value"] : $req->getBooterSettings("anonymous_language");
             $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
 
@@ -358,7 +367,7 @@
         function loginAs($userId, $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
             $token = $this->booter->getModel("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
-            $this->setCookie("z_login_token", $token, time() + ($this->booter->settings["loginTimeoutSeconds"]), "/");
+            $this->setCookie("z_login_token", $token, time() + intval($this->booter->settings["loginTimeoutSeconds"]), "/");
 
             if ($userId == $user_exec) {
                 $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
@@ -461,6 +470,8 @@
             foreach ($validationResult->fields as $field) {
                 if ($field->isFile) {
                     $upload = $this->upload();
+                    if(!isset($_FILES[$field->name])) continue; //TODO: Might take required into account
+                    //TODO: Should use the uploads folder
                     $uploadCode = $upload->upload($_FILES[$field->name], "uploads/", $field->fileMaxSize, $field->fileTypes);
                     if ($uploadCode) $this->error("Upload error: " . $uploadCode);
                     $field->value = $upload->fileId;

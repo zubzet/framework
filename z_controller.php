@@ -27,12 +27,16 @@
          * @param String $table Table
          * @param Array $fields Fields of the array to get to the client
          */
-        public function makeCEDFood($table, $fields) {
+        public function makeCEDFood($table, $fields, $escape = null) {
             $str = "[";
             foreach ($table as $row) {
-                $str .= '{dbId: ' . $row["id"];
+                $str .= '{"dbId": "' . $row["id"].'"';
                 foreach ($fields as $field) {
-                    $str .= ",$field:'" . $row[$field] . "'";
+                    if($escape === null) {
+                        $str .= ',"'.$field.'":"'.$row[$field].'"';
+                    } else {
+                        $str .= ',"'.$field.'":"' . $escape($row[$field], $field) . '"';
+                    }
                 }
                 $str .= "},";
             }

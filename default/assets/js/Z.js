@@ -31,6 +31,7 @@ Z = {
      * @param {boolean} options.doReload Should the form reload after submit? This is automatically set to true when using a CED in the form
      * @param {string} options.dom Id of a dom element to append this form automatically to
      * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
+     * @param {formErrorHook} options.formErrorHook Function that gets called only on formErrors
      */
     create(options) { return new ZForm(options); },
   },
@@ -99,13 +100,15 @@ Z = {
     saveError: "Error while saving",
     unsaved: "There are unsaved changes",
     error_filter: "Your input does not have the correct pattern!",
-    error_length: "Your input it too long or too short. It should have between [0] and [1] characters.",
+    error_length: "Your input is too long or too short. It should have between [0] and [1] characters.",
     error_required: "Please fill in this field",
     error_range: "The number is too large to too small. It must be between [0] and [1].",
     error_unique: "This already exists!",
     error_exist: "This does not exist!",
-    error_integer: "This is not an integer",
+    error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
+    //TODO: Add custom errors and translating
+    error_regex: "The input does not meet the required pattern!",
     error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
     choose_file: "Choose file"
   },
@@ -131,7 +134,37 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          document.getElementById(errorLabel).innerHTML = res.message;
+          if(document.getElementById(errorLabel).innerHTML == res.message) {
+            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          } else {
+            document.getElementById(errorLabel).innerHTML = res.message;
+            $('#'+errorLabel).slideDown(300);
+          }
+        }
+      });
+    },
+    /**
+     * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
+     * @param {string} unameemailElementId ID of the dom element for the name/email input
+     * @param {string} errorLabel ID of the dom element to show errors in
+     * @param {string} redirect URL to redirect after a successful login
+     */
+    ForgotPassword(unameemailElementId, errorLabel, redirect = "") {
+      var eUnameemail = document.getElementById(unameemailElementId);
+      Z.Request.root('login/forgot_password', 'forgot_password', {unameemail: eUnameemail.value}, (res) => {  
+        if (res.result == "success") {
+          if (redirect == "") {
+            window.location.reload();
+          } else {
+            window.location.href = redirect;
+          }
+        } else {
+          if(document.getElementById(errorLabel).innerHTML == res.message) {
+            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          } else {
+            document.getElementById(errorLabel).innerHTML = res.message;
+            $('#'+errorLabel).slideDown(300);
+          }
         }
       });
     },
@@ -143,14 +176,28 @@ Z = {
      * @param {string} errorLabelId ID if the DOM elemnt to show errors in
      * @param {string} redirect URL to redirect to after a successfull signup
      */
-    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "") {
+    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "", alertErrors = false) {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
-      if (ePassword.value != ePasswordConfirm.value) { alert("The password are not the same!"); return; }
+      if (ePassword.value != ePasswordConfirm.value) { 
+        if(alertErrors) {
+          alert("The password are not the same!"); 
+          return; 
+        } else {
+          if(document.getElementById(errorLabel).innerHTML == "The password are not the same!") {
+            $('#'+errorLabelId).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          } else {
+            document.getElementById(errorLabel).innerHTML = "The password are not the same!";
+            $('#'+errorLabelId).slideDown(300);
+          }
+          return;
+        }
+      }
       Z.Request.root('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
         if (res.result == "error") {
           document.getElementById(errorLabelId).innerHTML = res.message;
+          if(alertErrors) alert(res.message);
         } else if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -510,6 +557,11 @@ class ZCEDItem {
  * @param {object} data Data that comes back from the server after submiting.
  */
 
+ /**
+ * @callback formErrorHook
+ * @param {object} data Data that comes back from the server after submiting.
+ */
+
 /**
  * Class that handles all automatic form logic
  */
@@ -521,14 +573,18 @@ class ZForm {
    * @param {boolean} options.doReload Should the form reload after submit? This is automatically set to true when using a CED in the form
    * @param {string} options.dom Id of a dom element to append this form automatically to
    * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
+   * @param {formErrorHook} options.formErrorHook Function that is only called on form errors
    */
-  constructor(options = {doReload: true, dom: null, saveHook: null}) {
+  constructor(options = {doReload: true, dom: null, saveHook: null, formErrorHook:null, hidehints: false}) {
     this.fields = {};
     this.options = options;
     this.ceds = [];
 
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
+    this.formErrorHook = options.formErrorHook;
+
+    this.hidehints = options.hidehints;
 
     this.dom = document.createElement("div");
 
@@ -626,7 +682,12 @@ class ZForm {
         this.hint("alert-success", Z.Lang.saved);
       } else if (json.result == "formErrors") {
         for (var error of json.formErrors) {
-          this.fields[error.name].markInvalid(error);
+          if(this.fields[error.name]) {
+            this.fields[error.name].markInvalid(error);
+          }
+        }
+        if (this.formErrorHook) {
+          this.formErrorHook(json);
         }
       } else if (json.result == "error") {
         this.hint("alert-danger", Z.Lang.saveError);
@@ -711,6 +772,7 @@ class ZForm {
    * @returns {void}
    */
   hint(alertClass, content) {
+    if(this.hidehints) return;
     this.alert.classList.remove("d-none", this.lastAlertClass);
     this.alert.classList.add(alertClass);
     this.lastAlertClass = alertClass;

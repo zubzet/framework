@@ -39,6 +39,16 @@
         }
 
         /**
+         * Returns a model
+         * @param string $model Name of the model
+         * @param string $dir Set this when the model is stored in a specific directory
+         * @return z_model The model
+         */
+        public function getModel() {
+            return $this->booter->getModel(...func_get_args());
+        }
+
+        /**
          * Executes a query as a prepared statement.
          * @param string $query The query written as a prepared statement (With the question marks).
          * @param string $types The types for the individual parameters (i for int, s for string...).

@@ -86,7 +86,7 @@
          * @return string The reference
          */
         function addResetCode($userId, $ref, $reason) {
-            $ref = strtoupper("SKDB-".base_convert(crc32($ref), 10, 36)."-".base_convert(crc32(time()), 10, 36));
+            $ref = strtoupper("ZIT-".base_convert(crc32($ref), 10, 36)."-".base_convert(crc32(time()), 10, 36));
             $sql = "INSERT INTO `z_password_reset`(`userId`, `refId`, `reason`, `active`) VALUES (?, ?, ?, 1)";
             $this->exec($sql, "iss", $userId, $ref, $reason);
             return $ref;
