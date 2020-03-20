@@ -45,7 +45,7 @@
          * @return z_model The model
          */
         public function getModel() {
-            $this->booter->getModel(...func_get_args());
+            return $this->booter->getModel(...func_get_args());
         }
 
         /**

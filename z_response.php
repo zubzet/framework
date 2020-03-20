@@ -61,7 +61,7 @@
                 $catId = $this->booter->getModel("z_general")->getLogCategoryIdByName("view");
                 $user = $this->booter->user->userId;
 
-                $this->booter->getModel("z_general")->logAction($catId, "URL viewed (User ID: ".$user." ,URL: ".$_SERVER['REQUEST_URI'].")", $document);
+                $this->booter->getModel("z_general")->logAction($catId, "URL viewed (User ID: ".$user." ,URL: ".(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "console").")", $document);
 
                 //Load the document
                 $view = include($viewPath);
@@ -267,6 +267,8 @@
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
 
+        private $mailer;
+
         /**
          * Sends an email to an address
          * @param string $to Mail address
@@ -303,16 +305,17 @@
             ob_start();
             $this->render($document, $options, $layout);
             $content = ob_get_clean();
-            ob_end_clean();
+            if (ob_get_contents()) ob_end_clean();
 
             $from = $this->getBooterSettings("mail_user");
             $sender = $this->getBooterSettings("pageName");
 
-            require 'vendor/phpmailer/phpmailer/src/Exception.php';
-            require 'vendor/phpmailer/phpmailer/src/PHPMailer.php';
-            require 'vendor/phpmailer/phpmailer/src/SMTP.php';
+            require_once 'vendor/autoload.php';
 
-            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+            if(empty($this->mailer)) {
+                $this->mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+            }
+            $mail = $this->mailer;
 
             try {
                 //Server settings
@@ -351,7 +354,8 @@
          */
         function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
-            $language = $this->booter->getModel("z_general")->getLanguageById($target["languageId"])["value"];
+            $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
+            $language = isset($langObj["value"]) ? $langObj["value"] : $req->getBooterSettings("anonymous_language");
             $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
 

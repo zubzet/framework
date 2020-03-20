@@ -183,24 +183,19 @@
         public function updateErrorHandling($state = null) {
             //State or attribute check
             $this->showErrors = ($state != null ? $state : $this->showErrors);
-
             //custom error handler or standard
             if ($this->showErrors > 1) {
-
                 //Custom error function (even triggers for warnings)
                 set_error_handler(function($severity, $message, $file, $line) {
-
                     if (error_reporting() & $severity) {
                         throw new ErrorException($message, 0, $severity, $file, $line);
                     }
                 });
-                
             } else {
                 //Standard Exception Handling on / off
                 ini_set('display_errors', $this->showErrors);
                 ini_set('display_startup_errors', $this->showErrors);
                 error_reporting($this->showErrors == 1 ? E_ALL : 0);
-
             }
         }
 
@@ -275,7 +270,7 @@
                 } else {
                     return $this->executePath(["error", "404"]);
                 }
-            } catch (Exeption $e) {
+            } catch (Exception $e) {
                 return $this->executePath(["error", "500"]);
             }
 
