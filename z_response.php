@@ -331,9 +331,9 @@
 
                 // Enable TLS encryption, `ssl` also accepted
                 $mail->SMTPSecure = 'tls';      
-                                               
+
                 // TCP port to connect to
-                $mail->Port       = isset($this->getBooterSettings()["mail_password"]) ? $this->getBooterSettings("mail_password") : 587;
+                $mail->Port       = isset($this->getBooterSettings()["mail_port"]) ? $this->getBooterSettings("mail_port") : 587;
             
                 //Recipients
                 $mail->setFrom($from, $this->getBooterSettings("pageName"));
