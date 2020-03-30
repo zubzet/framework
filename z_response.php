@@ -319,14 +319,21 @@
 
             try {
                 //Server settings
+                // Set mailer to use SMTP
                 $mail->SMTPDebug = 0;                                       
-                $mail->isSMTP();                                            // Set mailer to use SMTP
-                $mail->Host       = $this->getBooterSettings("mail_smtp");  // Specify main and backup SMTP servers
+                $mail->isSMTP();                                            
+                $mail->Host       = $this->getBooterSettings("mail_smtp");
+
+                // Specify main and backup SMTP servers
                 $mail->SMTPAuth   = true;
                 $mail->Username   = $this->getBooterSettings("mail_user");  
                 $mail->Password   = $this->getBooterSettings("mail_password");
-                $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
-                $mail->Port       = 587;                                    // TCP port to connect to
+
+                // Enable TLS encryption, `ssl` also accepted
+                $mail->SMTPSecure = 'tls';      
+                                               
+                // TCP port to connect to
+                $mail->Port       = isset($this->getBooterSettings()["mail_password"]) ? $this->getBooterSettings("mail_password") : 587;
             
                 //Recipients
                 $mail->setFrom($from, $this->getBooterSettings("pageName"));
