@@ -22,4 +22,4 @@ return ["layout" => function($opt, $body, $head) { ?>
             <?php $opt["layout_essentials_body"]($opt); ?>
         </body>
     </html>
-<?php }] ?>
+<?php }]; ?>
