@@ -278,7 +278,7 @@
          * @param object $options Options to use in the view
          * @param string $layout Layout
          */
-        function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
+        function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "mail_layout.php") {
             //Import the email template
             $template = $this->booter->getViewPath($layout);
             if (!file_exists($template)) return false;
@@ -359,7 +359,7 @@
          * @param object $options Options for use in the view
          * @param string $layout Layout to use
          */
-        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
+        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail_layout.php") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
             $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
             $language = isset($langObj["value"]) ? $langObj["value"] : $req->getBooterSettings("anonymous_language");
