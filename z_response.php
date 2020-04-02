@@ -362,7 +362,7 @@
         function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "layout/mail_layout.php") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
             $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
-            $language = isset($langObj["value"]) ? $langObj["value"] : $req->getBooterSettings("anonymous_language");
+            $language = isset($langObj["value"]) ? $langObj["value"] : $this->getBooterSettings("anonymous_language");
             $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
 
