@@ -278,7 +278,7 @@
          * @param object $options Options to use in the view
          * @param string $layout Layout
          */
-        function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
+        function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "layout/mail_layout.php") {
             //Import the email template
             $template = $this->booter->getViewPath($layout);
             if (!file_exists($template)) return false;
@@ -319,14 +319,21 @@
 
             try {
                 //Server settings
+                // Set mailer to use SMTP
                 $mail->SMTPDebug = 0;                                       
-                $mail->isSMTP();                                            // Set mailer to use SMTP
-                $mail->Host       = $this->getBooterSettings("mail_smtp");  // Specify main and backup SMTP servers
+                $mail->isSMTP();                                            
+                $mail->Host       = $this->getBooterSettings("mail_smtp");
+
+                // Specify main and backup SMTP servers
                 $mail->SMTPAuth   = true;
                 $mail->Username   = $this->getBooterSettings("mail_user");  
                 $mail->Password   = $this->getBooterSettings("mail_password");
-                $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
-                $mail->Port       = 587;                                    // TCP port to connect to
+
+                // Enable TLS encryption, `ssl` also accepted
+                $mail->SMTPSecure = 'tls';      
+
+                // TCP port to connect to
+                $mail->Port       = isset($this->getBooterSettings()["mail_port"]) ? $this->getBooterSettings("mail_port") : 587;
             
                 //Recipients
                 $mail->setFrom($from, $this->getBooterSettings("pageName"));
@@ -352,10 +359,10 @@
          * @param object $options Options for use in the view
          * @param string $layout Layout to use
          */
-        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
+        function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "layout/mail_layout.php") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
             $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
-            $language = isset($langObj["value"]) ? $langObj["value"] : $req->getBooterSettings("anonymous_language");
+            $language = isset($langObj["value"]) ? $langObj["value"] : $this->getBooterSettings("anonymous_language");
             $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
 
