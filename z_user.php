@@ -81,9 +81,6 @@
                     $this->fields = $user;
                 }
             }
-
-            $this->chooseNonLoginLanguage();
-
         }
 
         private function chooseNonLoginLanguage() {
