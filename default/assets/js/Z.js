@@ -601,8 +601,9 @@ class ZForm {
     this.buttonSubmit = document.createElement("button");
     this.buttonSubmit.innerHTML = Z.Lang.submit;
     var that = this;
+    this.sendOnSubmitClick = true;
     this.buttonSubmit.addEventListener("click", function(e) {
-      that.send();
+      if(this.sendOnSubmitClick) that.send();
     });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
