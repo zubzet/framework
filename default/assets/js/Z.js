@@ -601,9 +601,8 @@ class ZForm {
     this.buttonSubmit = document.createElement("button");
     this.buttonSubmit.innerHTML = Z.Lang.submit;
     var that = this;
-    this.sendOnSubmitClick = true;
     this.buttonSubmit.addEventListener("click", function(e) {
-      if(this.sendOnSubmitClick) that.send();
+      that.send();
     });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
@@ -858,6 +857,8 @@ class ZFormField {
     this.name = options.name;
     this.isRequired = options.required;
     this.type = options.type;
+    this.filter = options.filter || false;
+    this.replacer = options.replacer || null;
     this.text = options.text || "&nbsp;";
     this.hint = options.hint;
     this.placeholder = options.placeholder;
@@ -968,6 +969,14 @@ class ZFormField {
       this.value = options.value;
     }
 
+    if(this.filter) {
+      this.setInputFilter(
+        this.input, 
+        this.filter,
+        this.replacer
+      );
+    }
+
     if (options.width) {
       this.setWidth(options.width);
     } else {
@@ -1033,6 +1042,26 @@ class ZFormField {
 
   set value(value) {
     this.input.value = value;
+  }
+
+  setInputFilter(textbox, inputFilter, replacer) {
+    ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function(event) {
+        textbox.addEventListener(event, function() {
+            if(replacer !== null) {
+              this.value = replacer(this.value);
+            } 
+            if (inputFilter(this.value)) {
+                this.oldValue = this.value;
+                this.oldSelectionStart = this.selectionStart;
+                this.oldSelectionEnd = this.selectionEnd;
+            } else if (this.hasOwnProperty("oldValue")) {
+                this.value = this.oldValue;
+                this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+            } else {
+                this.value = "";
+            }
+        });
+    });
   }
 
   /**
