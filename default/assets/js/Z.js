@@ -575,7 +575,14 @@ class ZForm {
    * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
    * @param {formErrorHook} options.formErrorHook Function that is only called on form errors
    */
-  constructor(options = {doReload: true, dom: null, saveHook: null, formErrorHook:null, hidehints: false}) {
+  constructor(options = {
+    doReload: true, 
+    dom: null, 
+    saveHook: null, 
+    formErrorHook:null, 
+    hidehints: false,
+    sendOnSubmitClick: true
+  }) {
     this.fields = {};
     this.options = options;
     this.ceds = [];
@@ -583,6 +590,7 @@ class ZForm {
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
     this.formErrorHook = options.formErrorHook;
+    this.sendOnSubmitClick = options.sendOnSubmitClick;
 
     this.hidehints = options.hidehints;
 
@@ -601,9 +609,8 @@ class ZForm {
     this.buttonSubmit = document.createElement("button");
     this.buttonSubmit.innerHTML = Z.Lang.submit;
     var that = this;
-    this.sendOnSubmitClick = true;
     this.buttonSubmit.addEventListener("click", function(e) {
-      if(this.sendOnSubmitClick) that.send();
+      if(that.sendOnSubmitClick) that.send();
     });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
