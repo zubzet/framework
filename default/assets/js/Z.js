@@ -581,7 +581,8 @@ class ZForm {
     saveHook: null, 
     formErrorHook:null, 
     hidehints: false,
-    sendOnSubmitClick: true
+    sendOnSubmitClick: true,
+    customEndpoint: null
   }) {
     this.fields = {};
     this.options = options;
@@ -590,7 +591,8 @@ class ZForm {
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
     this.formErrorHook = options.formErrorHook;
-    this.sendOnSubmitClick = options.sendOnSubmitClick;
+    this.sendOnSubmitClick = typeof variable === "boolean" ? options.sendOnSubmitClick : true;
+    this.customEndpoint = options.customEndpoint || null;
 
     this.hidehints = options.hidehints;
 
@@ -610,11 +612,7 @@ class ZForm {
     this.buttonSubmit.innerHTML = Z.Lang.submit;
     var that = this;
     this.buttonSubmit.addEventListener("click", function(e) {
-<<<<<<< HEAD
-      if(that.sendOnSubmitClick) that.send();
-=======
-      that.send();
->>>>>>> f4d658ce97060f75ce6be45830ee3fd212d29a6d
+      if(that.sendOnSubmitClick) that.send(that.customEndpoint);
     });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
@@ -660,21 +658,25 @@ class ZForm {
    * Gathers the information automatically from the form and submits them. This function will reload the page if doReload is true and the submit was a success.
    * @returns {void}
    */
-  send() {
+  send(customUrl = null) {
     var data = this.getFormData();
 
     for (var pair of data.entries()) {
       if(this.debug) console.log(pair[0]+ ', ' + pair[1]); 
     }
 
-    $.ajax({
+    var ajax_options = {
       method: "POST",
       enctype: 'multipart/form-data',
       cache: false,
       contentType: false,
       data: data,
       processData: false
-    }).done((data) => {
+    };
+
+    if(customUrl != null) ajax_options.url = customUrl;
+
+    $.ajax(ajax_options).done((data) => {
       var json;
 
       if(this.debug) console.log(data);
@@ -869,8 +871,6 @@ class ZFormField {
     this.name = options.name;
     this.isRequired = options.required;
     this.type = options.type;
-    this.filter = options.filter || false;
-    this.replacer = options.replacer || null;
     this.text = options.text || "&nbsp;";
     this.hint = options.hint;
     this.placeholder = options.placeholder;
@@ -981,14 +981,6 @@ class ZFormField {
       this.value = options.value;
     }
 
-    if(this.filter) {
-      this.setInputFilter(
-        this.input, 
-        this.filter,
-        this.replacer
-      );
-    }
-
     if (options.width) {
       this.setWidth(options.width);
     } else {
@@ -1054,26 +1046,6 @@ class ZFormField {
 
   set value(value) {
     this.input.value = value;
-  }
-
-  setInputFilter(textbox, inputFilter, replacer) {
-    ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function(event) {
-        textbox.addEventListener(event, function() {
-            if(replacer !== null) {
-              this.value = replacer(this.value);
-            } 
-            if (inputFilter(this.value)) {
-                this.oldValue = this.value;
-                this.oldSelectionStart = this.selectionStart;
-                this.oldSelectionEnd = this.selectionEnd;
-            } else if (this.hasOwnProperty("oldValue")) {
-                this.value = this.oldValue;
-                this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-            } else {
-                this.value = "";
-            }
-        });
-    });
   }
 
   /**
