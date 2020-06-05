@@ -655,6 +655,16 @@ class ZForm {
   }
 
   /**
+   * Adds custom html to the current part of the Form
+   * @returns {void}
+   */
+  addCustomHTML(html) {
+    var node = document.createElement("div");
+    node.innerHTML = html;
+    this.inputSpace.appendChild(node);
+  }
+
+  /**
    * Gathers the information automatically from the form and submits them. This function will reload the page if doReload is true and the submit was a success.
    * @returns {void}
    */
