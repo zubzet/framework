@@ -66,13 +66,14 @@ Z = {
      * Triggers a subaction on any action of any controller. Simply put the path in as action. For example: "login/logout". URL parameters can be attached here too.
      * @param {string} action Name of the subaction. Can be checked in the backend with $req->isAction("blub")
      * @param {object} data Data to send to the client. It will be passed as post data
-     * @param {function} handler Handler that gets called when the request was successfull
+     * @param {function} handler Handler that gets called when the request was successful
      */
-    root(action, subaction, data, handler = null) {
+    root(action, subaction, data, handler = null, async = false) {
       $.ajax({
         method: "POST",
         data: Object.assign(data, {action: subaction}),
-        url: Z.Request.rootPath + action
+        url: Z.Request.rootPath + action,
+        async: async
       }).done((data) => {
         var dat = null;
         try {
@@ -886,6 +887,10 @@ class ZFormField {
     this.placeholder = options.placeholder;
     this.default = options.default;
     this.autofill = options.autofill || false;
+    this.autocompleteData = options.autocompleteData || [];
+    this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
+    this.autocompleteTextCB = options.autocompleteTextCB;
+    this.autocompleteCB = options.autocompleteCB || null;
 
     this.optgroup = null;
 
@@ -947,22 +952,60 @@ class ZFormField {
       completeDiv.classList.add("list-group");
       customDiv.appendChild(this.input);
       customDiv.appendChild(completeDiv);
-      this.autocompleteData = [];
+
+      if(!Array.isArray(this.autocompleteData)) {
+        this.autocompleteBindingUrl = this.autocompleteData;
+      }
+
+      this.lockAutocompleteAge = 0;
 
       this.input.addEventListener("keyup", (e) => {
-        completeDiv.innerHTML = "";
+        if (e.key == "Shift") return;
+        if (e.target.value.length < this.autocompleteMinCharacters) return;
 
-        if (e.key == "Escape") return;
+        var currentAge = this.lockAutocompleteAge;
+
+        if(this.autocompleteBindingUrl && e.target.value != "") {
+          Z.Request.root(this.autocompleteBindingUrl, "autocomplete", {
+            "value": e.target.value
+          }, (res) => {
+            if(currentAge >= this.lockAutocompleteAge) {
+              this.lockAutocompleteAge++;
+              this.autocompleteData = res.data;
+              console.log(this.autocompleteData);
+            }
+          });
+        }
+
+        completeDiv.innerHTML = "";
         if (e.target.value == "") return;
-        for (let dataset of this.autocompleteData) {
-          if (dataset.text.toLowerCase().includes(e.target.value.toLowerCase())) {
-            var item = document.createElement("div");
+        if (e.key == "Escape") return;
+        
+        for (let value of this.autocompleteData) {
+          if (value.toLowerCase().includes(e.target.value.toLowerCase())) {
+            var item = document.createElement("button");
+            item.type = "button";
             item.classList.add("list-group-item");
-            item.innerText = dataset.text;
+            item.classList.add("list-group-item-action");
+            item.classList.add("py-1");
+            if(value.toLowerCase() == e.target.value.toLowerCase()) {
+              item.classList.add("text-primary");
+            }
+
+            var start = value.toLowerCase().indexOf(e.target.value.toLowerCase());
+            var tmp = value.substr(0, start);
+            tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
+            tmp += value.substring(start + e.target.value.length, value.length);
+            if(this.autocompleteTextCB) {
+              tmp = this.autocompleteTextCB(tmp, value);
+            }
+            item.innerHTML = tmp;
+
             completeDiv.appendChild(item);
             item.addEventListener("click", e => {
-              this.input.value = dataset.text;
+              this.input.value = value;
               completeDiv.innerHTML = "";
+              if(this.autocompleteCB) this.autocompleteCB(value);
             });
           }
         }
