@@ -69,8 +69,7 @@
                 global $langStorage;
                 $langStorage = array();
 
-                $arr = isset($view["lang"]) ? $view["lang"] : [];
-                if (!isset($arr["en"])) $arr["en"] = [];
+                $arr = $this->parse_i18n($view, $document);
                 
                 foreach($arr["en"] as $key => $val) {
                     if (isset($arr[$userLang][$key])) {
@@ -81,9 +80,9 @@
                 }
         
                 //Load the layout
+                $layout_url = $layout;
                 $layout = include($this->booter->getViewPath($layout));
-                $arr = isset($layout["lang"]) ? $layout["lang"] : [];
-                if (!isset($arr["en"])) $arr["en"] = [];
+                $arr = $this->parse_i18n($layout, $layout_url);
 
                 //TODO: Document $arr["en"]
                 foreach($arr["en"] as $key => $val) {
@@ -120,11 +119,90 @@
                 //Makes $body and $head optional
                 if(!isset($view["body"])) $view["body"] = function(){};
                 if(!isset($view["head"])) $view["head"] = function(){};
-                
+
+                ob_start();
                 $layout["layout"]($opt, $view["body"], $view["head"]);
+                $rendered = ob_get_contents();
+                ob_end_clean();
+
+                //Replace languages via string
+                if(strpos($rendered, '##-') !== false && strpos($rendered, '-##') !== false) {
+                    $rendered = $this->parse_opt_lang($rendered, "##-", "-##", function($inTag) use ($opt) {
+                        return $opt["lang"]($inTag, false);
+                    });
+                }
+
+                echo $rendered;
             } else {
                 $this->reroute(["error", "404"]);
             }
+        }
+
+        /**
+         * Replaces Tags with data
+         * @param string $rendered The rendered document
+         * @param string $startTag The opening tag
+         * @param string $endTag The closing tag
+         * @param callback $cb($inTag) The callback for replacing the tag
+         * @return string The replaced output of $rendered
+         */
+        private function parse_opt_lang($rendered, $startTag, $endTag, $cb) {
+            $output = $rendered;
+            $rendered = str_split($rendered);
+            $startTagLength = strlen($startTag);
+            $endTagLength = strlen($endTag);
+            $buffer = "";
+            $inTag = false;
+            $inTagData = "";
+            foreach($rendered as $char) {
+                if($inTag) {
+                    $inTagData .= $char;
+                    if(strlen($buffer) == $endTagLength) {
+                        if($buffer == $endTag) {
+                            $inTag = false;
+                            $inTagData = substr($inTagData, 0, -4);
+                            $output = str_replace($startTag.$inTagData.$endTag, $cb($inTagData), $output);
+                        }
+                        $buffer = substr($buffer, 1);
+                    }
+                    $buffer .= $char;
+                } else {
+                    if(strlen($buffer) == $startTagLength) {
+                        if($buffer == $startTag) {
+                            $inTag = true;
+                            $inTagData = $char;
+                            $buffer = "";
+                        } 
+                        $buffer = substr($buffer, 1);
+                    }
+                    $buffer .= $char;
+                }
+            }
+            return $output;
+        }
+
+        /**
+         * Parses all i18n files into lang arrays
+         * @param string $i18n The i18n file location
+         * @param string $document The file location of the view
+         * @return string[] The converted lang array
+         */
+        private function parse_i18n($i18n, $document) {
+            $arr = [];
+            if(isset($i18n["lang"])) {
+                if(is_array($i18n["lang"])) {
+                    $arr = $i18n["lang"];
+                } else {
+                    $filename = $i18n["lang"];
+                    if($filename == "i18n") {
+                        $filename = "z_views/i18n/".str_replace(".php", ".ini", $document);
+                    }
+                    if(!file_exists($filename)) throw new Exception("$filename i18n ini file does not exist!");
+                    $arr = parse_ini_file($filename, true);
+                }
+            }
+            if (!isset($arr["en"])) $arr["en"] = [];
+            return $arr;
         }
 
         /**

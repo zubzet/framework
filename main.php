@@ -125,6 +125,13 @@
             $this->config = parse_ini_file($this->config_file);
             $this->settings = $this->config;
 
+            //Replace config file with code settings
+            foreach($params as $key => $param) {
+                if(isset($this->settings[$key])) {
+                    $this->settings[$key] = $param;
+                }
+            }
+
             //Options to attributes
             foreach ($this->settings as $option => $val) {
                 $this->$option = $val;
