@@ -22,12 +22,18 @@
          * @var any $result Result of the last query
          */
         public $result;
+
+        /**
+         * @var z_framework $booter Reference to the booter
+         */
+        public $booter;
         
         /**
          * When instanced, a db connection is given as a refrence
          */
-        function __construct(&$conn) {
+        function __construct(&$conn, &$booter) {
             $this->conn = $conn;
+            $this->booter = $booter;
         }
 
         /**
@@ -40,18 +46,18 @@
             if (count($args) > 1) {
                 array_shift($args);
                 if (is_bool($this->stmt)) {
-                    die("<b>SQL Error: </b>" . $this->conn->error . "<br><b>Query: </b>" . $query);
+                    throw new Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
                 } else {
                     $this->stmt->bind_param(...$args);
                 }
             }
             if (is_bool($this->stmt)) {
-                die("<b>SQL Error: </b>" . $this->conn->error . "<br><b>Query: </b>" . $query);
+                throw new Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
             } else {
                 $this->stmt->execute();
             }
             if ($this->stmt->errno) {
-                die("<b>SQL Error: </b>" . $this->stmt->error . "<br><b>Query: </b>" . $query);
+                throw new Exception("SQL Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
             $this->result = $this->stmt->get_result();
             $this->stmt->close();
