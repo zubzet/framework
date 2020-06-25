@@ -7,12 +7,15 @@
  * Call this to paste the essential head part of a page into the layout
  * @param object $opt Object holding options for rendering
  */
-function essentialsHead($opt) { ?>
+function essentialsHead($opt, $customBoostrap) { ?>
 
     <script src="<?php $opt["generateResourceLink"]("assets/js/popper.min.js"); ?>"></script>
     <script src="<?php $opt["generateResourceLink"]("assets/js/jquery.min.js"); ?>"></script>
     
-    <script src="<?php $opt["generateResourceLink"]("assets/js/bootstrap.min.js"); ?>"></script>
+    <?php if(!$customBoostrap) { ?>
+        <script src="<?php $opt["generateResourceLink"]("assets/js/bootstrap.min.js"); ?>"></script>
+    <?php } ?>
+    
     <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
     
     <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>

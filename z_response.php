@@ -43,8 +43,8 @@
                 $opt["layout_essentials_body"] = function($opt) {
                     essentialsBody($opt);
                 };
-                $opt["layout_essentials_head"] = function($opt) {
-                    essentialsHead($opt);
+                $opt["layout_essentials_head"] = function($opt, $customBoostrap = false) {
+                    essentialsHead($opt, $customBoostrap);
                 };
 
                 $userLang = "en";
