@@ -62,17 +62,14 @@
          * The property $isLoggedIn and $userId and $execUserId will be set after calling this function.
          */
         public function identify() {
-            if($this->booter->lite_mode) {
-                $this->chooseNonLoginLanguage();
-            }
-
-            if (!isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
-                $this->isLoggedIn = false;
-                $this->chooseNonLoginLanguage();
-                return;
+            if ($this->booter->lite_mode || !isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
+                $this->anonymousRequest();
             }
 
             $tokenResult = $this->booter->getModel("z_login")->validateCookie($_COOKIE["z_login_token"]);
+            if(!isset($tokenResult["userId"]) || !isset($tokenResult["userId_exec"])) {
+                $this->anonymousRequest();
+            }
             $this->userId = $tokenResult["userId"];
             $this->execUserId = $tokenResult["userId_exec"];
 
@@ -85,6 +82,12 @@
                     $this->fields = $user;
                 }
             }
+        }
+
+        private function anonymousRequest() {
+            $this->isLoggedIn = false;
+            $this->chooseNonLoginLanguage();
+            return;
         }
 
         private function chooseNonLoginLanguage() {
