@@ -63,12 +63,12 @@
          */
         public function identify() {
             if ($this->booter->lite_mode || !isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
-                $this->anonymousRequest();
+                return $this->anonymousRequest();
             }
 
             $tokenResult = $this->booter->getModel("z_login")->validateCookie($_COOKIE["z_login_token"]);
             if(!isset($tokenResult["userId"]) || !isset($tokenResult["userId_exec"])) {
-                $this->anonymousRequest();
+                return $this->anonymousRequest();
             }
             $this->userId = $tokenResult["userId"];
             $this->execUserId = $tokenResult["userId_exec"];
