@@ -105,7 +105,7 @@
                     }
                     $lang = in_array($lang, $availableLang) ? $lang : $default;
                     
-                    setcookie("z_lang", $lang);
+                    setcookie("z_lang", $lang, time() + TIMESPAN_DAY_365, "/");
                 }
                 if($this->booter->lite_mode) {
                     $this->language = [

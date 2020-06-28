@@ -34,4 +34,9 @@
 
     const FILE_SIZE_100GB = 104857600000;
 
+    const TIMESPAN_DAY_1 = 86400;
+    const TIMESPAN_DAY_7 = 604800;
+    const TIMESPAN_DAY_30 = 2592000;
+    const TIMESPAN_DAY_365 = 31536000;
+
 ?>
