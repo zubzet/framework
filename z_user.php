@@ -114,7 +114,7 @@
                 } else {
                     $this->language = [
                         "value" => $lang,
-                        "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang)
+                        "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang, $defaultLanguageId = 1)
                     ];
                 }
             } else {

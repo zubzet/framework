@@ -32,10 +32,10 @@
          * @param string $value The short form of the language (EN, DE_Formal...)
          * @return int The id of the language
          */
-        function getLanguageByValue($value) {
+        function getLanguageByValue($value, $defaultLanguageId = 1) {
             $sql = "SELECT * FROM `z_language` WHERE `value`=?";
             $this->exec($sql, "s", $value);
-            return $this->resultToLine()["id"];
+            return $this->resultToLine()["id"] ?? $defaultLanguageId;
         }
 
         /**
