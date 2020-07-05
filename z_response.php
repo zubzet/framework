@@ -263,8 +263,9 @@
          * Reroutes to another action
          * @param string[] $path Path to where to reroute to
          * @param bool $alias true if this reroute acts as an alias
+         * @param bool $final Executes and exit if set to true
          */
-        public function reroute($path = [], $alias = false) {
+        public function reroute($path = [], $alias = false, $final = false) {
             if(!$alias) {
                 $this->booter->executePath($path);
             } else {
@@ -274,6 +275,7 @@
                 }
                 $this->booter->executePath($parts);
             }
+            if($final) exit;
         }
 
         /**
