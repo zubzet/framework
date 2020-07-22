@@ -406,7 +406,7 @@
                 $mail->Username   = $this->getBooterSettings("mail_user");  
                 $mail->Password   = $this->getBooterSettings("mail_password");
                 $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
-                $mail->Port       = 587;                                    // TCP port to connect to
+                $mail->Port       = $this->getBooterSettings("mail_port");                                    // TCP port to connect to
             
                 //Recipients
                 $mail->setFrom($from, $this->getBooterSettings("pageName"));
