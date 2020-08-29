@@ -49,7 +49,7 @@ Z = {
     action(action, data, handler) {
       $.ajax({
         method: "POST",
-        data: Object.assign(data, {action: action})
+        data: Object.assign(data, { action: action })
       }).done((data) => {
         var dat = null;
         try {
@@ -71,7 +71,7 @@ Z = {
     root(action, subaction, data, handler = null, async = false) {
       $.ajax({
         method: "POST",
-        data: Object.assign(data, {action: subaction}),
+        data: Object.assign(data, { action: subaction }),
         url: Z.Request.rootPath + action,
         async: async
       }).done((data) => {
@@ -127,7 +127,7 @@ Z = {
     Login(nameElementId, passwordElementId, errorLabel, redirect = "") {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
-      Z.Request.root('login', 'login', {name: eName.value, password: ePassword.value}, (res) => {  
+      Z.Request.root('login', 'login', { name: eName.value, password: ePassword.value }, (res) => {
         if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -135,11 +135,11 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          if(document.getElementById(errorLabel).innerHTML == res.message) {
-            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          if (document.getElementById(errorLabel).innerHTML == res.message) {
+            $('#' + errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
             document.getElementById(errorLabel).innerHTML = res.message;
-            $('#'+errorLabel).slideDown(300);
+            $('#' + errorLabel).slideDown(300);
           }
         }
       });
@@ -152,7 +152,7 @@ Z = {
      */
     ForgotPassword(unameemailElementId, errorLabel, redirect = "") {
       var eUnameemail = document.getElementById(unameemailElementId);
-      Z.Request.root('login/forgot_password', 'forgot_password', {unameemail: eUnameemail.value}, (res) => {  
+      Z.Request.root('login/forgot_password', 'forgot_password', { unameemail: eUnameemail.value }, (res) => {
         if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -160,11 +160,11 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          if(document.getElementById(errorLabel).innerHTML == res.message) {
-            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          if (document.getElementById(errorLabel).innerHTML == res.message) {
+            $('#' + errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
             document.getElementById(errorLabel).innerHTML = res.message;
-            $('#'+errorLabel).slideDown(300);
+            $('#' + errorLabel).slideDown(300);
           }
         }
       });
@@ -181,24 +181,24 @@ Z = {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
-      if (ePassword.value != ePasswordConfirm.value) { 
-        if(alertErrors) {
-          alert("The password are not the same!"); 
-          return; 
+      if (ePassword.value != ePasswordConfirm.value) {
+        if (alertErrors) {
+          alert("The password are not the same!");
+          return;
         } else {
-          if(document.getElementById(errorLabel).innerHTML == "The password are not the same!") {
-            $('#'+errorLabelId).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          if (document.getElementById(errorLabel).innerHTML == "The password are not the same!") {
+            $('#' + errorLabelId).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
             document.getElementById(errorLabel).innerHTML = "The password are not the same!";
-            $('#'+errorLabelId).slideDown(300);
+            $('#' + errorLabelId).slideDown(300);
           }
           return;
         }
       }
-      Z.Request.root('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
+      Z.Request.root('login/signup', 'signup', { email: eName.value, password: ePassword.value }, (res) => {
         if (res.result == "error") {
           document.getElementById(errorLabelId).innerHTML = res.message;
-          if(alertErrors) alert(res.message);
+          if (alertErrors) alert(res.message);
         } else if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -404,7 +404,7 @@ class ZCEDItem {
   constructor(blueprint) {
 
     this.dom = document.createElement("div");
-    
+
     if (blueprint.compact) {
       this.dom.classList.add("row");
     } else {
@@ -428,7 +428,7 @@ class ZCEDItem {
     }
 
     var buttonRemove = document.createElement("button");
-    buttonRemove.addEventListener("click", () => { 
+    buttonRemove.addEventListener("click", () => {
       this.ced.emit("change");
       this.dom.classList.add("d-none");
       this.deleted = true;
@@ -558,10 +558,10 @@ class ZCEDItem {
  * @param {object} data Data that comes back from the server after submiting.
  */
 
- /**
- * @callback formErrorHook
- * @param {object} data Data that comes back from the server after submiting.
- */
+/**
+* @callback formErrorHook
+* @param {object} data Data that comes back from the server after submiting.
+*/
 
 /**
  * Class that handles all automatic form logic
@@ -577,10 +577,10 @@ class ZForm {
    * @param {formErrorHook} options.formErrorHook Function that is only called on form errors
    */
   constructor(options = {
-    doReload: true, 
-    dom: null, 
-    saveHook: null, 
-    formErrorHook:null, 
+    doReload: true,
+    dom: null,
+    saveHook: null,
+    formErrorHook: null,
     hidehints: false,
     sendOnSubmitClick: true,
     customEndpoint: null
@@ -592,7 +592,8 @@ class ZForm {
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
     this.formErrorHook = options.formErrorHook;
-    this.sendOnSubmitClick = typeof variable === "boolean" ? options.sendOnSubmitClick : true;
+    if (undefined === options.sendOnSubmitClick) options.sendOnSubmitClick = true;
+    this.sendOnSubmitClick = options.sendOnSubmitClick;
     this.customEndpoint = options.customEndpoint || null;
 
     this.hidehints = options.hidehints;
@@ -612,8 +613,11 @@ class ZForm {
     this.buttonSubmit = document.createElement("button");
     this.buttonSubmit.innerHTML = Z.Lang.submit;
     var that = this;
-    this.buttonSubmit.addEventListener("click", function(e) {
-      if(that.sendOnSubmitClick) that.send(that.customEndpoint);
+    if (!this.noCLickEvent) this.buttonSubmit.addEventListener("click", function (e) {
+      if (that.sendOnSubmitClick) {
+        alert("actually here");
+        that.send(that.customEndpoint);
+      }
     });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
@@ -673,7 +677,7 @@ class ZForm {
     var data = this.getFormData();
 
     for (var pair of data.entries()) {
-      if(this.debug) console.log(pair[0]+ ', ' + pair[1]); 
+      if (this.debug) console.log(pair[0] + ', ' + pair[1]);
     }
 
     var ajax_options = {
@@ -685,17 +689,17 @@ class ZForm {
       processData: false
     };
 
-    if(customUrl != null) ajax_options.url = customUrl;
+    if (customUrl != null) ajax_options.url = customUrl;
 
     $.ajax(ajax_options).done((data) => {
       var json;
 
-      if(this.debug) console.log(data);
-      
+      if (this.debug) console.log(data);
+
       try {
         json = JSON.parse(data);
       } catch (e) {
-        json = {result: "error"};
+        json = { result: "error" };
       }
 
       if (json.result == "success") {
@@ -707,7 +711,7 @@ class ZForm {
         this.hint("alert-success", Z.Lang.saved);
       } else if (json.result == "formErrors") {
         for (var error of json.formErrors) {
-          if(this.fields[error.name]) {
+          if (this.fields[error.name]) {
             this.fields[error.name].markInvalid(error);
           }
         }
@@ -797,7 +801,7 @@ class ZForm {
    * @returns {void}
    */
   hint(alertClass, content) {
-    if(this.hidehints) return;
+    if (this.hidehints) return;
     this.alert.classList.remove("d-none", this.lastAlertClass);
     this.alert.classList.add(alertClass);
     this.lastAlertClass = alertClass;
@@ -947,13 +951,13 @@ class ZFormField {
       this.input = document.createElement("input");
       this.input.setAttribute("type", "text");
       this.input.classList.add("form-control");
-      
+
       var completeDiv = document.createElement("div");
       completeDiv.classList.add("list-group");
       customDiv.appendChild(this.input);
       customDiv.appendChild(completeDiv);
 
-      if(!Array.isArray(this.autocompleteData)) {
+      if (!Array.isArray(this.autocompleteData)) {
         this.autocompleteBindingUrl = this.autocompleteData;
       }
 
@@ -965,11 +969,11 @@ class ZFormField {
 
         var currentAge = this.lockAutocompleteAge;
 
-        if(this.autocompleteBindingUrl && e.target.value != "") {
+        if (this.autocompleteBindingUrl && e.target.value != "") {
           Z.Request.root(this.autocompleteBindingUrl, "autocomplete", {
             "value": e.target.value
           }, (res) => {
-            if(currentAge >= this.lockAutocompleteAge) {
+            if (currentAge >= this.lockAutocompleteAge) {
               this.lockAutocompleteAge++;
               this.autocompleteData = res.data;
               console.log(this.autocompleteData);
@@ -980,7 +984,7 @@ class ZFormField {
         completeDiv.innerHTML = "";
         if (e.target.value == "") return;
         if (e.key == "Escape") return;
-        
+
         for (let value of this.autocompleteData) {
           if (value.toLowerCase().includes(e.target.value.toLowerCase())) {
             var item = document.createElement("button");
@@ -988,7 +992,7 @@ class ZFormField {
             item.classList.add("list-group-item");
             item.classList.add("list-group-item-action");
             item.classList.add("py-1");
-            if(value.toLowerCase() == e.target.value.toLowerCase()) {
+            if (value.toLowerCase() == e.target.value.toLowerCase()) {
               item.classList.add("text-primary");
             }
 
@@ -996,7 +1000,7 @@ class ZFormField {
             var tmp = value.substr(0, start);
             tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
             tmp += value.substring(start + e.target.value.length, value.length);
-            if(this.autocompleteTextCB) {
+            if (this.autocompleteTextCB) {
               tmp = this.autocompleteTextCB(tmp, value);
             }
             item.innerHTML = tmp;
@@ -1005,13 +1009,13 @@ class ZFormField {
             item.addEventListener("click", e => {
               this.input.value = value;
               completeDiv.innerHTML = "";
-              if(this.autocompleteCB) this.autocompleteCB(value);
+              if (this.autocompleteCB) this.autocompleteCB(value);
             });
           }
         }
       });
 
-      document.addEventListener("click", function() {
+      document.addEventListener("click", function () {
         completeDiv.innerHTML = "";
       })
 
@@ -1137,7 +1141,7 @@ class ZFormField {
     this.input.setCustomValidity(error.type);
     this.input.classList.add("is-invalid");
 
-    this.dom.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+    this.dom.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
   }
 
   /**
@@ -1166,25 +1170,25 @@ class ZFormField {
     }
 
     for (var data of food) {
-      if(data.type == undefined || data.type == "option") {
+      if (data.type == undefined || data.type == "option") {
         var option = document.createElement("option");
         option.innerHTML = data.text;
         option.setAttribute("value", data.value);
-        if(this.optgroup != null) {
+        if (this.optgroup != null) {
           this.optgroup.appendChild(option);
         } else {
           this.input.appendChild(option);
         }
-      } else if(data.type == "optgroup") {
-        if(this.optgroup != null) this.input.appendChild(this.optgroup);
+      } else if (data.type == "optgroup") {
+        if (this.optgroup != null) this.input.appendChild(this.optgroup);
         this.optgroup = document.createElement("optgroup");
         this.optgroup.setAttribute("label", data.text);
         this.input.appendChild(this.optgroup);
       }
     }
 
-    if(this.optgroup != null) this.input.appendChild(this.optgroup);
-    
+    if (this.optgroup != null) this.input.appendChild(this.optgroup);
+
     if (this.options.value !== undefined) {
       this.value = this.options.value;
     }
