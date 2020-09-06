@@ -8,6 +8,7 @@
  * It is not needed to include this file manually. It will be added to the website in layout essentials.
  * 
  * @author Adrian Urban
+ * @author Alexander Zierhut
  */
 
 /**

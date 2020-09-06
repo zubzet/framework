@@ -27,7 +27,8 @@ function essentialsHead($opt, $customBootstrap) { ?>
     <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/fontawesome.min.css") ?>">
 
     <script>
-        Z.Request.rootPath = "<?php echo $opt["root"]; ?>";
+        Z.Request.rootPath = "<?= $opt["root"]; ?>";
+        Z.Request.rootHost = "<?= $opt["request"]->getRoot(); ?>";
         //TODO: make this better
         /*Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
         Z.Lang.submit = "<?php $opt["lang"]("form_submit") ?>",
