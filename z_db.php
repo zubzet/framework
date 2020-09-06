@@ -61,6 +61,7 @@
             }
             $this->result = $this->stmt->get_result();
             $this->stmt->close();
+            return $this;
         }
 
         /**

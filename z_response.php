@@ -15,15 +15,21 @@
      * The response class handles functions used by controllers to respond to requests
      */
     class Response extends RequestResponseHandler {
-        
         /**
          * Shows a document to the user
          * @param string $document Path to the view
          * @param string $opt assosiative array with values to replace in the view
          * @param string $layout The path to the layout to use
          */
-        public function render($document, $opt = [], $layout = "layout/default_layout.php") {
+        public function render($document, $opt = [], $options = []) {
+            // Legacy as $options used to be $layout
+            if(!is_array($options)) {
+                $options = [
+                    "layout" => $options
+                ];
+            }
 
+            $layout = $options["layout"] ?? "layout/default_layout.php";
             $viewPath = $this->booter->getViewPath($document);
 
             if ($viewPath !== false) {
@@ -43,8 +49,8 @@
                 $opt["layout_essentials_body"] = function($opt) {
                     essentialsBody($opt);
                 };
-                $opt["layout_essentials_head"] = function($opt, $customBoostrap = false) {
-                    essentialsHead($opt, $customBoostrap);
+                $opt["layout_essentials_head"] = function($opt, $customBootstrap = false) {
+                    essentialsHead($opt, $customBootstrap);
                 };
 
                 $userLang = "en";
@@ -132,10 +138,34 @@
                     });
                 }
 
+                if($options["minify"] ?? false) {
+                    $rendered = $this->minifyHTML($rendered);
+                }
+
                 echo $rendered;
             } else {
                 $this->reroute(["error", "404"]);
             }
+        }
+
+        /**
+         * Minifies HTML
+         * @param string $htmlContent The HTML content
+         * @return string The minified version of the input HTML content
+         */
+        public function minifyHTML(string $htmlContent) {
+            $patterns = [
+                '/(\n|^)(\x20+|\t)/',
+                '/(\n|^)\/\/(.*?)(\n|$)/',
+                '/\n/',
+                '/\<\!--.*?-->/',
+                '/(\x20+|\t)/', # Delete multispace (Without \n)
+                '/\>\s+\</', # strip whitespaces between tags
+                '/(\"|\')\s+\>/', # strip whitespaces between quotation ("') and end tags
+                '/=\s+(\"|\')/' # strip whitespaces between = "'
+            ];
+            $replace = ["\n", "\n", " ", "", " ", "><", "$1>", "=$1"];
+            return preg_replace($patterns, $replace, $htmlContent);
         }
 
         /**

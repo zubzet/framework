@@ -68,7 +68,7 @@ Z = {
      * @param {object} data Data to send to the client. It will be passed as post data
      * @param {function} handler Handler that gets called when the request was successful
      */
-    root(action, subaction, data, handler = null, async = false, parse = true) {
+    root(action, subaction, data, handler = null, async = true, parse = true) {
       $.ajax({
         method: "POST",
         data: Object.assign(data, {action: subaction}),
