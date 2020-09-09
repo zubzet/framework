@@ -53,7 +53,7 @@
          * @param string $query The query written as a prepared statement (With the question marks).
          * @param string $types The types for the individual parameters (i for int, s for string...).
          * @param ...string $params to insert in the prepared statement
-         * @return any result
+         * @return z_db Returning this for chaining 
          */
         function exec($query, $types = "", $params = null) {
             $res = $this->z_db->exec(...func_get_args());

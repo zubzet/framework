@@ -39,6 +39,7 @@
         /**
          * Executes a query as prepared statement
          * @param string $query Query written as prepared statement (that thing with the question marks as placeholders)
+         * @return z_db Returning this for chaining 
          */
         function exec($query) {
             $args = func_get_args();
@@ -66,7 +67,7 @@
 
         /**
          * Returns the id of the last inserted element
-         * @return int Id of the last insterted element
+         * @return int Id of the last inserted element
          */
         function getInsertId() {
             return $this->conn->insert_id;
@@ -94,7 +95,7 @@
         /**
          * Selects a full table or specified fields of it and returns the result as two dimensional array
          * @param string $table Name of the table in the database
-         * @param string $fields Fields to select. Formated as in an SQL query ("*", "a, b, c"...)
+         * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
          * @return any[][] A two dimensional array with the results of the select statement
          */
         function getFullTable($table, $fields = "*") {
@@ -106,8 +107,8 @@
         /**
          * Selects a full table of specified fields of it filtered with an additional where statement. It returns the result as two dimensional array
          * @param string $table Name of the table in the database
-         * @param string $fields Fields to select. Formated as in a SQL query ("*", "a, b, c"...)
-         * @param string $where The where statement in the query. Formated as in a SQL query (a = 4 AND c = 4...);
+         * @param string $fields Fields to select. Formatted as in a SQL query ("*", "a, b, c"...)
+         * @param string $where The where statement in the query. Formatted as in a SQL query (a = 4 AND c = 4...);
          * @param string $types String with the types. Conform to prepared statements ("ssis")
          * @param any[] $values The values to insert in the prepared statement
          * @return any[][] two dimensional array with table data
