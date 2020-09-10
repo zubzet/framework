@@ -417,7 +417,7 @@
             $content = ob_get_clean();
             if (ob_get_contents()) ob_end_clean();
 
-            $from = $this->getBooterSettings("mail_user");
+            $from = $this->getBooterSettings("mail_from") ?? $this->getBooterSettings("mail_user");
             $sender = $this->getBooterSettings("pageName");
 
             require_once 'vendor/autoload.php';
@@ -429,7 +429,7 @@
 
             try {
                 //Server settings
-                $mail->SMTPDebug = 0;                                       
+                $mail->SMTPDebug = 0;
                 $mail->isSMTP();                                            // Set mailer to use SMTP
                 $mail->Host       = $this->getBooterSettings("mail_smtp");  // Specify main and backup SMTP servers
                 $mail->SMTPAuth   = true;
