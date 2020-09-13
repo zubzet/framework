@@ -39,6 +39,7 @@
                 $opt["request"] = $this->booter->req;
                 $opt["root"] = $this->booter->rootFolder;
                 $opt["host"] = $this->booter->host;
+                $opt["absRoot"] = $this->booter->host.$this->booter->rootFolder;
 
                 if (!isset($opt["title"])) $opt["title"] = $this->getBooterSettings("pageName");
 
