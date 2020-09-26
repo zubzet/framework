@@ -9,7 +9,7 @@ steps:
   commands:
     - mkdocs build
     - mkdir /drone/tmp
-    - mv /drone/src/site/* /drone/tmp/
+    - cp -rf /drone/src/site/* /drone/tmp/
     - rm -vrf *
     - mv /drone/tmp/* /drone/src/
   when:
