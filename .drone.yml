@@ -10,19 +10,8 @@ steps:
     - mkdocs build
     - mkdir /drone/tmp
     - cp -rf /drone/src/site/* /drone/tmp/
-    - rm -vrf *
+    - rm -rf *
     - mv /drone/tmp/* /drone/src/
-  when:
-    branch:
-    - DEV
-    event:
-    - push
-
-- name: Minify code
-  image: thekevjames/minify
-  pull: if-not-exists
-  commands:
-    - minify --recursive --verbose --output /drone/src/ /drone/src/
   when:
     branch:
     - DEV
