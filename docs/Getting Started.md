@@ -16,8 +16,8 @@ It is not 100% necessary to use a framework, but especially PHP code is usually 
 9. Make sure your mysql capable service of choice is running.
 10. Fill out all the inputs and click **Install**.
 
-A possible configuration could look like this:<br>
-![image](/attachments/b0e1d7c9-15d7-4ba4-8d99-b97176797efa)
+### Migrate from old repo
+`git remote set-url origin ssh://git@git.zierhut-it.de:2310/ZubZet/framework.git`
 
 ## Using MVC
 Using this framework effectively, you must use the MVC pattern, which consists of 

@@ -12,6 +12,7 @@ steps:
     - mkdir /drone/tmp
     - cp -rf /drone/src/site/* /drone/tmp/
     - rm -rf *
+    - rm -rf .git .drone.yml
     - mv /drone/tmp/* /drone/src/
   when:
     event:
