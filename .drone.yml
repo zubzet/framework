@@ -14,6 +14,7 @@ steps:
     - rm -rf *
     - rm -rf .git .drone.yml
     - mv /drone/tmp/* /drone/src/
+    - echo 'ErrorDocument 404 404.html' >> .htaccess
   when:
     event:
     - push

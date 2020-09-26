@@ -18,4 +18,31 @@ theme:
 
 # Navigation
 nav:
-    - Getting Started: Getting Started.md
+    - Home: index.md
+    - Updating: how-to-update.md
+    - Core Features:
+        - Controllers And Actions: core-features/controllers-and-actions.md
+        - Models: core-features/models.md
+        - Views: core-features/views.md
+        - Layouts: core-features/layouts.md
+        - Permission System: core-features/permission-system.md
+        - Localization: core-features/localization.md
+        - Configuration: core-features/configuration.md
+        - REST API: core-features/rest-api.md
+        - Parameter Abstraction: core-features/parameter-abstraction.md
+    - Z-Admin:
+        - Genral Usage: z-admin/usage.md
+        - Login as another User: z-admin/login-as-another-user.md
+    - Forms:
+        - Auto Validation: forms/auto-form-validation.md
+        - CED Validation: forms/ced-validation.md
+        - File Uploads: forms/file-uploads.md
+    - Frontend Integration:
+        - Backend Requests: frontend-integration/backend-requests.md
+        - Presets: frontend-integration/presets.md
+    - Template Rendering Usages:
+        - Generating PDFs: template-rendering-usages/generating-pdfs.md
+        - Sending Mails: template-rendering-usages/sending-an-email.md
+    - Advanced Features:
+        - Sitemap Generation: advanced-features/sitemap-generation.md
+        - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
