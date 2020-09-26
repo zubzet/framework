@@ -7,7 +7,7 @@ steps:
   image: squidfunk/mkdocs-material
   pull: if-not-exists
   commands:
-    - sed 's/##CI_ENVIROMENT_BRANCH##/${DRONE_BRANCH}/g' mkdocs.yml
+    - sed 's/##CI_ENVIROMENT_BRANCH##/${DRONE_BRANCH}/g' mkdocs.yml >> mkdocs.yml
     - mkdocs build
     - mkdir /drone/tmp
     - cp -rf /drone/src/site/* /drone/tmp/

@@ -1,6 +1,6 @@
 # Project information
 site_name: ZubZet
-site_url: https://docs.zubzet.de
+site_url: https://docs.zubzet.de/##CI_ENVIROMENT_BRANCH##
 site_author: Alexander Zierhut
 site_description: A modular, prototyping speed oriented PHP Framework.
 
