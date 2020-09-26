@@ -10,7 +10,9 @@ steps:
     - mkdocs build
     - mkdir /drone/tmp
     - mv /drone/src/site/* /drone/tmp/
-    - rm -vrf * .* !(.) !(..)
+    - cd ..
+    - rm -vrf /drone/src/
+    - mkdir /drone/src/
     - mv /drone/tmp/* /drone/src/
   when:
     branch:
