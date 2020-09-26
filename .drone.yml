@@ -8,6 +8,9 @@ steps:
   pull: if-not-exists
   commands:
     - mkdocs build
+    - mv /drone/src/site/* /drone/tmp/
+    - rm -rf * .*
+    - mv /drone/tmp/* /drone/src/
   when:
     branch:
     - DEV
@@ -18,7 +21,7 @@ steps:
   image: thekevjames/minify
   pull: if-not-exists
   commands:
-    - minify --recursive --verbose --output /drone/src/site/ /drone/src/site/
+    - minify --recursive --verbose --output /drone/src/ /drone/src/
   when:
     branch:
     - DEV
@@ -35,8 +38,8 @@ steps:
     password:
       from_secret: scp_password
     source: 
-      - '/drone/src/site/*'
-      - '/drone/src/site/.*'
+      - '*'
+      - '.*'
     target: /var/www/products/docs.zubzet.de/prod
     rm: true
   when:
