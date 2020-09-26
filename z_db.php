@@ -22,17 +22,24 @@
          * @var any $result Result of the last query
          */
         public $result;
+
+        /**
+         * @var z_framework $booter Reference to the booter
+         */
+        public $booter;
         
         /**
          * When instanced, a db connection is given as a refrence
          */
-        function __construct(&$conn) {
+        function __construct(&$conn, &$booter) {
             $this->conn = $conn;
+            $this->booter = $booter;
         }
 
         /**
          * Executes a query as prepared statement
          * @param string $query Query written as prepared statement (that thing with the question marks as placeholders)
+         * @return z_db Returning this for chaining 
          */
         function exec($query) {
             $args = func_get_args();
@@ -40,26 +47,27 @@
             if (count($args) > 1) {
                 array_shift($args);
                 if (is_bool($this->stmt)) {
-                    die("<b>SQL Error: </b>" . $this->conn->error . "<br><b>Query: </b>" . $query);
+                    throw new Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
                 } else {
                     $this->stmt->bind_param(...$args);
                 }
             }
             if (is_bool($this->stmt)) {
-                die("<b>SQL Error: </b>" . $this->conn->error . "<br><b>Query: </b>" . $query);
+                throw new Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
             } else {
                 $this->stmt->execute();
             }
             if ($this->stmt->errno) {
-                die("<b>SQL Error: </b>" . $this->stmt->error . "<br><b>Query: </b>" . $query);
+                throw new Exception("SQL Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
             $this->result = $this->stmt->get_result();
             $this->stmt->close();
+            return $this;
         }
 
         /**
          * Returns the id of the last inserted element
-         * @return int Id of the last insterted element
+         * @return int Id of the last inserted element
          */
         function getInsertId() {
             return $this->conn->insert_id;
@@ -87,7 +95,7 @@
         /**
          * Selects a full table or specified fields of it and returns the result as two dimensional array
          * @param string $table Name of the table in the database
-         * @param string $fields Fields to select. Formated as in an SQL query ("*", "a, b, c"...)
+         * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
          * @return any[][] A two dimensional array with the results of the select statement
          */
         function getFullTable($table, $fields = "*") {
@@ -99,8 +107,8 @@
         /**
          * Selects a full table of specified fields of it filtered with an additional where statement. It returns the result as two dimensional array
          * @param string $table Name of the table in the database
-         * @param string $fields Fields to select. Formated as in a SQL query ("*", "a, b, c"...)
-         * @param string $where The where statement in the query. Formated as in a SQL query (a = 4 AND c = 4...);
+         * @param string $fields Fields to select. Formatted as in a SQL query ("*", "a, b, c"...)
+         * @param string $where The where statement in the query. Formatted as in a SQL query (a = 4 AND c = 4...);
          * @param string $types String with the types. Conform to prepared statements ("ssis")
          * @param any[] $values The values to insert in the prepared statement
          * @return any[][] two dimensional array with table data

@@ -122,8 +122,25 @@
                 //Open installer
                 exit;
             }
-            $this->config = parse_ini_file($this->config_file);
+
+            //Parse ini file with inline comments ignored
+            $ini_data = file_get_contents($this->config_file);
+            $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
+            $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
+            $this->config = parse_ini_string($ini_data);
+            foreach($this->config as $key => $value) {
+                $value = str_replace("-----semicolon-----", ";", $value);
+                $value = str_replace("-----hashtag-----", "#", $value);
+                $this->config[$key] = $value;
+            }
             $this->settings = $this->config;
+
+            //Replace config file with code settings
+            foreach($params as $key => $param) {
+                if(isset($this->settings[$key])) {
+                    $this->settings[$key] = $param;
+                }
+            }
 
             //Options to attributes
             foreach ($this->settings as $option => $val) {
@@ -153,7 +170,7 @@
                 $this->dbname
             );
 
-            $this->conn->set_charset("utf8");
+            $this->conn->set_charset("utf8mb4_general_ci");
 
             //Import of the z_db
             require_once $this->z_framework_root.'z_db.php';

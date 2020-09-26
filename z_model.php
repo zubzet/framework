@@ -53,7 +53,7 @@
          * @param string $query The query written as a prepared statement (With the question marks).
          * @param string $types The types for the individual parameters (i for int, s for string...).
          * @param ...string $params to insert in the prepared statement
-         * @return any result
+         * @return z_db Returning this for chaining 
          */
         function exec($query, $types = "", $params = null) {
             $res = $this->z_db->exec(...func_get_args());
@@ -139,6 +139,8 @@
          * @return int Id of the log category
          */
         function getLogCategoryIdByName($name) {
+            if($this->z_db->booter->lite_mode) return;
+
             $sql = "SELECT `id` FROM `z_interaction_log_category` WHERE LOWER(`name`) = LOWER(?)";
             $this->exec($sql, "s", $name);
             if ($this->countResults() > 0) {
@@ -161,6 +163,7 @@
          * @param int $value Optional value
          */
         function logAction($categoryId, $text, $value = null) {
+            if($this->z_db->booter->lite_mode) return;
             $user = $this->booter->user;
             $insertId = $this->getInsertId(); //Store to restore later
 

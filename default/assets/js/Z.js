@@ -8,6 +8,7 @@
  * It is not needed to include this file manually. It will be added to the website in layout essentials.
  * 
  * @author Adrian Urban
+ * @author Alexander Zierhut
  */
 
 /**
@@ -66,23 +67,27 @@ Z = {
      * Triggers a subaction on any action of any controller. Simply put the path in as action. For example: "login/logout". URL parameters can be attached here too.
      * @param {string} action Name of the subaction. Can be checked in the backend with $req->isAction("blub")
      * @param {object} data Data to send to the client. It will be passed as post data
-     * @param {function} handler Handler that gets called when the request was successfull
+     * @param {function} handler Handler that gets called when the request was successful
      */
-    root(action, subaction, data, handler = null) {
+    root(action, subaction, data, handler = null, async = true, parse = true) {
       $.ajax({
         method: "POST",
         data: Object.assign(data, {action: subaction}),
-        url: Z.Request.rootPath + action
+        url: Z.Request.rootPath + action,
+        async: async
       }).done((data) => {
-        var dat = null;
-        try {
-          dat = JSON.parse(data);
-        } catch (e) {
-          console.error("Please show this to a developer: ", data);
+        if(parse) {
+          var dat = null;
+          try {
+            dat = JSON.parse(data);
+          } catch (e) {
+            console.error("Please show this to a developer: ", data);
+          }
+          if (dat != null && handler) {
+            data = dat;
+          }
         }
-        if (dat != null && handler) {
-          handler(dat);
-        }
+        handler(data);
       });
     },
     /**
@@ -575,7 +580,15 @@ class ZForm {
    * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
    * @param {formErrorHook} options.formErrorHook Function that is only called on form errors
    */
-  constructor(options = {doReload: true, dom: null, saveHook: null, formErrorHook:null, hidehints: false}) {
+  constructor(options = {
+    doReload: true, 
+    dom: null, 
+    saveHook: null, 
+    formErrorHook:null, 
+    hidehints: false,
+    sendOnSubmitClick: true,
+    customEndpoint: null
+  }) {
     this.fields = {};
     this.options = options;
     this.ceds = [];
@@ -583,6 +596,8 @@ class ZForm {
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
     this.formErrorHook = options.formErrorHook;
+    this.sendOnSubmitClick = typeof variable === "boolean" ? options.sendOnSubmitClick : true;
+    this.customEndpoint = options.customEndpoint || null;
 
     this.hidehints = options.hidehints;
 
@@ -602,7 +617,7 @@ class ZForm {
     this.buttonSubmit.innerHTML = Z.Lang.submit;
     var that = this;
     this.buttonSubmit.addEventListener("click", function(e) {
-      that.send();
+      if(that.sendOnSubmitClick) that.send(that.customEndpoint);
     });
     this.buttonSubmit.classList.add("btn", "btn-primary");
     this.dom.appendChild(this.buttonSubmit);
@@ -645,24 +660,38 @@ class ZForm {
   }
 
   /**
+   * Adds custom html to the current part of the Form
+   * @returns {void}
+   */
+  addCustomHTML(html) {
+    var node = document.createElement("div");
+    node.innerHTML = html;
+    this.inputSpace.appendChild(node);
+  }
+
+  /**
    * Gathers the information automatically from the form and submits them. This function will reload the page if doReload is true and the submit was a success.
    * @returns {void}
    */
-  send() {
+  send(customUrl = null) {
     var data = this.getFormData();
 
     for (var pair of data.entries()) {
       if(this.debug) console.log(pair[0]+ ', ' + pair[1]); 
     }
 
-    $.ajax({
+    var ajax_options = {
       method: "POST",
       enctype: 'multipart/form-data',
       cache: false,
       contentType: false,
       data: data,
       processData: false
-    }).done((data) => {
+    };
+
+    if(customUrl != null) ajax_options.url = customUrl;
+
+    $.ajax(ajax_options).done((data) => {
       var json;
 
       if(this.debug) console.log(data);
@@ -862,6 +891,10 @@ class ZFormField {
     this.placeholder = options.placeholder;
     this.default = options.default;
     this.autofill = options.autofill || false;
+    this.autocompleteData = options.autocompleteData || [];
+    this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
+    this.autocompleteTextCB = options.autocompleteTextCB;
+    this.autocompleteCB = options.autocompleteCB || null;
 
     this.optgroup = null;
 
@@ -923,22 +956,60 @@ class ZFormField {
       completeDiv.classList.add("list-group");
       customDiv.appendChild(this.input);
       customDiv.appendChild(completeDiv);
-      this.autocompleteData = [];
+
+      if(!Array.isArray(this.autocompleteData)) {
+        this.autocompleteBindingUrl = this.autocompleteData;
+      }
+
+      this.lockAutocompleteAge = 0;
 
       this.input.addEventListener("keyup", (e) => {
-        completeDiv.innerHTML = "";
+        if (e.key == "Shift") return;
+        if (e.target.value.length < this.autocompleteMinCharacters) return;
 
-        if (e.key == "Escape") return;
+        var currentAge = this.lockAutocompleteAge;
+
+        if(this.autocompleteBindingUrl && e.target.value != "") {
+          Z.Request.root(this.autocompleteBindingUrl, "autocomplete", {
+            "value": e.target.value
+          }, (res) => {
+            if(currentAge >= this.lockAutocompleteAge) {
+              this.lockAutocompleteAge++;
+              this.autocompleteData = res.data;
+              console.log(this.autocompleteData);
+            }
+          });
+        }
+
+        completeDiv.innerHTML = "";
         if (e.target.value == "") return;
-        for (let dataset of this.autocompleteData) {
-          if (dataset.text.toLowerCase().includes(e.target.value.toLowerCase())) {
-            var item = document.createElement("div");
+        if (e.key == "Escape") return;
+        
+        for (let value of this.autocompleteData) {
+          if (value.toLowerCase().includes(e.target.value.toLowerCase())) {
+            var item = document.createElement("button");
+            item.type = "button";
             item.classList.add("list-group-item");
-            item.innerText = dataset.text;
+            item.classList.add("list-group-item-action");
+            item.classList.add("py-1");
+            if(value.toLowerCase() == e.target.value.toLowerCase()) {
+              item.classList.add("text-primary");
+            }
+
+            var start = value.toLowerCase().indexOf(e.target.value.toLowerCase());
+            var tmp = value.substr(0, start);
+            tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
+            tmp += value.substring(start + e.target.value.length, value.length);
+            if(this.autocompleteTextCB) {
+              tmp = this.autocompleteTextCB(tmp, value);
+            }
+            item.innerHTML = tmp;
+
             completeDiv.appendChild(item);
             item.addEventListener("click", e => {
-              this.input.value = dataset.text;
+              this.input.value = value;
               completeDiv.innerHTML = "";
+              if(this.autocompleteCB) this.autocompleteCB(value);
             });
           }
         }

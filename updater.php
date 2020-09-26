@@ -122,6 +122,9 @@
     if (!isset($cfg["anonymous_available_languages"])) {
         file_put_contents("z_config/z_settings.ini", "\nanonymous_available_languages = en, de", FILE_APPEND);
     }
+    if (!isset($cfg["lite_mode"])) {
+        file_put_contents("z_config/z_settings.ini", "\nlite_mode = Off", FILE_APPEND);
+    }
 
     //Composer shit
     $log .= "Downloading composer installer...<br>";

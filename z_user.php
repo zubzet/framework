@@ -62,13 +62,14 @@
          * The property $isLoggedIn and $userId and $execUserId will be set after calling this function.
          */
         public function identify() {
-            if (!isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
-                $this->isLoggedIn = false;
-                $this->chooseNonLoginLanguage();
-                return;
+            if ($this->booter->lite_mode || !isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
+                return $this->anonymousRequest();
             }
 
             $tokenResult = $this->booter->getModel("z_login")->validateCookie($_COOKIE["z_login_token"]);
+            if(!isset($tokenResult["userId"]) || !isset($tokenResult["userId_exec"])) {
+                return $this->anonymousRequest();
+            }
             $this->userId = $tokenResult["userId"];
             $this->execUserId = $tokenResult["userId_exec"];
 
@@ -81,6 +82,12 @@
                     $this->fields = $user;
                 }
             }
+        }
+
+        private function anonymousRequest() {
+            $this->isLoggedIn = false;
+            $this->chooseNonLoginLanguage();
+            return;
         }
 
         private function chooseNonLoginLanguage() {
@@ -98,12 +105,18 @@
                     }
                     $lang = in_array($lang, $availableLang) ? $lang : $default;
                     
-                    setcookie("z_lang", $lang);
+                    setcookie("z_lang", $lang, time() + TIMESPAN_DAY_365, "/");
                 }
-                $this->language = [
-                    "value" => $lang,
-                    "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang)
-                ];
+                if($this->booter->lite_mode) {
+                    $this->language = [
+                        "value" => $lang
+                    ];
+                } else {
+                    $this->language = [
+                        "value" => $lang,
+                        "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang, $defaultLanguageId = 1)
+                    ];
+                }
             } else {
                 $this->language = [
                     "value" => "EN",

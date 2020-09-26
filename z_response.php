@@ -15,15 +15,21 @@
      * The response class handles functions used by controllers to respond to requests
      */
     class Response extends RequestResponseHandler {
-        
         /**
          * Shows a document to the user
          * @param string $document Path to the view
          * @param string $opt assosiative array with values to replace in the view
          * @param string $layout The path to the layout to use
          */
-        public function render($document, $opt = [], $layout = "layout/default_layout.php") {
+        public function render($document, $opt = [], $options = []) {
+            // Legacy as $options used to be $layout
+            if(!is_array($options)) {
+                $options = [
+                    "layout" => $options
+                ];
+            }
 
+            $layout = $options["layout"] ?? "layout/default_layout.php";
             $viewPath = $this->booter->getViewPath($document);
 
             if ($viewPath !== false) {
@@ -33,6 +39,7 @@
                 $opt["request"] = $this->booter->req;
                 $opt["root"] = $this->booter->rootFolder;
                 $opt["host"] = $this->booter->host;
+                $opt["absRoot"] = $this->booter->host.$this->booter->rootFolder;
 
                 if (!isset($opt["title"])) $opt["title"] = $this->getBooterSettings("pageName");
 
@@ -43,8 +50,8 @@
                 $opt["layout_essentials_body"] = function($opt) {
                     essentialsBody($opt);
                 };
-                $opt["layout_essentials_head"] = function($opt) {
-                    essentialsHead($opt);
+                $opt["layout_essentials_head"] = function($opt, $customBootstrap = false) {
+                    essentialsHead($opt, $customBootstrap);
                 };
 
                 $userLang = "en";
@@ -69,8 +76,7 @@
                 global $langStorage;
                 $langStorage = array();
 
-                $arr = isset($view["lang"]) ? $view["lang"] : [];
-                if (!isset($arr["en"])) $arr["en"] = [];
+                $arr = $this->parse_i18n($view, $document);
                 
                 foreach($arr["en"] as $key => $val) {
                     if (isset($arr[$userLang][$key])) {
@@ -81,9 +87,9 @@
                 }
         
                 //Load the layout
+                $layout_url = $layout;
                 $layout = include($this->booter->getViewPath($layout));
-                $arr = isset($layout["lang"]) ? $layout["lang"] : [];
-                if (!isset($arr["en"])) $arr["en"] = [];
+                $arr = $this->parse_i18n($layout, $layout_url);
 
                 //TODO: Document $arr["en"]
                 foreach($arr["en"] as $key => $val) {
@@ -120,11 +126,114 @@
                 //Makes $body and $head optional
                 if(!isset($view["body"])) $view["body"] = function(){};
                 if(!isset($view["head"])) $view["head"] = function(){};
-                
+
+                ob_start();
                 $layout["layout"]($opt, $view["body"], $view["head"]);
+                $rendered = ob_get_contents();
+                ob_end_clean();
+
+                //Replace languages via string
+                if(strpos($rendered, '##-') !== false && strpos($rendered, '-##') !== false) {
+                    $rendered = $this->parse_opt_lang($rendered, "##-", "-##", function($inTag) use ($opt) {
+                        return $opt["lang"]($inTag, false);
+                    });
+                }
+
+                if($options["minify"] ?? false) {
+                    $rendered = $this->minifyHTML($rendered);
+                }
+
+                echo $rendered;
             } else {
                 $this->reroute(["error", "404"]);
             }
+        }
+
+        /**
+         * Minifies HTML
+         * @param string $htmlContent The HTML content
+         * @return string The minified version of the input HTML content
+         */
+        public function minifyHTML(string $htmlContent) {
+            $patterns = [
+                '/(\n|^)(\x20+|\t)/',
+                '/(\n|^)\/\/(.*?)(\n|$)/',
+                '/\n/',
+                '/\<\!--.*?-->/',
+                '/(\x20+|\t)/', # Delete multispace (Without \n)
+                '/\>\s+\</', # strip whitespaces between tags
+                '/(\"|\')\s+\>/', # strip whitespaces between quotation ("') and end tags
+                '/=\s+(\"|\')/' # strip whitespaces between = "'
+            ];
+            $replace = ["\n", "\n", " ", "", " ", "><", "$1>", "=$1"];
+            return preg_replace($patterns, $replace, $htmlContent);
+        }
+
+        /**
+         * Replaces Tags with data
+         * @param string $rendered The rendered document
+         * @param string $startTag The opening tag
+         * @param string $endTag The closing tag
+         * @param callback $cb($inTag) The callback for replacing the tag
+         * @return string The replaced output of $rendered
+         */
+        private function parse_opt_lang($rendered, $startTag, $endTag, $cb) {
+            $output = $rendered;
+            $rendered = str_split($rendered);
+            $startTagLength = strlen($startTag);
+            $endTagLength = strlen($endTag);
+            $buffer = "";
+            $inTag = false;
+            $inTagData = "";
+            foreach($rendered as $char) {
+                if($inTag) {
+                    $inTagData .= $char;
+                    if(strlen($buffer) == $endTagLength) {
+                        if($buffer == $endTag) {
+                            $inTag = false;
+                            $inTagData = substr($inTagData, 0, -4);
+                            $output = str_replace($startTag.$inTagData.$endTag, $cb($inTagData), $output);
+                        }
+                        $buffer = substr($buffer, 1);
+                    }
+                    $buffer .= $char;
+                } else {
+                    if(strlen($buffer) == $startTagLength) {
+                        if($buffer == $startTag) {
+                            $inTag = true;
+                            $inTagData = $char;
+                            $buffer = "";
+                        } 
+                        $buffer = substr($buffer, 1);
+                    }
+                    $buffer .= $char;
+                }
+            }
+            return $output;
+        }
+
+        /**
+         * Parses all i18n files into lang arrays
+         * @param string $i18n The i18n file location
+         * @param string $document The file location of the view
+         * @return string[] The converted lang array
+         */
+        private function parse_i18n($i18n, $document) {
+            $arr = [];
+            if(isset($i18n["lang"])) {
+                if(is_array($i18n["lang"])) {
+                    $arr = $i18n["lang"];
+                } else {
+                    $filename = $i18n["lang"];
+                    if($filename == "i18n") {
+                        $filename = "z_views/i18n/".str_replace(".php", ".ini", $document);
+                    }
+                    if(!file_exists($filename)) throw new Exception("$filename i18n ini file does not exist!");
+                    $arr = parse_ini_file($filename, true);
+                }
+            }
+            if (!isset($arr["en"])) $arr["en"] = [];
+            return $arr;
         }
 
         /**
@@ -185,8 +294,9 @@
          * Reroutes to another action
          * @param string[] $path Path to where to reroute to
          * @param bool $alias true if this reroute acts as an alias
+         * @param bool $final Executes and exit if set to true
          */
-        public function reroute($path = [], $alias = false) {
+        public function reroute($path = [], $alias = false, $final = false) {
             if(!$alias) {
                 $this->booter->executePath($path);
             } else {
@@ -196,6 +306,7 @@
                 }
                 $this->booter->executePath($parts);
             }
+            if($final) exit;
         }
 
         /**
@@ -307,7 +418,7 @@
             $content = ob_get_clean();
             if (ob_get_contents()) ob_end_clean();
 
-            $from = $this->getBooterSettings("mail_user");
+            $from = $this->getBooterSettings("mail_from") ?? $this->getBooterSettings("mail_user");
             $sender = $this->getBooterSettings("pageName");
 
             require_once 'vendor/autoload.php';
@@ -319,14 +430,14 @@
 
             try {
                 //Server settings
-                $mail->SMTPDebug = 0;                                       
+                $mail->SMTPDebug = 0;
                 $mail->isSMTP();                                            // Set mailer to use SMTP
                 $mail->Host       = $this->getBooterSettings("mail_smtp");  // Specify main and backup SMTP servers
                 $mail->SMTPAuth   = true;
                 $mail->Username   = $this->getBooterSettings("mail_user");  
                 $mail->Password   = $this->getBooterSettings("mail_password");
                 $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
-                $mail->Port       = 587;                                    // TCP port to connect to
+                $mail->Port       = $this->getBooterSettings("mail_port");                                    // TCP port to connect to
             
                 //Recipients
                 $mail->setFrom($from, $this->getBooterSettings("pageName"));
@@ -355,7 +466,7 @@
         function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
             $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
-            $language = isset($langObj["value"]) ? $langObj["value"] : $req->getBooterSettings("anonymous_language");
+            $language = isset($langObj["value"]) ? $langObj["value"] : $this->getBooterSettings("anonymous_language");
             $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
 

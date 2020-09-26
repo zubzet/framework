@@ -99,6 +99,14 @@
         }
 
         /**
+         * Returns the current root URL including protocol and rootDirectory
+         * @return string a URL like $opt["root"] but including the host before
+         */
+        public function getRoot() {
+            return $this->booter->root;
+        }
+
+        /**
          * Returns the last action visited before the current one
          * @return string The last action visited before the current one
          */

@@ -23,6 +23,17 @@
             return $this->getInsertId();
         }
 
+        /**
+         * Get a file by it's fileId
+         * @param int $fileId The file id
+         * @return string[] The id of the created dataset
+         */
+        function getById($fileId) {
+            $sql = "SELECT * FROM `z_file` WHERE `id`=? LIMIT 1";
+            $this->exec($sql, "i", $fileId);
+            return $this->resultToLine();
+        }
+
     }
 
 ?>
