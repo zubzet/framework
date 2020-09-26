@@ -17,7 +17,7 @@ steps:
     - DEV
     event:
     - push
-
+ 
 - name: Minify code
   image: thekevjames/minify
   pull: if-not-exists
