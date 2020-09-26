@@ -1,0 +1,46 @@
+kind: pipeline
+name: Update Documentation
+
+steps:
+
+- name: Build The Documentation
+  image: squidfunk/mkdocs-material
+  pull: if-not-exists
+  commands:
+    - mkdocs build
+  when:
+    branch:
+    - DEV
+    event:
+    - push
+
+- name: Minify code
+  image: thekevjames/minify
+  pull: if-not-exists
+  commands:
+    - minify --recursive --verbose --output /drone/src/site/ /drone/src/site/
+  when:
+    branch:
+    - DEV
+    event:
+    - push
+
+- name: Transfer Source
+  image: appleboy/drone-scp
+  settings: 
+    host:
+      from_secret: scp_host
+    user: 
+      from_secret: scp_user
+    password:
+      from_secret: scp_password
+    source: 
+      - '/drone/src/site/*'
+      - '/drone/src/site/.*'
+    target: /var/www/products/docs.zubzet.de/prod
+    rm: true
+  when:
+    branch:
+    - DEV
+    event:
+    - push

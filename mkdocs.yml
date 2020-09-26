@@ -18,4 +18,4 @@ theme:
 
 # Navigation
 nav:
-    - Home: Getting Started.md
+    - Getting Started: Getting Started.md
