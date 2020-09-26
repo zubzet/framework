@@ -7,14 +7,13 @@ steps:
   image: squidfunk/mkdocs-material
   pull: if-not-exists
   commands:
+    - sed 's/##CI_ENVIROMENT_BRANCH##/${DRONE_BRANCH}/g' mkdocs.yml
     - mkdocs build
     - mkdir /drone/tmp
     - cp -rf /drone/src/site/* /drone/tmp/
     - rm -rf *
     - mv /drone/tmp/* /drone/src/
   when:
-    branch:
-    - DEV
     event:
     - push
 
@@ -30,10 +29,8 @@ steps:
     source: 
       - '*'
       - '.*'
-    target: /var/www/products/docs.zubzet.de/prod
+    target: /var/www/products/docs.zubzet.de/prod/${DRONE_BRANCH}/
     rm: true
   when:
-    branch:
-    - DEV
     event:
     - push
