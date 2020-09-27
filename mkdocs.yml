@@ -15,6 +15,9 @@ copyright: Copyright &copy; 2018 - 2020 Zierhut IT - Alexander Zierhut
 # Theme
 theme:
     name: 'material'
+    palette:
+        primary: light blue
+        accent: indigo
     highlightjs: true
     hljs_languages:
         - php
@@ -26,10 +29,77 @@ theme:
         - navigation.instant
         - navigation.tabs
 
+# Social icons
+extra:
+    social:
+      - icon: fontawesome/solid/paper-plane
+        link: mailto:info@zierhut-it.de
+        name: Contact via mail
+      - icon: fontawesome/brands/twitter
+        link: https://twitter.com/zierhut_it
+      - icon: fontawesome/brands/linkedin
+        link: https://www.linkedin.com/company/30680659/
+      - icon: fontawesome/brands/github
+        link: https://git.zierhut-it.de/ZubZet
+    
+
+# Extensions
+markdown_extensions:
+    - toc:
+        permalink: ⚓
+    - markdown.extensions.admonition
+    - markdown.extensions.abbr
+    - markdown.extensions.attr_list
+    - markdown.extensions.def_list
+    - markdown.extensions.footnotes
+    - markdown.extensions.meta
+    - markdown.extensions.toc:
+        permalink: true
+    - pymdownx.arithmatex:
+        generic: true
+    - pymdownx.betterem:
+        smart_enable: all
+    - pymdownx.caret
+    - pymdownx.critic
+    - pymdownx.details
+    - pymdownx.emoji:
+        emoji_index: !!python/name:materialx.emoji.twemoji
+        emoji_generator: !!python/name:materialx.emoji.to_svg
+    - pymdownx.highlight
+    - pymdownx.inlinehilite
+    - pymdownx.keys
+    - pymdownx.magiclink:
+        repo_url_shorthand: true
+        user: squidfunk
+        repo: mkdocs-material
+    - pymdownx.mark
+    - pymdownx.smartsymbols
+    - pymdownx.snippets:
+        check_paths: true
+    - pymdownx.superfences:
+        custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+    - pymdownx.tabbed
+    - pymdownx.tasklist:
+        custom_checkbox: true
+    - pymdownx.tilde
+
+# Plugins
+plugins:
+    - search
+    - minify:
+        minify_html: true
+
 # Navigation
 nav:
-    - Home: index.md
-    - Updating: how-to-update.md
+    - Getting Started: index.md
+    - Setup: 
+        - Installation: setup/installation.md
+        - How To Update: setup/how-to-update.md
+        - How to Upgrade: 
+            - 0.9.x to 0.10.x: setup/upgrade/0.9.x-to-0.10.x.md
     - Core Features:
         - Controllers And Actions: core-features/controllers-and-actions.md
         - Models: core-features/models.md
@@ -56,9 +126,3 @@ nav:
     - Advanced Features:
         - Sitemap Generation: advanced-features/sitemap-generation.md
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
-
-markdown_extensions:
-    - toc:
-        permalink: ⚓
-    - admonition
-    - def_list

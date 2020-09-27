@@ -12,4 +12,3 @@ Only the first part of the URL get rerouted. The rest stays untouched.
     
     After:
     /ws/upload/endpoint/
-    
