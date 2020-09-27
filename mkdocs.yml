@@ -15,6 +15,16 @@ copyright: Copyright &copy; 2018 - 2020 Zierhut IT - Alexander Zierhut
 # Theme
 theme:
     name: 'material'
+    highlightjs: true
+    hljs_languages:
+        - php
+        - js
+        - css
+        - html
+        - sql
+    features:
+        - navigation.instant
+        - navigation.tabs
 
 # Navigation
 nav:
