@@ -56,3 +56,12 @@ nav:
     - Advanced Features:
         - Sitemap Generation: advanced-features/sitemap-generation.md
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
+
+markdown_extensions:
+    - toc:
+        permalink: ⚓
+    - admonition
+    - def_list
+    - mdx_gh_links:
+        user: mkdocs
+        repo: mkdocs
