@@ -62,6 +62,3 @@ markdown_extensions:
         permalink: ⚓
     - admonition
     - def_list
-    - mdx_gh_links:
-        user: mkdocs
-        repo: mkdocs
