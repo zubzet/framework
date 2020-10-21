@@ -1,0 +1,14 @@
+<?php return [ "head" => function($opt) { ?>
+    
+<?php }, "body" => function($opt) { ?> 
+    
+    
+
+<?php }, "lang" => [
+    "en" => [
+        "key1" => "word1"
+    ],
+    "DE_Formal" => [
+        "key1" => "wort1"
+    ]
+]]; ?>

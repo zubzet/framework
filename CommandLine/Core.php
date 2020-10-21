@@ -20,9 +20,9 @@
                     "class" => "UpdateManager",
                     "method" => "migrate_cli"
                 ],
-                "generate" => [
-                    "file" => "/../Generators/GeneratorManager.php",
-                    "class" => "GeneratorManager"
+                "build" => [
+                    "file" => "/../Builders/BuilderManager.php",
+                    "class" => "BuilderManager"
                 ]
             ];
 

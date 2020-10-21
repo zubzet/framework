@@ -17,8 +17,8 @@
             return in_array($name, $this->args);
         }
 
-        public function getArg($index) {
-            return $this->args[$index];
+        public function getArg($index, $default = null) {
+            return $this->args[$index] ?? $default;
         }
     }
 

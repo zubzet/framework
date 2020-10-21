@@ -71,7 +71,7 @@
             }
         }
 
-        public static function error($str, $die = true, $newLine = true) {
+        public static function error($str, $die = false, $newLine = true) {
             Console::write("{{red}}".($die ? "FATAL " : "")."ERROR{{default}}: $str", $newLine);
             if($die) exit;
         }
