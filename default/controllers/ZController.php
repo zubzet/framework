@@ -14,7 +14,6 @@
      *  admin.log
      *  admin.su
      *  admin.danger.cfg
-     *  admin.danger.update
      */
 
     /**
@@ -295,33 +294,6 @@
                 "log_categories" => $req->getModel("z_statistics", $res->getZRoot())->getLogCategories()
             ], "layout/z_admin_layout.php");
         }
-
-        /**
-         * Update action
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        function action_update($req, $res) {
-            $req->checkPermission("admin.danger.update");
-
-            $installedVersion = file_get_contents(".z_framework");
-            $kernelVersion = file_get_contents("z_framework/cv.txt");
-
-            if ($req->isAction("update")) {
-                $log = "";
-                if ($kernelVersion > $installedVersion) {
-                    include("z_framework/updater.php");
-                }
-                $res->generateRest(["result" => "success", "log" => $log]);
-            }
-
-            $res->render("z_update.php", [
-                "installed_version" => $installedVersion,
-                "kernel_version" => $kernelVersion
-            ], "layout/z_admin_layout.php");
-        }
-
     }
 
 ?>

@@ -3,6 +3,8 @@
      * The updater script
      */
 
+    chdir(__DIR__."/../../");
+
     /**
      * Helper for creating directories
      */
@@ -36,23 +38,15 @@
         return $results;
     }
 
-    $log = "Updating...<br>";
+    echo "Updating...\n";
 
-    $newVersion = file_get_contents("z_framework/cv.txt");
+    $newVersion = 41;
     if(!file_exists(".z_framework")) file_put_contents(".z_framework", 0);
     $currentVersion = file_get_contents(".z_framework");
-    $log .= "Current version: $currentVersion<br>";
-    $log .= "New version: $newVersion<br>";
+    echo "Current version: $currentVersion\n";
+    echo "New version: $newVersion\n";
 
-    if ($newVersion == $currentVersion) {
-        if(isset($argv[1]) && $argv[1] == "ignore-version") {
-            $log .= "No update needed, but this has been ignored.<br>";
-        } else {
-            die ("No update needed!");
-        }
-    }
-
-    $log .= "Creating directories...<br>";
+    echo "Creating directories...\n";
     createDirectoryUpdater("z_config");
     createDirectoryUpdater("z_models");
     createDirectoryUpdater("z_views");
@@ -67,9 +61,9 @@
         createDirectoryUpdater($folder);
     }
 
-    $log .= "All directories created...<br>";
+    echo "All directories created...\n";
 
-    $log .= "Copy files...<br>";
+    echo "Copy files...\n";
     copy("z_framework/install/index.php", "index.php");
     copy("z_framework/install/.htaccess", ".htaccess");
 
@@ -78,12 +72,12 @@
         $parts = explode("/", $file);
         $file_name = $parts[count($parts) - 1];
         if($file_name != "bootstrap.min.css" || ($file_name == "bootstrap.min.css" && !file_exists("assets/css/bootstrap.min.css"))) {
-            $log .= $file_copy;
+            echo $file_copy;
             copy($file, $file_copy);
         }
     }
 
-    $log .= "All files copied!<br>";
+    echo "All files copied!\n";
 
     if (!file_exists(".gitignore")) {
         copy("z_framework/default/gitignore", ".gitignore");
@@ -93,13 +87,13 @@
     $mysqli = new mysqli($cfg["dbhost"], $cfg["dbusername"], $cfg["dbpassword"], $cfg["dbname"]);
     if ($mysqli->errno) die ($mysqli->error);
 
-    $log .= "Updating database...<br>";
+    echo "Updating database...\n";
     //It errors when coloumn already exists. Can be ignored
     $mysqli->query("ALTER TABLE z_user ADD verified TIMESTAMP NULL");
     $mysqli->query("CREATE TABLE `z_email_verify` ( `id` INT NOT NULL AUTO_INCREMENT , `token` VARCHAR(255) NOT NULL , `user` INT NOT NULL , `end` DATETIME NOT NULL , `active` INT NOT NULL DEFAULT '1' , `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;");
 
     $mysqli->close();
-    $log .= "Database should be up to date now!<br>";
+    echo "Database should be up to date now!\n";
 
     if (!isset($cfg["pageName"])) {
         file_put_contents("z_config/z_settings.ini", "\npageName = Your Website", FILE_APPEND);
@@ -127,18 +121,19 @@
     }
 
     //Composer shit
-    $log .= "Downloading composer installer...<br>";
+    echo "Downloading composer installer...\n";
     copy('https://getcomposer.org/installer', './composer-setup.php');
-    $log .= "Executing composer installer...<br>";
+    echo "Executing composer installer...\n";
     exec('cd ./ && php composer-setup.php');
-    $log .= "Deleting composer installer...<br>";
-    unlink("./composer-setup.php");
-    $log .= "Getting html2pdf with composer<br>";
+    echo "Deleting composer installer...\n";
+    if(file_exists("composer-setup.php")) unlink("./composer-setup.php");
+    echo "Getting html2pdf with composer\n";
     exec('cd ./ && php composer.phar require spipu/html2pdf');
-    $log .= "Getting phpmailer with composer<br>";
+    echo "Getting phpmailer with composer\n";
     exec('cd ./ && php composer.phar require phpmailer/phpmailer');
-    $log .= "Finished!<br>";
+    echo "Finished!\n";
 
-    file_put_contents(".z_framework", $newVersion);
+    if(file_exists(".z_framework")) unlink(".z_framework");
+    if(file_exists("composer.phar")) unlink("composer.phar");
 
 ?>
