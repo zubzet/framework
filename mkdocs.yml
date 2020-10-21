@@ -101,6 +101,8 @@ nav:
     - Upgrading:
         - 0.10.x -> 0.11.x: setup/upgrade/0.10.x-to-0.11.x.md
         - 0.9.x -> 0.10.x: setup/upgrade/0.9.x-to-0.10.x.md
+    - Command Line Interface:
+        - Component Builders: command-line-interface/component-builders.md
     - Core Features:
         - Controllers And Actions: core-features/controllers-and-actions.md
         - Models: core-features/models.md
