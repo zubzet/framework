@@ -59,7 +59,13 @@
          * @return Any Value of the key
          */
         public function getBooterSettings($key = null) {
-            return $key !== null ? $this->booter->settings[$key] : $this->booter->settings;
+            if(!empty($key)) {
+                if(!isset($this->booter->settings[$key])) {
+                    throw new \Exception("The setting '$key' does not exist!");
+                }
+                return $this->booter->settings[$key];
+            }
+            return $this->booter->settings;
         }
 
     }
