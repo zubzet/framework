@@ -3,7 +3,7 @@
 2. Initialize an empty Git repository using<br>
    `git init`
 3. Add the framework as a submodule using<br> 
-   `git submodule add https://git.zierhut-it.de/Zierhut-IT/z_framework.git`
+   `git submodule add https://git.zierhut-it.de/ZubZet/framework.git z_framework`
 4. Login with your account if needed.
 5. You are required to have your php environment variable set. Use `php -v` to check. Fix this problem first, if you get an error.
 6. Navigate to your project in your browser. (Don't forget to use a webserver)
