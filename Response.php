@@ -46,7 +46,7 @@
                 //logged in user information
                 $opt["user"] = $this->booter->user;
 
-                include_once "layout_essentials.php";
+                include_once "LayoutEssentials.php";
                 $opt["layout_essentials_body"] = function($opt) {
                     essentialsBody($opt);
                 };
@@ -341,11 +341,11 @@
 
         /**
          * Creates an upload object that handles the rest of the upload.
-         * @return z_upload A new instance of the z_upload class
+         * @return Upload A new instance of the Upload class
          */
         public function upload() {
-            require_once $this->getZRoot()."z_upload.php";
-            return new z_upload($this);
+            require_once $this->getZRoot()."Upload.php";
+            return new Upload($this);
         }
 
         /**
@@ -353,7 +353,7 @@
          * @param object $payload data
          */
         private function getNewRest($payload) {
-            require_once $this->booter->z_framework_root.'z_rest.php';
+            require_once $this->booter->z_framework_root.'Rest.php';
             return new Rest($payload, $this->booter->urlParts);
         }
 

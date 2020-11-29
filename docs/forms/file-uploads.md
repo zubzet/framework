@@ -1,6 +1,6 @@
 # Working with file uploads
 ## Manual
-Sometimes it is needed that a user uploads a file. To handle incoming files, response has the `upload()` method. It returns a [`z_upload`](https://zdoc.zierhut-it.de/classes/z_upload.html) object which has more methods to handle with uploads.
+Sometimes it is needed that a user uploads a file. To handle incoming files, response has the `upload()` method. It returns a [`Upload`](https://zdoc.zierhut-it.de/classes/z_upload.html) object which has more methods to handle with uploads.
 
 ```php
 $upload = $res->upload();

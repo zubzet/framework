@@ -10,7 +10,7 @@
     class z_model {
 
         /**
-         * @var z_db $z_db Reference to the database proxy
+         * @var Database $z_db Reference to the database proxy
          */
         protected $z_db;
 
@@ -29,11 +29,11 @@
          * 
          * This constructor should only called from the booter. If you need a model, use $booter->getModel() instead.
          * 
-         * @param z_db $z_db The database proxy class (Usally one lives in the booter)
+         * @param Database $z_db The database proxy class (Usally one lives in the booter)
          * @param z_framework $booter Booter object
          */
-        function __construct(&$z_db, $booter) {
-            $this->z_db =& $z_db;
+        function __construct(&$database, $booter) {
+            $this->z_db =& $database;
             $this->booter = $booter;
             $this->lastInsertId;
         }
@@ -53,7 +53,7 @@
          * @param string $query The query written as a prepared statement (With the question marks).
          * @param string $types The types for the individual parameters (i for int, s for string...).
          * @param ...string $params to insert in the prepared statement
-         * @return z_db Returning this for chaining 
+         * @return Database Returning this for chaining 
          */
         function exec($query, $types = "", $params = null) {
             $res = $this->z_db->exec(...func_get_args());

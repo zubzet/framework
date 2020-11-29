@@ -1,12 +1,12 @@
 <?php
     /**
-     * z_db is used as a proxy for all database actions
+     * Database is used as a proxy for all database actions
      */
 
     /**
      * Proxy for all database access. Also holds utility functions
      */
-    class z_db {
+    class Database {
         
         /**
          * @var mysqli $conn Connection to the database
@@ -39,7 +39,7 @@
         /**
          * Executes a query as prepared statement
          * @param string $query Query written as prepared statement (that thing with the question marks as placeholders)
-         * @return z_db Returning this for chaining 
+         * @return Database Returning this for chaining 
          */
         function exec($query) {
             $args = func_get_args();

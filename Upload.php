@@ -6,7 +6,7 @@
     /**
      * Class that handles file uploads and checking types
      */
-    class z_upload {
+    class Upload {
         
         /** @var string $ref Reference */
         public $ref;

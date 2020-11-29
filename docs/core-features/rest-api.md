@@ -3,7 +3,7 @@
 As the client and the server are completely separated, they need to have a way communicated. It is basically a standardized way of transfering, in our case JSON data, from the server to the client.
 
 ## How to use this?
-There is a file called `z_rest.php`, which handles all the REST responses. You'll probably not be using this as another layer of abstraction exists within the response class. There are two functions regarding this topic. 
+There is a file called `Rest.php`, which handles all the REST responses. You'll probably not be using this as another layer of abstraction exists within the response class. There are two functions regarding this topic. 
 
 | Call                      | zdoc                                                                              |
 | ------------------------- | --------------------------------------------------------------------------------- |

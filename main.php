@@ -47,7 +47,7 @@
         /** @var array $settings Stores the z_framework settings */
         public $settings;
 
-        /** @var z_db $z_db Database proxy object  */
+        /** @var Database $z_db Database proxy object  */
         public $z_db;
 
         /** @var int $showErrors Defines what errors should be shown */
@@ -102,7 +102,7 @@
         ];
         
         /**
-         * Parses all the options as vars and instantiate the z_db and establish the db connection
+         * Parses all the options as vars and instantiate the Database and establish the db connection
          */
         function __construct($params = []) {
             chdir(__DIR__.'/..');
@@ -155,7 +155,7 @@
             $this->updateErrorHandling();
 
             //Import constants
-            require_once $this->z_framework_root . "z_constants.php";
+            require_once $this->z_framework_root . "Constants.php";
 
             //Parse Post request
             $this->decodePost();
@@ -180,8 +180,8 @@
             $this->conn->set_charset("utf8mb4_general_ci");
 
             //Import of the z_db
-            require_once $this->z_framework_root.'z_db.php';
-            $this->z_db = new z_db($this->conn, $this);
+            require_once $this->z_framework_root.'Database.php';
+            $this->z_db = new Database($this->conn, $this);
 
             //Import the standard controller;
             require_once $this->z_framework_root.'z_controller.php';
@@ -190,14 +190,14 @@
             require_once $this->z_framework_root.'z_model.php';
 
             //RR System
-            require_once $this->z_framework_root."z_requestResponseHandler.php";
-            require_once $this->z_framework_root."z_response.php";
-            require_once $this->z_framework_root."z_request.php";
+            require_once $this->z_framework_root."RequestResponseHandler.php";
+            require_once $this->z_framework_root."Response.php";
+            require_once $this->z_framework_root."Request.php";
             $this->req = new Request($this);
             $this->res = new Response($this);
 
             //User
-            require_once $this->z_framework_root.'z_user.php';
+            require_once $this->z_framework_root.'User.php';
             $this->user = new User($this);
             $this->user->identify();
         }
@@ -396,7 +396,7 @@
          * Answers this request with a rest
          */
         private function rest($options) {
-            require_once $this->z_framework_root.'z_rest.php';
+            require_once $this->z_framework_root.'Rest.php';
             $rest = new Rest($options, $this->urlParts);
             $rest->execute();
         }
