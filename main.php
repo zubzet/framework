@@ -240,6 +240,16 @@
          * @param Array $customUrlParts exmaple: ["panel", "index"]
          */
         public function execute($customUrlParts = null) {
+            global $argv;
+            if(isset($argv)) {
+                array_shift($argv);
+                if($argv[0] == "run") {
+                    array_shift($argv);
+                    $customUrlParts = $argv;
+                }
+            }
+
+            //Be able to force custom 
             if(isset($customUrlParts)) {
                 $this->urlParts = $customUrlParts;
             }
