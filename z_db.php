@@ -27,6 +27,11 @@
          * @var z_framework $booter Reference to the booter
          */
         public $booter;
+
+        /**
+         * @var int $insertId Last insert id
+         */
+        public $insertId;
         
         /**
          * When instanced, a db connection is given as a refrence
@@ -56,6 +61,7 @@
                 throw new Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
             } else {
                 $this->stmt->execute();
+                $this->insertId = $this->conn->insert_id;
             }
             if ($this->stmt->errno) {
                 throw new Exception("SQL Error: " . $this->stmt->error . "\nQuery: " . $query);
@@ -70,7 +76,7 @@
          * @return int Id of the last inserted element
          */
         function getInsertId() {
-            return $this->conn->insert_id;
+            return $this->insertId;
         }
 
         /**
