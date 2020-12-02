@@ -242,10 +242,8 @@
         public function execute($customUrlParts = null) {
             global $argv;
             if(isset($argv)) {
-                array_shift($argv);
-                if($argv[0] == "run") {
-                    array_shift($argv);
-                    $customUrlParts = $argv;
+                if(($argv[1] ?? null) == "run") {
+                    $customUrlParts = array_slice($argv, 1);
                 }
             }
 
