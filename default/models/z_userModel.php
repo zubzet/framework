@@ -6,19 +6,19 @@
     /**
      * User Model
      * 
-     * This model handles database stuff with the focus on user managment.
-     * An instance of this class can be acquired with z_framework::getModel("z_user")
+     * This model handles database stuff with the focus on user management.
+     * An instance of this class can be acquired with ZubZet::getModel("z_user")
      */
     class z_userModel extends z_model {
         
         /**
          * Returns a user row of the database, selected by the users id
-         * @param int $userid ID of the user we want the data about
+         * @param int $userId ID of the user we want the data about
          * @return any[] The dataset
          */
-        function getUserById($userid) {
+        function getUserById($userId) {
             $query = "SELECT * FROM `z_user` WHERE `id`=?";
-            $this->exec($query, "i", $userid);
+            $this->exec($query, "i", $userId);
             
             if ($this->getResult()->num_rows > 0) {
                 return $this->getResult()->fetch_assoc(); 

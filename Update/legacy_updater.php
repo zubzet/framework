@@ -41,8 +41,8 @@
     echo "Updating...\n";
 
     $newVersion = 41;
-    if(!file_exists(".z_framework")) file_put_contents(".z_framework", 0);
-    $currentVersion = file_get_contents(".z_framework");
+    if(!file_exists(".zVersion")) file_put_contents(".zVersion", 0);
+    $currentVersion = file_get_contents(".zVersion");
     echo "Current version: $currentVersion\n";
     echo "New version: $newVersion\n";
 
@@ -54,21 +54,21 @@
     createDirectoryUpdater("uploads");
     createDirectoryUpdater("assets");
 
-    $copy_tasks = getDirContents("z_framework/default/assets");
+    $copy_tasks = getDirContents("zubzet/default/assets");
     $copy_tasks["folders"] = array_reverse($copy_tasks["folders"]);
     foreach($copy_tasks["folders"] as $folder) {
-        $folder = str_replace("z_framework/default/", "", $folder);
+        $folder = str_replace("zubzet/default/", "", $folder);
         createDirectoryUpdater($folder);
     }
 
     echo "All directories created...\n";
 
     echo "Copy files...\n";
-    copy("z_framework/install/index.php", "index.php");
-    copy("z_framework/install/.htaccess", ".htaccess");
+    copy("zubzet/install/index.php", "index.php");
+    copy("zubzet/install/.htaccess", ".htaccess");
 
     foreach($copy_tasks["files"] as $file) {
-        $file_copy = str_replace("z_framework/default/", "", $file);
+        $file_copy = str_replace("zubzet/default/", "", $file);
         $parts = explode("/", $file);
         $file_name = $parts[count($parts) - 1];
         if($file_name != "bootstrap.min.css" || ($file_name == "bootstrap.min.css" && !file_exists("assets/css/bootstrap.min.css"))) {
@@ -80,7 +80,7 @@
     echo "All files copied!\n";
 
     if (!file_exists(".gitignore")) {
-        copy("z_framework/default/gitignore", ".gitignore");
+        copy("zubzet/default/gitignore", ".gitignore");
     }
 
     $cfg = parse_ini_file("z_config/z_settings.ini");
@@ -133,7 +133,7 @@
     exec('cd ./ && php composer.phar require phpmailer/phpmailer');
     echo "Finished!\n";
 
-    if(file_exists(".z_framework")) unlink(".z_framework");
+    if(file_exists(".zVersion")) unlink(".zVersion");
     if(file_exists("composer.phar")) unlink("composer.phar");
 
 ?>

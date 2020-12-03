@@ -40,9 +40,9 @@
         public $fields = []; //Stores custom per project properties
 
         /**
-         * @var z_framework $booter Holds a reference to the booter
+         * @var ZubZet $booter Holds a reference to the booter
          */
-        private $booter;
+        private ZubZet $booter;
 
         /**
          * @var string[] $permissions. Array of permissions the user has.
@@ -51,9 +51,9 @@
 
         /**
          * Creates a new user object
-         * @param z_framework $booter The booter object
+         * @param ZubZet $booter The booter object
          */
-        public function __construct($booter) {
+        public function __construct(ZubZet $booter) {
             $this->booter = $booter;
         }
 

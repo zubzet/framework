@@ -6,7 +6,7 @@
     /**
      * First class that is instantiated at a request
      */
-    class z_framework {
+    class ZubZet {
         public string $version = "0.11";
 
         /** @var string $rootDirectory Path to the root */
@@ -44,7 +44,7 @@
         /** @var string[] $urlParts Exploded url */
         public $urlParts;
 
-        /** @var array $settings Stores the z_framework settings */
+        /** @var array $settings Stores the ZubZet settings */
         public $settings;
 
         /** @var Database $z_db Database proxy object  */
@@ -62,28 +62,28 @@
         /** @var int $reroutes Number of how many times this request war rerouted */
         public $reroutes = 0;
 
-        /** @var string $z_framework_root Directory where the framework stuff lives */
-        public $z_framework_root = "z_framework/";
+        /** @var string $zubzet_root Directory where the framework stuff lives */
+        public $zubzet_root;
 
-        /** @var string $z_cnontrollers Directory in which the controllers live */
-        public $z_controllers = "z_controllers/";
+        /** @var string $z_controllers Directory in which the controllers live */
+        public $z_controllers = "project/z_controllers/";
 
         /** @var string $z_models Directory in which the models live in */
-        public $z_models = "z_models/";
+        public $z_models = "project/z_models/";
 
         /** @var string $z_views Directory of the views */
-        public $z_views = "z_views/";
+        public $z_views = "project/z_views/";
 
         /** @var string $config_file Path to the config file */
-        public $config_file = "z_config/z_settings.ini";
+        public $config_file = "configuration/settings.ini";
 
         /** @var User $user The requesting user */
         public $user;
 
-        /** @var string[] $ControllerStack All visted controllers as an array */
+        /** @var string[] $ControllerStack All visited controllers as an array */
         public $ControllerStack = [];
 
-        /** @var string[] $ActionStack All visted actions as an array */
+        /** @var string[] $ActionStack All visited actions as an array */
         public $ActionStack = [];
 
         /** @var Response $res A reference to an instance of the Response class */
@@ -105,10 +105,11 @@
          * Parses all the options as vars and instantiate the Database and establish the db connection
          */
         function __construct($params = []) {
-            chdir(__DIR__.'/..');
+            chdir(realpath("../"));
+            $this->zubzet_root = "include/zubzet/framework/";
 
             $param_keys = [
-                "root" => &$this->z_framework_root, 
+                "root" => &$this->zubzet_root, 
                 "controllers" => &$this->z_controllers, 
                 "models" => &$this->z_models, 
                 "views" => &$this->z_views, 
@@ -117,14 +118,6 @@
 
             foreach ($param_keys as $key => $param) {
                 if (isset($params[$key])) $param = $params[$key];
-            }
-
-            //Config file
-            if (!file_exists($this->config_file)) {
-                chdir("./z_framework");
-                require_once "./installer.php";
-                //Open installer
-                exit;
             }
 
             //Parse ini file with inline comments ignored
@@ -155,7 +148,7 @@
             $this->updateErrorHandling();
 
             //Import constants
-            require_once $this->z_framework_root . "Constants.php";
+            require_once $this->zubzet_root . "Constants.php";
 
             //Parse Post request
             $this->decodePost();
@@ -180,24 +173,24 @@
             $this->conn->set_charset("utf8mb4_general_ci");
 
             //Import of the z_db
-            require_once $this->z_framework_root.'Database.php';
+            require_once $this->zubzet_root.'Database.php';
             $this->z_db = new Database($this->conn, $this);
 
             //Import the standard controller;
-            require_once $this->z_framework_root.'z_controller.php';
+            require_once $this->zubzet_root.'z_controller.php';
 
             //Import the standard model
-            require_once $this->z_framework_root.'z_model.php';
+            require_once $this->zubzet_root.'z_model.php';
 
             //RR System
-            require_once $this->z_framework_root."RequestResponseHandler.php";
-            require_once $this->z_framework_root."Response.php";
-            require_once $this->z_framework_root."Request.php";
+            require_once $this->zubzet_root."RequestResponseHandler.php";
+            require_once $this->zubzet_root."Response.php";
+            require_once $this->zubzet_root."Request.php";
             $this->req = new Request($this);
             $this->res = new Response($this);
 
             //User
-            require_once $this->z_framework_root.'User.php';
+            require_once $this->zubzet_root.'User.php';
             $this->user = new User($this);
             $this->user->identify();
         }
@@ -296,8 +289,8 @@
                 $controllerFile = null;
                 if (file_exists($this->z_controllers . $controller . ".php")) {
                     $controllerFile = $this->z_controllers . $controller . ".php";
-                } else if (file_exists($this->z_framework_root . "default/controllers/" . $controller . ".php")) {
-                    $controllerFile = $this->z_framework_root . "default/controllers/" . $controller . ".php";
+                } else if (file_exists($this->zubzet_root . "default/controllers/" . $controller . ".php")) {
+                    $controllerFile = $this->zubzet_root . "default/controllers/" . $controller . ".php";
                 }
 
                 if ($controllerFile !== null) {
@@ -369,7 +362,7 @@
                 if (file_exists($path)) {
                     require_once $path;
                 } else {
-                    $path = $this->z_framework_root . "default/models/" . $model . ".php";
+                    $path = $this->zubzet_root . "default/models/" . $model . ".php";
                     if (file_exists($path)) {
                         require_once $path;
                     } else {
@@ -388,15 +381,15 @@
          */
         public function getViewPath($document) {
             if (file_exists($this->z_views.$document)) return $this->z_views.$document;
-            if (file_exists($this->z_framework_root."default/views/".$document)) return $this->z_framework_root."default/views/".$document;
-            return $this->z_framework_root."default/views/500.php";
+            if (file_exists($this->zubzet_root."default/views/".$document)) return $this->zubzet_root."default/views/".$document;
+            return $this->zubzet_root."default/views/500.php";
         }
 
         /**
          * Answers this request with a rest
          */
         private function rest($options) {
-            require_once $this->z_framework_root.'Rest.php';
+            require_once $this->zubzet_root.'Rest.php';
             $rest = new Rest($options, $this->urlParts);
             $rest->execute();
         }

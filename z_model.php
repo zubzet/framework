@@ -15,9 +15,9 @@
         protected $z_db;
 
         /**
-         * @var z_framework $booter Reference to the booter
+         * @var ZubZet $booter Reference to the booter
          */
-        protected $booter;
+        protected ZubZet $booter;
 
         /**
          * @var int $lastInsertId Holds the last id returned of an insert query. Does not change on logging
@@ -30,9 +30,9 @@
          * This constructor should only called from the booter. If you need a model, use $booter->getModel() instead.
          * 
          * @param Database $z_db The database proxy class (Usally one lives in the booter)
-         * @param z_framework $booter Booter object
+         * @param ZubZet $booter Booter object
          */
-        function __construct(&$database, $booter) {
+        function __construct(&$database, ZubZet $booter) {
             $this->z_db =& $database;
             $this->booter = $booter;
             $this->lastInsertId;

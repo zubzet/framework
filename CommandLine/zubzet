@@ -1,5 +1,5 @@
 <?php
-    require_once __DIR__."/z_framework/main.php";
-    $app = new z_framework();
+    require_once __DIR__."/ZubZet/main.php";
+    $app = new ZubZet();
     $app->executeCommandLine();
 ?>

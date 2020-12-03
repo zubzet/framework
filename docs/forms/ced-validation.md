@@ -1,5 +1,5 @@
 # Auto form validation using CED
-Some forms require the user to input multiple values into one field. Or to create multiple blocks or something. For every case this happens the CED system can be used. CED stands for **C**reate **E**dit **D**elete. It builds on top of the [form system](https://git.zierhut-it.de/Zierhut-IT/z_framework/wiki/Auto-form-validation-and-database-updates).
+Some forms require the user to input multiple values into one field. Or to create multiple blocks or something. For every case this happens the CED system can be used. CED stands for **C**reate **E**dit **D**elete. It builds on top of the [form system](https://git.zierhut-it.de/zubzet/framework/wiki/Auto-form-validation-and-database-updates).
 
 ## Front-end
 This is an example for adding permissions to a group. It is possible to have n permissions per group.

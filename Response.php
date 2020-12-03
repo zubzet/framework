@@ -353,7 +353,7 @@
          * @param object $payload data
          */
         private function getNewRest($payload) {
-            require_once $this->booter->z_framework_root.'Rest.php';
+            require_once $this->booter->zubzet_root.'Rest.php';
             return new Rest($payload, $this->booter->urlParts);
         }
 
@@ -477,7 +477,7 @@
          */
         function loginAs($userId, $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
-            $token = $this->booter->getModel("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
+            $token = $this->booter->getModel("z_login", $this->booter->zubzet_root)->createLoginToken($userId, $user_exec);
             $this->setCookie("z_login_token", $token, time() + intval($this->booter->settings["loginTimeoutSeconds"]), "/");
 
             if ($userId == $user_exec) {

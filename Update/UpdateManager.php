@@ -17,15 +17,15 @@
         }
 
         public function run() {
-            if(file_exists(".z_framework")) {
-                $version = file_get_contents(".z_framework");
+            if(file_exists(".zVersion")) {
+                $version = file_get_contents(".zVersion");
                 Console::write("The legacy update has not been done yet. Starting...");
                 if($version < 41) {
                     Console::write("Your installation will be updated to 0.9.0-edge ...");
                     include( __DIR__."/legacy_updater.php");
                 } else {
                     Console::write("The legacy update was already finished. Cleaning up ...");
-                    if(file_exists(".z_framework")) unlink(".z_framework");
+                    if(file_exists(".zVersion")) unlink(".zVersion");
                     if(file_exists("composer.phar")) unlink("composer.phar");
                 }
                 file_put_contents(".zVersion", "v0.9.0");

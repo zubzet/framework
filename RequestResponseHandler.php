@@ -9,15 +9,15 @@
     class RequestResponseHandler {
 
         /**
-         * @var z_framework $booter The framework object
+         * @var ZubZet $booter The framework object
          */
-        public $booter;
+        public ZubZet $booter;
 
         /**
          * Constructor every request and response object should have
-         * @param z_framework $booter The framework object
+         * @param ZubZet $booter The framework object
          */
-        public function __construct($booter) {
+        public function __construct(ZubZet $booter) {
             $this->booter = $booter;
         }
 
@@ -42,7 +42,7 @@
          * @return String
          */
         public function getZRoot() {
-            return $this->booter->z_framework_root; 
+            return $this->booter->zubzet_root; 
         }
 
         /**

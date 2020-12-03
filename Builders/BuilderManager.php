@@ -1,7 +1,7 @@
 <?php
     class BuilderManager {
         private $booter;
-        public function __construct(z_framework &$booter) {
+        public function __construct(ZubZet &$booter) {
             $this->booter = $booter;
         }
 

@@ -163,8 +163,8 @@ if (isset($_POST["db-host"])) {
         chdir("../");
         mkdir("z_config/");
         file_put_contents("z_config/z_settings.ini", $configText);
-        require("z_framework/updater.php");
-        chdir("./z_framework");
+        require("ZubZet/updater.php");
+        chdir("./ZubZet");
 
         //Hard-Verify admin accounts mail
         $mysqli = new mysqli($dbHost, $dbUser, $dbPassword, $dbDatabase);

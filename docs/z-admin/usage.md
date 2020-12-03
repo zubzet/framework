@@ -5,12 +5,12 @@ It has following categories:
 
 | Category | Function | Read more |
 | -------- | -------- | -------- |
-| Instance | Simple place to change instance settings| [Wiki](https://git.zierhut-it.de/Zierhut-IT/z_framework/wiki/The-Booter-Settings) |
+| Instance | Simple place to change instance settings| [Wiki](https://git.zierhut-it.de/zubzet/framework/wiki/The-Booter-Settings) |
 | Log / Statistics | View logs and statistics
-| Framework Update | Start updates for the framework | [Wiki](https://git.zierhut-it.de/Zierhut-IT/z_framework/wiki/Updating-to-the-newest-version-of-the-framework)
+| Framework Update | Start updates for the framework | [Wiki](https://git.zierhut-it.de/zubzet/framework/wiki/Updating-to-the-newest-version-of-the-framework)
 | Edit User | Form to edit users
 | Add User | Form to add users
-| Roles | User permission managment | [Wiki](https://git.zierhut-it.de/Zierhut-IT/z_framework/wiki/Using-the-Permissions-System)
+| Roles | User permission managment | [Wiki](https://git.zierhut-it.de/zubzet/framework/wiki/Using-the-Permissions-System)
 ## Permissions
 To be able to use all functions, the following permissions are needed:
 *  admin.panel

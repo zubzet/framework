@@ -6,8 +6,8 @@ site_description: A modular, prototyping speed oriented PHP Framework.
 
 # Repository
 repo_name: ZubZet/framework
-repo_url: https://git.zierhut-it.de/Zierhut-IT/z_framework
-edit_uri: https://git.zierhut-it.de/Zierhut-IT/z_framework/src/branch/##CI_ENVIROMENT_BRANCH##/docs
+repo_url: https://git.zierhut-it.de/zubzet/framework
+edit_uri: https://git.zierhut-it.de/zubzet/framework/src/branch/##CI_ENVIROMENT_BRANCH##/docs
 
 # Copyright
 copyright: Copyright &copy; 2018 - 2020 Zierhut IT - Alexander Zierhut
