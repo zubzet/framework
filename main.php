@@ -243,7 +243,7 @@
             global $argv;
             if(isset($argv)) {
                 if(($argv[1] ?? null) == "run") {
-                    $customUrlParts = array_slice($argv, 1);
+                    $customUrlParts = array_slice($argv, 2);
                 }
             }
 
