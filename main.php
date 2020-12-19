@@ -378,9 +378,18 @@
          * @param string $document Filename of the view
          * @return string Relative path to the view file
          */
-        public function getViewPath($document) {
-            if (file_exists($this->z_views.$document)) return $this->z_views.$document;
-            if (file_exists($this->z_framework_root."default/views/".$document)) return $this->z_framework_root."default/views/".$document;
+        public function getViewPath(...$documents) {
+            foreach($documents as $document) {
+                if(substr($document, -4, 4) != ".php") {
+                    $document .= ".php";
+                }
+                if (file_exists($this->z_views.$document)) {
+                    return $this->z_views.$document;
+                }
+                if (file_exists($this->z_framework_root."default/views/$document")) {
+                    return $this->z_framework_root."default/views/$document";
+                }
+            }
             return $this->z_framework_root."default/views/500.php";
         }
 

@@ -136,7 +136,7 @@
                     AND `created` >= ?";
             $timespan = date("Y-m-d H:i", strtotime("-10 minutes"));
             $this->exec($sql, "is", $userId, $timespan);
-            return $this->resultToLine()["RES"] === 0;
+            return $this->resultToLine()["RES"] == 0;
         }
         
 

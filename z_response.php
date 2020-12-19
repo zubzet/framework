@@ -391,9 +391,16 @@
          */
         function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
             //Import the email template
-            $template = $this->booter->getViewPath($layout);
+            $layout = str_replace(".php", "", $layout);
+            $layout = str_replace("_layout", "", $layout);
+            $layout = "layout/$layout"."_layout";
+
+            $template = $this->booter->getViewPath(
+                $layout,
+                (strpos($layout, "/mail") !== FALSE ? str_replace("/mail", "/email", $layout) : null)
+            );
             if (!file_exists($template)) return false;
-    
+            
             //Overwrite the language
             $lang = strtolower($lang);
             $options["overwrite_lang"] = $lang;

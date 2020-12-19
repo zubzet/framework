@@ -112,9 +112,13 @@ Z = {
     error_exist: "This does not exist!",
     error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
-    //TODO: Add custom errors and translating
     error_regex: "The input does not meet the required pattern!",
     error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
+    error_password_reset: "An error occurred. Did you use the correct email address?",
+    error_password_mismatch: "The password are not the same!",
+    error_invalid_email: "This email is not allowed!",
+    error_too_many_login_tries: "Too many login tries. Try again later.",
+    error_login: "Username or password is wrong",
     choose_file: "Choose file"
   },
   /**
@@ -125,13 +129,24 @@ Z = {
      * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
      * @param {string} nameElementId ID of the dom element for the name/email input
      * @param {string} passwordElementId ID of the dom element for password input
-     * @param {string} errorLabel ID of the dom element to show errors in
+     * @param {string} errorLabelId ID of the dom element to show errors in
      * @param {string} redirect URL to redirect after a successful login
      */
-    Login(nameElementId, passwordElementId, errorLabel, redirect = "") {
+    Login(nameElementId, passwordElementId, errorLabelId, redirect = "") {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
+      var errorLabel = document.getElementById(errorLabelId);
+
+      var loader = document.getElementById("loading");
+      if (loader) {
+        loader.style.display = "";
+      }
+      errorLabel.style.display = "none";
       Z.Request.root('login', 'login', {name: eName.value, password: ePassword.value}, (res) => {  
+        if (loader) {
+          loader.style.display = "none";
+        }
+
         if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -139,11 +154,20 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          if(document.getElementById(errorLabel).innerHTML == res.message) {
-            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          errorLabel.style.display = "";
+          var msg = res.message;
+          if (msg == "Username or password is wrong") {
+            msg = Z.Lang.error_login;
+          }
+          if (msg == "Too many login tries. Try again later.") {
+            msg = Z.Lang.error_too_many_login_tries;
+          }
+
+          if(errorLabel.innerHTML == msg) {
+            $(errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
-            document.getElementById(errorLabel).innerHTML = res.message;
-            $('#'+errorLabel).slideDown(300);
+            errorLabel.innerHTML = msg;
+            $(errorLabel).slideDown(300);
           }
         }
       });
@@ -156,7 +180,14 @@ Z = {
      */
     ForgotPassword(unameemailElementId, errorLabel, redirect = "") {
       var eUnameemail = document.getElementById(unameemailElementId);
+      var loader = document.getElementById("loading");
+      if (loader) {
+        loader.style.display = "";
+      }
       Z.Request.root('login/forgot_password', 'forgot_password', {unameemail: eUnameemail.value}, (res) => {  
+        if (loader) {
+          loader.style.display = "none";
+        }
         if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -164,10 +195,10 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          if(document.getElementById(errorLabel).innerHTML == res.message) {
+          if(document.getElementById(errorLabel).innerHTML == Z.Lang.error_password_reset) {
             $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
-            document.getElementById(errorLabel).innerHTML = res.message;
+            document.getElementById(errorLabel).innerHTML = Z.Lang.error_password_reset;//res.message;
             $('#'+errorLabel).slideDown(300);
           }
         }
@@ -185,24 +216,42 @@ Z = {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
+      var errorLabel = document.getElementById(errorLabelId);
+
       if (ePassword.value != ePasswordConfirm.value) { 
         if(alertErrors) {
-          alert("The password are not the same!"); 
+          alert(Z.Lang.error_password_mismatch); 
           return; 
         } else {
-          if(document.getElementById(errorLabel).innerHTML == "The password are not the same!") {
+          if(errorLabel.innerHTML == Z.Lang.error_password_mismatch) {
             $('#'+errorLabelId).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
-            document.getElementById(errorLabel).innerHTML = "The password are not the same!";
+            errorLabel.innerHTML = Z.Lang.error_password_mismatch;
             $('#'+errorLabelId).slideDown(300);
           }
           return;
         }
       }
+
+      var loader = document.getElementById("loading");
+      if (loader) {
+        loader.style.display = "";
+      }
+
       Z.Request.root('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
+        if (loader) {
+          loader.style.display = "none";
+        }
+
         if (res.result == "error") {
-          document.getElementById(errorLabelId).innerHTML = res.message;
-          if(alertErrors) alert(res.message);
+          let msg = res.message;
+          if (res.message == "This email is not allowed!") {
+            msg = Z.Lang.error_invalid_email;
+          }
+
+          errorLabel.innerHTML = msg;
+
+          if(alertErrors) alert(msg);
         } else if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -749,7 +798,9 @@ class ZForm {
       this.currentRowLength = 0;
     }
 
-    this.currentRow.appendChild(field.dom);
+    if (this.currentRow) {
+      this.currentRow.appendChild(field.dom);
+    }
     this.currentRowLength += field.width;
   }
 

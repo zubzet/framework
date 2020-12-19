@@ -38,6 +38,34 @@
         }
 
         /**
+         * Gets the IP of a request
+         * @return bool|string The ip of the client. False if no IP is detected
+         */
+        public function ip() {
+            $ip = false;
+            if(!empty($_SERVER['HTTP_CLIENT_IP'])) {
+                $ip = $_SERVER['HTTP_CLIENT_IP'];
+            } else if(!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            } else if(!empty($_SERVER['REMOTE_ADDR'])) {
+                $ip = $_SERVER['REMOTE_ADDR'];
+            } else if (getenv('HTTP_CLIENT_IP')) {
+                $ip = getenv('HTTP_CLIENT_IP');
+            } else if(getenv('HTTP_X_FORWARDED_FOR')) {
+                $ip = getenv('HTTP_X_FORWARDED_FOR');
+            } else if(getenv('HTTP_X_FORWARDED')) {
+                $ip = getenv('HTTP_X_FORWARDED');
+            } else if(getenv('HTTP_FORWARDED_FOR')) {
+                $ip = getenv('HTTP_FORWARDED_FOR');
+            } else if(getenv('HTTP_FORWARDED')) {
+                $ip = getenv('HTTP_FORWARDED');
+            } else if(getenv('REMOTE_ADDR')) {
+                $ip = getenv('REMOTE_ADDR');
+            }
+            return $ip;
+        }
+
+        /**
          * Gets a posted file
          * @param string $key The name of the file
          * @param string $default Default value if the file is not posted

@@ -9,30 +9,6 @@
     class LoginController extends z_controller {
 
         /**
-         * Gets the IP adress of the requesting client
-         * @return string The Ip Adress of the requesting client. "UNKOWN" when it could not be determined.
-         */
-        private function get_client_ip_env() {
-            $ipaddress = '';
-            if (getenv('HTTP_CLIENT_IP'))
-                $ipaddress = getenv('HTTP_CLIENT_IP');
-            else if(getenv('HTTP_X_FORWARDED_FOR'))
-                $ipaddress = getenv('HTTP_X_FORWARDED_FOR');
-            else if(getenv('HTTP_X_FORWARDED'))
-                $ipaddress = getenv('HTTP_X_FORWARDED');
-            else if(getenv('HTTP_FORWARDED_FOR'))
-                $ipaddress = getenv('HTTP_FORWARDED_FOR');
-            else if(getenv('HTTP_FORWARDED'))
-                $ipaddress = getenv('HTTP_FORWARDED');
-            else if(getenv('REMOTE_ADDR'))
-                $ipaddress = getenv('REMOTE_ADDR');
-            else
-                $ipaddress = 'UNKNOWN';
-        
-            return $ipaddress;
-        }
-
-        /**
          * @var bool $action_index_sitemap If set to true the action_index will appear in the sitemap
          */
         public static $action_index_sitemap = true;
@@ -72,9 +48,9 @@
                     /* SECURITY EMAIL */
                     if ($req->getModel("z_login")->sendTooManyLoginsEmailByUserId($user["id"])) {
                         
-                        $ip = /*$this->get_client_ip_env() =*/ "178.9.171.91";
+                        $ip = $req->ip();
 
-                        if (filter_var($ip, FILTER_VALIDATE_IP) && !in_array($ip, ["127.0.0.1", "::1"])) {
+                        if (filter_var($ip, FILTER_VALIDATE_IP) /*&& !in_array($ip, ["127.0.0.1", "::1"])*/) {
                             
                             $res->sendEmailToUser(
                                 $user["id"],
@@ -86,7 +62,7 @@
                                 [
                                     "user" => $user,
                                     "date" => date("Y-m-d H:i:s"),
-                                    "ip" => json_decode(file_get_contents("https://api.ipdata.co/".$ip."?api-key=".$req->getBooterSettings("ipdata_co_api_key")))
+                                    "ip" => $ip
                                 ]
                             );
 
@@ -335,16 +311,23 @@
          * @param Request $req The request object
          * @param Response $res The response object
          */
-        public function action_change_password($req, $res) {
+        public function action_change_password(Request $req, Response $res) {
             $res->reroute(["login", "reset"]);
         }
 
-        private function send_verify_mail($req, $res, $userId) {
+        private function send_verify_mail(Request $req, Response $res, $userId) {
             $userModel = $req->getModel("z_user");
 
             $token = $userModel->createVerifyToken($userId);
             $url = $res->booter->root . "login/verify/" . $token;
-            $res->sendEmailToUser($userId, "Verify your email!", "email_verify.php", ["url" => $url] ,"layout/mail_layout.php");
+            $res->sendEmailToUser(
+                $userId,
+                $req->getBooterSettings("pageName", "")." - Sign Up", 
+                "email_verify.php", 
+                [
+                    "url" => $url
+                ]
+            );
         }
 
     }
