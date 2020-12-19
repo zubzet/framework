@@ -879,6 +879,7 @@ class ZForm {
     button.innerHTML = text;
     this.dom.appendChild(button);
     button.addEventListener("click", action);
+    return button;
   }
 
 }
