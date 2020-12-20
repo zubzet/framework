@@ -421,4 +421,8 @@
     function getCaller($depth = 1) {
         return debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3)[$depth + 1]['function'];
     }
+
+    function e($str) {
+        echo htmlspecialchars($str);
+    }
 ?>
