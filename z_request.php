@@ -295,10 +295,10 @@
 
             $formResult = new FormResult($this);
             $formResult->fields = $fields;
-
-            
+   
             foreach ($fields as $field) {
                 $name = $field->name;
+
                 $field->value = $data[$name]??null;
                 
                 foreach ($field->rules as $rule) {
@@ -522,6 +522,11 @@
         public $value;
 
         /**
+         * @var boolean Skip this field when writing SQL 
+         */
+        public $noSave;
+
+        /**
          * Creates a form field representation
          * @param string $name Name of the field. Should match the name in the post header
          * @param string $dbName Name of the field in the database. If not set it will be equal to the name
@@ -534,6 +539,7 @@
             $this->isRequired = false;
             $this->value = null;
             $this->isFile = false;
+            $this->noSave = false;
         }
 
         /**

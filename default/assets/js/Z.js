@@ -1025,6 +1025,7 @@ class ZFormField {
       customDiv.appendChild(l);
       customDiv.appendChild(this.input);
       this.input.classList.add("form-control");
+      this.input.addEventListener("change", (e) => { l.innerText = e.srcElement.files[0].name; });
     } else if (this.type == "select") {           // --- Select ---
       this.input = document.createElement("select");
       var option = document.createElement("option");

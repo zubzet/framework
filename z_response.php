@@ -426,7 +426,6 @@
             if (ob_get_contents()) ob_end_clean();
 
             $from = $this->getBooterSettings("mail_from") ?? $this->getBooterSettings("mail_user");
-            $sender = $this->getBooterSettings("pageName");
 
             require_once 'vendor/autoload.php';
 
@@ -455,6 +454,7 @@
                 $mail->Subject = $subject;
                 $mail->Body    = $content;
                 $mail->AltBody = strip_tags(str_replace("<br>", "\n\r", $content));
+                $mail->CharSet = 'UTF-8';
             
                 $mail->send();
             } catch (Exception $e) {
@@ -558,14 +558,21 @@
             $db = $this->booter->z_db;
             $vals = [];
             $sql = "UPDATE `$table` SET";
-            $types = "";
+            $types = "";            
 
             for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
                 $field = $validationResult->fields[$i];
+
+                if ($field->noSave) {
+                    continue;
+                }
+
                 $sql .= " `". $field->dbField . "` = ?, ";
                 $types .= $field->dataType;
                 $vals[] = $field->value;
             }
+
+            //TODO: Implement $field->noSave for last part of the query
 
             $field = $validationResult->fields[$i];
             $sql .= " `". $field->dbField . "` = ?";
@@ -625,7 +632,10 @@
             foreach ($validationResult->fields as $field) {
                 if ($field->isFile) {
                     $upload = $this->upload();
-                    if(!isset($_FILES[$field->name])) continue; //TODO: Might take required into account
+                    if(!isset($_FILES[$field->name])) {
+                        $field->noSave = true;
+                        continue;
+                    } //TODO: Might take required into account
                     //TODO: Should use the uploads folder
                     $uploadCode = $upload->upload(
                         $_FILES[$field->name], 
