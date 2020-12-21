@@ -699,7 +699,7 @@ class ZForm {
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
     this.formErrorHook = options.formErrorHook;
-    this.sendOnSubmitClick = typeof variable === "boolean" ? options.sendOnSubmitClick : true;
+    this.sendOnSubmitClick = "sendOnSubmitClick" in options ? options.sendOnSubmitClick : true;
     this.customEndpoint = options.customEndpoint || null;
 
     this.hidehints = options.hidehints;
@@ -1019,13 +1019,13 @@ class ZFormField {
       this.input = document.createElement("input");
       this.input.setAttribute("type", this.type);
       this.input.classList.add("custom-file-input");
-      var l = document.createElement("label");
-      l.innerHTML = options.customFileInputText || Z.Lang.choose_file;
-      l.classList.add("custom-file-label", "text-truncate");
-      customDiv.appendChild(l);
+      this.fileValue = document.createElement("label");
+      this.fileValue.innerHTML = options.customFileInputText || Z.Lang.choose_file;
+      this.fileValue.classList.add("custom-file-label", "text-truncate");
+      customDiv.appendChild(this.fileValue);
       customDiv.appendChild(this.input);
       this.input.classList.add("form-control");
-      this.input.addEventListener("change", (e) => { l.innerText = e.srcElement.files[0].name; });
+      this.input.addEventListener("change", (e) => { this.fileValue.innerText = e.srcElement.files[0].name; });
     } else if (this.type == "select") {           // --- Select ---
       this.input = document.createElement("select");
       var option = document.createElement("option");
@@ -1207,7 +1207,15 @@ class ZFormField {
   }
 
   set value(value) {
-    this.input.value = value;
+    if (this.input.type != "file") {
+      this.input.value = value;
+    } else {
+      if (value == "") {
+        this.fileValue.innerText = Z.Lang.choose_file;
+      } else {
+        this.fileValue.innerText = value;
+      }
+    }
   }
 
   /**
