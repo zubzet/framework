@@ -153,6 +153,9 @@
             //Import constants
             require_once $this->z_framework_root . "z_constants.php";
 
+            //Import helpers
+            include($this->z_framework_root."helpers.php");
+
             //Parse Post request
             $this->decodePost();
 
@@ -411,18 +414,4 @@
 
     }
 
-    //Helper functions
-
-    /**
-     * Helper function to get the caller of a function
-     * @param int $depth Index of the callstack from back to front
-     * @return any The caller
-     */
-    function getCaller($depth = 1) {
-        return debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3)[$depth + 1]['function'];
-    }
-
-    function e($str) {
-        echo htmlspecialchars($str);
-    }
 ?>
