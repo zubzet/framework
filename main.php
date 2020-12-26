@@ -103,6 +103,8 @@
          */
         function __construct($params = []) {
 
+            chdir(__DIR__."/../");
+
             $param_keys = [
                 "root" => &$this->z_framework_root, 
                 "controllers" => &$this->z_controllers, 
