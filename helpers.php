@@ -32,4 +32,10 @@
         echo htmlspecialchars($value);
     }
 
+    function var_swap(&$x, &$y) {
+        $tmp = $x;
+        $x = $y;
+        $y = $tmp;
+    }
+
 ?>
