@@ -426,6 +426,9 @@
             if (ob_get_contents()) ob_end_clean();
 
             $from = $this->getBooterSettings("mail_from") ?? $this->getBooterSettings("mail_user");
+            if(!filter_var($from, FILTER_VALIDATE_EMAIL)) {
+                throw new \Exception("mail_user is not a valid mail. Try using mail_from instead.");
+            }
 
             require_once 'vendor/autoload.php';
 
