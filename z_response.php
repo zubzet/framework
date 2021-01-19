@@ -393,8 +393,18 @@
             //Import the email template
             $layout = str_replace(".php", "", $layout);
             $layout = str_replace("_layout", "", $layout);
-            $layout = "layout/$layout"."_layout";
+            $layout = "$layout"."_layout";
 
+            if(!file_exists($this->getZViews()."$layout.php")) {
+                if(substr($layout, 0, 7) !== "layout/") {
+                    $layout = "layout/$layout";
+                }
+            }
+
+            if(!file_exists($this->getZViews()."$layout.php")) {
+                throw new \Exception("'$layout.php' does not exist.");
+            }
+            
             $template = $this->booter->getViewPath(
                 $layout,
                 (strpos($layout, "/mail") !== FALSE ? str_replace("/mail", "/email", $layout) : null)
