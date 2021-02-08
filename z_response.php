@@ -557,6 +557,26 @@
         }
 
         /**
+         * Inserts a set into the database with data from a form. Updates if the set already exists
+         * @param string $table Tablename in the database
+         * @param string $pkField Name of the field in the database of the primary key
+         * @param string $pkType Type of the primary field ("s"/"i"...)
+         * @param string $pkValue Value of the primary key in the row to change
+         * @param ValidationResult $validationResult Result of a validation
+         */
+        public function insertOrUpdateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult) {
+            $db = $this->booter->z_db;
+            $sql = "SELECT `$pkField` FROM `$table` WHERE `$pkField`=?";
+            $db->exec($sql, $pkType, $pkValue);
+            if($db->countResults() > 0) {
+                return $this->updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult);
+            }
+            return $this->insertDatabase($table, $validationResult, [
+                $pkField => $pkValue
+            ]);
+        }
+
+        /**
          * Updates a database row by a user filled form
          * @param string $table Tablename in the database
          * @param string $pkField Name of the field in the database of the primary key
