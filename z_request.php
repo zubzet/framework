@@ -42,7 +42,7 @@
          * @return bool|string The ip of the client. False if no IP is detected
          */
         public function ip() {
-            $ip = false;
+            $ip = null;
             if(!empty($_SERVER['HTTP_CLIENT_IP'])) {
                 $ip = $_SERVER['HTTP_CLIENT_IP'];
             } else if(!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -63,6 +63,10 @@
                 $ip = getenv('REMOTE_ADDR');
             }
             return $ip;
+        }
+
+        public function referer() {
+            return $_SERVER['HTTP_REFERER'] ?? null;
         }
 
         /**

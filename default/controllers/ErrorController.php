@@ -17,6 +17,7 @@
          * @param Response $res The response object
          */
         public function action_403($req, $res) {
+            http_response_code(403);
             $res->render("403.php", [], "layout/min_layout.php");
         }
 
@@ -29,6 +30,7 @@
          * @param Response $res The response object
          */
         public function action_404($req, $res) {
+            http_response_code(404);
             $res->render("404.php", [], "layout/min_layout.php");
         }
 
@@ -41,6 +43,7 @@
          * @param Response $res The response object
          */
         public function action_500($req, $res) {
+            http_response_code(500);
             $res->render("500.php", [], "layout/min_layout.php");
         }
         
