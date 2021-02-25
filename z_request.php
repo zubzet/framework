@@ -69,6 +69,15 @@
             return $_SERVER['HTTP_REFERER'] ?? null;
         }
 
+        public function userAgent() {
+            return $_SERVER['HTTP_USER_AGENT'] ?? null;
+        }
+
+        public function getExecutionTime() {
+            if(!isset($_SERVER["REQUEST_TIME_FLOAT"])) return false;
+            return microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];
+        }
+
         /**
          * Gets a posted file
          * @param string $key The name of the file
