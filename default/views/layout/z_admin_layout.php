@@ -21,7 +21,8 @@ return [
             "form_saved" => "Gespeichert!",
             "form_save_error" => "Speichern Fehlgeschlagen",
             "form_unsaved_changes" => "Es gibt ungespeicherte änderungen",
-            "back" => "Zurück"
+            "back" => "Zurück",
+            "database" => "Datenbank"
         ], 
         "en" => [
             "administration" => "Administration",
@@ -39,7 +40,8 @@ return [
             "form_saved" => "Saved!",
             "form_save_error" => "Error while saving",
             "form_unsaved_changes" => "There are unsaved changes",
-            "back" => "Go back"
+            "back" => "Go back",
+            "database" => "Database"
         ]
     ], "layout" => function($opt, $body, $head) {?>
 <!doctype html>
@@ -130,6 +132,12 @@ return [
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.log")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/log"><i class="fa fa-file"></i><?php $opt["lang"]("log_statistics"); ?></a>
+                            <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.database")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/database">
+                                    <i class="fa fa-database"></i>
+                                    <?php $opt["lang"]("database"); ?>
+                                </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.danger.update")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/update"><i class="fa fa-download"></i><?php $opt["lang"]("update"); ?></a>
