@@ -54,4 +54,10 @@
         return $result;
     }
 
+    function emptyToNull(&$value) {
+        if(empty($value) || $value === "null") {
+            $value = null;
+        }
+    }
+
 ?>
