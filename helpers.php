@@ -38,4 +38,26 @@
         $y = $tmp;
     }
 
+    function shortenStr($str, $maxlength = 10, $cutDescriptor = "...") {
+        $maxlength -= strlen($cutDescriptor);
+        $result = "";
+        foreach(explode(" ", $str) as $part) {
+            $lengthLeft = $maxlength - strlen($result);
+            if($lengthLeft > strlen($part)) {
+                $result .= "$part ";
+            } else {
+                $result .= substr($part, 0, $lengthLeft);
+                $result .= $cutDescriptor;
+                break;
+            }
+        }
+        return $result;
+    }
+
+    function emptyToNull(&$value) {
+        if(empty($value) || $value === "null") {
+            $value = null;
+        }
+    }
+
 ?>

@@ -272,7 +272,7 @@
             } else {
                 $controller = $this->defaultIndex;
             }
-            
+
             if (isset($parts[1])) {
                 $method = "action_" . strtolower($parts[1]);
             } else {
