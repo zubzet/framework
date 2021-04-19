@@ -242,7 +242,7 @@
 
         /** 
          * The Execution of the requested action 
-         * @param Array $customUrlParts exmaple: ["panel", "index"]
+         * @param Array $customUrlParts example: ["panel", "index"]
          */
         public function execute($customUrlParts = null) {
             global $argv;
