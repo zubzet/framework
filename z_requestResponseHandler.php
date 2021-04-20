@@ -58,9 +58,12 @@
          * @param String $key Key of the settings
          * @return Any Value of the key
          */
-        public function getBooterSettings($key = null) {
+        public function getBooterSettings($key = null, $useDefault = true, $default = null) {
             if(!empty($key)) {
                 if(!isset($this->booter->settings[$key])) {
+                    if($useDefault) {
+                        return $default;
+                    }
                     throw new \Exception("The setting '$key' does not exist!");
                 }
                 return $this->booter->settings[$key];

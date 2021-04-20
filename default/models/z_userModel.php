@@ -103,7 +103,7 @@
          */
         function updateAccountSettings($id, $email, $language) {
             $query = "UPDATE `z_user` SET `email`=?, `languageId`=? WHERE `id`=?";
-            $this->exec($query, "siii", $email, $language, $id);
+            $this->exec($query, "sii", $email, $language, $id);
 
             //Log
             $this->logAction($this->getLogCategoryIdByName("user"), "User account updated (User ID: $id)", $id);
@@ -150,6 +150,16 @@
         function addRoleToUserByRoleId($userId, $roleId) {
             $sql = "INSERT INTO `z_user_role`(`role`, `user`) VALUES (?, ?)";
             $this->exec($sql, "ii", $roleId, $userId);
+        }
+
+        /**
+         * Add a role to a user
+         * @param int $userId The id of the user itended to recieve the role
+         * @param int $roleId The id of the role to be added
+         */
+        function removeRoleFromUserByRoleId($userId, $roleId) {
+            $sql = "UPDATE `z_user_role` SET `active`=0 WHERE `user`=? AND `role`=?";
+            $this->exec($sql, "ii", $userId, $roleId);
         }
 
         /**

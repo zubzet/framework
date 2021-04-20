@@ -38,6 +38,47 @@
         }
 
         /**
+         * Gets the IP of a request
+         * @return bool|string The ip of the client. False if no IP is detected
+         */
+        public function ip() {
+            $ip = null;
+            if(!empty($_SERVER['HTTP_CLIENT_IP'])) {
+                $ip = $_SERVER['HTTP_CLIENT_IP'];
+            } else if(!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            } else if(!empty($_SERVER['REMOTE_ADDR'])) {
+                $ip = $_SERVER['REMOTE_ADDR'];
+            } else if (getenv('HTTP_CLIENT_IP')) {
+                $ip = getenv('HTTP_CLIENT_IP');
+            } else if(getenv('HTTP_X_FORWARDED_FOR')) {
+                $ip = getenv('HTTP_X_FORWARDED_FOR');
+            } else if(getenv('HTTP_X_FORWARDED')) {
+                $ip = getenv('HTTP_X_FORWARDED');
+            } else if(getenv('HTTP_FORWARDED_FOR')) {
+                $ip = getenv('HTTP_FORWARDED_FOR');
+            } else if(getenv('HTTP_FORWARDED')) {
+                $ip = getenv('HTTP_FORWARDED');
+            } else if(getenv('REMOTE_ADDR')) {
+                $ip = getenv('REMOTE_ADDR');
+            }
+            return $ip;
+        }
+
+        public function referer() {
+            return $_SERVER['HTTP_REFERER'] ?? null;
+        }
+
+        public function userAgent() {
+            return $_SERVER['HTTP_USER_AGENT'] ?? null;
+        }
+
+        public function getExecutionTime() {
+            if(!isset($_SERVER["REQUEST_TIME_FLOAT"])) return false;
+            return microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];
+        }
+
+        /**
          * Gets a posted file
          * @param string $key The name of the file
          * @param string $default Default value if the file is not posted
@@ -267,10 +308,10 @@
 
             $formResult = new FormResult($this);
             $formResult->fields = $fields;
-
-            
+   
             foreach ($fields as $field) {
                 $name = $field->name;
+
                 $field->value = $data[$name]??null;
                 
                 foreach ($field->rules as $rule) {
@@ -494,6 +535,11 @@
         public $value;
 
         /**
+         * @var boolean Skip this field when writing SQL 
+         */
+        public $noSave;
+
+        /**
          * Creates a form field representation
          * @param string $name Name of the field. Should match the name in the post header
          * @param string $dbName Name of the field in the database. If not set it will be equal to the name
@@ -506,6 +552,7 @@
             $this->isRequired = false;
             $this->value = null;
             $this->isFile = false;
+            $this->noSave = false;
         }
 
         /**

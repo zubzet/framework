@@ -107,6 +107,8 @@
         function __construct($params = []) {
             chdir(__DIR__.'/..');
 
+            chdir(__DIR__."/../");
+
             $param_keys = [
                 "root" => &$this->z_framework_root, 
                 "controllers" => &$this->z_controllers, 
@@ -146,6 +148,16 @@
                 }
             }
 
+            //Overwrite using environment vars
+            if($this->settings["allow_env_config"] ?? false == true) {
+                foreach($this->settings as $key => $setting) {
+                    $envName = "CONFIG_".strtoupper($key);
+                    if(false !== getenv($envName)) {
+                        $this->settings[$key] = getenv($envName);
+                    }
+                }
+            }
+
             //Options to attributes
             foreach ($this->settings as $option => $val) {
                 $this->$option = $val;
@@ -156,6 +168,9 @@
 
             //Import constants
             require_once $this->z_framework_root . "z_constants.php";
+
+            //Import helpers
+            include($this->z_framework_root."helpers.php");
 
             //Parse Post request
             $this->decodePost();
@@ -246,13 +261,17 @@
 
         /** 
          * The Execution of the requested action 
-         * @param Array $customUrlParts exmaple: ["panel", "index"]
+         * @param Array $customUrlParts example: ["panel", "index"]
          */
         public function execute($customUrlParts = null) {
             global $argv;
-            if($argv[1] ?? "" == "legacy-update") {
-                return $this->executeCommandLine();
+            if(isset($argv)) {
+                if(($argv[1] ?? null) == "run") {
+                    $customUrlParts = array_slice($argv, 2);
+                }
             }
+
+            //Be able to force custom 
             if(isset($customUrlParts)) {
                 $this->urlParts = $customUrlParts;
             }
@@ -277,7 +296,7 @@
             } else {
                 $controller = $this->defaultIndex;
             }
-            
+
             if (isset($parts[1])) {
                 $method = "action_" . strtolower($parts[1]);
             } else {
@@ -386,9 +405,18 @@
          * @param string $document Filename of the view
          * @return string Relative path to the view file
          */
-        public function getViewPath($document) {
-            if (file_exists($this->z_views.$document)) return $this->z_views.$document;
-            if (file_exists($this->z_framework_root."default/views/".$document)) return $this->z_framework_root."default/views/".$document;
+        public function getViewPath(...$documents) {
+            foreach($documents as $document) {
+                if(substr($document, -4, 4) != ".php") {
+                    $document .= ".php";
+                }
+                if (file_exists($this->z_views.$document)) {
+                    return $this->z_views.$document;
+                }
+                if (file_exists($this->z_framework_root."default/views/$document")) {
+                    return $this->z_framework_root."default/views/$document";
+                }
+            }
             return $this->z_framework_root."default/views/500.php";
         }
 
@@ -410,14 +438,4 @@
 
     }
 
-    //Helper functions
-
-    /**
-     * Helper function to get the caller of a function
-     * @param int $depth Index of the callstack from back to front
-     * @return any The caller
-     */
-    function getCaller($depth = 1) {
-        return debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3)[$depth + 1]['function'];
-    }
 ?>
