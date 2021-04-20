@@ -1,0 +1,13 @@
+<?php
+
+    class %%name%%Model extends z_model {
+        
+        public function getById() {
+            $sql = "SELECT * FROM z_user";
+            $this->exec();
+            return $this->resultToArray();
+        }
+
+    }
+
+?>

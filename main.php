@@ -7,9 +7,12 @@
      * First class that is instantiated at a request
      */
     class z_framework {
+        public string $version = "0.11";
 
         /** @var string $rootDirectory Path to the root */
-        private $rootDirectory;
+        public $rootDirectory;
+
+        public $workingDir;
 
         /** @var string $host Name of the host of this page */
         public $host;
@@ -102,6 +105,7 @@
          * Parses all the options as vars and instantiate the z_db and establish the db connection
          */
         function __construct($params = []) {
+            chdir(__DIR__.'/..');
 
             chdir(__DIR__."/../");
 
@@ -171,6 +175,9 @@
             //Parse Post request
             $this->decodePost();
 
+            //Setup the absolute working dir
+            $this->workingDir = getcwd()."/";
+
             //processing the url
             $this->rootFolder = "/".$this->rootDirectory;
             $this->root = $this->host . "/" . $this->rootDirectory;
@@ -201,6 +208,8 @@
             require_once $this->z_framework_root."z_requestResponseHandler.php";
             require_once $this->z_framework_root."z_response.php";
             require_once $this->z_framework_root."z_request.php";
+            $this->req = new Request($this);
+            $this->res = new Response($this);
 
             //User
             require_once $this->z_framework_root.'z_user.php';
@@ -269,6 +278,11 @@
             $this->executePath($this->urlParts);
         }
 
+        public function executeCommandLine() {
+            require_once __DIR__."/CommandLine/Core.php";
+            $this->cli = new CommandLine_Core($this);
+        }
+
         /**
         * Executes a action for a specified path
         * @param Array $parts exmaple: ["auth", "login"]
@@ -319,8 +333,6 @@
             $this->ActionStack[] = $method;
             
             try {
-                $this->req = new Request($this);
-                $this->res = new Response($this);
                 $CTRL_obj = new $controller($this->req, $this->res);
                 if (method_exists($controller, $method)) {
                     return $CTRL_obj->{$method}($this->req, $this->res);
