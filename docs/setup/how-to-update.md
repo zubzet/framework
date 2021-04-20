@@ -1,12 +1,9 @@
-This page assumes you have console access and have PHP setup to be used in the CLI. You can test this by running: `php -v`
+# Updating to the newest version of the framework
+This page assumes you are using this framework as a git submodule and you have an user account with the permission `admin.danger.update`.
 
-## Running the update
-```bash
-php zubzet update
-```
+1. Get the newest version of the submodule by using `git pull` in the `z_framework` directory.
+2. Open the Z-Admin panel by opening the web page in your browser `yourwebsite.tld/[root/]z/` and log in.
+3. Go to the `Framework Update` page.
+4. Click `Update to framework version`.
 
-## Update from older versions than 0.11.0
-Please run the following command to generate the ZubZet cli:
-```bash
-php index.php migrate-cli
-```
+When you reload the page and the project version is the same as the framework version, everything worked fine.

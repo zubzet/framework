@@ -14,6 +14,7 @@
      *  admin.log
      *  admin.su
      *  admin.danger.cfg
+     *  admin.danger.update
      */
 
     /**
