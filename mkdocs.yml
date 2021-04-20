@@ -126,3 +126,4 @@ nav:
     - Advanced Features:
         - Sitemap Generation: advanced-features/sitemap-generation.md
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
+        - Commands: advanced-features/commands.md

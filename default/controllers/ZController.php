@@ -322,6 +322,27 @@
             ], "layout/z_admin_layout.php");
         }
 
+        public function action_database(Request $req, Response $res) {
+            $req->checkPermission("admin.database");
+
+            if($req->getParameters(0, 1, "adminer.css")) {
+                return require_once "z_framework/adminer/adminer.css";
+            }
+
+            if($req->getParameters(0, 1, "internal")) {
+
+
+                $GLOBALS["credentials"]["host"] = $req->getBooterSettings("dbhost");
+                $GLOBALS["credentials"]["username"] = $req->getBooterSettings("dbusername");
+                $GLOBALS["credentials"]["password"] = $req->getBooterSettings("dbpassword");
+                $GLOBALS["credentials"]["database"] = $req->getBooterSettings("dbname");
+
+                return require "z_framework/adminer/index.php";
+            }
+
+            $res->render("database_viewer.php", [], "layout/z_admin_layout.php");
+        }
+
     }
 
 ?>

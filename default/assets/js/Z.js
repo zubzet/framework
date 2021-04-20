@@ -69,12 +69,13 @@ Z = {
      * @param {object} data Data to send to the client. It will be passed as post data
      * @param {function} handler Handler that gets called when the request was successful
      */
-    root(action, subaction, data, handler = null, async = true, parse = true) {
+    root(action, subaction, data, handler = null, async = true, parse = true, additionalParameters = {}) {
       $.ajax({
         method: "POST",
         data: Object.assign(data, {action: subaction}),
         url: Z.Request.rootPath + action,
-        async: async
+        async: async,
+        ...additionalParameters
       }).done((data) => {
         if(parse) {
           var dat = null;
@@ -112,10 +113,15 @@ Z = {
     error_exist: "This does not exist!",
     error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
-    //TODO: Add custom errors and translating
     error_regex: "The input does not meet the required pattern!",
     error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
-    choose_file: "Choose file"
+    error_password_reset: "An error occurred. Did you use the correct email address?",
+    error_password_mismatch: "The password are not the same!",
+    error_invalid_email: "This email is not allowed!",
+    error_too_many_login_tries: "Too many login tries. Try again later.",
+    error_login: "Username or password is wrong",
+    choose_file: "Choose file",
+    CEDRemove: "✕"
   },
   /**
    * Holds some presets to create fix effects
@@ -125,13 +131,24 @@ Z = {
      * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
      * @param {string} nameElementId ID of the dom element for the name/email input
      * @param {string} passwordElementId ID of the dom element for password input
-     * @param {string} errorLabel ID of the dom element to show errors in
+     * @param {string} errorLabelId ID of the dom element to show errors in
      * @param {string} redirect URL to redirect after a successful login
      */
-    Login(nameElementId, passwordElementId, errorLabel, redirect = "") {
+    Login(nameElementId, passwordElementId, errorLabelId, redirect = "") {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
+      var errorLabel = document.getElementById(errorLabelId);
+
+      var loader = document.getElementById("loading");
+      if (loader) {
+        loader.style.display = "";
+      }
+      errorLabel.style.display = "none";
       Z.Request.root('login', 'login', {name: eName.value, password: ePassword.value}, (res) => {  
+        if (loader) {
+          loader.style.display = "none";
+        }
+
         if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -139,11 +156,20 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          if(document.getElementById(errorLabel).innerHTML == res.message) {
-            $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
+          errorLabel.style.display = "";
+          var msg = res.message;
+          if (msg == "Username or password is wrong") {
+            msg = Z.Lang.error_login;
+          }
+          if (msg == "Too many login tries. Try again later.") {
+            msg = Z.Lang.error_too_many_login_tries;
+          }
+
+          if(errorLabel.innerHTML == msg) {
+            $(errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
-            document.getElementById(errorLabel).innerHTML = res.message;
-            $('#'+errorLabel).slideDown(300);
+            errorLabel.innerHTML = msg;
+            $(errorLabel).slideDown(300);
           }
         }
       });
@@ -156,7 +182,14 @@ Z = {
      */
     ForgotPassword(unameemailElementId, errorLabel, redirect = "") {
       var eUnameemail = document.getElementById(unameemailElementId);
+      var loader = document.getElementById("loading");
+      if (loader) {
+        loader.style.display = "";
+      }
       Z.Request.root('login/forgot_password', 'forgot_password', {unameemail: eUnameemail.value}, (res) => {  
+        if (loader) {
+          loader.style.display = "none";
+        }
         if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -164,10 +197,10 @@ Z = {
             window.location.href = redirect;
           }
         } else {
-          if(document.getElementById(errorLabel).innerHTML == res.message) {
+          if(document.getElementById(errorLabel).innerHTML == Z.Lang.error_password_reset) {
             $('#'+errorLabel).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
-            document.getElementById(errorLabel).innerHTML = res.message;
+            document.getElementById(errorLabel).innerHTML = Z.Lang.error_password_reset;//res.message;
             $('#'+errorLabel).slideDown(300);
           }
         }
@@ -185,24 +218,42 @@ Z = {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
+      var errorLabel = document.getElementById(errorLabelId);
+
       if (ePassword.value != ePasswordConfirm.value) { 
         if(alertErrors) {
-          alert("The password are not the same!"); 
+          alert(Z.Lang.error_password_mismatch); 
           return; 
         } else {
-          if(document.getElementById(errorLabel).innerHTML == "The password are not the same!") {
+          if(errorLabel.innerHTML == Z.Lang.error_password_mismatch) {
             $('#'+errorLabelId).fadeOut(20).fadeIn(100).fadeOut(20).fadeIn(100).show();
           } else {
-            document.getElementById(errorLabel).innerHTML = "The password are not the same!";
+            errorLabel.innerHTML = Z.Lang.error_password_mismatch;
             $('#'+errorLabelId).slideDown(300);
           }
           return;
         }
       }
+
+      var loader = document.getElementById("loading");
+      if (loader) {
+        loader.style.display = "";
+      }
+
       Z.Request.root('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
+        if (loader) {
+          loader.style.display = "none";
+        }
+
         if (res.result == "error") {
-          document.getElementById(errorLabelId).innerHTML = res.message;
-          if(alertErrors) alert(res.message);
+          let msg = res.message;
+          if (res.message == "This email is not allowed!") {
+            msg = Z.Lang.error_invalid_email;
+          }
+
+          errorLabel.innerHTML = msg;
+
+          if(alertErrors) alert(msg);
         } else if (res.result == "success") {
           if (redirect == "") {
             window.location.reload();
@@ -250,6 +301,7 @@ class ZCED { //Create, edit, delete
    * @param {array} blueprint.value Default value. Can be generated in php with createCEDFood
    * @param {Array} blueprint.fields Array of options for creating fields. These fields will be inserted in all CED items
    * @param {boolean} blueprint.compact Uses the compact mode if set to true
+   * @param {boolean} blueprint.smallButton Makes the remove button small
    */
   constructor(blueprint = {}) {
     this.blueprint = blueprint;
@@ -279,7 +331,7 @@ class ZCED { //Create, edit, delete
     this.buttonAdd = document.createElement("button");
     this.buttonAdd.innerHTML = Z.Lang.addElement;
     this.buttonAdd.addEventListener("click", this.createItem.bind(this));
-    this.buttonAdd.classList.add("btn", "btn-primary", "m-1");
+    this.buttonAdd.classList.add("btn", "btn-primary", "my-1", "mr-1");
     this.dom.appendChild(this.buttonAdd);
 
     if (blueprint.value) {
@@ -346,6 +398,7 @@ class ZCED { //Create, edit, delete
     this.items.push(item);
     item.ced = this;
     this.itemDom.appendChild(item.dom);
+    this.updateMargins();
   }
 
   /**
@@ -394,6 +447,16 @@ class ZCED { //Create, edit, delete
       item.markValid();
     }
   }
+
+  updateMargins() {
+    for (var i = 0; i < this.items.length; i++) {
+      this.items[i].dom.classList.add("mb-1");
+    }
+
+    if (this.items.length > 0) {
+      this.items[this.items.length - 1].dom.classList.remove("mb-1");
+    }
+  }
 }
 
 /**
@@ -402,17 +465,23 @@ class ZCED { //Create, edit, delete
 class ZCEDItem {
 
   /**
-   * Creates an CED item. Usally these items are created in ZCED.createItem which is recommenden to use when creating items.
+   * Creates an CED item. Usually these items are created in ZCED.createItem which is recommended to use when creating items.
    * @param {CEDBlueprint} blueprint Blueprint for an item
    */
   constructor(blueprint) {
 
     this.dom = document.createElement("div");
-    
+    this.currentRowLength = 12;
+
     if (blueprint.compact) {
       this.dom.classList.add("row");
+      this.inputSpace = this.dom;
     } else {
-      this.dom.classList.add("card", "m-1", "p-1");
+      this.dom.classList.add("card", "mx-1", "mb-1", "p-1", "pb-3");
+      this.inputSpace = document.createElement("div");
+      this.inputSpace.classList.add("form-group");
+      this.inputSpace.classList.add("mb-0");
+      this.dom.appendChild(this.inputSpace);
     }
 
     this.fields = {};
@@ -424,23 +493,27 @@ class ZCEDItem {
 
     for (var fieldBlueprint of this.blueprint.fields) {
       var field = new ZFormField(fieldBlueprint);
-      this.dom.appendChild(field.dom);
-      field.on("change", () => {
-        this.ced.emit("change");
-      });
-      this.fields[field.name] = field;
+      this.addField(field);
     }
 
     var buttonRemove = document.createElement("button");
     buttonRemove.addEventListener("click", () => { 
       this.ced.emit("change");
+      this.ced.updateMargins();
       this.dom.classList.add("d-none");
       this.deleted = true;
+      if (blueprint.deleteHook) {
+        blueprint.deleteHook(this);
+      }
     });
-    buttonRemove.innerHTML = "✕";
-    buttonRemove.classList.add("btn", "btn-danger");
+    buttonRemove.innerHTML = Z.Lang.CEDRemove;;
+    buttonRemove.classList.add("btn", "btn-danger", "float-right");
 
-    this.dom.appendChild(buttonRemove);
+    if (this.blueprint.smallButton) {
+      this.inputSpace.appendChild(buttonRemove);
+    } else {
+      this.dom.appendChild(buttonRemove);
+    }
 
     if (blueprint.compact) {
       var removeWrapper = document.createElement("div");
@@ -555,6 +628,36 @@ class ZCEDItem {
     }
   }
 
+  addField(field) {
+    field.label.classList.add("mb-0");
+    this.dom.appendChild(field.dom);
+    this.fields[field.name] = field;
+    field.on("change", () => {
+      this.ced.emit("change");
+    });
+
+    this.fields[field.name] = field;
+
+    if (!this.blueprint.compact) {
+      if (field.width + this.currentRowLength > 12) {
+        var group = document.createElement("div");
+        group.classList.add("form-group");
+        this.currentRow = document.createElement("div");
+        this.currentRow.classList.add("form-row");
+        group.appendChild(this.currentRow);
+        this.inputSpace.appendChild(group);
+        this.currentRowLength = 0;
+      }
+    } else {
+      this.inputSpace.appendChild(field.dom);
+    }
+
+    if (this.currentRow) {
+      this.currentRow.appendChild(field.dom);
+    }
+    this.currentRowLength += field.width;
+  }
+
 }
 
 /**
@@ -596,7 +699,7 @@ class ZForm {
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
     this.formErrorHook = options.formErrorHook;
-    this.sendOnSubmitClick = typeof variable === "boolean" ? options.sendOnSubmitClick : true;
+    this.sendOnSubmitClick = "sendOnSubmitClick" in options ? options.sendOnSubmitClick : true;
     this.customEndpoint = options.customEndpoint || null;
 
     this.hidehints = options.hidehints;
@@ -613,14 +716,9 @@ class ZForm {
     this.inputSpace.classList.add("form-group");
     this.dom.appendChild(this.inputSpace);
 
-    this.buttonSubmit = document.createElement("button");
-    this.buttonSubmit.innerHTML = Z.Lang.submit;
-    var that = this;
-    this.buttonSubmit.addEventListener("click", function(e) {
-      if(that.sendOnSubmitClick) that.send(that.customEndpoint);
+    this.buttonSubmit = this.createActionButton(Z.Lang.submit, "btn-primary", () => {
+      if(this.sendOnSubmitClick) this.send(this.customEndpoint);
     });
-    this.buttonSubmit.classList.add("btn", "btn-primary");
-    this.dom.appendChild(this.buttonSubmit);
 
     this.currentRowLength = 12;
     this.currentRow = null;
@@ -749,7 +847,9 @@ class ZForm {
       this.currentRowLength = 0;
     }
 
-    this.currentRow.appendChild(field.dom);
+    if (this.currentRow) {
+      this.currentRow.appendChild(field.dom);
+    }
     this.currentRowLength += field.width;
   }
 
@@ -824,10 +924,11 @@ class ZForm {
    */
   createActionButton(text, style, action) {
     var button = document.createElement("button");
-    button.classList.add("ml-1", "btn", style);
+    button.classList.add("mr-1", "mb-1", "btn", style);
     button.innerHTML = text;
     this.dom.appendChild(button);
     button.addEventListener("click", action);
+    return button;
   }
 
 }
@@ -899,7 +1000,7 @@ class ZFormField {
     this.optgroup = null;
 
     this.dom = document.createElement("div");
-    this.dom.classList.add("col");
+    this.dom.classList.add("col", "col-12");
 
     this.label = document.createElement("label");
     this.label.innerHTML = this.text;
@@ -918,12 +1019,13 @@ class ZFormField {
       this.input = document.createElement("input");
       this.input.setAttribute("type", this.type);
       this.input.classList.add("custom-file-input");
-      var l = document.createElement("label");
-      l.innerHTML = options.customFileInputText || Z.Lang.choose_file;
-      l.classList.add("custom-file-label", "text-truncate");
-      customDiv.appendChild(l);
+      this.fileValue = document.createElement("label");
+      this.fileValue.innerHTML = options.customFileInputText || Z.Lang.choose_file;
+      this.fileValue.classList.add("custom-file-label", "text-truncate");
+      customDiv.appendChild(this.fileValue);
       customDiv.appendChild(this.input);
       this.input.classList.add("form-control");
+      this.input.addEventListener("change", (e) => { this.fileValue.innerText = e.srcElement.files[0].name; });
     } else if (this.type == "select") {           // --- Select ---
       this.input = document.createElement("select");
       var option = document.createElement("option");
@@ -931,6 +1033,9 @@ class ZFormField {
       option.setAttribute("selected", true);
       option.setAttribute("value", "");
       option.innerHTML = "---";
+      if (options.required) {
+        option.disabled = true;
+      }
       this.input.classList.add("form-control");
       this.input.appendChild(option);
     } else if (this.type == "textarea") {         // --- Textarea ---
@@ -1102,7 +1207,15 @@ class ZFormField {
   }
 
   set value(value) {
-    this.input.value = value;
+    if (this.input.type != "file") {
+      this.input.value = value;
+    } else {
+      if (value == "") {
+        this.fileValue.innerText = Z.Lang.choose_file;
+      } else {
+        this.fileValue.innerText = value;
+      }
+    }
   }
 
   /**
@@ -1166,7 +1279,11 @@ class ZFormField {
     }
 
     if (clear) {
-      this.input.innerHTML = '<option value="">---</option>';
+      if (!this.options.required) {
+        this.input.innerHTML = '<option value="">---</option>';
+      } else {
+        this.input.innerHTML = "";
+      }
     }
 
     for (var data of food) {

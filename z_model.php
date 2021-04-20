@@ -57,7 +57,6 @@
          */
         function exec($query, $types = "", $params = null) {
             $res = $this->z_db->exec(...func_get_args());
-            $this->lastInsertId = $this->z_db->getInsertId(...func_get_args());
             return $res;
         }
 
@@ -66,7 +65,7 @@
          * @return int The id of the in the last insert created dataset
          */
         function getInsertId() {
-            return $this->lastInsertId;
+            return $this->z_db->getInsertId();
         }
 
         /**

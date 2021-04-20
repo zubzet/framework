@@ -10,9 +10,9 @@
 
         /**
          * Makes food edible to input selects
-         * @param String $table Database table result
-         * @param String $value_field Row that is used as value
-         * @param String $text_field Row that is shown to the client as text
+         * @param array $table Database table result
+         * @param string $value_field Row that is used as value
+         * @param string $text_field Row that is shown to the client as text
          */
         public function makeFood($table, $value_field, $text_field, $opional_text_field = null) {
             $str = [];
@@ -24,8 +24,8 @@
 
         /**
          * Makes food edible for CED fields
-         * @param String $table Table
-         * @param Array $fields Fields of the array to get to the client
+         * @param array $table Table
+         * @param array $fields Fields of the array to get to the client
          */
         public function makeCEDFood($table, $fields, $escape = null) {
             $str = "[";
