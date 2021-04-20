@@ -1,5 +1,0 @@
-<?php
-    require_once __DIR__."/z_framework/main.php";
-    $app = new z_framework();
-    $app->executeCommandLine();
-?>

@@ -1,6 +1,0 @@
-
-        public function %%name%%(Request $req, Response $res) {
-            $res->render("sample.php", [
-                "key" => "value"
-            ]);
-        }
