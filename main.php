@@ -144,6 +144,16 @@
                 }
             }
 
+            //Overwrite using environment vars
+            if($this->settings["allow_env_config"] ?? false == true) {
+                foreach($this->settings as $key => $setting) {
+                    $envName = "CONFIG_".strtoupper($key);
+                    if(false !== getenv($envName)) {
+                        $this->settings[$key] = getenv($envName);
+                    }
+                }
+            }
+
             //Options to attributes
             foreach ($this->settings as $option => $val) {
                 $this->$option = $val;
