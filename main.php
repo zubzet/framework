@@ -370,8 +370,17 @@
          * @return z_model The model
          */
         public function getModel($model, $dir = null) {
+            $modelParts = explode(".", $model);
+
+            if(count($modelParts) > 1) {
+                $lastPart = array_pop($modelParts);
+                $modelParts = array_map("strtolower", $modelParts);
+                $model = implode(DIRECTORY_SEPARATOR, $modelParts) . DIRECTORY_SEPARATOR . $lastPart;
+            }
+
             $model .= "Model";
             $path = ($dir == null ? $this->z_models : $dir)."$model.php";
+
             if (!isset($this->modelCache[$model])) {
                 if (file_exists($path)) {
                     require_once $path;
@@ -382,7 +391,12 @@
                     } else {
                         throw new Exception("Model: $model does not exist!");
                     }
-                }                
+                }
+                
+                // Only use the last part of the model name as the class Name
+                $model = explode(DIRECTORY_SEPARATOR, $model);
+                $model = array_pop($model);
+
                 $this->modelCache[$model] = new $model($this->z_db, $this);
             }
             return $this->modelCache[$model];
