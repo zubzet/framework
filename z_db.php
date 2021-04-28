@@ -105,9 +105,9 @@
          * @return any[][] A two dimensional array with the results of the select statement
          */
         function getFullTable($table, $fields = "*") {
-            $query = "SELECT $fields FROM $table";
-            $this->exec($query);
-            return $this->resultToarray();
+            $sql = "SELECT $fields FROM $table";
+            $this->exec($sql);
+            return $this->resultToArray();
         }
 
         /**
@@ -120,9 +120,9 @@
          * @return any[][] two dimensional array with table data
          */
         function getTableWhere($table, $fields = "*", $where = "", $types="", $values = []) {
-            $query = "SELECT $fields FROM $table WHERE $where";
-            $this->exec($query, $types, ...$values);
-            return $this->resultToarray();
+            $sql = "SELECT $fields FROM $table WHERE $where";
+            $this->exec($sql, $types, ...$values);
+            return $this->resultToArray();
         }
         
         /**
