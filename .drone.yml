@@ -27,7 +27,7 @@ steps:
         - push
 
   - name: Build phpDocumentor
-    image: harbor.zierhut-it.de/hub.docker.com/phpdoc/phpdoc:3.1
+    image: harbor.zierhut-it.de/hub.docker.com/phpdoc/phpdoc:3.0
     pull: if-not-exists
     commands:
       - phpdoc -d . -t publish/${DRONE_BRANCH/\//_}/details --ignore ./adminer --ignore ./docs --cache-folder .phpdoc-cache
