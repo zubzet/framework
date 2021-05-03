@@ -6,11 +6,11 @@ site_description: A modular, prototyping speed oriented PHP Framework.
 
 # Repository
 repo_name: ZubZet/framework
-repo_url: https://git.zierhut-it.de/zubzet/framework
-edit_uri: https://git.zierhut-it.de/zubzet/framework/src/branch/##CI_ENVIROMENT_BRANCH##/docs
+repo_url: https://git.zierhut-it.de/Zierhut-IT/z_framework
+edit_uri: https://git.zierhut-it.de/Zierhut-IT/z_framework/src/branch/##CI_ENVIROMENT_BRANCH##/docs
 
 # Copyright
-copyright: Copyright &copy; 2018 - 2020 Zierhut IT - Alexander Zierhut
+copyright: Copyright &copy; 2018 - 2021 Zierhut IT - Alexander Zierhut
 
 # Theme
 theme:
@@ -98,11 +98,9 @@ nav:
     - Setup: 
         - Installation: setup/installation.md
         - How To Update: setup/how-to-update.md
-    - Upgrading:
-        - 0.10.x -> 0.11.x: setup/upgrade/0.10.x-to-0.11.x.md
-        - 0.9.x -> 0.10.x: setup/upgrade/0.9.x-to-0.10.x.md
-    - Command Line Interface:
-        - Component Builders: command-line-interface/component-builders.md
+        - How to Upgrade: 
+            - 0.10.x to 0.11.x: setup/upgrade/0.10.x-to-0.11.x.md
+            - 0.9.x to 0.10.x: setup/upgrade/0.9.x-to-0.10.x.md
     - Core Features:
         - Controllers And Actions: core-features/controllers-and-actions.md
         - Models: core-features/models.md
@@ -129,3 +127,4 @@ nav:
     - Advanced Features:
         - Sitemap Generation: advanced-features/sitemap-generation.md
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
+        - Commands: advanced-features/commands.md

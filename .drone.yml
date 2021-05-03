@@ -1,38 +1,68 @@
 kind: pipeline
 name: Distribute Documentation
+type: docker
 
 steps:
+  - name: Restore phpDocumentor Cache
+    image: harbor.zierhut-it.de/hub.docker.com/drillster/drone-volume-cache
+    pull: if-not-exists
+    volumes:
+      - name: cache
+        path: /cache
+    settings:
+      restore: true
+      mount:
+        - ./.phpdoc-cache
+        - ./publish
 
-- name: Build The Documentation
-  image: squidfunk/mkdocs-material
-  pull: if-not-exists
-  commands:
-    - sed -i 's/##CI_ENVIROMENT_BRANCH##/${DRONE_BRANCH/\//_}/g' mkdocs.yml
-    - mkdocs build
-    - mkdir /drone/tmp
-    - cp -rf /drone/src/site/* /drone/tmp/
-    - rm -rf *
-    - rm -rf .git .drone.yml
-    - mv /drone/tmp/* /drone/src/
-    - echo 'ErrorDocument 404 ./404.html' >> .htaccess
-  when:
-    event:
-    - push
+  - name: Build The Documentation
+    image: harbor.zierhut-it.de/hub.docker.com/squidfunk/mkdocs-material
+    pull: if-not-exists
+    commands:
+      - sed -i 's/##CI_ENVIROMENT_BRANCH##/${DRONE_BRANCH}/g' mkdocs.yml
+      - mkdocs build --site-dir publish/${DRONE_BRANCH}
+      - echo 'ErrorDocument 404 ./404.html' >> publish/${DRONE_BRANCH}/.htaccess
+    when:
+      event:
+        - push
 
-- name: Transfer Source
-  image: appleboy/drone-scp
-  settings: 
+  - name: Build phpDocumentor
+    image: harbor.zierhut-it.de/hub.docker.com/phpdoc/phpdoc
+    pull: if-not-exists
+    commands:
+      - phpdoc -d . -t publish/technical/${DRONE_BRANCH} --cache-folder .phpdoc-cache
+    when:
+      event:
+        - push
+
+  - name: Build Docker Image
+    image: harbor.zierhut-it.de/hub.docker.com/plugins/docker
+    settings:
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      repo: harbor.zierhut-it.de/zubzet/documentation
+      cache_from: "harbor.zierhut-it.de/zubzet/documentation:${DRONE_BRANCH}"
+      registry: harbor.zierhut-it.de
+      tags:
+        - latest
+        - ${DRONE_BRANCH}
+        - ${DRONE_COMMIT_SHA:0:10}
+
+  - name: Deploy
+    image: harbor.zierhut-it.de/public/drone-cli
+    environment:
+      DRONE_SERVER: https://drone.zierhut-it.de
+      DRONE_TOKEN:
+        from_secret: drone_token
+    commands:
+      - drone build create --param ANSIBLE_TAGS=zubzet/documentation --param ZUBZET_DOCUMENTATION_TAG=${DRONE_COMMIT_SHA:0:10} Zierhut-IT/infrastructure
+    when:
+      event:
+        - push
+
+volumes:
+  - name: cache
     host:
-      from_secret: scp_host
-    user: 
-      from_secret: scp_user
-    password:
-      from_secret: scp_password
-    source: 
-      - '*'
-      - '.*'
-    target: /var/www/products/docs.zubzet.de/prod/${DRONE_BRANCH/\//_}/
-    rm: true
-  when:
-    event:
-    - push
+      path: /cache
