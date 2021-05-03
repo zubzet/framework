@@ -19,9 +19,9 @@ steps:
     image: harbor.zierhut-it.de/hub.docker.com/squidfunk/mkdocs-material
     pull: if-not-exists
     commands:
-      - sed -i 's/##CI_ENVIROMENT_BRANCH##/${DRONE_BRANCH}/g' mkdocs.yml
-      - mkdocs build --site-dir publish/${DRONE_BRANCH}
-      - echo 'ErrorDocument 404 ./404.html' >> publish/${DRONE_BRANCH}/.htaccess
+      - sed -i 's/##CI_ENVIROMENT_BRANCH##/${DRONE_BRANCH/\//_}/g' mkdocs.yml
+      - mkdocs build --site-dir publish/${DRONE_BRANCH/\//_}
+      - echo 'ErrorDocument 404 ./404.html' >> publish/${DRONE_BRANCH/\//_}/.htaccess
     when:
       event:
         - push
@@ -30,7 +30,7 @@ steps:
     image: harbor.zierhut-it.de/hub.docker.com/phpdoc/phpdoc
     pull: if-not-exists
     commands:
-      - phpdoc -d . -t publish/technical/${DRONE_BRANCH} --cache-folder .phpdoc-cache
+      - phpdoc -d . -t publish/technical/${DRONE_BRANCH/\//_} --cache-folder .phpdoc-cache
     when:
       event:
         - push
@@ -43,11 +43,10 @@ steps:
       password:
         from_secret: docker_password
       repo: harbor.zierhut-it.de/zubzet/documentation
-      cache_from: "harbor.zierhut-it.de/zubzet/documentation:${DRONE_BRANCH}"
+      cache_from: "harbor.zierhut-it.de/zubzet/documentation"
       registry: harbor.zierhut-it.de
       tags:
         - latest
-        - ${DRONE_BRANCH}
         - ${DRONE_COMMIT_SHA:0:10}
 
   - name: Deploy
