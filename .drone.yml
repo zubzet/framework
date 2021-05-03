@@ -30,7 +30,7 @@ steps:
     image: harbor.zierhut-it.de/hub.docker.com/phpdoc/phpdoc
     pull: if-not-exists
     commands:
-      - phpdoc -d . -t publish/technical/${DRONE_BRANCH/\//_} --cache-folder .phpdoc-cache
+      - phpdoc -d . -t publish/${DRONE_BRANCH/\//_}/details --cache-folder .phpdoc-cache
     when:
       event:
         - push
