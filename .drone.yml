@@ -3,7 +3,7 @@ name: Distribute Documentation
 type: docker
 
 steps:
-  - name: Restore phpDocumentor Cache
+  - name: Restore Cache
     image: harbor.zierhut-it.de/hub.docker.com/drillster/drone-volume-cache
     pull: if-not-exists
     volumes:
@@ -34,6 +34,18 @@ steps:
     when:
       event:
         - push
+
+  - name: Rebuild Cache
+    image: harbor.zierhut-it.de/hub.docker.com/drillster/drone-volume-cache
+    pull: if-not-exists
+    volumes:
+      - name: cache
+        path: /cache
+    settings:
+      rebuild: true
+      mount:
+        - ./.phpdoc-cache
+        - ./publish
 
   - name: Build Docker Image
     image: harbor.zierhut-it.de/hub.docker.com/plugins/docker
