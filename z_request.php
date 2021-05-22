@@ -497,6 +497,15 @@
             }
             return null;
         }
+
+        /**
+         * @param string $name Name of the form field to assign the error to
+         * @param string $type Type of the error. Influences the error message
+         */
+         function addCustomError($name, $type) {
+            $this->errors[] = ["name" => $name, "type" => $type];
+            $this->hasErrors = true;
+        }
     }
 
     /**
