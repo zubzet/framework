@@ -23,5 +23,9 @@ export default {
   error_too_many_login_tries: "Too many login tries. Try again later.",
   error_login: "Username or password is wrong",
   choose_file: "Choose file",
-  CEDRemove: "✕"
+  CEDRemove: "✕",
+  modal_ok: "OK",
+  modal_confirm: "Confirm",
+  modal_cancel: "Cancel",
+  modal_confirm_string: "Type <code>[0]</code> into the input to confirm"
 }

@@ -8,6 +8,8 @@ import ZCEDItem from "./form/ZCEDItem.js";
 import ZForm from "./form/ZForm.js";
 import ZFormField from "./form/ZFormField.js";
 
+import ModalBS4 from "./ModalBS4.js";
+
 console.warn("Experimental! Do not use the webpack bundled Z.js in production");
 
 window.Z = {
@@ -15,7 +17,8 @@ window.Z = {
   Request,
   Lang,
   Presets,
-  Forms
+  Forms,
+  ModalBS4
 }
 
 // Legacy support. Following classes should not be used manually.
