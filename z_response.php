@@ -430,10 +430,14 @@
             $options["application_root"] = $this->getBooterSettings("host") . $this->booter->rootFolder;
 
             //Render the email template
-            ob_start();
-            $this->render($document, $options, $layout);
-            $content = ob_get_clean();
-            if (ob_get_contents()) ob_end_clean();
+            if(isset($options["skip_render"])) {
+                $content = $document;
+            } else {
+                ob_start();
+                $this->render($document, $options, $layout);
+                $content = ob_get_clean();
+                if (ob_get_contents()) ob_end_clean();
+            }
 
             $from = $this->getBooterSettings("mail_from") ?? $this->getBooterSettings("mail_user");
             if(!filter_var($from, FILTER_VALIDATE_EMAIL)) {
@@ -472,7 +476,10 @@
                 $mail->send();
             } catch (Exception $e) {
                 echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                return false;
             }
+
+            return true;
         }
 
         /**
