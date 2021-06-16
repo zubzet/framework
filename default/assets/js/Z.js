@@ -15,7 +15,7 @@
  * @type {object} Z
  * Namespace object for Z.js
  */
-Z = {
+ Z = {
 
   /**
    * Debug mode
@@ -994,6 +994,7 @@ class ZFormField {
     this.autofill = options.autofill || false;
     this.autocompleteData = options.autocompleteData || [];
     this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
+    this.float = options.float || false;
     this.autocompleteTextCB = options.autocompleteTextCB;
     this.autocompleteCB = options.autocompleteCB || null;
 
@@ -1081,43 +1082,59 @@ class ZFormField {
             if(currentAge >= this.lockAutocompleteAge) {
               this.lockAutocompleteAge++;
               this.autocompleteData = res.data;
-              console.log(this.autocompleteData);
+              updateAutocompleteResults();
             }
           });
         }
 
-        completeDiv.innerHTML = "";
-        if (e.target.value == "") return;
-        if (e.key == "Escape") return;
-        
-        for (let value of this.autocompleteData) {
-          if (value.toLowerCase().includes(e.target.value.toLowerCase())) {
-            var item = document.createElement("button");
-            item.type = "button";
-            item.classList.add("list-group-item");
-            item.classList.add("list-group-item-action");
-            item.classList.add("py-1");
-            if(value.toLowerCase() == e.target.value.toLowerCase()) {
-              item.classList.add("text-primary");
+        let updateAutocompleteResults = () => {
+          completeDiv.innerHTML = "";
+          if (e.target.value == "") return;
+          if (e.key == "Escape") return;
+          
+          for (let value of this.autocompleteData) {
+  
+            let text = typeof value == "string" ? value : value.text;
+            let realValue = typeof value == "string" ? value : value.value;
+  
+            if (text.toLowerCase().includes(e.target.value.toLowerCase())) {
+              var item = document.createElement("button");
+              item.type = "button";
+              item.classList.add("list-group-item");
+              item.classList.add("list-group-item-action");
+              item.classList.add("py-1");
+              
+              if(text.toLowerCase() == e.target.value.toLowerCase()) {
+                item.classList.add("text-primary");
+              }
+  
+              var start = text.toLowerCase().indexOf(e.target.value.toLowerCase());
+              var tmp = text.substr(0, start);
+              tmp += "<strong>" + text.substr(start, e.target.value.length) + "</strong>";
+              tmp += text.substring(start + e.target.value.length, value.length);
+              if(this.autocompleteTextCB) {
+                tmp = this.autocompleteTextCB(tmp, text, realValue);
+              }
+              item.innerHTML = tmp;
+  
+              completeDiv.appendChild(item);
+              
+              if (this.float) {
+                completeDiv.style.position = "absolute";
+                completeDiv.style.width = "calc(100% - 10px)";
+              }
+  
+              item.addEventListener("click", e => {
+                this.input.value = text;
+                completeDiv.innerHTML = "";
+                if(this.autocompleteCB) {
+                  this.autocompleteCB(realValue, text);
+                }
+              });
             }
-
-            var start = value.toLowerCase().indexOf(e.target.value.toLowerCase());
-            var tmp = value.substr(0, start);
-            tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
-            tmp += value.substring(start + e.target.value.length, value.length);
-            if(this.autocompleteTextCB) {
-              tmp = this.autocompleteTextCB(tmp, value);
-            }
-            item.innerHTML = tmp;
-
-            completeDiv.appendChild(item);
-            item.addEventListener("click", e => {
-              this.input.value = value;
-              completeDiv.innerHTML = "";
-              if(this.autocompleteCB) this.autocompleteCB(value);
-            });
           }
-        }
+        };
+        updateAutocompleteResults();
       });
 
       document.addEventListener("click", function() {
