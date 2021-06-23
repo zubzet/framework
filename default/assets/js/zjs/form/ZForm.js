@@ -65,6 +65,7 @@ export default class ZForm {
     this.currentRow = null;
     this.rows = [];
 
+    this.title = options.title || "no title";
     if (options.dom) document.getElementById(options.dom).appendChild(this.dom);
   }
 
@@ -210,7 +211,7 @@ export default class ZForm {
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
-    var field = new ZFormField(options);
+    var field = ZFormField.create(options);
     this.addField(field);
     return field;
   }
@@ -269,6 +270,16 @@ export default class ZForm {
     this.dom.appendChild(button);
     button.addEventListener("click", action);
     return button;
+  }
+
+  /**
+   * Gets the value of a specific field in the form
+   * @param {string} name Name of the field to get the value from
+   */
+  getFieldValue(name) {
+    if (!(name in this.fields)) return undefined;
+    let field = this.fields[name];
+    return field.value;
   }
 
 }

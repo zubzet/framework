@@ -19,7 +19,7 @@ let zInputIndex = 0;
 
 /**
  * Types to use in an input field. All html default ones, textarea, select and autocomplete are supported.
- * @typedef {"button"|"checkbox"|"color"|"date"|"datetime-local"|"email"|"file"|"hidden"|"image"|"month"|"number"|"password"|"radio"|"range"|"reset"|"search"|"submit"|"tel"|"text"|"time"|"url"|"week"|"select"|"textarea"|"autocomplete"} InputType
+ * @typedef {"button"|"checkbox"|"color"|"date"|"datetime-local"|"email"|"file"|"multi-file"|"hidden"|"image"|"month"|"number"|"password"|"radio"|"range"|"reset"|"search"|"submit"|"tel"|"text"|"time"|"url"|"week"|"select"|"textarea"|"autocomplete"|"checkbox-list"} InputType
  */
 
 /**
@@ -62,11 +62,7 @@ export default class ZFormField {
     this.placeholder = options.placeholder;
     this.default = options.default;
     this.autofill = options.autofill || false;
-    this.autocompleteData = options.autocompleteData || [];
-    this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
-    this.autocompleteTextCB = options.autocompleteTextCB;
-    this.autocompleteCB = options.autocompleteCB || null;
-
+    
     this.optgroup = null;
 
     this.dom = document.createElement("div");
@@ -83,21 +79,7 @@ export default class ZFormField {
 
     var customDiv = null;
 
-    if (this.type == "file") {                    // --- File upload ---
-      customDiv = document.createElement("div");
-      customDiv.classList.add("custom-file");
-      this.input = document.createElement("input");
-      this.input.setAttribute("type", this.type);
-      this.input.classList.add("custom-file-input");
-      this.fileValue = document.createElement("label");
-      this.fileValue.innerHTML = options.customFileInputText || Z.Lang.choose_file;
-      this.fileValue.classList.add("custom-file-label", "text-truncate");
-      customDiv.appendChild(this.fileValue);
-      customDiv.appendChild(this.input);
-      this.input.classList.add("form-control");
-      this.input.addEventListener("change", (e) => { this.fileValue.innerText = e.srcElement.files[0].name; });
-      //bsCustomFileInput.init();
-    } else if (this.type == "select") {           // --- Select ---
+    if (this.type == "select") {           // --- Select ---
       this.input = document.createElement("select");
       var option = document.createElement("option");
       option.setAttribute("disabled", true);
@@ -122,6 +104,12 @@ export default class ZFormField {
       this.input.setAttribute("type", "hidden");
       this.dom.classList.add("d-none");
     } else if (this.type == "autocomplete") {     // --- Autocomplete ---
+      this.autocompleteData = options.autocompleteData || [];
+      this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
+      this.autocompleteTextCB = options.autocompleteTextCB;
+      this.autocompleteCB = options.autocompleteCB || null;
+      this.float = options.float || false; // Should the autocomplete popup float above the page?
+
       customDiv = document.createElement("div");
 
       this.input = document.createElement("input");
@@ -152,50 +140,70 @@ export default class ZFormField {
             if(currentAge >= this.lockAutocompleteAge) {
               this.lockAutocompleteAge++;
               this.autocompleteData = res.data;
-              console.log(this.autocompleteData);
+              updateAutocompleteResults();
             }
           });
         }
 
-        completeDiv.innerHTML = "";
-        if (e.target.value == "") return;
-        if (e.key == "Escape") return;
-        
-        for (let value of this.autocompleteData) {
-          if (value.toLowerCase().includes(e.target.value.toLowerCase())) {
-            var item = document.createElement("button");
-            item.type = "button";
-            item.classList.add("list-group-item");
-            item.classList.add("list-group-item-action");
-            item.classList.add("py-1");
-            if(value.toLowerCase() == e.target.value.toLowerCase()) {
-              item.classList.add("text-primary");
+        let updateAutocompleteResults = () => {
+          completeDiv.innerHTML = "";
+          if (e.target.value == "") return;
+          if (e.key == "Escape") return;
+          
+          for (let value of this.autocompleteData) {
+  
+            let text = typeof value == "string" ? value : value.text;
+            let realValue = typeof value == "string" ? value : value.value;
+  
+            if (text.toLowerCase().includes(e.target.value.toLowerCase())) {
+              var item = document.createElement("button");
+              item.type = "button";
+              item.classList.add("list-group-item");
+              item.classList.add("list-group-item-action");
+              item.classList.add("py-1");
+              
+              if(text.toLowerCase() == e.target.value.toLowerCase()) {
+                item.classList.add("text-primary");
+              }
+  
+              var start = text.toLowerCase().indexOf(e.target.value.toLowerCase());
+              var tmp = text.substr(0, start);
+              tmp += "<strong>" + text.substr(start, e.target.value.length) + "</strong>";
+              tmp += text.substring(start + e.target.value.length, value.length);
+              if(this.autocompleteTextCB) {
+                tmp = this.autocompleteTextCB(tmp, text, realValue);
+              }
+              item.innerHTML = tmp;
+  
+              completeDiv.appendChild(item);
+              
+              if (this.float) {
+                completeDiv.style.position = "absolute";
+                completeDiv.style.width = "calc(100% - 10px)";
+              }
+  
+              item.addEventListener("click", e => {
+                this.input.value = text;
+                completeDiv.innerHTML = "";
+                if(this.autocompleteCB) {
+                  this.autocompleteCB(realValue, text);
+                }
+              });
             }
-
-            var start = value.toLowerCase().indexOf(e.target.value.toLowerCase());
-            var tmp = value.substr(0, start);
-            tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
-            tmp += value.substring(start + e.target.value.length, value.length);
-            if(this.autocompleteTextCB) {
-              tmp = this.autocompleteTextCB(tmp, value);
-            }
-            item.innerHTML = tmp;
-
-            completeDiv.appendChild(item);
-            item.addEventListener("click", e => {
-              this.input.value = value;
-              completeDiv.innerHTML = "";
-              if(this.autocompleteCB) this.autocompleteCB(value);
-            });
           }
-        }
+        };
+        updateAutocompleteResults();
       });
 
       document.addEventListener("click", function() {
         completeDiv.innerHTML = "";
-      })
+      });
 
-    } else {                                      // --- Default ---
+    } else if (this.type == "boolean") { // --- Boolean ---
+      this.input = document.createElement("select");
+      this.input.classList.add("form-control");
+      this.input.innerHTML = `<option value="1">${Z.Lang.yes}</option><option value="2">${Z.Lang.no}</option>`;
+    } else { // --- Default ---
       this.input = document.createElement("input");
       this.input.setAttribute("type", this.type);
       this.input.classList.add("form-control");
@@ -277,16 +285,8 @@ export default class ZFormField {
     return this.input.value;
   }
 
-  set value(value) {
-    if (this.input.type != "file") {
-      this.input.value = value;
-    } else {
-      if (value == "") {
-        this.fileValue.innerText = Z.Lang.choose_file;
-      } else {
-        this.fileValue.innerText = value;
-      }
-    }
+  set value(value) {    
+    this.input.value = value;
   }
 
   /**
@@ -336,6 +336,17 @@ export default class ZFormField {
     this.errorLabel.innerHTML = "";
     this.input.setCustomValidity("");
     this.input.classList.remove("is-invalid");
+  }
+
+  /**
+   * Validates the input and shows an appropriate in case of an error.
+   * @returns {boolean} False in case of invalid
+   */
+  validate() {
+    /**
+     * @todo Implement
+     */
+    return true;
   }
 
   /**
@@ -396,12 +407,240 @@ export default class ZFormField {
    * @returns {void}
    */
   getFormData(data) {
-    if (this.type == "file") {
-      if (this.input.files[0]) {
-        data.append(this.name, this.input.files[0], this.value);
-      }
+    data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
+  }
+
+  static create(options) {
+    let field;
+
+    if (options.type == "file") {
+      options.type = "multi-file";
+      options.limit = 1;
+    }
+
+    if (options.type == "multi-file") {
+      field = new MultiFileUpload(options);
+    } else if (options.type == "checkbox-list") {
+      field = new CheckboxList(options);
     } else {
-      data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
+      field = new ZFormField(options);
+    }
+    return field;
+  }
+}
+
+class MultiFileUpload extends ZFormField {
+
+  constructor(options) {
+    super(options);
+    this.uploadPath = Z.Request.rootPath + "upload";
+
+    this.input.type = "file";
+    this.input.setAttribute("multiple", true);
+    this.input.style.display = "none";
+
+    this.fileLimit = options.limit || 10;
+    this.types = options.fileTypes || ["pdf", "png", "jpg", "jpeg"];
+
+    this.list = document.createElement("div");
+    this.list.classList.add("list-group");
+    this.dom.appendChild(this.list);
+
+    this.emptyHint = document.createElement("div");
+    this.emptyHint.classList.add("list-group-item");
+    this.emptyHint.innerHTML = this.fileLimit == 1 ? Z.Lang.choose_file : Z.Lang.no_files_selected;
+    this.list.appendChild(this.emptyHint);
+
+    this.statusHint = document.createElement("div");
+    this.statusHint.classList.add("list-group-item", "list-group-item-secondary", "p-1");
+    if (this.fileLimit > 1) {
+      this.list.appendChild(this.statusHint);
+    }
+
+    this.fileValues = [];
+
+    this.list.addEventListener("click", () => {
+      this.input.click();
+    });
+
+    this.input.addEventListener("change", () => {
+      let files = this.input.files;
+      for (let i = 0; i < files.length; i++) {
+        this.addUpload(files[i]);
+      }
+      this.update();
+      this.input.value = "";
+    });
+
+    this.update();
+  }
+
+  addUpload(file) {
+    if (this.fileValues.length >= this.fileLimit) {
+      this.hint(Z.Lang.too_many_files);
+      return;
+    }
+
+    let uploadData = {
+      progress: 0,
+      serverId: null,
+      file: file,
+      progressBar: null,
+      dom: null
+    }
+
+    let item = document.createElement("div");
+    let text = document.createElement("span");
+    text.innerText += file.name;
+
+    let icon = document.createElement("span");
+    icon.innerHTML = `<i class="far fa-file"></i>`;
+    icon.style.marginRight = "4px";
+    
+    item.appendChild(icon);
+    item.appendChild(text);
+
+    text.style.width = "100%";
+    text.style.overflow = "hidden";
+    text.style.textOverflow = "ellipsis";
+    text.style.whiteSpace = "nowrap";
+
+    item.classList.add("list-group-item", "p-2", "d-flex", "justify-content-between", "align-items-center", "text-truncate");
+
+    let removeButton = document.createElement("div");
+    removeButton.innerHTML = Z.Lang.CEDRemove;
+    removeButton.classList.add("btn", "btn-danger");
+    removeButton.style.cursor = "pointer";
+    item.appendChild(removeButton);
+
+    removeButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      let index = this.fileValues.indexOf(uploadData);
+      this.fileValues.splice(index, 1);
+      item.remove();
+      this.update();
+    });
+
+    let progressBar = document.createElement("div");
+    Object.assign(progressBar.style, {
+      position: "absolute",
+      width: "0px",
+      height: "4px",
+      bottom: "0px",
+      left: "0px",
+      background: "red",
+      transition: "all 200ms"
+    });
+    item.appendChild(progressBar);
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    setProgress(0);
+    fetch(this.uploadPath, {
+      method: "POST",
+      body: formData
+    }).then(res => {
+      return res.json();
+    }).then(res => {
+      uploadData.serverId = res.fileId;
+      setProgress(1);
+    });
+
+    uploadData.dom = item;
+    this.fileValues.push(uploadData);
+
+    function setProgress(progress) {
+      uploadData.progress = progress;
+      progressBar.style.width = progress * 100 + "%";
+      progressBar.style.background = progress == 1 ? "green" : "red";
+    }
+
+    return uploadData;
+  }
+
+  update() {
+    if (this.fileValues.length == 0) {
+      this.emptyHint.style.display = "";
+    } else {
+      this.emptyHint.style.display = "none";
+    }
+    
+    for (let file of this.fileValues) {
+      this.list.insertBefore(file.dom, this.emptyHint);
+    }
+
+    this.statusHint.innerText = this.fileValues.length + " / " + this.fileLimit;
+  }
+
+  /**
+   * @type {any}
+   */
+     get value() {
+      return this.fileValues.map(val => val.serverId).join(",");
+    }
+}
+
+class CheckboxList extends ZFormField {
+
+  constructor(options) {
+    super(options);
+
+    this.input.type = "hidden";
+  }
+
+  feedData(food, clear = true) {
+    if (!this.list) {
+      this.items = [];
+      this.list = document.createElement("div");
+      this.list.classList.add("list-group");
+      this.dom.appendChild(this.list);
+    }
+
+    if (clear) {
+      for (let item of this.items) {
+        item.remove();
+      }
+    }
+
+    for (let value of food) {
+      let item = document.createElement("div");
+      this.items.push(item);
+      item.classList.add("list-group-item", "list-group-item-action");
+      item.innerHTML = `<i class="far fa-square"></i> ` + value.text;
+      item.dataset.value = value.value;
+      item.style.cursor = "pointer";
+      item.addEventListener("click", () => {
+        item.classList.toggle("active");
+        this.update();
+      });
+      this.list.appendChild(item);
     }
   }
+
+  update() {
+    let selectedItems = this.items.filter(item => item.classList.contains("active"));
+    this.input.value = selectedItems.map(item => item.dataset.value).join(",");
+    for (let item of this.items) {
+      if (item.classList.contains("active")) {
+        item.innerHTML = item.innerHTML.replace("fa-square", "fa-check-square");
+      } else {
+        item.innerHTML = item.innerHTML.replace("fa-check-square", "fa-square");
+      }
+    }
+    this.input.dispatchEvent(new Event("change"));
+  }
+
+  set value(value) {
+    if (typeof value == 'string') value = value.split(",");
+    for (let item of this.items) {
+      item.classList.toggle("active", value.includes(item.dataset.value));
+    }
+    this.update();
+  }
+
+  get value() {
+    return this.items.filter(item => item.classList.contains("active")).map(item => item.dataset.value);
+  }
+
 }

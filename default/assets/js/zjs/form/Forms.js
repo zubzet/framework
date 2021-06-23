@@ -1,4 +1,5 @@
 import ZForm from "./ZForm.js";
+import MultiStepForm from "./MultiStepForm.js";
 
 /**
  * Form creation utility
@@ -13,4 +14,10 @@ export default {
    * @param {formErrorHook} options.formErrorHook Function that gets called only on formErrors
    */
   create(options) { return new ZForm(options); },
+
+  /**
+   * Creates a multi step form and returns it
+   * @param {} options 
+   */
+  createMultiStepForm(options) { return new MultiStepForm(options); }
 }

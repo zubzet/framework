@@ -17,7 +17,7 @@ function essentialsHead($opt, $customBootstrap) { ?>
     <?php } ?>
     
     <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
-    <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>
+    <script src="<?php $opt["generateResourceLink"]("assets/js/zjs/Z.js") ?>"></script>
 
     <link href="<?php $opt["generateResourceLink"]("assets/css/bootstrap.min.css"); ?>" rel="stylesheet">
     

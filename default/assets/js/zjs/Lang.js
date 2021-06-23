@@ -6,6 +6,7 @@ export default {
   submit: "Submit",
   saved: "Saved!",
   saveError: "Error while saving",
+  back: "Back",
   unsaved: "There are unsaved changes",
   error_filter: "Your input does not have the correct pattern!",
   error_length: "Your input is too long or too short. It should have between [0] and [1] characters.",
@@ -27,5 +28,9 @@ export default {
   modal_ok: "OK",
   modal_confirm: "Confirm",
   modal_cancel: "Cancel",
-  modal_confirm_string: "Type <code>[0]</code> into the input to confirm"
+  modal_confirm_string: "Type <code>[0]</code> into the input to confirm",
+  no_files_selected: "There are no files selected yet. Click here to add files",
+  yes: "Yes",
+  no: "No",
+  too_many_files: "The file upload limit was reached"
 }

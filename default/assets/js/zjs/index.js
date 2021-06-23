@@ -10,8 +10,6 @@ import ZFormField from "./form/ZFormField.js";
 
 import ModalBS4 from "./ModalBS4.js";
 
-console.warn("Experimental! Do not use the webpack bundled Z.js in production");
-
 window.Z = {
   debug: false,
   Request,
