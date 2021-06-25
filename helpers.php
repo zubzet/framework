@@ -39,14 +39,14 @@
     }
 
     function shortenStr($str, $maxlength = 10, $cutDescriptor = "...") {
-        $maxlength -= strlen($cutDescriptor);
+        $maxlength -= mb_strlen($cutDescriptor);
         $result = "";
         foreach(explode(" ", $str) as $part) {
-            $lengthLeft = $maxlength - strlen($result);
-            if($lengthLeft > strlen($part)) {
+            $lengthLeft = $maxlength - mb_strlen($result);
+            if($lengthLeft > mb_strlen($part)) {
                 $result .= "$part ";
             } else {
-                $result .= substr($part, 0, $lengthLeft);
+                $result .= mb_substr($part, 0, $lengthLeft);
                 $result .= $cutDescriptor;
                 break;
             }
