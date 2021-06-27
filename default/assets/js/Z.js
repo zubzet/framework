@@ -1059,7 +1059,9 @@ class ZFormField {
       this.input.classList.add("form-control");
       
       var completeDiv = document.createElement("div");
-      completeDiv.classList.add("list-group");
+      completeDiv.classList.add("list-group", "shadow-sm");
+      completeDiv.style.zIndex = "999";
+      completeDiv.style.top = "calc(100% - 0.25em)";
       customDiv.appendChild(this.input);
       customDiv.appendChild(completeDiv);
 
