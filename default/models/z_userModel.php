@@ -176,25 +176,24 @@
         function verifyUser($token) {
             if (!$token) return false;
 
+            // Retrieve the token from the database
             $sql = "SELECT * FROM `z_email_verify` WHERE token = ?";
             $this->exec($sql, "s", $token);
             $result = $this->resultToLine();
 
-            if (!$result) {
-                return false;
-            }
+            // If the token was not found, the attempt is invalid
+            if (!isset($result)) return false;
 
-            $endTime = strtotime($result["end"]);
-            $now = date("Y-m-d H:i:s");
-            if ($now > $endTime) {
-                return false;
-            }
+            // Verification is invalid if the token is too old
+            if (time() > strtotime($result["end"])) return false;
 
+            // Remove the token from the database
             $sql = "UPDATE z_email_verify SET active = 0 WHERE id = ?";
             $this->exec($sql, "i", $result["id"]);
 
-            $sql = "UPDATE z_user SET verified = ? WHERE id = ?";
-            $this->exec($sql, "si", $now, $result["user"]);
+            // Mark the user as verified
+            $sql = "UPDATE z_user SET verified = CURRENT_TIMESTAMP() WHERE id = ?";
+            $this->exec($sql, "i", $result["user"]);
 
             return true;
         }
