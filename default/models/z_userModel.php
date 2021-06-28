@@ -177,7 +177,10 @@
             if (!$token) return false;
 
             // Retrieve the token from the database
-            $sql = "SELECT * FROM `z_email_verify` WHERE token = ?";
+            $sql = "SELECT * 
+                    FROM `z_email_verify` 
+                    WHERE token = ? 
+                    AND `active` = 1";
             $this->exec($sql, "s", $token);
             $result = $this->resultToLine();
 
@@ -188,11 +191,15 @@
             if (time() > strtotime($result["end"])) return false;
 
             // Remove the token from the database
-            $sql = "UPDATE z_email_verify SET active = 0 WHERE id = ?";
+            $sql = "UPDATE z_email_verify 
+                    SET active = 0
+                    WHERE id = ?";
             $this->exec($sql, "i", $result["id"]);
 
             // Mark the user as verified
-            $sql = "UPDATE z_user SET verified = CURRENT_TIMESTAMP() WHERE id = ?";
+            $sql = "UPDATE z_user 
+                    SET verified = CURRENT_TIMESTAMP() 
+                    WHERE id = ?";
             $this->exec($sql, "i", $result["user"]);
 
             return true;
