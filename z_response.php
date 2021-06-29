@@ -579,7 +579,8 @@
             $sql = "SELECT `$pkField` FROM `$table` WHERE `$pkField`=?";
             $db->exec($sql, $pkType, $pkValue);
             if($db->countResults() > 0) {
-                return $this->updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult);
+                $this->updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult);
+                return $pkValue;
             }
             return $this->insertDatabase($table, $validationResult, $fixed);
         }
