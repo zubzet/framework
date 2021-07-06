@@ -1100,7 +1100,7 @@ class ZFormField {
             let realValue = typeof value == "string" ? value : value.value;
   
             if (text.toLowerCase().includes(e.target.value.toLowerCase())) {
-              var item = document.createElement("button");
+              let item = document.createElement("button");
               item.type = "button";
               item.classList.add("list-group-item");
               item.classList.add("list-group-item-action");
@@ -1110,8 +1110,8 @@ class ZFormField {
                 item.classList.add("text-primary");
               }
   
-              var start = text.toLowerCase().indexOf(e.target.value.toLowerCase());
-              var tmp = text.substr(0, start);
+              let start = text.toLowerCase().indexOf(e.target.value.toLowerCase());
+              let tmp = text.substr(0, start);
               tmp += "<strong>" + text.substr(start, e.target.value.length) + "</strong>";
               tmp += text.substring(start + e.target.value.length, value.length);
               if(this.autocompleteTextCB) {
