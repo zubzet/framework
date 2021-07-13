@@ -6,7 +6,8 @@ export default {
   submit: "Submit",
   saved: "Saved!",
   saveError: "Error while saving",
-  back: "Back",
+  back: `Back`,
+  next: `Next`,
   unsaved: "There are unsaved changes",
   error_filter: "Your input does not have the correct pattern!",
   error_length: "Your input is too long or too short. It should have between [0] and [1] characters.",
@@ -23,6 +24,9 @@ export default {
   error_invalid_email: "This email is not allowed!",
   error_too_many_login_tries: "Too many login tries. Try again later.",
   error_login: "Username or password is wrong",
+  error_bad_upload: "An error occurred while uploading the file",
+  error_upload_not_finished: "An upload is currently still in progress.",
+  error_too_many_files: "Too many files already added. Remove some to add new ones",
   choose_file: "Choose file",
   CEDRemove: "✕",
   modal_ok: "OK",
@@ -32,5 +36,6 @@ export default {
   no_files_selected: "There are no files selected yet. Click here to add files",
   yes: "Yes",
   no: "No",
-  too_many_files: "The file upload limit was reached"
+  multi_form_final: "Your inputs have been saved. Thank you ☻",
+  multi_form_final_title: "Geschafft!"
 }

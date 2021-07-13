@@ -60,6 +60,7 @@ export default class ZForm {
     this.buttonSubmit = this.createActionButton(Z.Lang.submit, "btn-primary", () => {
       if(this.sendOnSubmitClick) this.send(this.customEndpoint);
     });
+    this.buttonSubmit.disabled = true;
 
     this.currentRowLength = 12;
     this.currentRow = null;
@@ -87,8 +88,8 @@ export default class ZForm {
    * Returns a FormData object containg data for Post requests.
    * @returns {FormData} object holding the data
    */
-  getFormData() {
-    var data = new FormData();
+  getFormData(data = null) {
+    if (!data) data = new FormData();
     data.set("isFormData", 1);
 
     for (var k in this.fields) {
@@ -111,16 +112,18 @@ export default class ZForm {
 
   /**
    * Gathers the information automatically from the form and submits them. This function will reload the page if doReload is true and the submit was a success.
-   * @returns {void}
+   * @returns {Promise<boolean>}
    */
   send(customUrl = null) {
-    var data = this.getFormData();
+    Z.Loader.show();
 
-    for (var pair of data.entries()) {
+    let data = this.getFormData();
+
+    for (let pair of data.entries()) {
       if(this.debug) console.log(pair[0]+ ', ' + pair[1]); 
     }
 
-    var ajax_options = {
+    let ajax_options = {
       method: "POST",
       enctype: 'multipart/form-data',
       cache: false,
@@ -131,37 +134,44 @@ export default class ZForm {
 
     if(customUrl != null) ajax_options.url = customUrl;
 
-    $.ajax(ajax_options).done((data) => {
-      var json;
+    return new Promise((resolve, reject) => {
+      $.ajax(ajax_options).done((data) => {
+        Z.Loader.hide();
 
-      if(this.debug) console.log(data);
-      
-      try {
-        json = JSON.parse(data);
-      } catch (e) {
-        json = {result: "error"};
-      }
+        let json;
 
-      if (json.result == "success") {
-        if (this.saveHook) {
-          this.saveHook(json);
+        if (this.debug) console.log(data);
+        
+        try {
+          json = JSON.parse(data);
+        } catch (e) {
+          json = {result: "error"};
         }
 
-        if (this.doReload) window.location.reload();
-        this.hint("alert-success", Z.Lang.saved);
-      } else if (json.result == "formErrors") {
-        for (var error of json.formErrors) {
-          if(this.fields[error.name]) {
-            this.fields[error.name].markInvalid(error);
+        if (json.result == "success") {
+          if (this.saveHook) {
+            this.saveHook(json);
           }
-        }
-        if (this.formErrorHook) {
-          this.formErrorHook(json);
-        }
-      } else if (json.result == "error") {
-        this.hint("alert-danger", Z.Lang.saveError);
-      }
+          resolve(true);
 
+          if (this.doReload) window.location.reload();
+          this.hint("alert-success", Z.Lang.saved);
+        } else if (json.result == "formErrors") {
+          for (var error of json.formErrors) {
+            if(this.fields[error.name]) {
+              this.fields[error.name].markInvalid(error);
+            }
+          }
+          if (this.formErrorHook) {
+            this.formErrorHook(json);
+          }
+          resolve(false);
+        } else if (json.result == "error") {
+          this.hint("alert-danger", Z.Lang.saveError);
+          resolve(false);
+        }
+
+      });
     });
   }
 
@@ -174,8 +184,18 @@ export default class ZForm {
     if (field.type == "CED") this.doReload = true;
 
     this.fields[field.name] = field;
-    field.on('change', () => {
+    field.on('keyup', async () => {
+      this.validate(false);
+    });
+
+    field.on('change', async () => {
       this.hint("alert-warning", Z.Lang.unsaved);
+
+      // Check for errors on the changed field
+      field.validate();
+
+      // Validate the document to enable the submit button in case of no validation errors
+      this.validate(false);
     });
 
     if (field.width + this.currentRowLength > 12) {
@@ -280,6 +300,20 @@ export default class ZForm {
     if (!(name in this.fields)) return undefined;
     let field = this.fields[name];
     return field.value;
+  }
+
+  /**
+   * Validates every field of the form
+   * @param {boolean} showError Should error messages be displayed in case of invalid inputs? (This will also trigger required messages on inputs the user has not touched yet)
+   * @returns {boolean} True if all fields are valid 
+  */
+  async validate(showError = true) {
+    let invalid = false;
+    for (let name in this.fields) {
+      invalid |= !(await this.fields[name].validate(showError));
+    }
+    this.buttonSubmit.disabled = invalid;
+    return !invalid;
   }
 
 }

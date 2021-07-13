@@ -9,7 +9,7 @@ All functions in `Z.ModalsBS4` require to have the Bootstrap 4 styles loaded.
 ```js
 async function() {
   console.log("Modal is opening...");
-  await Z.ModalsBS4.showMessage({
+  await Z.ModalBS4.showMessage({
     message: "Hello World",
     title: "Titel"            // Title is optional
   });
@@ -20,7 +20,7 @@ async function() {
 ## Ask the user for confirmation
 ```js
 async function() {
-  if (await Z.ModalsBS4.confirm({
+  if (await Z.ModalBS4.confirm({
     message: "Please confirm this action",
     title: "Confirmation",                  // Title is optional
     confirmString: "Type this"              // optional. If given, the user has to type the string into an input before confirming is possible.

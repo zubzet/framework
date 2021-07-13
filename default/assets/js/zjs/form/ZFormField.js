@@ -38,6 +38,8 @@ let zInputIndex = 0;
  * @property {Food} food Food for selects or autocomepletes
  * @property {boolean} compact Sets the compact mode. In compact mode, the label is hidden
  * @property {string} prepend Content to put in front of the input. Units are usally put there
+ * @property {string} append Content to put at the end of the input. Units are usally put there
+ * @property {string[]} datalist Can be used to generate a datalist tag to populate an text input with autocomplete data
  */
 
 /**
@@ -63,6 +65,7 @@ export default class ZFormField {
     this.default = options.default;
     this.autofill = options.autofill || false;
     
+    this.id = "input-" + zInputIndex;
     this.optgroup = null;
 
     this.dom = document.createElement("div");
@@ -70,11 +73,13 @@ export default class ZFormField {
 
     this.label = document.createElement("label");
     this.label.innerHTML = this.text;
+    this.label.classList.add("mb-0");
+
     if (this.options.required) {
       this.label.innerHTML += "<span class='text-danger'>*</span>";
       this.label.classList.add("input-required");
     }
-    this.label.setAttribute("for", "input-" + zInputIndex);
+    this.label.setAttribute("for", this.id);
     this.dom.appendChild(this.label);
 
     var customDiv = null;
@@ -202,14 +207,14 @@ export default class ZFormField {
     } else if (this.type == "boolean") { // --- Boolean ---
       this.input = document.createElement("select");
       this.input.classList.add("form-control");
-      this.input.innerHTML = `<option value="1">${Z.Lang.yes}</option><option value="2">${Z.Lang.no}</option>`;
+      this.input.innerHTML = `<option value="1">${Z.Lang.yes}</option><option value="0">${Z.Lang.no}</option>`;
     } else { // --- Default ---
       this.input = document.createElement("input");
       this.input.setAttribute("type", this.type);
       this.input.classList.add("form-control");
     }
     this.input.setAttribute("name", this.name);
-    this.input.setAttribute("id", "input-" + zInputIndex);
+    this.input.id = this.id;
     if (!this.autofill) {
       this.input.setAttribute("autocomplete", "new-password");
     }
@@ -244,9 +249,29 @@ export default class ZFormField {
       this.dom.appendChild(this.input);
     }
 
-    if (options.prepend) {
-      var groupWrapper = document.createElement("div");
+    if (options.datalist) {
+      let datalist = document.createElement("datalist");
+      datalist.id = this.id + "-list";
+
+      for (let option of options.datalist) {
+        let opt = document.createElement("option");
+        opt.value = option;
+        datalist.appendChild(opt);
+      }
+
+      this.dom.appendChild(datalist);
+      this.input.setAttribute("list", datalist.id);
+    }
+
+    let groupWrapper = null;
+    if (options.prepend || options.append) {
+      groupWrapper = document.createElement("div");
       groupWrapper.classList.add("input-group");
+      this.dom.appendChild(groupWrapper);
+      groupWrapper.appendChild(this.input);
+    }
+
+    if (options.prepend) {
       var prependDiv = document.createElement("div");
       prependDiv.classList.add("input-group-prepend");
       var prependSpan = document.createElement("span");
@@ -255,7 +280,16 @@ export default class ZFormField {
       prependDiv.appendChild(prependSpan);
       groupWrapper.appendChild(prependDiv);
       groupWrapper.appendChild(this.input);
-      this.dom.appendChild(groupWrapper);
+    }
+
+    if (options.append) {
+      var appendDiv = document.createElement("div");
+      appendDiv.classList.add("input-group-append");
+      var appendSpan = document.createElement("span");
+      appendSpan.classList.add("input-group-text");
+      appendSpan.innerHTML = options.append;
+      appendDiv.appendChild(appendSpan);
+      groupWrapper.appendChild(appendDiv);
     }
 
     if (this.hint) {
@@ -282,6 +316,7 @@ export default class ZFormField {
    * @type {any}
    */
   get value() {
+    if (this.type == "boolean") return this.input.value == "1";
     return this.input.value;
   }
 
@@ -321,11 +356,18 @@ export default class ZFormField {
       }
     }
 
-    this.errorLabel.innerHTML = text;
+    this.showError(text);
     this.input.setCustomValidity(error.type);
     this.input.classList.add("is-invalid");
 
     this.dom.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+  }
+
+  /**
+   * To simply show a message without marking this field as invalid
+   */
+  showError(text) {
+    this.errorLabel.innerHTML = text;
   }
 
   /**
@@ -340,12 +382,18 @@ export default class ZFormField {
 
   /**
    * Validates the input and shows an appropriate in case of an error.
+   * @param {boolean} showError Set to false if you only want to know if the field is valid without annoying the user 
    * @returns {boolean} False in case of invalid
    */
-  validate() {
-    /**
-     * @todo Implement
-     */
+  async validate(showError = true) {
+    let value = this.value;
+    let valueIsSet = Array.isArray(value) ? value.length > 0 : Boolean(value); 
+
+    if (this.isRequired && !valueIsSet && this.type != "boolean") {
+      if (showError) this.markInvalid({type: "required"});
+      return false;
+    }
+    this.markValid();
     return true;
   }
 
@@ -398,6 +446,16 @@ export default class ZFormField {
    * @returns {string} The data containing string
    */
   getPostString() {
+    let value = this.value;
+    if (Array.isArray(value)) {
+      let out = [];
+      let index = 0;
+      for (let item of value) {
+        out.push(this.name+"[" + index + "]=<#decURI#>" + encodeURIComponent(item));
+        index++;
+      }
+      return out.join("&");
+    }
     return this.name + "=<#decURI#>" + encodeURIComponent(this.value);
   }
 
@@ -407,7 +465,16 @@ export default class ZFormField {
    * @returns {void}
    */
   getFormData(data) {
-    data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
+    let value = this.value;
+    if (Array.isArray(value)) {
+      let index = 0;
+      for (let item of value) {
+        data.set(this.name+"[" + index + "]", "<#decURI#>" + encodeURIComponent(item));
+        index++;
+      }
+    } else {
+      data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
+    }
   }
 
   static create(options) {
@@ -433,7 +500,7 @@ class MultiFileUpload extends ZFormField {
 
   constructor(options) {
     super(options);
-    this.uploadPath = Z.Request.rootPath + "upload";
+    this.uploadPath = window.location;//Z.Request.rootPath + "upload";
 
     this.input.type = "file";
     this.input.setAttribute("multiple", true);
@@ -441,6 +508,8 @@ class MultiFileUpload extends ZFormField {
 
     this.fileLimit = options.limit || 10;
     this.types = options.fileTypes || ["pdf", "png", "jpg", "jpeg"];
+
+    this.input.setAttribute("accept", this.types.map(t => "." + t).join(","));
 
     this.list = document.createElement("div");
     this.list.classList.add("list-group");
@@ -453,31 +522,88 @@ class MultiFileUpload extends ZFormField {
 
     this.statusHint = document.createElement("div");
     this.statusHint.classList.add("list-group-item", "list-group-item-secondary", "p-1");
+
+    this.statusHintFileNumber = document.createElement("span");
+    this.statusHint.appendChild(this.statusHintFileNumber);
+    
+    this.statusHintFileTypes = document.createElement("span");
+    this.statusHint.appendChild(this.statusHintFileTypes);
+    this.statusHintFileTypes.innerText = this.types.join(", ");
+    this.statusHintFileTypes.classList.add("font-weight-light", "ml-3");
+
+    let buttonUpload = document.createElement("button");
+    buttonUpload.innerHTML = `<i class="fas fa-upload"></i>`;
+    buttonUpload.classList.add("btn", "btn-secondary", "float-right", "py-0");
+    this.statusHint.appendChild(buttonUpload);
+
     if (this.fileLimit > 1) {
       this.list.appendChild(this.statusHint);
+    } else {
+      this.emptyHint.appendChild(buttonUpload);
     }
 
     this.fileValues = [];
 
+    // --- File upload manual ---
     this.list.addEventListener("click", () => {
       this.input.click();
     });
 
     this.input.addEventListener("change", () => {
       let files = this.input.files;
+      if (files.length == 0) return;
+
+      for (let i = 0; i < files.length; i++) {
+        this.addUpload(files[i]);
+      }
+
+      this.update();
+      this.input.value = "";
+      this.input.dispatchEvent(new Event("change"));
+    });
+
+    // --- File upload by dragging ---
+    let onDragOver = (e) => {
+      e.preventDefault();
+      this.list.style.outline = "2px solid var(--primary)";
+    }
+
+    let onDragEnd = (e) => {
+      e.preventDefault();
+      this.list.style.outline = "";
+    }
+
+    this.list.addEventListener("dragover", onDragOver);
+    this.list.addEventListener("dragenter", onDragOver);
+
+    this.list.addEventListener("dragleave", onDragEnd);
+    this.list.addEventListener("dragend", onDragEnd);
+
+    this.list.addEventListener("drop", (e) => {
+      console.log("DROP");
+      onDragEnd(e);
+      e.preventDefault();
+      e.stopPropagation();
+
+      let files = e.dataTransfer.files;
       for (let i = 0; i < files.length; i++) {
         this.addUpload(files[i]);
       }
       this.update();
       this.input.value = "";
+      this.input.dispatchEvent(new Event("change"));
     });
 
+    // Call update to set initial text for this.statusHint
     this.update();
   }
 
   addUpload(file) {
     if (this.fileValues.length >= this.fileLimit) {
-      this.hint(Z.Lang.too_many_files);
+      Z.ModalBS4.showMessage({
+        message: Z.Lang.error_too_many_files,        
+      });
+      this.showError(Z.Lang.error_too_many_files);
       return;
     }
 
@@ -486,7 +612,8 @@ class MultiFileUpload extends ZFormField {
       serverId: null,
       file: file,
       progressBar: null,
-      dom: null
+      dom: null,
+      errored: false
     }
 
     let item = document.createElement("div");
@@ -519,6 +646,8 @@ class MultiFileUpload extends ZFormField {
       this.fileValues.splice(index, 1);
       item.remove();
       this.update();
+      this.input.dispatchEvent(new Event("change"));
+      xhr.abort();
     });
 
     let progressBar = document.createElement("div");
@@ -534,18 +663,43 @@ class MultiFileUpload extends ZFormField {
     item.appendChild(progressBar);
 
     let formData = new FormData();
+    formData.append("action", "z_form_upload");
     formData.append("file", file);
 
     setProgress(0);
-    fetch(this.uploadPath, {
-      method: "POST",
-      body: formData
-    }).then(res => {
-      return res.json();
-    }).then(res => {
-      uploadData.serverId = res.fileId;
-      setProgress(1);
+
+    // Use XHR instead of fetch to get the progress event
+    const xhr = new XMLHttpRequest();
+    xhr.addEventListener("loadend", e => {
+
+      try {
+        let res = JSON.parse(xhr.response);
+        if (res.result != "success") throw new Error("No success");
+
+        uploadData.serverId = res.fileId;
+        setProgress(1);
+        this.input.dispatchEvent(new Event("change"));
+      } catch (e) {
+        uploadData.errored = true;
+        item.classList.add("list-group-item-danger");
+        text.innerText += " - " + Z.Lang.error_bad_upload;
+        this.input.dispatchEvent(new Event("change"));
+        progressBar.style.background = "";
+      }
+
     });
+
+    xhr.addEventListener("progress", onProgress);
+    xhr.upload.addEventListener("progress", onProgress);
+
+    function onProgress(e) {
+      if (e.lengthComputable) {
+        setProgress(e.loaded / e.total);
+      }
+    }
+
+    xhr.open("POST", this.uploadPath);
+    xhr.send(formData);
 
     uploadData.dom = item;
     this.fileValues.push(uploadData);
@@ -555,30 +709,48 @@ class MultiFileUpload extends ZFormField {
       progressBar.style.width = progress * 100 + "%";
       progressBar.style.background = progress == 1 ? "green" : "red";
     }
-
     return uploadData;
   }
 
   update() {
+    // Show / hide label in case there are no files uploaded yet
     if (this.fileValues.length == 0) {
       this.emptyHint.style.display = "";
     } else {
       this.emptyHint.style.display = "none";
     }
     
+    // Sort files in the correct order they were uploaded
     for (let file of this.fileValues) {
       this.list.insertBefore(file.dom, this.emptyHint);
     }
 
-    this.statusHint.innerText = this.fileValues.length + " / " + this.fileLimit;
+    // Show the number of files uploaded.
+    this.statusHintFileNumber.innerText = this.fileValues.length + " / " + this.fileLimit;
+  }
+
+  async validate(showError = true) {
+    // Check for failed uploads
+    if (this.fileValues.some(val => val.errored)) {
+      if (showError) this.markInvalid({type: "bad_upload"});
+      return false;
+    }
+
+    // Check for incomplete uploads
+    if (this.fileValues.some(val => val.progress < 1)) {
+      if (showError) this.markInvalid({type: "upload_not_finished"});
+      return false;
+    }
+
+    return super.validate(showError);
   }
 
   /**
    * @type {any}
    */
-     get value() {
-      return this.fileValues.map(val => val.serverId).join(",");
-    }
+  get value() {
+    return this.fileValues.map(val => val.serverId);
+  }
 }
 
 class CheckboxList extends ZFormField {
@@ -631,6 +803,9 @@ class CheckboxList extends ZFormField {
     this.input.dispatchEvent(new Event("change"));
   }
 
+  /**
+   * @param {any[]} value array of selected values
+   */
   set value(value) {
     if (typeof value == 'string') value = value.split(",");
     for (let item of this.items) {

@@ -2,6 +2,7 @@ import Forms from "./form/Forms.js";
 import Request from "./Request.js";
 import Lang from "./Lang.js";
 import Presets from "./presets/Presets.js";
+import Loader from "./Loader.js";
 
 import ZCED from "./form/ZCED.js";
 import ZCEDItem from "./form/ZCEDItem.js";
@@ -16,7 +17,8 @@ window.Z = {
   Lang,
   Presets,
   Forms,
-  ModalBS4
+  ModalBS4,
+  Loader
 }
 
 // Legacy support. Following classes should not be used manually.
