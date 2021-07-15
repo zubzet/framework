@@ -65,6 +65,23 @@
             return $ip;
         }
 
+        /**
+         * Detect if a request was made from the console
+         *
+         * @return bool the request was made from a console
+         */
+        public function isCli() {
+            if(defined('STDIN')) {
+                return true;
+            }
+
+            $remoteAddr = empty($_SERVER['REMOTE_ADDR']);
+            $userAgent = isset($_SERVER['HTTP_USER_AGENT']);
+            $args = count($_SERVER['argv'] ?? []);
+
+            return $remoteAddr && !$userAgent && $args > 0;
+        }
+
         public function referer() {
             return $_SERVER['HTTP_REFERER'] ?? null;
         }
@@ -280,16 +297,26 @@
          */
         public function checkPermission($permission, $boolResult = false) {
             $user = $this->getRequestingUser();
+
+            if($permission == "console") {
+                if($this->isCli()) return true;
+                if($boolResult) return false;
+                $this->booter->executePath(["error", "403"]);
+                exit; 
+            }
+
             if (!$user->isLoggedIn) {
                 if($boolResult) return false;
                 $this->booter->executePath(["login", "index"]);
                 exit;
             }
+
             if (!$user->checkPermission($permission)) {
                 if($boolResult) return false;
                 $this->booter->executePath(["error", "403"]);
                 exit;
             }
+
             return true;
         }
 
