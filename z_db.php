@@ -32,6 +32,8 @@
          * @var int $insertId Last insert id
          */
         public $insertId;
+
+        public $affectedRows;
         
         /**
          * When instanced, a db connection is given as a refrence
@@ -66,6 +68,7 @@
             if ($this->stmt->errno) {
                 throw new Exception("SQL Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
+            $this->affectedRows = $this->stmt->affected_rows;
             $this->result = $this->stmt->get_result();
             $this->stmt->close();
             return $this;

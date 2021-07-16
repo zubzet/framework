@@ -73,6 +73,21 @@
             return $_SERVER['HTTP_USER_AGENT'] ?? null;
         }
 
+        /**
+         * Get the http method of the current request
+         *
+         * @param string $type Optional type the method will be checked against
+         * @return string|bool
+         */
+        public function method(?string $type = null): string|bool {
+            $method = $_SERVER['REQUEST_METHOD'] ?? "";
+            $method = strtoupper($method);
+            if(isset($type)) {
+                return $method == $type;
+            }
+            return $method;
+        }
+
         public function getExecutionTime() {
             if(!isset($_SERVER["REQUEST_TIME_FLOAT"])) return false;
             return microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];

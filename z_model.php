@@ -61,11 +61,19 @@
         }
 
         /**
-         * Returns the last insert id. Ignores insers done by log.
+         * Returns the last insert id.
          * @return int The id of the in the last insert created dataset
          */
         function getInsertId() {
             return $this->z_db->getInsertId();
+        }
+
+        /**
+         * Returns the rows affected. Usually used when making an update
+         * @return int The id of the in the last insert created dataset
+         */
+        function getAffectedRows() {
+            return $this->z_db->affectedRows;
         }
 
         /**

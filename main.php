@@ -303,6 +303,9 @@
                     $controllerFile = $this->z_controllers . $controller . ".php";
                 } else if (file_exists($this->z_framework_root . "default/controllers/" . $controller . ".php")) {
                     $controllerFile = $this->z_framework_root . "default/controllers/" . $controller . ".php";
+                } else if (file_exists($this->z_controllers . "FallbackController.php")) {
+                    $controller = "FallbackController";
+                    $controllerFile = $this->z_controllers . "FallbackController.php";
                 }
 
                 if ($controllerFile !== null) {
