@@ -507,7 +507,7 @@ class MultiFileUpload extends ZFormField {
     this.input.style.display = "none";
 
     this.fileLimit = options.limit || 10;
-    this.types = options.fileTypes || ["pdf", "png", "jpg", "jpeg"];
+    this.types = options.filetypes || ["pdf", "png", "jpg", "jpeg"];
 
     this.input.setAttribute("accept", this.types.map(t => "." + t).join(","));
 
