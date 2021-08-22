@@ -169,6 +169,28 @@
         }
 
         /**
+         * Converts the result of the last query into a grouped array
+         * @param string $groupBy The field, by which the array is grouped by
+         * @param string $subElement If set, the only a sub element of the grouped element is returned
+         * @return any[groupBy][] Results of the last query as two dimensional array with the index as thr groupBy value
+         */
+        public function mergeAsGroup($groupBy, $subElement = null) {
+            $elements = $this->resultToArray();
+            $groups = [];
+            foreach($elements as $element) {
+                if (!isset($groups[$element[$groupBy]])) {
+                    $groups[$element[$groupBy]] = [];
+                }
+                if(isset($subElement)) {
+                    $groups[$element[$groupBy]][] = $element[$subElement];
+                    continue;
+                }
+                $groups[$element[$groupBy]][] = $element;
+            }
+            return $groups;
+        }
+
+        /**
          * Returns one line of the last query
          * @return any[] Line of the last result
          */
