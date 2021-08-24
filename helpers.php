@@ -60,4 +60,12 @@
         }
     }
 
+    function de_strtolower($string) {
+        return str_replace([
+            "Ä", "Ö", "Ü", "ß"
+        ], [
+            "ä", "ö", "ü", "ss"
+        ], strtolower($string));
+    }
+
 ?>
