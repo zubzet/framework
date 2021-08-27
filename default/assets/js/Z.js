@@ -1290,7 +1290,7 @@ class ZFormField {
       if(data.type == undefined || data.type == "option") {
         var option = document.createElement("option");
         option.innerHTML = data.text;
-        option.setAttribute("value", data.value);
+        option.setAttribute("value", data.value ?? data.text);
         if(this.optgroup != null) {
           this.optgroup.appendChild(option);
         } else {

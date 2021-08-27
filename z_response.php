@@ -378,8 +378,6 @@
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
 
-        private $mailer;
-
         /**
          * Sends an email to an address
          * @param string $to Mail address
@@ -448,12 +446,9 @@
 
             require_once 'vendor/autoload.php';
 
-            if(empty($this->mailer)) {
-                $this->mailer = new PHPMailer\PHPMailer\PHPMailer(true);
-            }
-            $mail = $this->mailer;
-
             try {
+                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
                 //Server settings
                 $mail->SMTPDebug = 0;
                 $mail->isSMTP();                                            // Set mailer to use SMTP

@@ -24,16 +24,16 @@
         private $conn;
 
         /** @var string $dbhost Hostname of the machine on that the database lives */
-        private $dbhost;
+        public $dbhost;
 
         /** @var string $dbusername Username for the database connection */
-        private $dbusername;
+        public $dbusername;
 
         /** @var string $dbpassword Password for the database connection */
-        private $dbpassword;
+        public $dbpassword;
 
         /** @var string $dbname Name of the database */
-        private $dbname;
+        public $dbname;
 
         /** @var string $default Name of the controller when no specific is selected */
         private $defaultIndex;
@@ -177,19 +177,9 @@
             $this->url = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "cli");
             $this->urlParts = $this->parseUrl();
 
-            //Database connection
-            $this->conn = new mysqli(
-                $this->dbhost,
-                $this->dbusername,
-                $this->dbpassword,
-                $this->dbname
-            );
-
-            $this->conn->set_charset("utf8mb4_general_ci");
-
             //Import of the z_db
             require_once $this->z_framework_root.'z_db.php';
-            $this->z_db = new z_db($this->conn, $this);
+            $this->z_db = new z_db($this);
 
             //Import the standard controller;
             require_once $this->z_framework_root.'z_controller.php';
@@ -429,13 +419,6 @@
             require_once $this->z_framework_root.'z_rest.php';
             $rest = new Rest($options, $this->urlParts);
             $rest->execute();
-        }
-
-        /**
-         * Closes the database connection on exit
-         */
-        function __destruct() {
-            if (isset($this->conn)) $this->conn->close();
         }
 
     }

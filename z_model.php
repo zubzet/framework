@@ -75,7 +75,6 @@
         function resultToArray() {
             return $this->z_db->resultToArray(...func_get_args());
         }
-
         
         /**
          * Returns one line of the last query.
