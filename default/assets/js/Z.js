@@ -80,7 +80,7 @@
         if(parse) {
           var dat = null;
           try {
-            dat = JSON.parse(data);
+            if(typeof data !== 'object') dat = JSON.parse(data);
           } catch (e) {
             console.error("Please show this to a developer: ", data);
           }
@@ -994,7 +994,6 @@ class ZFormField {
     this.autofill = options.autofill || false;
     this.autocompleteData = options.autocompleteData || [];
     this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
-    this.float = options.float || false;
     this.autocompleteTextCB = options.autocompleteTextCB;
     this.autocompleteCB = options.autocompleteCB || null;
 
@@ -1059,9 +1058,7 @@ class ZFormField {
       this.input.classList.add("form-control");
       
       var completeDiv = document.createElement("div");
-      completeDiv.classList.add("list-group", "shadow-sm");
-      completeDiv.style.zIndex = "999";
-      completeDiv.style.top = "calc(100% - 0.25em)";
+      completeDiv.classList.add("list-group");
       customDiv.appendChild(this.input);
       customDiv.appendChild(completeDiv);
 
@@ -1084,59 +1081,43 @@ class ZFormField {
             if(currentAge >= this.lockAutocompleteAge) {
               this.lockAutocompleteAge++;
               this.autocompleteData = res.data;
-              updateAutocompleteResults();
+              console.log(this.autocompleteData);
             }
           });
         }
 
-        let updateAutocompleteResults = () => {
-          completeDiv.innerHTML = "";
-          if (e.target.value == "") return;
-          if (e.key == "Escape") return;
-          
-          for (let value of this.autocompleteData) {
-  
-            let text = typeof value == "string" ? value : value.text;
-            let realValue = typeof value == "string" ? value : value.value;
-  
-            if (text.toLowerCase().includes(e.target.value.toLowerCase())) {
-              let item = document.createElement("button");
-              item.type = "button";
-              item.classList.add("list-group-item");
-              item.classList.add("list-group-item-action");
-              item.classList.add("py-1");
-              
-              if(text.toLowerCase() == e.target.value.toLowerCase()) {
-                item.classList.add("text-primary");
-              }
-  
-              let start = text.toLowerCase().indexOf(e.target.value.toLowerCase());
-              let tmp = text.substr(0, start);
-              tmp += "<strong>" + text.substr(start, e.target.value.length) + "</strong>";
-              tmp += text.substring(start + e.target.value.length, value.length);
-              if(this.autocompleteTextCB) {
-                tmp = this.autocompleteTextCB(tmp, text, realValue);
-              }
-              item.innerHTML = tmp;
-  
-              completeDiv.appendChild(item);
-              
-              if (this.float) {
-                completeDiv.style.position = "absolute";
-                completeDiv.style.width = "calc(100% - 10px)";
-              }
-  
-              item.addEventListener("click", e => {
-                this.input.value = text;
-                completeDiv.innerHTML = "";
-                if(this.autocompleteCB) {
-                  this.autocompleteCB(realValue, text);
-                }
-              });
+        completeDiv.innerHTML = "";
+        if (e.target.value == "") return;
+        if (e.key == "Escape") return;
+        
+        for (let value of this.autocompleteData) {
+          if (value.toLowerCase().includes(e.target.value.toLowerCase())) {
+            var item = document.createElement("button");
+            item.type = "button";
+            item.classList.add("list-group-item");
+            item.classList.add("list-group-item-action");
+            item.classList.add("py-1");
+            if(value.toLowerCase() == e.target.value.toLowerCase()) {
+              item.classList.add("text-primary");
             }
+
+            var start = value.toLowerCase().indexOf(e.target.value.toLowerCase());
+            var tmp = value.substr(0, start);
+            tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
+            tmp += value.substring(start + e.target.value.length, value.length);
+            if(this.autocompleteTextCB) {
+              tmp = this.autocompleteTextCB(tmp, value);
+            }
+            item.innerHTML = tmp;
+
+            completeDiv.appendChild(item);
+            item.addEventListener("click", e => {
+              this.input.value = value;
+              completeDiv.innerHTML = "";
+              if(this.autocompleteCB) this.autocompleteCB(value);
+            });
           }
-        };
-        updateAutocompleteResults();
+        }
       });
 
       document.addEventListener("click", function() {
