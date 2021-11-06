@@ -160,12 +160,20 @@
         function changeRoleStateByUserIdAndRoleId($userId, $roleId, $shouldHaveRole = true) {
             // If the user should not have the role, invalidate all grants of it
             if(!$shouldHaveRole) {
-                $sql = "UPDATE `z_user_role` SET `active` = 0 WHERE `user` = ?";
-                return $this->exec($sql, "i", $userId);
+                $sql = "UPDATE `z_user_role` 
+                        SET `active` = 0 
+                        WHERE `user` = ? 
+                        AND `role` = ?
+                        AND `active` = 1";
+                return $this->exec($sql, "ii", $userId, $roleId);
             }
 
             // Find out if the user already has the role
-            $sql = "SELECT COUNT(*) > 0 AS has_role FROM `z_user_role` WHERE `role` = ? AND `user` = ?";
+            $sql = "SELECT COUNT(*) > 0 AS has_role 
+                    FROM `z_user_role` 
+                    WHERE `role` = ? 
+                    AND `user` = ? 
+                    AND `active` = 1";
             $hasRole = $this->exec($sql, "ii", $roleId, $userId)->resultToLine()["has_role"];
 
             // If the user does not have the role, grant it
