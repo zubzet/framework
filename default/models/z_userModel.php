@@ -248,5 +248,19 @@
             return $token;
         }
 
+        /**
+         * Gets the id of a role by it's name
+         * @param string $name The name of the role
+         * @return int The id of the role
+         */
+        public function getRoleIdByRoleName(string $name): ?int {
+            $sql = "SELECT `id`
+                    FROM `z_role`
+                    WHERE `name` = ?
+                    LIMIT 1";
+            $this->exec($sql, "s", $name);
+            return $this->resultToLine()["id"] ?? null;
+        }
+
     }
 ?>
