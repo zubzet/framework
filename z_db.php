@@ -41,7 +41,7 @@
         /**
          * @var int $lastConnect Unix timestamp of the last database connect
          */
-        public $lastPing;
+        public $lastHeartbeat;
 
         /**
          * @var int $connectTimeout Database connection timeout in seconds. Defaults to 0.5 hours
@@ -96,7 +96,7 @@
          * @return void
          */
         public function disconnect($forceClose = false) {
-            if($forceClose || $this->ping()) {
+            if($forceClose || $this->heartbeat()) {
                 $this->conn->close();
             }
         }
@@ -109,7 +109,7 @@
         public function exec($query) {
             // Make sure a connection was made and has not timed out
             if(!isset($this->lastConnect) || time() - $this->lastConnect >= $this->connectTimeout) {
-                if(!isset($this->lastPing) || time() - $this->lastPing >= $this->connectTimeout) {
+                if(!isset($this->lastHeartbeat) || time() - $this->lastHeartbeat >= $this->connectTimeout) {
                     $this->connect();
                 }
             }
@@ -137,6 +137,9 @@
 
             $this->result = $this->stmt->get_result();
             $this->stmt->close();
+
+            $this->lastHeartbeat = time();
+
             return $this;
         }
 
@@ -144,8 +147,14 @@
          * Run a very lightweight query to keep the connection alive
          * @return void
          */
-        public function ping() {
-            $this->lastPing = time();
+        public function heartbeat($waitForTimeout = true) {
+            if($waitForTimeout) {
+                // Only ping if the timeout 
+                if(isset($this->lastHeartbeat) && time() - $this->lastHeartbeat < max(1, $this->connectTimeout - 30)) {
+                    return;
+                }
+            }
+            $this->lastHeartbeat = time();
             $this->exec("SELECT 1");
         }
 

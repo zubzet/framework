@@ -115,6 +115,15 @@
         }
 
         /**
+         * Run a very lightweight query to keep the connection alive
+         * @param string $waitForTimeout If set to true, only ping if no other query has been made within the timeout period
+         * @return void
+         */
+        public function heartbeat($waitForTimeout = true) {
+            $this->z_db->heartbeat(...func_get_args());
+        }
+
+        /**
          * Returns the result of the last query.
          * @return any Result of the last query
          */
