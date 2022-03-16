@@ -3,10 +3,14 @@
      * Also known as the booter 
      */
 
+    namespace ZubZet;
+
+use Exception;
+
     /**
      * First class that is instantiated at a request
      */
-    class z_framework {
+    class Framework {
 
         /** @var string $rootDirectory Path to the root */
         private $rootDirectory;
@@ -42,7 +46,7 @@
         public $urlParts;
 
         /** @var array $settings Stores the z_framework settings */
-        public $settings;
+        public $settings = [];
 
         /** @var z_db $z_db Database proxy object  */
         public $z_db;
@@ -118,22 +122,17 @@
             }
 
             //Config file
-            if (!file_exists($this->config_file)) {
-                chdir("./z_framework");
-                require_once "./installer.php";
-                //Open installer
-                exit;
-            }
-
-            //Parse ini file with inline comments ignored
-            $ini_data = file_get_contents($this->config_file);
-            $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
-            $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
-            $this->config = parse_ini_string($ini_data);
-            foreach($this->config as $key => $value) {
-                $value = str_replace("-----semicolon-----", ";", $value);
-                $value = str_replace("-----hashtag-----", "#", $value);
-                $this->config[$key] = $value;
+            if (file_exists($this->config_file)) {
+                //Parse ini file with inline comments ignored
+                $ini_data = file_get_contents($this->config_file);
+                $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
+                $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
+                $this->config = parse_ini_string($ini_data);
+                foreach($this->config as $key => $value) {
+                    $value = str_replace("-----semicolon-----", ";", $value);
+                    $value = str_replace("-----hashtag-----", "#", $value);
+                    $this->config[$key] = $value;
+                }
             }
             $this->settings = $this->config;
 
