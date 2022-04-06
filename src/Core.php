@@ -4,13 +4,11 @@
      */
 
     namespace ZubZet;
-
-use Exception;
-
+ 
     /**
      * First class that is instantiated at a request
      */
-    class Framework {
+    class Core {
 
         /** @var string $rootDirectory Path to the root */
         private $rootDirectory;
@@ -105,7 +103,8 @@ use Exception;
         /**
          * Parses all the options as vars and instantiate the z_db and establish the db connection
          */
-        function __construct($params = []) {
+        function __construct($params = [], $root = "") {
+            $this->z_framework_root = $root;
 
             chdir(__DIR__."/../");
 
@@ -122,20 +121,18 @@ use Exception;
             }
 
             //Config file
-            if (file_exists($this->config_file)) {
-                //Parse ini file with inline comments ignored
-                $ini_data = file_get_contents($this->config_file);
-                $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
-                $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
-                $this->config = parse_ini_string($ini_data);
-                foreach($this->config as $key => $value) {
-                    $value = str_replace("-----semicolon-----", ";", $value);
-                    $value = str_replace("-----hashtag-----", "#", $value);
-                    $this->config[$key] = $value;
-                }
+            //Parse ini file with inline comments ignored
+            $ini_data = file_get_contents($this->config_file);
+            $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
+            $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
+            $this->config = parse_ini_string($ini_data);
+            foreach($this->config as $key => $value) {
+                $value = str_replace("-----semicolon-----", ";", $value);
+                $value = str_replace("-----hashtag-----", "#", $value);
+                $this->config[$key] = $value;
             }
             $this->settings = $this->config;
-
+            
             //Replace config file with code settings
             foreach($params as $key => $param) {
                 if(isset($this->settings[$key])) {
@@ -178,7 +175,7 @@ use Exception;
 
             //Import of the z_db
             require_once $this->z_framework_root.'z_db.php';
-            $this->z_db = new z_db($this);
+            $this->z_db = new \z_db($this);
 
             //Import the standard controller;
             require_once $this->z_framework_root.'z_controller.php';
@@ -193,7 +190,7 @@ use Exception;
 
             //User
             require_once $this->z_framework_root.'z_user.php';
-            $this->user = new User($this);
+            $this->user = new \User($this);
             $this->user->identify();
         }
 
@@ -209,7 +206,7 @@ use Exception;
                 //Custom error function (even triggers for warnings)
                 set_error_handler(function($severity, $message, $file, $line) {
                     if (error_reporting() & $severity) {
-                        throw new ErrorException($message, 0, $severity, $file, $line);
+                        throw new \ErrorException($message, 0, $severity, $file, $line);
                     }
                 });
             } else {
@@ -299,7 +296,7 @@ use Exception;
                 } else {
                     return $this->executePath(["error", "404"]);
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 return $this->executePath(["error", "500"]);
             }
 
@@ -308,8 +305,8 @@ use Exception;
             $this->ActionStack[] = $method;
             
             try {
-                $this->req = new Request($this);
-                $this->res = new Response($this);
+                $this->req = new \Request($this);
+                $this->res = new \Response($this);
                 $CTRL_obj = new $controller($this->req, $this->res);
                 if (method_exists($controller, $method)) {
                     return $CTRL_obj->{$method}($this->req, $this->res);
@@ -323,7 +320,7 @@ use Exception;
                         return $this->executePath(["error", "404"]);
                     }
                 }
-            } catch(Exception $e) {
+            } catch(\Exception $e) {
                 if ($this->showErrors != 0) {
                     throw $e;
                 } else {
@@ -378,7 +375,7 @@ use Exception;
                     if (file_exists($path)) {
                         require_once $path;
                     } else {
-                        throw new Exception("Model: $model does not exist!");
+                        throw new \Exception("Model: $model does not exist!");
                     }
                 }
                 
@@ -416,7 +413,7 @@ use Exception;
          */
         private function rest($options) {
             require_once $this->z_framework_root.'z_rest.php';
-            $rest = new Rest($options, $this->urlParts);
+            $rest = new \Rest($options, $this->urlParts);
             $rest->execute();
         }
 

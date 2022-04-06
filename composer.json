@@ -1,9 +1,9 @@
 {
-    "name": "zierhut-it/zubzet",
+    "name": "zubzet/zubzet",
     "require": {},
     "autoload": {
         "psr-4": {
-            "ZubZet\\": "./"
+            "ZubZet\\": "src/"
         }
     }
 }
