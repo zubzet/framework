@@ -378,8 +378,6 @@
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
 
-        private $mailer;
-
         /**
          * Sends an email to an address
          * @param string $to Mail address
@@ -391,26 +389,28 @@
          */
         public function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
             //Import the email template
-            $layout = str_replace(".php", "", $layout);
-            $layout = str_replace("_layout", "", $layout);
-            $layout = "$layout"."_layout";
+            if(!isset($options["skip_render"])) {
+                $layout = str_replace(".php", "", $layout);
+                $layout = str_replace("_layout", "", $layout);
+                $layout = "$layout"."_layout";
 
-            if(!file_exists($this->getZViews()."$layout.php")) {
-                if(substr($layout, 0, 7) !== "layout/") {
-                    $layout = "layout/$layout";
+                if(!file_exists($this->getZViews()."$layout.php")) {
+                    if(substr($layout, 0, 7) !== "layout/") {
+                        $layout = "layout/$layout";
+                    }
                 }
-            }
 
-            if(!file_exists($this->getZViews()."$layout.php")) {
-                throw new \Exception("'$layout.php' does not exist.");
+                if(!file_exists($this->getZViews()."$layout.php")) {
+                    throw new \Exception("'$layout.php' does not exist.");
+                }
+                
+                $template = $this->booter->getViewPath(
+                    $layout,
+                    (strpos($layout, "/mail") !== FALSE ? str_replace("/mail", "/email", $layout) : null)
+                );
+                if (!file_exists($template)) return false;
             }
-            
-            $template = $this->booter->getViewPath(
-                $layout,
-                (strpos($layout, "/mail") !== FALSE ? str_replace("/mail", "/email", $layout) : null)
-            );
-            if (!file_exists($template)) return false;
-            
+                
             //Overwrite the language
             $lang = strtolower($lang);
             $options["overwrite_lang"] = $lang;
@@ -430,24 +430,25 @@
             $options["application_root"] = $this->getBooterSettings("host") . $this->booter->rootFolder;
 
             //Render the email template
-            ob_start();
-            $this->render($document, $options, $layout);
-            $content = ob_get_clean();
-            if (ob_get_contents()) ob_end_clean();
+            if(isset($options["skip_render"])) {
+                $content = $document;
+            } else {
+                ob_start();
+                $this->render($document, $options, $layout);
+                $content = ob_get_clean();
+                if (ob_get_contents()) ob_end_clean();
+            }
 
             $from = $this->getBooterSettings("mail_from") ?? $this->getBooterSettings("mail_user");
             if(!filter_var($from, FILTER_VALIDATE_EMAIL)) {
-                throw new \Exception("mail_user is not a valid mail. Try using mail_from instead.");
+                throw new \Exception("mail_user '$from' is not a valid mail. Try using mail_from instead.");
             }
 
             require_once 'vendor/autoload.php';
 
-            if(empty($this->mailer)) {
-                $this->mailer = new PHPMailer\PHPMailer\PHPMailer(true);
-            }
-            $mail = $this->mailer;
-
             try {
+                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
                 //Server settings
                 $mail->SMTPDebug = 0;
                 $mail->isSMTP();                                            // Set mailer to use SMTP
@@ -472,7 +473,10 @@
                 $mail->send();
             } catch (Exception $e) {
                 echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                return false;
             }
+
+            return true;
         }
 
         /**
@@ -487,7 +491,7 @@
             $target = $this->booter->getModel("z_user")->getUserById($userId);
             $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
             $language = isset($langObj["value"]) ? $langObj["value"] : $this->getBooterSettings("anonymous_language");
-            $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
+            return $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
 
         /**
@@ -570,7 +574,8 @@
             $sql = "SELECT `$pkField` FROM `$table` WHERE `$pkField`=?";
             $db->exec($sql, $pkType, $pkValue);
             if($db->countResults() > 0) {
-                return $this->updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult);
+                $this->updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult);
+                return $pkValue;
             }
             return $this->insertDatabase($table, $validationResult, $fixed);
         }

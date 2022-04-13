@@ -15,7 +15,7 @@
  * @type {object} Z
  * Namespace object for Z.js
  */
-Z = {
+ Z = {
 
   /**
    * Debug mode
@@ -80,7 +80,7 @@ Z = {
         if(parse) {
           var dat = null;
           try {
-            dat = JSON.parse(data);
+            if(typeof data !== 'object') dat = JSON.parse(data);
           } catch (e) {
             console.error("Please show this to a developer: ", data);
           }
@@ -1290,7 +1290,7 @@ class ZFormField {
       if(data.type == undefined || data.type == "option") {
         var option = document.createElement("option");
         option.innerHTML = data.text;
-        option.setAttribute("value", data.value);
+        option.setAttribute("value", data.value ?? data.text);
         if(this.optgroup != null) {
           this.optgroup.appendChild(option);
         } else {

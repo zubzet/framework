@@ -153,6 +153,37 @@
         }
 
         /**
+         * Change the state of a role granted to a user, Can be used to add or remove roles
+         * @param int $userId The id of the user
+         * @param int $roleId The id of the role
+         */
+        function changeRoleStateByUserIdAndRoleId($userId, $roleId, $shouldHaveRole = true) {
+            // If the user should not have the role, invalidate all grants of it
+            if(!$shouldHaveRole) {
+                $sql = "UPDATE `z_user_role` 
+                        SET `active` = 0 
+                        WHERE `user` = ? 
+                        AND `role` = ?
+                        AND `active` = 1";
+                return $this->exec($sql, "ii", $userId, $roleId);
+            }
+
+            // Find out if the user already has the role
+            $sql = "SELECT COUNT(*) > 0 AS has_role 
+                    FROM `z_user_role` 
+                    WHERE `role` = ? 
+                    AND `user` = ? 
+                    AND `active` = 1";
+            $hasRole = $this->exec($sql, "ii", $roleId, $userId)->resultToLine()["has_role"];
+
+            // If the user does not have the role, grant it
+            if(!$hasRole) {
+                $sql = "INSERT INTO `z_user_role`(`role`, `user`) VALUES (?, ?)";
+                $this->exec($sql, "ii", $roleId, $userId);
+            }
+        }
+
+        /**
          * Gets all permissions a specific user has
          * 
          * @param int $userId Id of the target user
@@ -176,25 +207,31 @@
         function verifyUser($token) {
             if (!$token) return false;
 
-            $sql = "SELECT * FROM `z_email_verify` WHERE token = ?";
+            // Retrieve the token from the database
+            $sql = "SELECT * 
+                    FROM `z_email_verify` 
+                    WHERE token = ? 
+                    AND `active` = 1";
             $this->exec($sql, "s", $token);
             $result = $this->resultToLine();
 
-            if (!$result) {
-                return false;
-            }
+            // If the token was not found, the attempt is invalid
+            if (!isset($result)) return false;
 
-            $endTime = strtotime($result["end"]);
-            $now = date("Y-m-d H:i:s");
-            if ($now > $endTime) {
-                return false;
-            }
+            // Verification is invalid if the token is too old
+            if (time() > strtotime($result["end"])) return false;
 
-            $sql = "UPDATE z_email_verify SET active = 0 WHERE id = ?";
+            // Remove the token from the database
+            $sql = "UPDATE z_email_verify 
+                    SET active = 0
+                    WHERE id = ?";
             $this->exec($sql, "i", $result["id"]);
 
-            $sql = "UPDATE z_user SET verified = ? WHERE id = ?";
-            $this->exec($sql, "si", $now, $result["user"]);
+            // Mark the user as verified
+            $sql = "UPDATE z_user 
+                    SET verified = CURRENT_TIMESTAMP() 
+                    WHERE id = ?";
+            $this->exec($sql, "i", $result["user"]);
 
             return true;
         }
@@ -209,6 +246,20 @@
             $sql = "INSERT INTO `z_email_verify`(token, user, end) VALUES (?, ?, ?)";
             $this->exec($sql, "sis", $token, $userId, $endDate);
             return $token;
+        }
+
+        /**
+         * Gets the id of a role by it's name
+         * @param string $name The name of the role
+         * @return int The id of the role
+         */
+        public function getRoleIdByRoleName(string $name): ?int {
+            $sql = "SELECT `id`
+                    FROM `z_role`
+                    WHERE `name` = ?
+                    LIMIT 1";
+            $this->exec($sql, "s", $name);
+            return $this->resultToLine()["id"] ?? null;
         }
 
     }

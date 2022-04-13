@@ -75,7 +75,6 @@
         function resultToArray() {
             return $this->z_db->resultToArray(...func_get_args());
         }
-
         
         /**
          * Returns one line of the last query.
@@ -113,6 +112,15 @@
          */
         function countTableEntries($table) {
             return $this->z_db->countTableEntries(...func_get_args());
+        }
+
+        /**
+         * Run a very lightweight query to keep the connection alive
+         * @param string $waitForTimeout If set to true, only ping if no other query has been made within the timeout period
+         * @return void
+         */
+        public function heartbeat($waitForTimeout = true) {
+            $this->z_db->heartbeat(...func_get_args());
         }
 
         /**
