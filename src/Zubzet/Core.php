@@ -3,7 +3,7 @@
      * Also known as the booter 
      */
 
-    namespace ZubZet;
+    namespace Zubzet;
  
     /**
      * First class that is instantiated at a request
@@ -61,8 +61,11 @@
         /** @var int $reroutes Number of how many times this request war rerouted */
         public $reroutes = 0;
 
-        /** @var string $z_framework_root Directory where the framework stuff lives */
+        /** @var string $z_framework_root Directory where the user stuff lives */
         public $z_framework_root = "z_framework/";
+
+        /** @var string $vendorRoot Directory where the framework stuff lives */
+        public $vendorRoot = __DIR__ . DIRECTORY_SEPARATOR;
 
         /** @var string $z_cnontrollers Directory in which the controllers live */
         public $z_controllers = "z_controllers/";
@@ -104,7 +107,7 @@
          * Parses all the options as vars and instantiate the z_db and establish the db connection
          */
         function __construct($params = [], $root = "") {
-            $this->z_framework_root = $root;
+            $this->z_framework_root = $root.DIRECTORY_SEPARATOR;
 
             chdir(__DIR__."/../");
 
@@ -122,7 +125,7 @@
 
             //Config file
             //Parse ini file with inline comments ignored
-            $ini_data = file_get_contents($this->config_file);
+            $ini_data = file_get_contents($this->z_framework_root.$this->config_file);
             $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
             $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
             $this->config = parse_ini_string($ini_data);
@@ -159,10 +162,10 @@
             $this->updateErrorHandling();
 
             //Import constants
-            require_once $this->z_framework_root . "z_constants.php";
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "z_constants.php";
 
             //Import helpers
-            include($this->z_framework_root."helpers.php");
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "helpers.php";
 
             //Parse Post request
             $this->decodePost();
@@ -174,22 +177,22 @@
             $this->urlParts = $this->parseUrl();
 
             //Import of the z_db
-            require_once $this->z_framework_root.'z_db.php';
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "z_db.php";
             $this->z_db = new \z_db($this);
 
             //Import the standard controller;
-            require_once $this->z_framework_root.'z_controller.php';
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "z_controller.php";
 
             //Import the standard model
-            require_once $this->z_framework_root.'z_model.php';
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "z_model.php";
 
             //RR System
-            require_once $this->z_framework_root."z_requestResponseHandler.php";
-            require_once $this->z_framework_root."z_response.php";
-            require_once $this->z_framework_root."z_request.php";
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "z_requestResponseHandler.php";
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "z_response.php";
+            require_once __DIR__ . DIRECTORY_SEPARATOR . "z_request.php";
 
             //User
-            require_once $this->z_framework_root.'z_user.php';
+            require_once __DIR__ . DIRECTORY_SEPARATOR . 'z_user.php';
             $this->user = new \User($this);
             $this->user->identify();
         }
@@ -285,10 +288,11 @@
 
             try {
                 $controllerFile = null;
-                if (file_exists($this->z_controllers . $controller . ".php")) {
-                    $controllerFile = $this->z_controllers . $controller . ".php";
-                } else if (file_exists($this->z_framework_root . "default/controllers/" . $controller . ".php")) {
-                    $controllerFile = $this->z_framework_root . "default/controllers/" . $controller . ".php";
+                $userControllerFile = $this->z_framework_root . $this->z_controllers . $controller . ".php";
+                if (file_exists($userControllerFile)) {
+                    $controllerFile = $userControllerFile;
+                } else if (file_exists(__DIR__ . DIRECTORY_SEPARATOR . "default/controllers/" . $controller . ".php")) {
+                    $controllerFile = __DIR__ . DIRECTORY_SEPARATOR . "default/controllers/" . $controller . ".php";
                 }
 
                 if ($controllerFile !== null) {
@@ -365,13 +369,13 @@
             }
 
             $model .= "Model";
-            $path = ($dir == null ? $this->z_models : $dir)."$model.php";
-
+            $path = ($dir == null ? $this->z_framework_root . $this->z_models : $dir)."$model.php";
+            
             if (!isset($this->modelCache[$model])) {
                 if (file_exists($path)) {
                     require_once $path;
                 } else {
-                    $path = $this->z_framework_root . "default/models/" . $model . ".php";
+                    $path = __DIR__ . DIRECTORY_SEPARATOR . "default/models/" . $model . ".php";
                     if (file_exists($path)) {
                         require_once $path;
                     } else {
@@ -398,21 +402,22 @@
                 if(substr($document, -4, 4) != ".php") {
                     $document .= ".php";
                 }
-                if (file_exists($this->z_views.$document)) {
-                    return $this->z_views.$document;
+                $userViewFile = $this->z_framework_root . $this->z_views . $document;
+                if (file_exists($userViewFile)) {
+                    return $userViewFile;
                 }
-                if (file_exists($this->z_framework_root."default/views/$document")) {
-                    return $this->z_framework_root."default/views/$document";
+                if (file_exists(__DIR__ . DIRECTORY_SEPARATOR . "default/views/$document")) {
+                    return __DIR__ . DIRECTORY_SEPARATOR . "default/views/$document";
                 }
             }
-            return $this->z_framework_root."default/views/500.php";
+            return __DIR__ . DIRECTORY_SEPARATOR . "default/views/500.php";
         }
 
         /**
          * Answers this request with a rest
          */
         private function rest($options) {
-            require_once $this->z_framework_root.'z_rest.php';
+            require_once __DIR__ . DIRECTORY_SEPARATOR . 'z_rest.php';
             $rest = new \Rest($options, $this->urlParts);
             $rest->execute();
         }

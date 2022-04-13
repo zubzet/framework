@@ -30,7 +30,7 @@
          * This constructor should only called from the booter. If you need a model, use $booter->getModel() instead.
          * 
          * @param z_db $z_db The database proxy class (Usally one lives in the booter)
-         * @param z_framework $booter Booter object
+         * @param ZubZet\Core $booter Booter object
          */
         function __construct(&$z_db, $booter) {
             $this->z_db =& $z_db;

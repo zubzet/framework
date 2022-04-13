@@ -353,7 +353,7 @@
          * @param object $payload data
          */
         private function getNewRest($payload) {
-            require_once $this->booter->z_framework_root.'z_rest.php';
+            require_once $this->getZRoot().'z_rest.php';
             return new Rest($payload, $this->booter->urlParts);
         }
 

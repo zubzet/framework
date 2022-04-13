@@ -42,7 +42,7 @@
          * @return String
          */
         public function getZRoot() {
-            return $this->booter->z_framework_root; 
+            return $this->booter->vendorRoot; 
         }
 
         /**

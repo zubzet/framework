@@ -24,7 +24,7 @@
         public $result;
 
         /**
-         * @var z_framework $booter Reference to the booter
+         * @var ZubZet\Core $booter Reference to the booter
          */
         public $booter;
 
