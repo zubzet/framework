@@ -43,7 +43,7 @@
         /** @var string[] $urlParts Exploded url */
         public $urlParts;
 
-        /** @var array $settings Stores the z_framework settings */
+        /** @var array $settings Stores the config */
         public $settings = [];
 
         /** @var z_db $z_db Database proxy object  */
@@ -61,8 +61,8 @@
         /** @var int $reroutes Number of how many times this request war rerouted */
         public $reroutes = 0;
 
-        /** @var string $z_framework_root Directory where the user stuff lives */
-        public $z_framework_root = "z_framework/";
+        /** @var string $projectRoot Directory where the user files are stored */
+        public $projectRoot;
 
         /** @var string $vendorRoot Directory where the framework stuff lives */
         public $vendorRoot = __DIR__ . DIRECTORY_SEPARATOR;
@@ -107,12 +107,12 @@
          * Parses all the options as vars and instantiate the z_db and establish the db connection
          */
         function __construct($params = [], $root = "") {
-            $this->z_framework_root = $root.DIRECTORY_SEPARATOR;
+            $this->projectRoot = $root.DIRECTORY_SEPARATOR;
 
             chdir(__DIR__."/../");
 
             $param_keys = [
-                "root" => &$this->z_framework_root, 
+                "root" => &$this->projectRoot, 
                 "controllers" => &$this->z_controllers, 
                 "models" => &$this->z_models, 
                 "views" => &$this->z_views, 
@@ -125,7 +125,7 @@
 
             //Config file
             //Parse ini file with inline comments ignored
-            $ini_data = file_get_contents($this->z_framework_root.$this->config_file);
+            $ini_data = file_get_contents($this->projectRoot.$this->config_file);
             $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
             $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
             $this->config = parse_ini_string($ini_data);
@@ -288,7 +288,7 @@
 
             try {
                 $controllerFile = null;
-                $userControllerFile = $this->z_framework_root . $this->z_controllers . $controller . ".php";
+                $userControllerFile = $this->projectRoot . $this->z_controllers . $controller . ".php";
                 if (file_exists($userControllerFile)) {
                     $controllerFile = $userControllerFile;
                 } else if (file_exists(__DIR__ . DIRECTORY_SEPARATOR . "default/controllers/" . $controller . ".php")) {
@@ -369,7 +369,7 @@
             }
 
             $model .= "Model";
-            $path = ($dir == null ? $this->z_framework_root . $this->z_models : $dir)."$model.php";
+            $path = ($dir == null ? $this->projectRoot . $this->z_models : $dir)."$model.php";
             
             if (!isset($this->modelCache[$model])) {
                 if (file_exists($path)) {
@@ -402,7 +402,7 @@
                 if(substr($document, -4, 4) != ".php") {
                     $document .= ".php";
                 }
-                $userViewFile = $this->z_framework_root . $this->z_views . $document;
+                $userViewFile = $this->projectRoot . $this->z_views . $document;
                 if (file_exists($userViewFile)) {
                     return $userViewFile;
                 }

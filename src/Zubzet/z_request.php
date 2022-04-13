@@ -284,7 +284,7 @@
 
         /**
          * Updates the error handling state.
-         * @param int $state Error state. See: z_framework::updateErrorHandling($state)
+         * @param int $state Error state. See: updateErrorHandling($state)
          */
         public function updateErrorHandling($state) {
             $this->booter->updateErrorHandling($state);

@@ -9,13 +9,13 @@
     class RequestResponseHandler {
 
         /**
-         * @var z_framework $booter The framework object
+         * @var $booter The framework object
          */
         public $booter;
 
         /**
          * Constructor every request and response object should have
-         * @param z_framework $booter The framework object
+         * @param $booter The framework object
          */
         public function __construct($booter) {
             $this->booter = $booter;

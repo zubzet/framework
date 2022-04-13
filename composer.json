@@ -1,5 +1,5 @@
 {
-    "name": "zubzet/zubzet",
+    "name": "zubzet/framework",
     "require": {},
     "autoload": {
         "psr-4": {

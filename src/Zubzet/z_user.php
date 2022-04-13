@@ -40,7 +40,7 @@
         public $fields = []; //Stores custom per project properties
 
         /**
-         * @var z_framework $booter Holds a reference to the booter
+         * @var $booter Holds a reference to the booter
          */
         private $booter;
 
@@ -51,7 +51,7 @@
 
         /**
          * Creates a new user object
-         * @param z_framework $booter The booter object
+         * @param $booter The booter object
          */
         public function __construct($booter) {
             $this->booter = $booter;

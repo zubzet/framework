@@ -15,7 +15,7 @@
         protected $z_db;
 
         /**
-         * @var z_framework $booter Reference to the booter
+         * @var $booter Reference to the booter
          */
         protected $booter;
 

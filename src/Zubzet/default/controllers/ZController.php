@@ -36,36 +36,6 @@
         }
 
         /**
-         * Action for the instance configuration
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        public function action_cfg_instance($req, $res) {
-            $req->checkPermission("admin.danger.cfg");
-
-            if ($req->getPost("Save", false) !== false) {
-                unset($_POST["Save"]);
-                file_put_contents($req->getConfigFile(), "");
-                foreach ($_POST as $name => $setting) {
-                    file_put_contents(
-                        $req->getConfigFile(), 
-                        $name . " = " . $setting . "\n",
-                        FILE_APPEND
-                    );
-                }
-                header("location: ".$req->getRootFolder());
-                exit;
-            }
-
-            $res->render("z_instance.php", [
-                "title" => "Instance Config",
-                "configured_fields" => $req->getBooterSettings(),
-                "ref_save" => $req->getPost("Save", false) !== false
-            ], "layout/z_admin_layout.php");
-        }
-
-        /**
          * Action for adding a user
          * 
          * @param Request $req The request object
@@ -294,53 +264,6 @@
             $res->render("z_log.php", [
                 "log_categories" => $req->getModel("z_statistics", $res->getZRoot())->getLogCategories()
             ], "layout/z_admin_layout.php");
-        }
-
-        /**
-         * Update action
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        function action_update($req, $res) {
-            $req->checkPermission("admin.danger.update");
-
-            $installedVersion = file_get_contents(".z_framework");
-            $kernelVersion = file_get_contents("z_framework/cv.txt");
-
-            if ($req->isAction("update")) {
-                $log = "";
-                if ($kernelVersion > $installedVersion) {
-                    include("z_framework/updater.php");
-                }
-                $res->generateRest(["result" => "success", "log" => $log]);
-            }
-
-            $res->render("z_update.php", [
-                "installed_version" => $installedVersion,
-                "kernel_version" => $kernelVersion
-            ], "layout/z_admin_layout.php");
-        }
-
-        public function action_database(Request $req, Response $res) {
-            $req->checkPermission("admin.database");
-
-            if($req->getParameters(0, 1, "adminer.css")) {
-                return require_once "z_framework/adminer/adminer.css";
-            }
-
-            if($req->getParameters(0, 1, "internal")) {
-
-
-                $GLOBALS["credentials"]["host"] = $req->getBooterSettings("dbhost");
-                $GLOBALS["credentials"]["username"] = $req->getBooterSettings("dbusername");
-                $GLOBALS["credentials"]["password"] = $req->getBooterSettings("dbpassword");
-                $GLOBALS["credentials"]["database"] = $req->getBooterSettings("dbname");
-
-                return require "z_framework/adminer/index.php";
-            }
-
-            $res->render("database_viewer.php", [], "layout/z_admin_layout.php");
         }
 
     }

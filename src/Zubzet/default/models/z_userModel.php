@@ -5,9 +5,9 @@
 
     /**
      * User Model
-     * 
-     * This model handles database stuff with the focus on user managment.
-     * An instance of this class can be acquired with z_framework::getModel("z_user")
+     *
+     * This model handles database stuff with the focus on user management.
+     * An instance of this class can be acquired with getModel("z_user")
      */
     class z_userModel extends z_model {
         

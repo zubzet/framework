@@ -27,5 +27,3 @@ This is how the file of a basic empty view looks like:
     ]
 ]]; ?>
 ```
-
-More examples for views can be found in [`z_framework/default/views`](https://git.zierhut-it.de/Zierhut-IT/z_framework/src/branch/DEV/default/views).
