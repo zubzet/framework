@@ -3,7 +3,7 @@
      * Also known as the booter 
      */
 
-    namespace Zubzet;
+    namespace ZubZet;
  
     /**
      * First class that is instantiated at a request

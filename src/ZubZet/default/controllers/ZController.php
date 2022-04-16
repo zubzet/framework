@@ -17,6 +17,8 @@
      *  admin.danger.update
      */
 
+    use ZubZet\Utilities\PasswordHash\PasswordHash;
+
     /**
      * The ZController contains actions for the admin dashboard / panel
      */
@@ -53,7 +55,6 @@
                 if ($formResult->hasErrors) {
                     $res->formErrors($formResult->errors);
                 } else {
-                    require_once $req->getZRoot().'z_libs/passwordHandler.php';
                     if ($req->getModel("z_user", $res->getZRoot())->add(
                         $req->getPost("email"),
                         $req->getPost("languageId"),

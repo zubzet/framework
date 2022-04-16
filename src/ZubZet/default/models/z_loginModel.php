@@ -50,6 +50,7 @@
          * @param object $pw A password created by the password handler
          */
         function updatePassword($id, $pw) {
+            // todo: update this
             $sql = "UPDATE `z_user` SET `password`=?, `Salt`=? WHERE `id`=?";
             $this->exec($sql, "ssi", $pw["hash"], $pw["salt"], $id);
         }

@@ -1,7 +1,6 @@
 <?php
-    /**
-     * File that defines the user model
-     */
+
+    use ZubZet\Utilities\PasswordHash\PasswordHash;
 
     /**
      * User Model
@@ -70,7 +69,7 @@
             $this->logActionByCategory("user", "User $email created");
 
             if ($passwordString !== null) {
-                $password = passwordHandler::createPassword($passwordString);
+                $password = PasswordHash::createPassword($passwordString);
                 $this->updatePassword($insertId, $password);
             }
 

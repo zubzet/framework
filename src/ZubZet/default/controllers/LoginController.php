@@ -1,7 +1,6 @@
-<?php 
-    /**
-     * This file holds the login controller
-     */
+<?php
+
+    use ZubZet\Utilities\PasswordHash\PasswordHash;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -22,7 +21,6 @@
          * @param Response $res The response object
          */
         public function action_index($req, $res) {
-
             //Check if user has entert information
             if ($req->getPost("name", false) !== false) {
 
@@ -34,9 +32,6 @@
                     $res->error("Username or password is wrong");
                 }
                 
-                //Password handler import
-                require_once $req->getZRoot().'z_libs/passwordHandler.php';
-
                 if ($user["verified"] == NULL) {
                     $link = $req->booter->rootFolder . "login/verify";
                     $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
@@ -79,7 +74,7 @@
                 }
 
                 //Check the password
-                if (passwordHandler::checkPassword($req->getPost("password"), $user["password"], $user["salt"])) {
+                if (PasswordHash::checkPassword($req->getPost("password"), $user["password"], $user["salt"], "sha512", "0.9")) {
                     $res->loginAs($user["id"]);
                     $res->success();
                 } else {
@@ -133,7 +128,6 @@
                     $res->error("This email is not allowed!");
                 } else {
                     $userModel = $req->getModel("z_user");
-                    require_once $req->getZRoot().'z_libs/passwordHandler.php';
 
                     $userId = $userModel->add(
                         $req->getPost("email"),
@@ -230,8 +224,7 @@
             if ($req->getPost("password", false) !== false) {
                 
                 //Generating a new password
-                require_once $req->getZRoot().'z_libs/passwordHandler.php';
-                $req->getModel("z_login", $req->getZRoot())->updatePassword($DBResetCode["userId"], passwordHandler::createPassword($req->getPost("password")));
+                $req->getModel("z_login", $req->getZRoot())->updatePassword($DBResetCode["userId"], PasswordHash::createPassword($req->getPost("password")));
                 
                 //Update reset code active attribute
                 $req->getModel("z_login", $req->getZRoot())->disableResetCode($DBResetCode["id"]);
