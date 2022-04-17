@@ -1,6 +1,7 @@
 <?php
 
     use ZubZet\Utilities\PasswordHash\PasswordHash;
+use ZubZet\Utilities\PasswordHash\StorablePassword;
 
     /**
      * User Model
@@ -63,27 +64,40 @@
                 $query = "INSERT INTO `z_user`(`email`, `languageId`, `verified`) VALUES (?, ?, ?)";
                 $this->exec($query, "sss", $email, $language, $verified);
             }
-            $insertId = $this->getInsertId();
+            $userId = $this->getInsertId();
 
             //Log
             $this->logActionByCategory("user", "User $email created");
 
             if ($passwordString !== null) {
-                $password = PasswordHash::createPassword($passwordString);
-                $this->updatePassword($insertId, $password);
+                $this->getModel("z_login")->updatePassword(
+                    $userId,
+                    PasswordHash::create($passwordString)
+                );
             }
 
-            return $insertId;
+            return $userId;
         }
 
         /**
          * Sets the password for a user
          * @param int $id Id of the user which password should be changed
-         * @param string $pw The raw unhashed new password
+         * @param StorablePassword $password A storable password
          */
-        function updatePassword($id, $pw) {
-            $sql = "UPDATE `z_user` SET `password`=?, `Salt`=? WHERE `id`=?";
-            $this->exec($sql, "ssi", $pw["hash"], $pw["salt"], $id);
+        function updatePassword(int $userId, StorablePassword $password) {
+            $sql = "UPDATE `z_user`
+                    SET
+                        `password` = ?,
+                        `salt` = ?,
+                        `hash_name` = ?,
+                        `custom_logic_name` = ?
+                    WHERE `id` = ?";
+            $this->exec(
+                $sql, "ssssi",
+                $password->hash, $password->salt,
+                $password->hashingName, $password->customLogicName,
+                $userId
+            );
         }
 
         /**

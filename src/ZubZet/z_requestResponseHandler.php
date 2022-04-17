@@ -26,6 +26,7 @@
          * @return String
          */
         public function getZViews() {
+            var_dump(getcwd());
             return $this->booter->z_views;
         }
 

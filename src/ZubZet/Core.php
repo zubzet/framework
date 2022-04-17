@@ -67,7 +67,7 @@
         /** @var string $vendorRoot Directory where the framework stuff lives */
         public $vendorRoot = __DIR__ . DIRECTORY_SEPARATOR;
 
-        /** @var string $z_cnontrollers Directory in which the controllers live */
+        /** @var string $z_controllers Directory in which the controllers live */
         public $z_controllers = "z_controllers/";
 
         /** @var string $z_models Directory in which the models live in */
@@ -109,7 +109,7 @@
         function __construct($params = [], $root = "") {
             $this->projectRoot = $root.DIRECTORY_SEPARATOR;
 
-            chdir(__DIR__."/../");
+            chdir($this->projectRoot);
 
             $param_keys = [
                 "root" => &$this->projectRoot, 

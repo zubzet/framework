@@ -74,13 +74,29 @@
                 }
 
                 //Check the password
-                if (PasswordHash::checkPassword($req->getPost("password"), $user["password"], $user["salt"], "sha512", "0.9")) {
+                if($req->getPost("password", false) && isset($user["password"])) {
+                    $result = PasswordHash::check(
+                        $req->getPost("password"),
+                        (string) $user["password"],
+                        (string) $user["salt"],
+                        (string) $user["hash_name"],
+                        $user["custom_logic_name"]
+                    );
+                };
+
+                if ($result->matches ?? false) {
+                    if ($result->hasUpdate) {
+                        $req->getModel("z_login")->updatePassword(
+                            $user["id"], $result
+                        );
+                    }
+
                     $res->loginAs($user["id"]);
-                    $res->success();
+                    return $res->success();
                 } else {
                     //Add login try
                     $req->getModel("z_login", $req->getZRoot())->newLoginTry($user["id"]);
-                    $res->error("Username or password is wrong");
+                    return $res->error("Username or password is wrong");
                 }
 
             } else {
@@ -215,17 +231,20 @@
          * @param Response $res The response object
          */
         public function action_reset($req, $res) {
-            
             $code = $req->getParameters(0, 1);
             $DBResetCode = $req->getModel("z_login", $req->getZRoot())->getResetCode($code, $req->getBooterSettings("forgotPasswordTimeSpan"));
 
             if (!$DBResetCode) die("ERROR: This code is not or no longer valid!");
 
             if ($req->getPost("password", false) !== false) {
-                
                 //Generating a new password
-                $req->getModel("z_login", $req->getZRoot())->updatePassword($DBResetCode["userId"], PasswordHash::createPassword($req->getPost("password")));
-                
+                $req->getModel("z_login", $req->getZRoot())->updatePassword(
+                    $DBResetCode["userId"],
+                    PasswordHash::create(
+                        $req->getPost("password")
+                    )
+                );
+
                 //Update reset code active attribute
                 $req->getModel("z_login", $req->getZRoot())->disableResetCode($DBResetCode["id"]);
 

@@ -394,12 +394,14 @@
                 $layout = str_replace("_layout", "", $layout);
                 $layout = "$layout"."_layout";
 
+                var_dump($this->getZViews()."$layout.php");
                 if(!file_exists($this->getZViews()."$layout.php")) {
                     if(substr($layout, 0, 7) !== "layout/") {
                         $layout = "layout/$layout";
                     }
                 }
 
+                var_dump($this->getZViews()."$layout.php");
                 if(!file_exists($this->getZViews()."$layout.php")) {
                     throw new \Exception("'$layout.php' does not exist.");
                 }

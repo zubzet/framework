@@ -3,6 +3,8 @@
      * This file holds the login model
      */
 
+    use ZubZet\Utilities\PasswordHash\StorablePassword;
+
     /**
      * The login model holds logging in and out of users
      */
@@ -44,15 +46,25 @@
             return $this->getResult()->fetch_assoc();
         }
 
-        /** 
-         * Updates the password of an user
-         * @param int $id The id of the user
-         * @param object $pw A password created by the password handler
+        /**
+         * Sets the password for a user
+         * @param int $id id of the user which password should be changed
+         * @param StorablePassword $password A storable password
          */
-        function updatePassword($id, $pw) {
-            // todo: update this
-            $sql = "UPDATE `z_user` SET `password`=?, `Salt`=? WHERE `id`=?";
-            $this->exec($sql, "ssi", $pw["hash"], $pw["salt"], $id);
+        function updatePassword(int $userId, StorablePassword $password) {
+            $sql = "UPDATE `z_user`
+                    SET
+                        `password` = ?,
+                        `salt` = ?,
+                        `hash_name` = ?,
+                        `custom_logic_name` = ?
+                    WHERE `id` = ?";
+            $this->exec(
+                $sql, "ssssi",
+                $password->hash, $password->salt,
+                $password->hashingName, $password->customLogicName,
+                $userId
+            );
         }
 
         /**
