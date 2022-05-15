@@ -8,6 +8,7 @@
         "name": "Adrian Urban",
         "email": "adrian.urban@zierhut-it.de"
     }],
+    "license": "GPL-3.0-or-later",
     "support": {
         "email": "info@zierhut-it.de",
         "wiki": "https://docs.zubzet.de"
