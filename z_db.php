@@ -69,7 +69,7 @@
          * @param bool $firstConnection Determine if this a reconnect
          * @return void
          */
-        public function connect($charset = "utf8mb4_general_ci", $firstConnection = false) {
+        public function connect($charset = "utf8mb4", $firstConnection = false) {
             // Try to close the connection if it exists
             if(!$firstConnection) {
                 $this->disconnect();
