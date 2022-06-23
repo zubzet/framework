@@ -180,7 +180,7 @@
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @param int $length The amount of array elements that will be returned at the set offset. If null, every element will be returned
          * @param string $val If the length is 1, a Boolean will be returned. $val will be compared to the parameter
-         * @return Array
+         * @return mixed[]|string
          */
         public function getParameters($offset = 0, $length = null, $val = null) {
             

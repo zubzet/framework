@@ -46,13 +46,18 @@
         /**
          * @var int $connectTimeout Database connection timeout in seconds. Defaults to 0.5 hours
          */
-        public $connectTimeout = 1800;
+        public int $connectTimeout;
         
         /**
          * When instanced, a db connection is given as a refrence
          */
         public function __construct(&$booter) {
             $this->booter = $booter;
+            $this->connectTimeout = $booter->req->getBooterSettings(
+                "db_connection_timeout",
+                $useDefault = true,
+                900,
+            );
             $this->connect(firstConnection: true);
         }
 
@@ -90,6 +95,14 @@
             $this->lastConnect = time();
         }
 
+        public function assertConnection() {
+            try {
+                $this->heartbeat(waitForTimeout: false);
+            } catch(\Exception) {
+                $this->connect();
+            }
+        }
+
         /**
          * Disconnect from the database
          * @param boolean $forceClose Close the connection regardless of if it seems to be open
@@ -110,7 +123,7 @@
             // Make sure a connection was made and has not timed out
             if(!isset($this->lastConnect) || time() - $this->lastConnect >= $this->connectTimeout) {
                 if(!isset($this->lastHeartbeat) || time() - $this->lastHeartbeat >= $this->connectTimeout) {
-                    $this->connect();
+                    $this->assertConnection();
                 }
             }
 
@@ -168,11 +181,11 @@
 
         /**
          * Converts the result of the last query into an array and returns it
-         * @return any[][] Results of the last query as two dimensional array
+         * @return mixed[][] Results of the last query as two dimensional array
          */
-        public function resultToArray($out = []) {
+        public function resultToArray($out = []): array {
             while ($row = $this->result->fetch_assoc()) {
-                array_push($out, $row);             
+                array_push($out, $row);
             }
             return $out;
         }
@@ -201,9 +214,9 @@
 
         /**
          * Returns one line of the last query
-         * @return any[] Line of the last result
+         * @return mixed[] Line of the last result
          */
-        public function resultToLine() {
+        public function resultToLine(): ?array {
             return $this->result->fetch_assoc();
         }
 

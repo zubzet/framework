@@ -177,22 +177,25 @@
             $this->url = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "cli");
             $this->urlParts = $this->parseUrl();
 
-            //Import of the z_db
-            require_once $this->z_framework_root.'z_db.php';
-            $this->z_db = new z_db($this);
-
-            //Import the standard controller;
+            // Import the standard controller;
             require_once $this->z_framework_root.'z_controller.php';
 
-            //Import the standard model
+            // Import the standard model
             require_once $this->z_framework_root.'z_model.php';
 
-            //RR System
+            // RR System
             require_once $this->z_framework_root."z_requestResponseHandler.php";
             require_once $this->z_framework_root."z_response.php";
             require_once $this->z_framework_root."z_request.php";
 
-            //User
+            $this->req = new Request($this);
+            $this->res = new Response($this);
+
+            // Import of the z_db
+            require_once $this->z_framework_root.'z_db.php';
+            $this->z_db = new z_db($this);
+
+            // User
             require_once $this->z_framework_root.'z_user.php';
             $this->user = new User($this);
             $this->user->identify();
@@ -309,8 +312,6 @@
             $this->ActionStack[] = $method;
             
             try {
-                $this->req = new Request($this);
-                $this->res = new Response($this);
                 $CTRL_obj = new $controller($this->req, $this->res);
                 if (method_exists($controller, $method)) {
                     return $CTRL_obj->{$method}($this->req, $this->res);

@@ -70,17 +70,17 @@
 
         /**
          * Converts the result of the last query into an array and returns it.
-         * @return any[][] Results of the last query as two dimensional array
+         * @return mixed[][] Results of the last query as two dimensional array
          */
-        function resultToArray() {
+        function resultToArray(): array {
             return $this->z_db->resultToArray(...func_get_args());
         }
         
         /**
          * Returns one line of the last query.
-         * @return any[] Line of the last result
+         * @return mixed[] Line of the last result
          */
-        function resultToLine() {
+        function resultToLine(): ?array {
             return $this->z_db->resultToLine(...func_get_args());
         }
 
