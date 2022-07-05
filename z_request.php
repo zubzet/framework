@@ -165,6 +165,21 @@
         }
 
         /**
+         * Returns the app domain as specified in the configuration (`host=`)
+         * @return string the domain
+         */
+        public function getDomain(): string {
+            return explode(
+                ":",
+                str_replace(
+                    ["http://", "https://", "/"],
+                    "",
+                    (string) $this->getBooterSettings("host"),
+                ),
+            )[0];
+        }
+
+        /**
          * Returns the last action visited before the current one
          * @return string The last action visited before the current one
          */

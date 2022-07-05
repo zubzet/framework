@@ -50,6 +50,11 @@
         private $permissions;
 
         /**
+         * @var string[] $sessionToken. The token used to authenticate the current session
+         */
+        private ?string $sessionToken = null;
+
+        /**
          * Creates a new user object
          * @param z_framework $booter The booter object
          */
@@ -72,6 +77,7 @@
             }
             $this->userId = $tokenResult["userId"];
             $this->execUserId = $tokenResult["userId_exec"];
+            $this->sessionToken = $tokenResult["token"];
 
             if ($this->userId !== false) {
                 $user = $this->booter->getModel("z_user")->getUserById($this->userId);
@@ -148,6 +154,10 @@
                 if (in_array($check, $this->permissions)) return true;
             }
             return false;
+        }
+
+        public function getSessionToken(): ?string {
+            return $this->sessionToken;
         }
 
     }

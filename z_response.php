@@ -334,9 +334,15 @@
          * @param string $name Name of the cookie
          * @param string $path Path of the server
          */
-        public function unsetCookie($name, $path = "/") {
+        public function unsetCookie(string $name, string $path = "/", string $domainScope = "") {
             unset($_COOKIE[$name]);
-            setcookie($name, '', time() - 3600, $path);
+            setcookie(
+                $name,
+                '',
+                1, // 1970-01-01 00:00:01
+                $path,
+                $domainScope,
+            );
         }
 
         /**
@@ -502,13 +508,28 @@
         public function loginAs($userId, $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
             $token = $this->booter->getModel("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
-            $this->setCookie("z_login_token", $token, time() + intval($this->booter->settings["loginTimeoutSeconds"]), "/");
+
+            $this->setCookie(
+                "z_login_token",
+                $token,
+                time() + intval($this->booter->settings["loginTimeoutSeconds"]),
+                "/",
+                $this->getCookieDomainScope(),
+            );
 
             if ($userId == $user_exec) {
                 $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
             } else {
                 $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("loginas"), "User $user_exec logged in.", $user_exec);
             }
+        }
+
+        public function getCookieDomainScope(): string {
+            $cookieScope = "";
+            if((bool) ($this->booter->settings["login_scope_allow_subdomains"] ?? "false")) {
+                $cookieScope = "." . $this->booter->req->getDomain();
+            }
+            return $cookieScope;
         }
 
         /**
@@ -544,8 +565,16 @@
         public function logout() {
             $user = $this->booter->user;
             if ($user->isLoggedIn) {
+                if(!is_null($user->getSessionToken())) {
+                    $this->booter->getModel("z_login")->invalidateSession(
+                        $user->getSessionToken(),
+                    );
+                }
+                $this->unsetCookie(
+                    "z_login_token",
+                    domainScope: $this->getCookieDomainScope(),
+                );
                 $this->booter->getModel("z_general")->logActionByCategory("logout", "User logged out (" . $user->fields["email"] . ")", $user->fields["email"]);
-                $this->unsetCookie("z_login_token");
                 $this->rerouteUrl();
             }
         }

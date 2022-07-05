@@ -11,24 +11,53 @@
         /**
          * Validate a login token retrieved from the users Cookie
          * @param string $token The login token that is saved in the clients cookie
-         * @return any[]|false The user data from the databaset or false if the token is wrong
+         * @return any[]|false The user data from the database or false if the token is wrong
          */
-        function validateCookie($token) {
-            $query = "SELECT * FROM `z_logintoken` WHERE `token`=?";
-            $this->exec($query, "s", $token);
-            return $this->getResult()->num_rows > 0 ? $this->getResult()->fetch_assoc() : false;
+        public function validateCookie(string $token): bool|array {
+            $sql = "SELECT *
+                    FROM `z_logintoken`
+                    WHERE `token` = ?
+                    LIMIT 1";
+            $session = $this->exec($sql, "s", $token)->resultToLine();
+            if(is_null($session)) return false;
+
+            // Get the session lifetime from the configuration
+            $lifetime = (int) $this->z_db->booter->req->getBooterSettings(
+                "loginTimeoutSeconds",
+                TIMESPAN_DAY_7,
+            );
+
+            // Only return the session if it is not yet expired
+            if((strtotime($session["created"]) + $lifetime) > time()) {
+                return $session;
+            }
+
+            // Delete expired sessions that were tried anyways
+            $this->booter->getModel("z_login")->invalidateSession(
+                $session["token"],
+            );
+            return false;
+        }
+
+        /**
+         * Invalidates and removes a login token (session) for a user
+         * @param string $token The session identifier
+         */
+        public function invalidateSession(string $token): void {
+            $sql = "DELETE FROM `z_logintoken` WHERE `token` = ?";
+            $this->exec($sql, "s", $token);
         }
 
         /**
          * Creates a login token for a user
-         * @param int $userid Id of the user
+         * @param int $userId Id of the user
          * @param int $exec_userId Id of the executing user
          * @return string The login token
          */
-        function createLoginToken($userid, $exec_userId) {
-            $token = str_replace('.', '', uniqid('', true)).rand(10000, 99999);
+        function createLoginToken(int $userId, int $exec_userId) {
+            $token = bin2hex(random_bytes(20));
             $sql = "INSERT INTO `z_logintoken`(`userId`, `userId_exec`, `token`) VALUES (?, ?, ?)";
-            $this->exec($sql, "iis", $userid, $exec_userId, $token);
+            $this->exec($sql, "iis", $userId, $exec_userId, $token);
             return $token;
         }
 
