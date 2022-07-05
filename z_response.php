@@ -516,6 +516,7 @@
                 "/",
                 $this->getCookieDomainScope(),
             );
+            $this->deleteOldLoginCookieDomainScope();
 
             if ($userId == $user_exec) {
                 $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
@@ -574,8 +575,25 @@
                     "z_login_token",
                     domainScope: $this->getCookieDomainScope(),
                 );
+                $this->deleteOldLoginCookieDomainScope();
+
                 $this->booter->getModel("z_general")->logActionByCategory("logout", "User logged out (" . $user->fields["email"] . ")", $user->fields["email"]);
                 $this->rerouteUrl();
+            }
+        }
+
+        /**
+         * Deletes the login token for the domain specified in 
+         * `login_scope_allow_subdomains_delete_domainscope_name`.
+         * Helpful when `login_scope_allow_subdomains` is altered after users already logged in.
+         */
+        private function deleteOldLoginCookieDomainScope(): void {
+            $deleteOldCookieDomainScope = $this->booter->settings["login_scope_allow_subdomains_delete_domainscope_name"] ?? null;
+            if (!is_null($deleteOldCookieDomainScope)) {
+                $this->unsetCookie(
+                    "z_login_token",
+                    domainScope: $deleteOldCookieDomainScope,
+                );
             }
         }
 
