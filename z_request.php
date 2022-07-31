@@ -12,6 +12,11 @@
     class Request extends RequestResponseHandler {
 
         /**
+         * @var array Store values within the Request to passthrough data withing internal redirects
+         */
+        public array $store = [];
+
+        /**
          * Gets a get parameter
          * @param string $key of the parameter
          * @param string $default Default value
