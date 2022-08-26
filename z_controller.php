@@ -14,12 +14,18 @@
          * @param string $value_field Row that is used as value
          * @param string $text_field Row that is shown to the client as text
          */
-        public function makeFood($table, $value_field, $text_field, $opional_text_field = null) {
-            $str = [];
+        public function makeFood($table, $valueField, $textField, $optionalTextField = null) {
+            $food = [];
             foreach ($table as $row) {
-                $str[] = '{ "value": "' . $row[$value_field] . '", "text": "' . $row[$text_field] . ($opional_text_field != null ? " " . $row[$opional_text_field] : '') . '"}';
+                $text = $row[$textField];
+                if(!is_null($optionalTextField)) $text .= " " . $row[$optionalTextField];
+
+                $food[] = [
+                    "value" => $row[$valueField],
+                    "text" => $text,
+                ];
             }
-            return "[" . implode(",", $str) . "]";
+            return json_encode($food);
         }
 
         /**
