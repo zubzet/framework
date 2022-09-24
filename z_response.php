@@ -527,7 +527,7 @@
 
         public function getCookieDomainScope(): string {
             $cookieScope = "";
-            if((bool) ($this->booter->settings["login_scope_allow_subdomains"] ?? "false")) {
+            if("true" == ($this->booter->settings["login_scope_allow_subdomains"] ?? "false")) {
                 $cookieScope = "." . $this->booter->req->getDomain();
             }
             return $cookieScope;
