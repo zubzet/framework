@@ -9,7 +9,8 @@
         return debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3)[$depth + 1]['function'];
     }
 
-    function e($value) {
+    function e(?string $value): ?string {
+        if(is_null($value)) return null;
         $value = strip_tags($value);
         return htmlspecialchars($value);
     }
