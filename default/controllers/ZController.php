@@ -76,31 +76,36 @@
 
             if ($req->hasFormData()) {
                 $formResult = $req->validateForm([
-                    (new FormField("email"))      -> required() -> filter(FILTER_VALIDATE_EMAIL) -> unique("z_user", "email"),
-                    (new FormField("languageId")) -> required() -> exists("z_language", "id")
+                    (new FormField("email"))
+                        -> required()
+                        -> filter(FILTER_VALIDATE_EMAIL)
+                        -> unique("z_user", "email"),
+                    (new FormField("languageId"))
+                        -> required()
+                        -> exists("z_language", "id"),
                 ]);
 
                 if ($formResult->hasErrors) {
-                    $res->formErrors($formResult->errors);
-                } else {
-                    require_once $req->getZRoot().'z_libs/passwordHandler.php';
-                    if ($req->getModel("z_user", $res->getZRoot())->add(
-                        $req->getPost("email"),
-                        $req->getPost("languageId"),
-                        $req->getPost("password")
-                    ) == false) {
-                        $res->error();
-                    } else {
-                        $res->success();
-                    }
+                    return $res->formErrors($formResult->errors);
                 }
+
+                require_once $req->getZRoot().'z_libs/passwordHandler.php';
+
+                $result = $req->getModel("z_user", $res->getZRoot())->add(
+                    $req->getPost("email"),
+                    $req->getPost("languageId"),
+                    $req->getPost("password"),
+                    date("Y-m-d H:i:s"),
+                );
+
+                if(false === $result) return $res->error();
+                return $res->success();
             }
 
             $res->render("z_add_user.php", [
                 "title" => "Add user",
                 "languages" => $this->makeFood($req->getModel("z_general")->getLanguageList(), "id", "name")
             ], "layout/z_admin_layout.php");
-            
         }
 
         /**
