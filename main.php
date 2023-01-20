@@ -74,6 +74,9 @@
         /** @var string $config_file Path to the config file */
         public $config_file = "z_config/z_settings.ini";
 
+        /** @var string $config An associative array of key value config parameters  */
+        public $config = [];
+
         /** @var User $user The requesting user */
         public $user;
 
