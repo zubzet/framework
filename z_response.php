@@ -392,8 +392,9 @@
          * @param string $lang Language identifier ("EN", "DE_Formal"...)
          * @param object $options Options to use in the view
          * @param string $layout Layout
+         * @param string[] $attachments Contents of each attachment, not their path. Array keys can be used to set the filename i.e. $filename => $content
          */
-        public function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email") {
+        public function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email", array $attachments = []) {
             //Import the email template
             if(!isset($options["skip_render"])) {
                 $layout = str_replace(".php", "", $layout);
@@ -463,8 +464,8 @@
                 $mail->Username   = $this->getBooterSettings("mail_user");  
                 $mail->Password   = $this->getBooterSettings("mail_password");
                 $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
-                $mail->Port       = $this->getBooterSettings("mail_port");                                    // TCP port to connect to
-            
+                $mail->Port       = $this->getBooterSettings("mail_port");  // TCP port to connect to
+
                 //Recipients
                 $mail->setFrom($from, $this->getBooterSettings("pageName"));
                 $mail->addAddress($to);
@@ -475,7 +476,12 @@
                 $mail->Body    = $content;
                 $mail->AltBody = strip_tags(str_replace("<br>", "\n\r", $content));
                 $mail->CharSet = 'UTF-8';
-            
+
+                // Attachments
+                foreach($attachments as $filename => $attachment) {
+                    $mail->addStringAttachment($attachment, $filename);
+                }
+
                 $mail->send();
             } catch (Exception $e) {
                 echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
