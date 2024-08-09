@@ -208,11 +208,24 @@
             if (!$token) return false;
 
             // Retrieve the token from the database
-            $sql = "SELECT * 
-                    FROM `z_email_verify` 
-                    WHERE token = ? 
-                    AND `active` = 1";
-            $this->exec($sql, "s", $token);
+            $sql = "SELECT *
+                    FROM `z_email_verify`
+                    -- Either the token is still valid and unused
+                    WHERE (
+                        `token` = ?
+                        AND `active` = 1
+                    )
+                    -- Or the user is already verified
+                    OR (
+                        SELECT `verified`
+                        FROM `z_user`
+                        WHERE `id` IN (
+                            SELECT `user`
+                            FROM `z_email_verify`
+                            WHERE `token` = ?
+                        )
+                    ) IS NOT NULL";
+            $this->exec($sql, "ss", $token, $token);
             $result = $this->resultToLine();
 
             // If the token was not found, the attempt is invalid
