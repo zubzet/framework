@@ -208,24 +208,19 @@
             if (!$token) return false;
 
             // Retrieve the token from the database
-            $sql = "SELECT *
-                    FROM `z_email_verify`
-                    -- Either the token is still valid and unused
-                    WHERE (
-                        `token` = ?
-                        AND `active` = 1
+            $sql = "SELECT zev.*
+                    FROM `z_email_verify` AS zev
+                    LEFT JOIN `z_user` AS zu
+                    ON zev.`user` = zu.`id`
+                    WHERE `token` = ?
+                    AND (
+                        -- Either the token is still valid and unused
+                        zev.`active` = 1
+                        -- Or the user is already verified
+                        OR zu.`verified` IS NOT NULL
                     )
-                    -- Or the user is already verified
-                    OR (
-                        SELECT `verified`
-                        FROM `z_user`
-                        WHERE `id` IN (
-                            SELECT `user`
-                            FROM `z_email_verify`
-                            WHERE `token` = ?
-                        )
-                    ) IS NOT NULL";
-            $this->exec($sql, "ss", $token, $token);
+                    LIMIT 1";
+            $this->exec($sql, "s", $token);
             $result = $this->resultToLine();
 
             // If the token was not found, the attempt is invalid
@@ -235,14 +230,14 @@
             if (time() > strtotime($result["end"])) return false;
 
             // Remove the token from the database
-            $sql = "UPDATE z_email_verify 
+            $sql = "UPDATE z_email_verify
                     SET active = 0
                     WHERE id = ?";
             $this->exec($sql, "i", $result["id"]);
 
             // Mark the user as verified
-            $sql = "UPDATE z_user 
-                    SET verified = CURRENT_TIMESTAMP() 
+            $sql = "UPDATE z_user
+                    SET verified = CURRENT_TIMESTAMP()
                     WHERE id = ?";
             $this->exec($sql, "i", $result["user"]);
 
