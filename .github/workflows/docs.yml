@@ -1,0 +1,36 @@
+name: Distribute Documentation
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Sanitize Branch Name
+        id: sanitize
+        run: echo "SANITIZED_REF_NAME=${GITHUB_REF_NAME//\//_}" >> $GITHUB_ENV
+
+      - name: Build The Documentation
+        run: |
+          sed -i 's/##CI_ENVIROMENT_BRANCH##/${{ env.SANITIZED_REF_NAME }}/g' mkdocs.yml
+          docker run --rm \
+            -v ${{ github.workspace }}:/docs \
+            squidfunk/mkdocs-material \
+            build --site-dir publish/${{ env.SANITIZED_REF_NAME }}
+          echo 'ErrorDocument 404 ./404.html' >> publish/${{ env.SANITIZED_REF_NAME }}/.htaccess
+
+      - name: Build phpDocumentor
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/app \
+            phpdoc/phpdoc:3.1 \
+            phpdoc -d /app -t /app/publish/${{ env.SANITIZED_REF_NAME }}/api --ignore ./adminer --ignore ./docs
