@@ -34,9 +34,14 @@ jobs:
             phpdoc/phpdoc:3.1 \
             phpdoc -d /app -t /app/publish/${{ env.SANITIZED_REF_NAME }}/api --ignore ./adminer --ignore ./docs
 
+      - name: Ensure correct permissions
+        run: sudo chmod -R 777 publish/
+
+      - name: Move to DOCS folder
+        run: mkdir publish/docs && mv -f publish/DEV publish/docs
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: publish/${{ env.SANITIZED_REF_NAME }}
-          destination_dir: docs/${{ env.SANITIZED_REF_NAME }}
+          publish_dir: publish/
