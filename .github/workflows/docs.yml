@@ -26,7 +26,6 @@ jobs:
             -v ${{ github.workspace }}:/docs \
             squidfunk/mkdocs-material \
             build --site-dir publish/${{ env.SANITIZED_REF_NAME }}
-          echo 'ErrorDocument 404 ./404.html' >> publish/${{ env.SANITIZED_REF_NAME }}/.htaccess
 
       - name: Build phpDocumentor
         run: |
