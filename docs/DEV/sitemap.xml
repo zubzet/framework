@@ -1,111 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://docs.zubzet.de/test/</loc>
+         <loc>https://zubzet.com/docs/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/advanced-features/aliases-and-virtual-links/</loc>
+         <loc>https://zubzet.com/docs/advanced-features/aliases-and-virtual-links/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/advanced-features/commands/</loc>
+         <loc>https://zubzet.com/docs/advanced-features/commands/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/advanced-features/sitemap-generation/</loc>
+         <loc>https://zubzet.com/docs/advanced-features/sitemap-generation/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/configuration/</loc>
+         <loc>https://zubzet.com/docs/core-features/configuration/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/controllers-and-actions/</loc>
+         <loc>https://zubzet.com/docs/core-features/controllers-and-actions/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/layouts/</loc>
+         <loc>https://zubzet.com/docs/core-features/layouts/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/localization/</loc>
+         <loc>https://zubzet.com/docs/core-features/localization/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/models/</loc>
+         <loc>https://zubzet.com/docs/core-features/models/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/parameter-abstraction/</loc>
+         <loc>https://zubzet.com/docs/core-features/parameter-abstraction/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/permission-system/</loc>
+         <loc>https://zubzet.com/docs/core-features/permission-system/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/rest-api/</loc>
+         <loc>https://zubzet.com/docs/core-features/rest-api/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/core-features/views/</loc>
+         <loc>https://zubzet.com/docs/core-features/views/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/forms/auto-form-validation/</loc>
+         <loc>https://zubzet.com/docs/forms/auto-form-validation/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/forms/ced-validation/</loc>
+         <loc>https://zubzet.com/docs/forms/ced-validation/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/forms/file-uploads/</loc>
+         <loc>https://zubzet.com/docs/forms/file-uploads/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/frontend-integration/backend-requests/</loc>
+         <loc>https://zubzet.com/docs/frontend-integration/backend-requests/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/frontend-integration/presets/</loc>
+         <loc>https://zubzet.com/docs/frontend-integration/presets/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/setup/how-to-update/</loc>
+         <loc>https://zubzet.com/docs/setup/how-to-update/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/setup/installation/</loc>
+         <loc>https://zubzet.com/docs/setup/installation/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/setup/upgrade/0.10.x-to-0.11.x/</loc>
+         <loc>https://zubzet.com/docs/setup/upgrade/0.10.x-to-0.11.x/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/setup/upgrade/0.9.x-to-0.10.x/</loc>
+         <loc>https://zubzet.com/docs/setup/upgrade/0.9.x-to-0.10.x/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/template-rendering-usages/generating-pdfs/</loc>
+         <loc>https://zubzet.com/docs/template-rendering-usages/generating-pdfs/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/template-rendering-usages/sending-an-email/</loc>
+         <loc>https://zubzet.com/docs/template-rendering-usages/sending-an-email/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/z-admin/login-as-another-user/</loc>
+         <loc>https://zubzet.com/docs/z-admin/login-as-another-user/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/z-admin/usage/</loc>
+         <loc>https://zubzet.com/docs/z-admin/usage/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
     <url>
-         <loc>https://docs.zubzet.de/test/zjs/modals/</loc>
+         <loc>https://zubzet.com/docs/zjs/modals/</loc>
          <lastmod>2024-09-15</lastmod>
     </url>
 </urlset>
