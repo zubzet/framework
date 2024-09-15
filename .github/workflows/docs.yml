@@ -37,9 +37,6 @@ jobs:
       - name: Ensure correct permissions
         run: sudo chmod -R 777 public/
 
-      - name: Move to DOCS folder
-        run: mkdir public/docs && mv -f public/DEV public/docs
-
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
