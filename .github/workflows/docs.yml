@@ -25,24 +25,23 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/docs \
             squidfunk/mkdocs-material \
-            build --site-dir publish/${{ env.SANITIZED_REF_NAME }}
+            build --site-dir public/${{ env.SANITIZED_REF_NAME }}
 
       - name: Build phpDocumentor
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/app \
             phpdoc/phpdoc:3.1 \
-            phpdoc -d /app -t /app/publish/${{ env.SANITIZED_REF_NAME }}/api --ignore ./adminer --ignore ./docs
+            phpdoc -d /app -t /app/public/${{ env.SANITIZED_REF_NAME }}/api --ignore ./adminer --ignore ./docs
 
       - name: Ensure correct permissions
-        run: sudo chmod -R 777 publish/
+        run: sudo chmod -R 777 public/
 
       - name: Move to DOCS folder
-        run: mkdir publish/docs && mv -f publish/DEV publish/docs
+        run: mkdir public/docs && mv -f public/DEV public/docs
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: publish/
-          destination_dir: /
+          destination_dir: docs/${{ env.SANITIZED_REF_NAME }}
