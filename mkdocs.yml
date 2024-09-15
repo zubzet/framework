@@ -6,7 +6,7 @@ site_description: A modular, prototyping speed oriented PHP framework.
 
 # Repository
 repo_name: zubzet/framework
-repo_url: https://github.com/zubzet/framework/blob/CI_ENVIROMENT_BRANCH
+repo_url: https://github.com/zubzet/framework/blob/##CI_ENVIROMENT_BRANCH##
 edit_uri: docs/
 
 # Copyright
@@ -28,6 +28,7 @@ theme:
     features:
         - navigation.instant
         - navigation.tabs
+        - content.action.edit
 
 # Social icons
 extra:
@@ -36,11 +37,11 @@ extra:
         link: mailto:info@zierhut-it.de
         name: Contact via mail
       - icon: fontawesome/brands/twitter
-        link: https://twitter.com/zierhut_it
+        link: https://x.com/zierhut_it
       - icon: fontawesome/brands/linkedin
         link: https://www.linkedin.com/company/30680659/
       - icon: fontawesome/brands/github
-        link: https://git.zierhut-it.de/ZubZet
+        link: https://github.com/zubzet
     
 
 # Extensions
