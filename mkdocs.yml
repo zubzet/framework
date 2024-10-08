@@ -16,8 +16,8 @@ copyright: Copyright &copy; 2018 - 2024 Zierhut IT GmbH - Alexander Zierhut and 
 theme:
     name: 'material'
     palette:
-        primary: light blue
-        accent: indigo
+        primary: md-primary-fg-color
+        accent: md-primary-fg-color--light
     highlightjs: true
     hljs_languages:
         - php
@@ -27,8 +27,8 @@ theme:
         - sql
     features:
         - navigation.instant
-        - navigation.tabs
         - content.action.edit
+
 
 # Social icons
 extra:
@@ -43,7 +43,8 @@ extra:
       - icon: fontawesome/brands/github
         link: https://github.com/zubzet
     
-
+extra_css:
+  - stylesheets/extra.css
 # Extensions
 markdown_extensions:
     - toc:
@@ -96,6 +97,7 @@ nav:
             - 0.10.x to 0.11.x: setup/upgrade/0.10.x-to-0.11.x.md
             - 0.9.x to 0.10.x: setup/upgrade/0.9.x-to-0.10.x.md
     - Core Features:
+        - MVC:  core-features/mvc.md
         - Controllers And Actions: core-features/controllers-and-actions.md
         - Models: core-features/models.md
         - Views: core-features/views.md
