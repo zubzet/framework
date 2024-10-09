@@ -11,11 +11,18 @@ It is a php file which returns an array with up to three attributes. `head` and 
 
 `head` and `body` should accept a parameter called $opt. It contains data passed into the $opt parameter of the [`render`](https://zdoc.zierhut-it.de/classes/Response.html#method_render) method. For the view to communicate back to a controller, asynchronous methods must be used.
 
-## Example view
-This is how the file of a basic empty view looks like:
+## Simple example view
+```php
+<?php return [ "body" => function($opt) { ?>
+    <h1>Hello World</h1>
+<?php }]; ?>
+
+```
+
+## Complete example view
 ```php
 <?php return [ "head" => function($opt) { ?>
-        
+
 <?php }, "body" => function($opt) { ?> 
 
 <?php }, "lang" => [

@@ -8,7 +8,7 @@ If you have already created a model, you can simply use [`$req->getModel("Modeln
 ### Built-In Functionality
 Every model inherits all of [these methods](https://zdoc.zierhut-it.de/classes/z_model.html) from the z_model class. You can simply use the already existing methods and build on them.
 
-### Example Model
+## Example Model
 ```php
 <?php
 
@@ -27,10 +27,10 @@ Every model inherits all of [these methods](https://zdoc.zierhut-it.de/classes/z
 ?>
 ```
 
-### Example Database Request
+
 The method [`exec`](https://zdoc.zierhut-it.de/classes/z_model.html#method_exec) is probably the most important one for your model. It incorporates all the steps for a prepared statement in one simple line. The first parameter is the sql command as a variable or string literal. The second parameter is a string literal of all the variable types. Each char represents one variable. All parameters afterwards are expected to be variables and replace the question marks within the sql command.
 
-#### Prepared types
+###Prepared types
 | Type | Description | Use Cases                                    |
 | ---- | ----------- | ------------------------------------------- |
 | i    | An integer  | Mostly IDs, but also other numeric values   |
@@ -38,7 +38,14 @@ The method [`exec`](https://zdoc.zierhut-it.de/classes/z_model.html#method_exec)
 | d    | A double    | A rational number                           |
 | b    | A blob      | Binary data like an image. (Not recommended) |
 
-#### Code
+## Example Database Request
+
+```sql
+    $sql = "YOUR COMMAND ?, ?";
+    $this->exec($sql, "si", $stringVar, $intVar);
+```
+
+### Tips
 ??? danger "Why not simply write queries without question marks?"
     When not preparing your variables, it is very likely that your code is vulnerable to SQl injections, one of the most common security mistakes made when dealing with databases.
 
@@ -46,7 +53,3 @@ The method [`exec`](https://zdoc.zierhut-it.de/classes/z_model.html#method_exec)
 
     Learn more about SQL injections from the <a href="httpds://www.php.net/manual/en/security.database.sql-injection.php">official PHP documentation</a>. An interesting and even partly entertaining read.
 
-```php
-    $sql = "YOUR COMMAND ?, ?";
-    $this->exec($sql, "si", $stringVar, $intVar);
-```
