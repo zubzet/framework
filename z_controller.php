@@ -4,15 +4,15 @@
      */
 
     /**
-     * Base class for all controllers. Controllers should inherit from this
+     * Base class for all controllers. Controllers should inherit from this class.
      */
     class z_controller { 
 
         /**
-         * Makes food edible to input selects
+         * Makes food edible for input selects
          * @param array $table Database table result
-         * @param string $value_field Row that is used as value
-         * @param string $text_field Row that is shown to the client as text
+         * @param string $valueField Row that is used as value
+         * @param string $textField Row that is shown to the client as text
          */
         public function makeFood($table, $valueField, $textField, $optionalTextField = null) {
             $food = [];

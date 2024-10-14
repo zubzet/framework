@@ -19,7 +19,7 @@
         private $stmt;
 
         /**
-         * @var any $result Result of the last query
+         * @var array|null $result Result of the last query
          */
         public $result;
 
