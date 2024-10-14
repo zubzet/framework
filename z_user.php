@@ -9,21 +9,21 @@
     class User {
 
         /**
-         * @var bool $isLoggedIn Hold is the user is logged
+         * @var bool $isLoggedIn Holds if the user is logged in
          */
         public $isLoggedIn = false;
 
         /**
-         * @var int $userId Id of the user in the database.
+         * @var int $userId ID of the user in the database.
          * 
-         * Null is equal to anonymous
+         * Null represents an anonymous user
          */
         public $userId = null;
 
         /**
-         * @var int $execUserId Id of the user that is logged in as this user.
+         * @var int $execUserId ID of the user that is logged in as this user.
          * 
-         * Null is equal to anonymous
+         * Null represents an anonymous user
          */
         public $execUserId = null;
 
@@ -45,12 +45,12 @@
         private $booter;
 
         /**
-         * @var string[] $permissions. Array of permissions the user has.
+         * @var string[] $permissions Array of permissions the user has.
          */
         private $permissions;
 
         /**
-         * @var string[] $sessionToken. The token used to authenticate the current session
+         * @var string|null $sessionToken The token used to authenticate the current session
          */
         private ?string $sessionToken = null;
 
@@ -63,8 +63,8 @@
         }
 
         /**
-         * Checks if the user is someone registered. Checks by the z_login_token cookie. 
-         * The property $isLoggedIn and $userId and $execUserId will be set after calling this function.
+         * Checks if the user is registered. Checks by the z_login_token cookie. 
+         * The properties $isLoggedIn, $userId, and $execUserId will be set after calling this function.
          */
         public function identify() {
             if ($this->booter->lite_mode || !isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {

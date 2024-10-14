@@ -1,10 +1,10 @@
 <?php 
     /**
-     * ResponseRequest handler
+     * RequestResponse handler
      */
 
     /**
-     * Base class for the response and request object
+     * Base class for the response and request objects
      */
     class RequestResponseHandler {
 
@@ -14,7 +14,7 @@
         public $booter;
 
         /**
-         * Constructor every request and response object should have
+         * Constructor that every request and response object should have
          * @param z_framework $booter The framework object
          */
         public function __construct($booter) {
@@ -23,7 +23,7 @@
 
         /**
          * Returns the ZViews directory
-         * @return String
+         * @return string
          */
         public function getZViews() {
             return $this->booter->z_views;
@@ -31,7 +31,7 @@
 
         /**
          * Returns the ZControllers directory
-         * @return String
+         * @return string
          */
         public function getZControllers() {
             return $this->booter->z_controllers;
@@ -39,14 +39,14 @@
 
         /**
          * Returns the framework root directory
-         * @return String
+         * @return string
          */
         public function getZRoot() {
             return $this->booter->z_framework_root; 
         }
 
         /**
-         * Gets the database communication stuff
+         * Gets the database communication interface
          * @return z_model
          */
         public function getModel() {
@@ -54,9 +54,9 @@
         }
 
         /**
-         * Gets a booter settings
-         * @param String $key Key of the settings
-         * @return Any Value of the key
+         * Gets a booter setting
+         * @param string $key Key of the setting
+         * @return mixed Value of the key
          */
         public function getBooterSettings($key = null, $useDefault = true, $default = null) {
             if(!empty($key)) {
