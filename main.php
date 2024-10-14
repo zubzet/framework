@@ -7,51 +7,11 @@
      * First class that is instantiated at a request
      */
     class z_framework {
-
-        /** @var string $rootDirectory Path to the root */
-        private $rootDirectory;
-
-        /** @var string $host Name of the host of this page */
-        public $host;
-
-        /** @var string $root Absolute path to the page */
-        public $root;
-
-        /** @var string $url URL to reach this page */
-        public $url;
-
-        /** @var mysqli $host Database connection object */
-        private $conn;
-
-        /** @var string $dbhost Hostname of the machine on that the database lives */
-        public $dbhost;
-
-        /** @var string $dbusername Username for the database connection */
-        public $dbusername;
-
-        /** @var string $dbpassword Password for the database connection */
-        public $dbpassword;
-
-        /** @var string $dbname Name of the database */
-        public $dbname;
-
-        /** @var string $default Name of the controller when no specific is selected */
-        private $defaultIndex;
-
-        /** @var string[] $urlParts Exploded url */
-        public $urlParts;
-
         /** @var array $settings Stores the z_framework settings */
         public $settings;
 
         /** @var z_db $z_db Database proxy object  */
         public $z_db;
-
-        /** @var int $showErrors Defines what errors should be shown */
-        public $showErrors;
-
-        /** @var string $rootFolder Path to the root folder */
-        public $rootFolder;
 
         /** @var int $maxReroutes Number of reroutes controller can do before abort */
         public $maxReroutes = 10;
@@ -157,11 +117,6 @@
                 }
             }
 
-            //Options to attributes
-            foreach ($this->settings as $option => $val) {
-                $this->$option = $val;
-            }
-
             //Error handling
             $this->updateErrorHandling();
 
@@ -202,6 +157,20 @@
             require_once $this->z_framework_root.'z_user.php';
             $this->user = new User($this);
             $this->user->identify();
+        }
+
+        public function __set(string $name, mixed $value): void {
+            if(isset($this->{$name})) {
+                $this->{$name} = $value;
+                return;
+            }
+            $this->settings[$name] = $value;
+        }
+
+        public function __get(string $name): mixed {
+            if(isset($this->{$name})) return $this->{$name};
+            if(!isset($this->settings[$name])) return null;
+            return $this->settings[$name];
         }
 
         /**
