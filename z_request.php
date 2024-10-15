@@ -474,6 +474,8 @@
         public function validateCED($name, $rules) {
             $errors = [];
 
+            $result = new FormResult();
+
             if (isset($_POST[$name])) {
                 $array = $_POST[$name];
                 foreach ($array as $i => $subform) {
