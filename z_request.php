@@ -1,4 +1,4 @@
-<?php 
+<?php
     /**
      * Route handling system documentation:
      * Every action takes two parameters.
@@ -12,15 +12,15 @@
     class Request extends RequestResponseHandler {
 
         /**
-         * @var array Store values within the Request to passthrough data withing internal redirects
+         * @var array Store values within the Request to pass through data within internal redirects
          */
         public array $store = [];
 
         /**
-         * Gets a get parameter
-         * @param string $key of the parameter
-         * @param string $default Default value
-         * @return Array|string Content of the get value
+         * Gets a GET parameter
+         * @param string $key The key of the parameter
+         * @param mixed $default Default value
+         * @return string|mixed The content of the GET value
          */
         public function getGet($key, $default = null) {
             if (isset($_GET[$key])) {
@@ -30,10 +30,10 @@
         }
 
         /**
-         * Gets a post parameter
-         * @param string $key of the parameter
-         * @param string $default Default value
-         * @return Array|string Content of the post value
+         * Gets a POST parameter
+         * @param string $key The key of the parameter
+         * @param mixed $default Default value
+         * @return string|mixed The content of the POST value
          */
         public function getPost($key, $default = null) {
             if (isset($_POST[$key])) {
@@ -44,7 +44,7 @@
 
         /**
          * Gets the IP of a request
-         * @return bool|string The ip of the client. False if no IP is detected
+         * @return bool|string The IP of the client. False if no IP is detected
          */
         public function ip() {
             $ip = null;
@@ -71,9 +71,9 @@
         }
 
         /**
-         * Detect if a request was made from the console
+         * Detects if a request was made from the console
          *
-         * @return bool the request was made from a console
+         * @return bool True if the request was made from a console
          */
         public function isCli() {
             if(defined('STDIN')) {
@@ -103,8 +103,8 @@
         /**
          * Gets a posted file
          * @param string $key The name of the file
-         * @param string $default Default value if the file is not posted
-         * @return Array|string The posted file
+         * @param mixed $default Default value if the file is not posted
+         * @return string|mixed The posted file
          */
         public function getFile($key, $default = null) {
             if (isset($_FILES[$key])) {
@@ -115,9 +115,9 @@
 
         /**
          * Gets a cookie
-         * @param string $key of the parameter
-         * @param string $default Default value
-         * @return any Content of the Cookie
+         * @param string $key The key of the parameter
+         * @param mixed $default Default value
+         * @return mixed Content of the cookie
          */
         public function getCookie($key, $default = null) {
             if (isset($_COOKIE[$key])) {
@@ -127,8 +127,8 @@
         }
 
         /**
-         * Returns a list of all visted controllers
-         * @return string[] All visted controllers as an array
+         * Returns a list of all visited controllers
+         * @return string[] All visited controllers as an array
          */
         public function getControllerStack() {
             return $this->booter->ControllerStack;
@@ -146,8 +146,8 @@
         }
 
         /**
-         * Returns a list of all visted actions
-         * @return string[] All visted actions as an array
+         * Returns a list of all visited actions
+         * @return string[] All visited actions as an array
          */
         public function getActionStack() {
             return $this->booter->ActionStack;
@@ -162,7 +162,7 @@
         }
 
         /**
-         * Returns the current root URL including protocol and rootDirectory
+         * Returns the current root URL including protocol and root directory
          * @return string a URL like $opt["root"] but including the host before
          */
         public function getRoot() {
@@ -196,7 +196,7 @@
         }
 
         /**
-         * Gets the url parameters (including the leading controller and action) specified by the path.
+         * Gets the URL parameters (including the leading controller and action) specified by the path.
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @param int $length The amount of array elements that will be returned at the set offset. If null, every element will be returned
          * @param string $val If the length is 1, a Boolean will be returned. $val will be compared to the parameter
@@ -223,9 +223,11 @@
 
         /**
          * A backend implementation of the Google reCAPTCHA v3 API
-         * @param string $response The response you have received from the google reCAPTCHA execution
+         * @param string $response The response you have received from the Google reCAPTCHA execution
+         * @param string $action The action name used in reCAPTCHA verification
          * @param string $secretKey Your reCAPTCHA secret key. (Can be retrieved from https://www.google.com/recaptcha/intro/v3.html)
-         * @return float The score between 0-1 Google returned
+         * @param bool $checkHostname Whether to check if the hostname matches
+         * @return float The score between 0-1 returned by Google
          */
         public function getReCaptchaV3Score($response, $action, $secretKey, $checkHostname = true) {
             // Build POST request:
@@ -266,9 +268,9 @@
         }
 
         /**
-         * Works like getParameters and decodes a SEO optimized URL. Example: test.com/episodes/this-is-some-text-64 The 64 is an id
+         * Works like getParameters and decodes an SEO optimized URL. Example: test.com/episodes/this-is-some-text-64 The 64 is an id
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
-         * @return string[] [id, text] of the url
+         * @return string[] [id, text] of the URL
          */
         public function getReadableParameter($offset = 0) {
             $param = $this->getParameters($offset, 1);
@@ -279,7 +281,7 @@
         }
 
         /**
-         * Gets the user who requested.
+         * Gets the user who made the request.
          * @return User Object of the requesting user
          */
         public function getRequestingUser() {
@@ -311,9 +313,10 @@
         }
 
         /**
-         * Checks if the current has a permission. If the user is not logged in, it will be redirected to the login page. 
-         * If the user is logged in but does not have the permission, it will be redirected to 403.
+         * Checks if the current user has a permission. If the user is not logged in, they will be redirected to the login page. 
+         * If the user is logged in but does not have the permission, they will be redirected to 403.
          * @param string $permission Permission to check for
+         * @param bool $boolResult If true, the function will return a boolean result instead of redirecting
          */
         public function checkPermission($permission, $boolResult = false) {
             $user = $this->getRequestingUser();
@@ -429,7 +432,7 @@
                                 $errors[] = ["name" => $name, "type" => "file"];
                             }
                         } else {
-                            $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unkown type
+                            $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unknown type
                         }
 
                         $field->value = $value;
@@ -454,9 +457,9 @@
         }
 
         /**
-         * Checks if the request is a async ajax request of a type
-         * @param string $type Type of the request. Request is send via Z.js => Z.Request.action()
-         * @return bool True if request of type
+         * Checks if the request is an async AJAX request of a given type
+         * @param string $type Type of the request. Request is sent via Z.js => Z.Request.action()
+         * @return bool True if the request is of the specified type
          */
         public function isAction($type) {
             return ($this->getPost("action") == $type);
@@ -546,6 +549,7 @@
         }
 
         /**
+         * Adds a custom error to the form result
          * @param string $name Name of the form field to assign the error to
          * @param string $type Type of the error. Influences the error message
          */
@@ -581,17 +585,17 @@
         public $dataType;
 
         /**
-         * @var boolean $isRequired If set, the value is required. This is saved outside the rules to array becaue other rules may need access to this value to work properly
+         * @var boolean $isRequired If set, the value is required. This is saved outside the rules array because other rules may need access to this value to work properly
          */
         public $isRequired;
 
         /**
-         * @var any $value The validated value
+         * @var mixed $value The validated value
          */
         public $value;
 
         /**
-         * @var boolean Skip this field when writing SQL 
+         * @var boolean $noSave Skip this field when writing SQL 
          */
         public $noSave;
 
@@ -614,9 +618,9 @@
         /**
          * Adds a filter rule
          * 
-         * Creates an error when a filter fails. Available are all filter_var compatibles.
+         * Creates an error when a filter fails. All filter_var compatible filters are available.
          * 
-         * @param int $filter A valid php filter
+         * @param int $filter A valid PHP filter
          * @return FormField Returns itself to allow chaining
          */
         function filter($filter) {
@@ -631,11 +635,11 @@
         /**
          * Adds a unique rule
          * 
-         * This rule checks if a dataset with specific value already exist.  
+         * This rule checks if a dataset with a specific value already exists.  
          * A set to ignore can also be specified. An error will be created when the set exists.
          * 
-         * @param string $table Tablename in the database
-         * @param string $field Fieldname in the table
+         * @param string $table Table name in the database
+         * @param string $field Field name in the table
          * @param string $ignoreField name of the field in which the ignore value is
          * @param string $ignoreValue value of the dataset that should be ignored
          * @return FormField Returns itself to allow chaining
@@ -653,13 +657,13 @@
         }
 
         /**
-         * Adds a exists rule
+         * Adds an exists rule
          * 
-         * This rule checks if a dataset with specific value already exist.  
-         * A set to ignore can also be specified. An error will be created when the set does not exists.
+         * This rule checks if a dataset with a specific value already exists.  
+         * A set to ignore can also be specified. An error will be created when the set does not exist.
          * 
-         * @param string $table Tablename in the database
-         * @param string $field Fieldname in the table
+         * @param string $table Table name in the database
+         * @param string $field Field name in the table
          * @return FormField Returns itself to allow chaining
          */
         function exists($table, $field) {
@@ -691,7 +695,7 @@
         /**
          * Adds a length rule
          * 
-         * This rule will create an error when the input is to long or to short
+         * This rule will create an error when the input is too long or too short
          * 
          * @param int $min Minimum number of chars
          * @param int $max Maximum number of chars
@@ -708,9 +712,9 @@
         }
 
         /**
-         * Adds a integer rule
+         * Adds an integer rule
          * 
-         * This rule will create an error when the input was not an value that could be parsed to an integer.
+         * This rule will create an error when the input was not a value that could be parsed to an integer.
          * Also this function sets the type of the field to "i".
          * 
          * @return FormField Returns itself to allow chaining
@@ -727,7 +731,7 @@
         /**
          * Adds a range rule
          * 
-         * This rule checks if the input as a number is in a range. If the number is not in the range, an error will be created.
+         * This rule checks if the input, as a number, is within a range. If the number is not in the range, an error will be created.
          * 
          * @param float $min Min allowed value
          * @param float $max Max allowed value
@@ -746,7 +750,7 @@
         /**
          * Adds a date rule
          * 
-         * This rule checks if the inputed value adheres to a given date format
+         * This rule checks if the input value adheres to a given date format
          * 
          * @param string $format The tested date format
          * @return FormField Returns itself to allow chaining
@@ -782,10 +786,10 @@
         }
 
         /**
-         * Adds a regular expression to a field
+         * Adds a regular expression rule to the field
          * 
          * @param string $expression The regex expression
-         * @param string[] $exceptions An array of the regex excepted characters
+         * @param string[] $exceptions An array of characters to be excluded from the regex
          * @return FormField Returns itself to allow chaining
          */
         function regex($expression, $exceptions = []) {
