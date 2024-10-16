@@ -15,7 +15,7 @@ When using `$res->render`, a third optional parameter accepts a path to a layout
             <?php $head($opt); ?>
         </head>
         <body>
-            <?php $body($opt); ?>
+            <?php $body($opt); ?> <!-- View ist rendered here-->
             <?php $opt["layout_essentials_body"]($opt); ?>
         </body>
     </html>
