@@ -196,7 +196,7 @@
             <dt class="phpdocumentor-table-of-contents__entry -method -public">
     <a href="classes/z-model.html#method_getResult">getResult()</a>
     <span>
-                        &nbsp;: array&lt;string|int, mixed&gt;|null    </span>
+                        &nbsp;: null|bool|<abbr title="\mysqli_result">mysqli_result</abbr>    </span>
 </dt>
 <dd>Returns the result of the last query.</dd>
 
@@ -238,7 +238,7 @@
             <dt class="phpdocumentor-table-of-contents__entry -method -public">
     <a href="classes/z-model.html#method_resultToLine">resultToLine()</a>
     <span>
-                        &nbsp;: array&lt;string|int, mixed&gt;    </span>
+                        &nbsp;: array&lt;string|int, mixed&gt;|null    </span>
 </dt>
 <dd>Returns one line of the last query.</dd>
 
@@ -759,14 +759,14 @@
 
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility">public</span>
-                <span class="phpdocumentor-signature__name">getResult</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, mixed&gt;|null</span></code>
+                <span class="phpdocumentor-signature__name">getResult</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">null|bool|<abbr title="\mysqli_result">mysqli_result</abbr></span></code>
 
     
     
     
 
         <h5 class="phpdocumentor-return-value__heading">Return values</h5>
-    <span class="phpdocumentor-signature__response_type">array&lt;string|int, mixed&gt;|null</span>
+    <span class="phpdocumentor-signature__response_type">null|bool|<abbr title="\mysqli_result">mysqli_result</abbr></span>
             &mdash;
             <section class="phpdocumentor-description"><p>Result of the last query</p>
 </section>
@@ -1069,14 +1069,14 @@
 
     <code class="phpdocumentor-code phpdocumentor-signature ">
     <span class="phpdocumentor-signature__visibility">public</span>
-                <span class="phpdocumentor-signature__name">resultToLine</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, mixed&gt;</span></code>
+                <span class="phpdocumentor-signature__name">resultToLine</span><span>(</span><span>)</span><span> : </span><span class="phpdocumentor-signature__response_type">array&lt;string|int, mixed&gt;|null</span></code>
 
     
     
     
 
         <h5 class="phpdocumentor-return-value__heading">Return values</h5>
-    <span class="phpdocumentor-signature__response_type">array&lt;string|int, mixed&gt;</span>
+    <span class="phpdocumentor-signature__response_type">array&lt;string|int, mixed&gt;|null</span>
             &mdash;
             <section class="phpdocumentor-description"><p>Line of the last result</p>
 </section>

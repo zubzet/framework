@@ -298,7 +298,7 @@ Search.appendIndex(
         },                {
             "fqsen": "\\z_userModel\u003A\u003AgetUserList\u0028\u0029",
             "name": "getUserList",
-            "summary": "Returns\u0020all\u0020userdata\u0020from\u0020the\u0020database",
+            "summary": "Returns\u0020all\u0020user\u0020data\u0020from\u0020the\u0020database",
             "url": "classes/z-userModel.html#method_getUserList"
         },                {
             "fqsen": "\\z_userModel\u003A\u003Aadd\u0028\u0029",
