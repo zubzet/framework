@@ -35,7 +35,7 @@
         public $language = []; //TODO: Insert default language here
 
         /**
-         * @var any[] $fields Holds the dataset from the database of this user
+         * @var mixed[] $fields Holds the dataset from the database of this user
          */
         public $fields = []; //Stores custom per project properties
 

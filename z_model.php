@@ -78,10 +78,10 @@
         
         /**
          * Returns one line of the last query.
-         * @return mixed[] Line of the last result
+         * @return array|null Line of the last result
          */
         function resultToLine(): ?array {
-            return $this->z_db->resultToLine(...func_get_args());
+            return $this->z_db->resultToLine();
         }
 
         /**
@@ -125,7 +125,7 @@
 
         /**
          * Returns the result of the last query.
-         * @return array|null Result of the last query
+         * @return null|bool|mysqli_result Result of the last query
          */
         function getResult() {
             return $this->z_db->result;
