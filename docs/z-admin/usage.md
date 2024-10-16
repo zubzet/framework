@@ -30,8 +30,6 @@ To be able to use all functions, the following permissions are needed:
 - admin.roles.delete
 - admin.log
 - admin.su
-- admin.danger.cfg
-- admin.danger.update
 
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.
