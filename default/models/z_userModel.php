@@ -14,7 +14,7 @@
         /**
          * Returns a user row of the database, selected by the users id
          * @param int $userid ID of the user we want the data about
-         * @return any[] The dataset
+         * @return bool|array|null The dataset
          */
         function getUserById($userid) {
             $query = "SELECT * FROM `z_user` WHERE `id`=?";
@@ -29,7 +29,7 @@
         /**
          * Returns a user row of the database, selected by the users email address
          * @param string $email Email of the user from who we want the data about
-         * @return any[] The dataset
+         * @return bool|array|null The dataset
          */
         function getUserByEmail($email) {
             $query = "SELECT * FROM `z_user` WHERE `email`=?";
@@ -42,8 +42,8 @@
         }
 
         /**
-         * Returns all userdata from the database
-         * @return any[][] The table as a two dimensional array
+         * Returns all user data from the database
+         * @return array[] The table as a two dimensional array
          */
         function getUserList() {
             return $this->getFullTable("z_user");
@@ -112,7 +112,7 @@
         /**
          * Gets all the roles a user has
          * @param int $userId The id of the target user
-         * @return any[] The datasets of the user_role table
+         * @return array[] The datasets of the user_role table
          */
         function getRoles($userId) {
             $sql = "SELECT * FROM z_user_role WHERE user = ? AND active = 1";

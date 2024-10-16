@@ -1,9 +1,9 @@
-<?php 
+<?php
     /**
      * Route handling system documentation:
      * Every action takes two parameters.
-     * Request => used to get incoming and session stuff
-     * Response => used to handle outgoing stuff
+     * Request => used to access incoming data and session information
+     * Response => used to handle outgoing data
      */
 
     /**
@@ -12,14 +12,14 @@
     $opt = [];
 
     /**
-     * The response class handles functions used by controllers to respond to requests
+     * The Response class provides functions used by controllers to respond to requests
      */
     class Response extends RequestResponseHandler {
         /**
          * Shows a document to the user
          * @param string $document Path to the view
-         * @param string $opt assosiative array with values to replace in the view
-         * @param string $layout The path to the layout to use
+         * @param array $opt Associative array with values to replace in the view
+         * @param array $options Rendering options, e.g., or a string for layout
          */
         public function render($document, $opt = [], $options = []) {
             // Legacy as $options used to be $layout
@@ -170,12 +170,12 @@
         }
 
         /**
-         * Replaces Tags with data
+         * Replaces tags with data
          * @param string $rendered The rendered document
          * @param string $startTag The opening tag
          * @param string $endTag The closing tag
-         * @param callback $cb($inTag) The callback for replacing the tag
-         * @return string The replaced output of $rendered
+         * @param callable $cb Callback function to generate the replacement content
+         * @return string The output after replacing the tags
          */
         private function parse_opt_lang($rendered, $startTag, $endTag, $cb) {
             $output = $rendered;
@@ -213,10 +213,10 @@
         }
 
         /**
-         * Parses all i18n files into lang arrays
-         * @param string $i18n The i18n file location
+         * Parses the i18n data into language arrays
+         * @param array $i18n The i18n data
          * @param string $document The file location of the view
-         * @return string[] The converted lang array
+         * @return array The parsed language array
          */
         private function parse_i18n($i18n, $document) {
             $arr = [];
@@ -239,9 +239,9 @@
         /**
          * Renders a PDF file
          * @param string $document Path to the view
-         * @param array $opt Array of data to use by the view
-         * @param string $name name of the output file
-         * @param string $dlOpt Html2Pdf opts
+         * @param array $opt Array of data to be used by the view
+         * @param string $name Name of the output file
+         * @param string $dlOpt Html2Pdf options
          * @param array $pdfOptions PDF options (see Html2Pdf constructor)
          */
         public function renderPDF($document, $opt, $name = "CV.pdf", $dlOpt = "I", $pdfOptions = ['P', 'A4', 'en', true, 'UTF-8', array(20, 20, 20, 5)]) {
@@ -263,18 +263,18 @@
         }
 
         /**
-         * Sends a simple text. Use only for debug reasons!
-         * @param string $text
+         * Sends simple text. Use only for debugging purposes!
+         * @param string $text The text to send
          */
         public function send($text) {
             echo $text;
         }
 
         /**
-         * Sends a file to the user and forces him to show the file in the browser if possible. Useful for sending files the user has no access to.
+         * Sends a file to the user and forces the browser to display the file if possible. Useful for sending files the user does not have access to.
          * @param string $path Path to the file.
          * @param string $filename Name to show at the client. Do not use the internal server path!
-         * @param string $type Type of the file
+         * @param string $type MIME type of the file
          */
         public function showFile($path, $filename = "unkown", $type = "application/pdf") {
             $url = $path;
@@ -293,8 +293,8 @@
         /**
          * Reroutes to another action
          * @param string[] $path Path to where to reroute to
-         * @param bool $alias true if this reroute acts as an alias
-         * @param bool $final Executes and exit if set to true
+         * @param bool $alias True if this reroute acts as an alias
+         * @param bool $final Executes and exits if set to true
          */
         public function reroute($path = [], $alias = false, $final = false) {
             if(!$alias) {
@@ -310,9 +310,9 @@
         }
 
         /**
-         * Reroutes at the users client
-         * @param string $url
-         * @param string $root
+         * Reroutes at the user's client
+         * @param string $url The URL to reroute to
+         * @param string $root The root URL
          */
         public function rerouteUrl($url = "", $root = null) {
             if ($root === null) $root = $this->booter->rootFolder;
@@ -321,9 +321,9 @@
         }
 
         /**
-         * Sets a cookie just like the standard PHP function. (Passthrough)
+         * Sets a cookie just like the standard PHP function. (Pass-through)
          * See: https://www.php.net/manual/en/function.setcookie.php
-         * @param any $args See: setcookie
+         * @param mixed ...$args See setcookie
          */
         public function setCookie() {
             setcookie(...func_get_args());
@@ -332,7 +332,8 @@
         /**
          * Removes a cookie at the client
          * @param string $name Name of the cookie
-         * @param string $path Path of the server
+         * @param string $path Path on the server
+         * @param string $domainScope The domain scope of the cookie
          */
         public function unsetCookie(string $name, string $path = "/", string $domainScope = "") {
             unset($_COOKIE[$name]);
@@ -355,8 +356,8 @@
         }
 
         /**
-         * Gets a new rest object
-         * @param object $payload data
+         * Gets a new Rest object
+         * @param object $payload Data payload
          */
         private function getNewRest($payload) {
             require_once $this->booter->z_framework_root.'z_rest.php';
@@ -364,9 +365,9 @@
         }
 
         /**
-         * Generates a rest object
-         * @param object $payload data
-         * @param bool $die
+         * Generates a Rest object
+         * @param object $payload Data payload
+         * @param bool $die Whether to exit after generating the Rest object
          */
         public function generateRest($payload, $die = true) {
             //if (@$payload["result"] == "error") $this->generateRestError("ergc", getCaller(1));
@@ -374,9 +375,9 @@
         }
 
         /**
-         * Generates a rest error object
+         * Generates a Rest error object
          * @param string $code Code
-         * @param string $message Error Message
+         * @param string $message Error message
          */
         public function generateRestError($code, $message) {
             $model = $this->booter->getModel("z_general");
@@ -390,7 +391,7 @@
          * @param string $subject Subject of the mail
          * @param string $document View
          * @param string $lang Language identifier ("EN", "DE_Formal"...)
-         * @param object $options Options to use in the view
+         * @param array $options Options to use in the view
          * @param string $layout Layout
          * @param string[] $attachments Contents of each attachment, not their path. Array keys can be used to set the filename i.e. $filename => $content
          */
@@ -493,10 +494,10 @@
 
         /**
          * Sends an email to a user
-         * @param int $userId id of the target user
+         * @param int $userId ID of the target user
          * @param string $subject Subject of the mail
          * @param string $document View of the mail
-         * @param object $options Options for use in the view
+         * @param array $options Options for use in the view
          * @param string $layout Layout to use
          */
         public function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
@@ -508,8 +509,8 @@
 
         /**
          * Logs the current user in as someone else
-         * @param int $userId id of the user to sudo in
-         * @param int $user_exec id of the executing user
+         * @param int $userId ID of the user to sudo into
+         * @param int $user_exec ID of the executing user
          */
         public function loginAs($userId, $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
@@ -558,11 +559,11 @@
 
         /**
          * Sends a success message to the client. Exit
-         * @param mixed[] $playload An optional payload that will be added to the result
+         * @param mixed[] $payload An optional payload that will be added to the result
          */
-        public function success($playload = []) {
+        public function success($payload = []) {
             $result = ["result" => "success"];
-            $result = array_merge($result, $playload);
+            $result = array_merge($result, $payload);
             $this->generateRest($result);
         }
 
@@ -606,8 +607,8 @@
         /**
          * Logs something
          * @param string $categoryName Name of the log category in the database
-         * @param string $text Log Text
-         * @param int $value Log Value
+         * @param string $text Log text
+         * @param int $value Log value
          */
         public function log($categoryName, $text, $value) {
             $this->booter->getModel("z_general")->logActionByCategory($categoryName, $text, $value);
@@ -615,11 +616,11 @@
 
         /**
          * Inserts a set into the database with data from a form. Updates if the set already exists
-         * @param string $table Tablename in the database
-         * @param string $pkField Name of the field in the database of the primary key
-         * @param string $pkType Type of the primary field ("s"/"i"...)
+         * @param string $table Table name in the database
+         * @param string $pkField Name of the primary key field in the database
+         * @param string $pkType Type of the primary key field ("s"/"i"...)
          * @param string $pkValue Value of the primary key in the row to change
-         * @param ValidationResult $validationResult Result of a validation
+         * @param FormResult $validationResult Result of the validation
          * @param array $fixed Fixed values to add, which are not coming from the form
          */
         public function insertOrUpdateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult, array $fixed = []) {
@@ -634,12 +635,12 @@
         }
 
         /**
-         * Updates a database row by a user filled form
-         * @param string $table Tablename in the database
-         * @param string $pkField Name of the field in the database of the primary key
-         * @param string $pkType Type of the primary field ("s"/"i"...)
+         * Updates a database row with data from a user-filled form
+         * @param string $table Table name in the database
+         * @param string $pkField Name of the primary key field in the database
+         * @param string $pkType Type of the primary key field ("s"/"i"...)
          * @param string $pkValue Value of the primary key in the row to change
-         * @param ValidationResult $validationResult Result of a validation
+         * @param FormResult $validationResult Result of the validation
          */
         public function updateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult) {
             //First check for file uploads
@@ -678,9 +679,9 @@
 
         /**
          * Inserts a set into the database with data from a form
-         * @param string $table Tablename in the database
-         * @param FormResult $validationResult Result of a validation
-         * @param array Some values to add to the database that were not in the Formresult
+         * @param string $table Table name in the database
+         * @param FormResult $validationResult Result of the validation
+         * @param array $fixed Some values to add to the database that were not in the FormResult
          */
         public function insertDatabase(string $table, FormResult $validationResult, array $fixed = []) {
             $this->uploadFromForm($validationResult);
@@ -742,8 +743,8 @@
         /**
          * Executes a "Create Edit Delete"
          * @param string $table The name of the affected table in the database
-         * @param FormResult $validationResult the result of a validated CED
-         * @param Array $fix Fixed values. For example fix user id not set by the client
+         * @param FormResult $validationResult The result of a validated CED
+         * @param array $fix Fixed values. For example, fix user ID not set by the client
          */
         public function doCED($table, $validationResult, $fix = []) {
             if ($validationResult->doNothing) return;
