@@ -8,12 +8,12 @@ Since there are no actual paths, controllers are tightly bound to the requested 
 
 
 
-## Routing 
+## Routing
 
-The url is seperated into 4 relevant parts
+The url is separated into 4 relevant parts
 
 - Host/root for example `localhost/` or `www.example.com/`
-- Controller name 
+- Controller name
 - Action name
 - Parameters
 

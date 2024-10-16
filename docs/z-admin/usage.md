@@ -1,17 +1,20 @@
+# What can it do?
+The Z-Admin panel is a management panel you can open to edit/create users or roles/permissions.
+
 # Using the Z-Admin panel
-The Z-Admin panel is a control panel all projects using the framework have. It is accessible with the z controller. For example, an URL like this: `{yourdomain.tld}/{yourwebsite}/z`. Only logged in accounts with the correct permissions are able to see this section.
+The Z-Admin panel is a control panel all projects using the framework have. It is accessible with the z controller. For example, an URL like this: `localhost/project/z` or `abcde.de/z` or `{yourdomain.tld}/{yourwebsite}/z`. Only logged in accounts with the correct permissions are able to see this section.
 
 ## Categories
 It has following categories:
 
-| Category | Function | Read more |
-| -------- | -------- | -------- |
-| Instance | Simple place to change instance settings| [Wiki](https://git.zierhut-it.de/Zierhut-IT/z_framework/wiki/The-Booter-Settings) |
+| Category | Function |
+| -------- | -------- |
+| Instance | Simple place to change instance settings|
 | Log / Statistics | View logs and statistics
-| Framework Update | Start updates for the framework | [Wiki](https://git.zierhut-it.de/Zierhut-IT/z_framework/wiki/Updating-to-the-newest-version-of-the-framework)
+| Framework Update | Start updates for the framework |
 | Edit User | Form to edit users
 | Add User | Form to add users
-| Roles | User permission managment | [Wiki](https://git.zierhut-it.de/Zierhut-IT/z_framework/wiki/Using-the-Permissions-System)
+| Roles | User permission managment |
 
 
 ## Permissions
@@ -22,7 +25,7 @@ To be able to use all functions, the following permissions are needed:
 - admin.user.add
 - admin.user.edit
 - admin.roles.list
-- admin.roles.screate
+- admin.roles.create
 - admin.roles.edit
 - admin.roles.delete
 - admin.log

@@ -13,26 +13,44 @@ It is a php file which returns an array with up to three attributes. `head` and 
 
 ## Simple example view
 ```php
-<?php return [ "body" => function($opt) { ?>
-    <h1>Hello World</h1>
-<?php }]; ?>
+    <?php return [ "body" => function($opt) { ?>
+        <h1>Hello World</h1>
+    <?php }]; ?>
 
 ```
 
-## Complete example view
+## example view using a passed value / option
+
 ```php
-<?php return [ "head" => function($opt) { ?>
+    // Controller
+    return $res->render("view.php", [
+        "text" => "Hello World",
+    ]);
 
-<?php }, "body" => function($opt) { ?> 
+```
+```php
+    // View
+    <?php return [ "body" => function($opt) { ?>
+        <h1>$opt["text"]</h1>
+    <?php }]; ?>
 
-<?php }, "lang" => [
-    "en" => [
-        "key1" => "word1"
-    ],
-    "DE_Formal" => [
-        "key1" => "wort1"
-    ]
-]]; ?>
+```
+
+
+## Complete example view with localization
+```php
+    <?php return [ "head" => function($opt) { ?>
+
+    <?php }, "body" => function($opt) { ?> 
+
+    <?php }, "lang" => [
+        "en" => [
+            "key1" => "word1"
+        ],
+        "DE_Formal" => [
+            "key1" => "wort1"
+        ]
+    ]]; ?>
 ```
 
 More examples for views can be found in [`z_framework/default/views`](https://git.zierhut-it.de/Zierhut-IT/z_framework/src/branch/DEV/default/views).
