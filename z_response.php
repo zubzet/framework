@@ -643,7 +643,7 @@
             $sql = "SELECT `$pkField` FROM `$table` WHERE `$pkField`=?";
             $db->exec($sql, $pkType, $pkValue);
             if($db->countResults() > 0) {
-                $this->updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult);
+                $this->updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult, $fixed);
                 return $pkValue;
             }
             return $this->insertDatabase($table, $validationResult, $fixed);
@@ -657,39 +657,39 @@
          * @param string $pkValue Value of the primary key in the row to change
          * @param FormResult $validationResult Result of the validation
          */
-        public function updateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult) {
+        public function updateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult, array $fixed = []) {
             //First check for file uploads
             $this->uploadFromForm($validationResult);
 
-            $db = $this->booter->z_db;
-            $vals = [];
-            $sql = "UPDATE `$table` SET";
-            $types = "";            
+            $fields = [];
+            $values = [];
+            $types = "";
 
-            for ($i = 0; $i < count($validationResult->fields) - 1; $i++) {
-                $field = $validationResult->fields[$i];
+            // Gather all fields from the form
+            foreach($validationResult->fields as $field) {
+                if($field->noSave) continue;
 
-                if ($field->noSave) {
-                    continue;
-                }
-
-                $sql .= " `". $field->dbField . "` = ?, ";
+                $fields[] = $field->dbField;
+                $values[] = $field->value;
                 $types .= $field->dataType;
-                $vals[] = $field->value;
             }
 
-            //TODO: Implement $field->noSave for last part of the query
+            // Gather fixed values
+            foreach($fixed as $field => $value) {
+                $fields[] = $field;
+                $values[] = $value;
+                $types .= "s";
+            }
 
-            $field = $validationResult->fields[$i];
-            $sql .= " `". $field->dbField . "` = ?";
-            $types .= $field->dataType;
-            $vals[] = $field->value;
-            
-            $sql .= " WHERE `$pkField` = ?;";
-            $types .= $pkType;
-            $vals[] = $pkValue;
+            // Build the query
+            $sql = "UPDATE `$table` SET";
+            $sql .= " `".implode("`=?,`", $fields)."`=? ";
 
-            $db->exec($sql, $types, ...$vals);
+            // Filtering condition
+            $sql .= "WHERE `$pkField` = ?;";
+            $values[] = $pkValue;
+
+            $this->booter->z_db->exec($sql, $types.$pkType, ...$values);
         }
 
         /**
