@@ -19,7 +19,7 @@
         private $stmt;
 
         /**
-         * @var array|null $result Result of the last query
+         * @var null|bool|mysqli_result $result Result of the last query
          */
         public $result;
 

@@ -10,7 +10,7 @@
 
         /**
          * Returns a list of all log categorys
-         * @return any[][] The list from the database
+         * @return array[] The list from the database
          */
         function getLogCategories() {
             return $this->getFullTable("z_interaction_log_category");
@@ -21,7 +21,7 @@
          * @param string $start The start date from which logs should be returned in a sql format
          * @param string $end The end date to which the logs should be returned in sql format
          * @param int $categories A list of category ids
-         * @return any[][] The datasets from the database in an array
+         * @return array[] The datasets from the database in an array
          */
         function getLogTableByCategories($start, $end, array $categories) {
             $sql = "SELECT i.*, e.email as `name`, e_exec.email as `name_exec`
