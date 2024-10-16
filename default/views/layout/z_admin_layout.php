@@ -127,9 +127,6 @@ return [
                     <button class="btn btn-primary d-md-none btn-block mb-2" data-toggle="collapse" data-target="#navbar"><i class="fa fa-bars"></i></button>
                     <div id="navbar" class="collapse show">
                         <div class="list-group mb-1">
-                            <?php if($opt["user"]->checkPermission("admin.danger.cfg")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/cfg_instance"><i class="fa fa-wrench"></i><?php $opt["lang"]("instance"); ?></a>
-                            <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.log")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/log"><i class="fa fa-file"></i><?php $opt["lang"]("log_statistics"); ?></a>
                             <?php } ?>
@@ -138,9 +135,6 @@ return [
                                     <i class="fa fa-database"></i>
                                     <?php $opt["lang"]("database"); ?>
                                 </a>
-                            <?php } ?>
-                            <?php if($opt["user"]->checkPermission("admin.danger.update")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/update"><i class="fa fa-download"></i><?php $opt["lang"]("update"); ?></a>
                             <?php } ?>
                         </div>
                         <div class="list-group mb-1">
