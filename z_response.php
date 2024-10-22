@@ -572,21 +572,36 @@
          */
         public function logout() {
             $user = $this->booter->user;
-            if ($user->isLoggedIn) {
-                if(!is_null($user->getSessionToken())) {
-                    $this->booter->getModel("z_login")->invalidateSession(
-                        $user->getSessionToken(),
-                    );
-                }
-                $this->unsetCookie(
-                    "z_login_token",
-                    domainScope: $this->getCookieDomainScope(),
-                );
-                $this->deleteOldLoginCookieDomainScope();
-
-                $this->booter->getModel("z_general")->logActionByCategory("logout", "User logged out (" . $user->fields["email"] . ")", $user->fields["email"]);
-                $this->rerouteUrl();
+            if(!$user->isLoggedIn) {
+                return $this->rerouteUrl();
             }
+
+            // Deactivate the session in the db
+            if(!is_null($user->getSessionToken())) {
+                $this->booter->getModel("z_login")->invalidateSession(
+                    $user->getSessionToken(),
+                );
+            }
+
+            // Remove the cookie
+            $this->unsetCookie(
+                "z_login_token",
+                domainScope: $this->getCookieDomainScope(),
+            );
+            $this->deleteOldLoginCookieDomainScope();
+
+            $this->booter->getModel("z_general")->logActionByCategory(
+                "logout",
+                "User logged out (" . $user->fields["email"] . ")",
+                $user->fields["email"],
+            );
+
+            // Return to Login as if the user was logged in as someone else
+            if($user->userId != $user->execUserId) {
+                $this->loginAs($user->execUserId);
+            }
+
+            return $this->rerouteUrl();
         }
 
         /**
