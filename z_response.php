@@ -668,7 +668,7 @@
             // Gather all fields from the form
             foreach($validationResult->fields as $field) {
                 if($field->noSave) continue;
-                if($field->dbField == $pkField) continue;
+                if($field->dbField == $pkField && $field->value == $pkValue) continue;
 
                 $fields[] = $field->dbField;
                 $values[] = $field->value;
@@ -677,6 +677,8 @@
 
             // Gather fixed values
             foreach($fixed as $field => $value) {
+                if($field == $pkField && $value == $pkValue) continue;
+
                 $fields[] = $field;
                 $values[] = $value;
                 $types .= "s";
