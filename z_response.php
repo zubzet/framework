@@ -668,6 +668,7 @@
             // Gather all fields from the form
             foreach($validationResult->fields as $field) {
                 if($field->noSave) continue;
+                if($field->dbField == $pkField) continue;
 
                 $fields[] = $field->dbField;
                 $values[] = $field->value;
