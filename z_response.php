@@ -464,7 +464,7 @@
                 $mail->SMTPAuth   = true;
                 $mail->Username   = $this->getBooterSettings("mail_user");  
                 $mail->Password   = $this->getBooterSettings("mail_password");
-                $mail->SMTPSecure = 'tls';                                  // Enable TLS encryption, `ssl` also accepted
+                $mail->SMTPSecure = $this->getBooterSettings("mail_security", default: "tls");
                 $mail->Port       = $this->getBooterSettings("mail_port");  // TCP port to connect to
 
                 //Recipients

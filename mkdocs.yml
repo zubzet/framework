@@ -90,12 +90,12 @@ plugins:
 # Navigation
 nav:
     - Getting Started: index.md
-    - Setup: 
+    - Setup:
         - Installation: setup/installation.md
         - How To Update: setup/how-to-update.md
-        - How to Upgrade: 
-            - 0.10.x to 0.11.x: setup/upgrade/0.10.x-to-0.11.x.md
-            - 0.9.x to 0.10.x: setup/upgrade/0.9.x-to-0.10.x.md
+        - How to Upgrade:
+            - 0.10 to 0.11: setup/upgrade/0.10-to-0.11.md
+            - 0.9 to 0.10: setup/upgrade/0.9-to-0.10.md
     - Core Features:
         - MVC:  core-features/mvc.md
         - Controllers And Actions: core-features/controllers-and-actions.md
