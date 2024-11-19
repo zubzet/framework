@@ -19,7 +19,7 @@
          * Shows a document to the user
          * @param string $document Path to the view
          * @param array $opt Associative array with values to replace in the view
-         * @param array $options Rendering options, e.g., or a string for layout
+         * @param string|array $options Rendering options, e.g., or a string for layout
          */
         public function render($document, $opt = [], $options = []) {
             // Legacy as $options used to be $layout
@@ -357,7 +357,7 @@
 
         /**
          * Gets a new Rest object
-         * @param object $payload Data payload
+         * @param array $payload Data payload
          */
         private function getNewRest($payload) {
             require_once $this->booter->z_framework_root.'z_rest.php';
@@ -366,7 +366,7 @@
 
         /**
          * Generates a Rest object
-         * @param object $payload Data payload
+         * @param array $payload Data payload
          * @param bool $die Whether to exit after generating the Rest object
          */
         public function generateRest($payload, $die = true) {

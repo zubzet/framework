@@ -194,7 +194,7 @@
          * Converts the result of the last query into a grouped array
          * @param string $groupBy The field, by which the array is grouped by
          * @param string $subElement If set, the only a sub element of the grouped element is returned
-         * @return any[groupBy][] Results of the last query as two dimensional array with the index as thr groupBy value
+         * @return mixed[][] Results of the last query as two dimensional array with the index as thr groupBy value
          */
         public function mergeAsGroup($groupBy, $subElement = null) {
             $elements = $this->resultToArray();

@@ -356,7 +356,7 @@
                 $data = array_merge($_POST, $_FILES);
             }
 
-            $formResult = new FormResult($this);
+            $formResult = new FormResult();
             $formResult->fields = $fields;
    
             foreach ($fields as $field) {
@@ -468,7 +468,7 @@
         /**
          * Validates a "Create Edit Delete" input
          * @param string $name Name of the input field
-         * @param object $rules Array of rules for validating
+         * @param array $rules Array of rules for validating
          * @return FormResult Result of the validation. Needed to perform response actions
          */
         public function validateCED($name, $rules) {
