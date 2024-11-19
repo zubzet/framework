@@ -203,9 +203,10 @@
         /**
          * Verifies an users mail address
          * @param string $token. The token from the url the user clicked on.
+         * @return bool True if the user was successfully verified or already was verified
          */
-        function verifyUser($token) {
-            if (!$token) return false;
+        function verifyUser($token): bool {
+            if(!$token) return false;
 
             // Retrieve the token from the database
             $sql = "SELECT zev.*
@@ -215,7 +216,11 @@
                     WHERE `token` = ?
                     AND (
                         -- Either the token is still valid and unused
-                        zev.`active` = 1
+                        (
+                            zev.`active` = 1
+                            -- Verification is invalid if the token is too old
+                            AND zev.`end` > CURRENT_TIMESTAMP()
+                        )
                         -- Or the user is already verified
                         OR zu.`verified` IS NOT NULL
                     )
@@ -224,10 +229,8 @@
             $result = $this->resultToLine();
 
             // If the token was not found, the attempt is invalid
-            if (!isset($result)) return false;
-
-            // Verification is invalid if the token is too old
-            if (time() > strtotime($result["end"])) return false;
+            if(!isset($result)) return false;
+            if(!empty($result["verified"])) return true;
 
             // Remove the token from the database
             $sql = "UPDATE z_email_verify
