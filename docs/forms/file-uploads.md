@@ -11,10 +11,11 @@ if ($upload->upload($_FILES["file"], "uploads/", FILE_SIZE_100GB, ["txt", "jpg",
 $fileId = $upload->fileId;
 ```
 
-`$file` is the file in `$_FILES`.
-`$uploadDir` is the directory to place the file in. Ending with `/`.
-`$maxSize` is the max file size. For some values there are already constants in the framework.
+`$file` is the file in `$_FILES`.  
+`$uploadDir` is the directory to place the file in. Ending with `/`.  
+`$maxSize` is the max file size. For some values there are already constants in the framework.  
 `$typeArray` array of accepted file types.
+
 
 ## Using Z-Forms
 When using Z-Forms, files will be stored and error feedback automatically goes back to the user. For file uploads there is the special rule `file()`.

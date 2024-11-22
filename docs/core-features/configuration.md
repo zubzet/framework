@@ -11,5 +11,17 @@ If you want to use another key, simply create a new key in your `z_settings.ini`
 - Connections to other external tools like a Mailer, Storage or Api keys.
 - Basic Framework settings
 
+## Example
+```php
+public function action_chatgpt(Request $req, Response $res) {
+    $chatgptApiKey = $res->getBooterSettings("chatgpt_api_key");
+
+    /* remaining code */
+
+    return $res->render("admin/chatgpt.php");
+}
+```
+
+
 ## Purpose
 This helps manage credentials and settings more easily, while keeping sensitive data separate from everything else.
