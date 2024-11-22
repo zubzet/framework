@@ -13,15 +13,19 @@ Every model inherits many useful methods from the z_model class. You can simply 
 ```php
 <?php
 
-    class ExampleModel extends z_model {
+    class EmployeeModel extends z_model {
 
-        public function getTest() {
-            $sql = "SELECT * FROM `test`";
+        public function getAll(): array {
+            $sql = "SELECT *
+                    FROM `employee`";
             return $this->exec($sql)->resultToArray();
         }
 
-         public function updateTest() {
-            // Update stuff
+        public function getById($employeeId): array {
+            $sql = "SELECT *
+                    FROM `employee`
+                    WHERE `id` = ?";
+            return $this->exec($sql, "i", $employeeId)->resultToLine();
         }
 
     }
@@ -42,9 +46,20 @@ The method `exec` is probably the most important one for your model. It incorpor
 ## Example Database Request
 
 ```sql
-    $sql = "YOUR COMMAND ?, ?";
-    $this->exec($sql, "si", $stringVar, $intVar);
+$sql = "SELECT * 
+        FROM `employee` 
+        WHERE `first_name` = ?
+        AND `age` = ?";
+$this->exec($sql, "si", "Klaus", 30);
 ```
+
+### Execute Features
+| Type             | Description |
+| ---------------- | ----------- |
+| resultToLine()   | Converts the first row of the query result into a flat array (one-dimensional), often useful when fetching a single row of data. |
+| resultToArray()  | Converts the result set of a query into an array where each row is represented as an associative array.|
+| getInsertId()    | Get the last insert id. |
+| countResults     | Returns the number of results in the last query. |
 
 ### Tips
 ??? danger "Why not simply write queries without question marks?"

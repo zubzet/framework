@@ -41,7 +41,7 @@ The following function `action_test` will be executed when requesting the path `
 <?php
     class ExampleController extends z_controller {
 
-        public function action_test($req, $res) {
+        public function action_test(Request $req, Response $res) {
 
         }
 
@@ -53,25 +53,50 @@ The following function `action_test` will be executed when requesting the path `
 
 ```php
 <?php
-    class ExampleController extends z_controller {
+    class EmployeeController extends z_controller {
 
-        public function action_test($req, $res) {
-            $parameter = $req->getParameters(0, 1);
 
-            // Interacting with Models
-            $req->getModel("Example")->doSomethingWithParameter($parameter);
+        // This action will be executed when requesting the path `{root}/Employee`
+        public function action_index(Request $req, Response $res) {
+            return $res->render("employee/index.php");
+        }
 
-            // Handle an asynchronous request
-            if($req->isAction("xy")) {
+        // This action will be executed when requesting the path `{root}/Employee/list`
+        public function action_list(Request $req, Response $res) {
+            // Check the permissions of the currently logged-in user.
+            $req->checkPermission("employee.list");
 
+            // Handle an asynchronous POST-request with the parameter: action=delete-employee
+            if ($req->isAction("delete-employee")) {
+                $req->checkPermission("employee.delete");
+
+                $employeeId = $req->getPost("employeeId");
+
+                // Interacting with Models
+                $req->getModel("Employee")->deleteById($employeeId);
+
+                return $res->success();
             }
 
-            // Rendering Views
-            return $res->render("view.php", [
-                "something" => "a",
+            // Rendering the View with all Employees as Array
+            return $res->render("employee/employee_list.php", [
+                "employees" => $req->getModel("Employee")->getAll()
             ]);
         }
 
+        // This action will be executed when requesting the path `{root}/Employee/view`
+        public function action_view(Request $req, Response $res) {
+            $req->checkPermission("employee.view");
+
+            // Retrives URL parameters (Offset, Length)
+            $employeeId = $req->getParameters(0, 1);
+
+            $employee = $req->getModel("Employee")->getById($employeeId);
+
+            return $res->render("employee/employee_view.php", [
+                "employee" => $employee
+            ]);
+        }
     }
 ?>
 ```

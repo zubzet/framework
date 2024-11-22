@@ -11,15 +11,48 @@ For this feature to work a mail address needs to be configured in the [booter se
 
 Example code for sending a mail:
 ```php
-$res->sendEmail(
-    "test@sd.tld",                                         // Target address
-    ["en" => "Welcome Mail", "de" => "Willkommens Mail"],  // Subject
-    "email_welcome.php",                                   // Path to the email view
-    "de",                                                  // Language used in the email
-    ["name" => "Otto"],                                    // Options
-    "layout/email_layout.php"                              // Layout to use
-);
+public function action_register(Request $req, Response $res) {
+    if($req->isAction("register")) {
+        $email = $req->getPost("email");
+        $password = $req->getPost("password");
+
+        $response = $req->getModel("Employee")->register($email, $password);
+
+        if(!$response) {
+            return $res->error();
+        }
+
+        $res->sendEmail(
+            $email          ,                                         // Target address
+            ["en" => "Welcome Mail", "de" => "Willkommens Mail"],     // Subject
+            "email_welcome.php",                                      // Path to the email view
+            "en",                                                     // Language used in the email
+            [
+                "email" => $email
+            ],                                                        // Options
+            "employee/mail_layout.php"                                // Layout to use
+        );
+    }
+}
 ```
+
+### Example Layout
+```php
+<?php return ["layout" => function($opt, $body, $head) { ?>
+    <html>
+        <head>
+            <meta charset="utf-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+            <?= $head($opt); ?>
+        </head>
+        <body>
+            Welcome <?= $opt["email"] ?>!
+            <?= $body($opt); ?>
+        </body>
+    </html>
+<?php }]; ?>
+```
+
 
 ## Send to registered users
 `sendEmailToUser()` sends a mail to an user identified by its user id. The mail address and language are fetched from the database, so less information is needed.
