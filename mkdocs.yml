@@ -126,4 +126,5 @@ nav:
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
         - Commands: advanced-features/commands.md
     - Guides:
-        - Application 1: guides/application-1.md
+        - Guest List: guides/guest-list.md
+        - Library: guides/library.md
