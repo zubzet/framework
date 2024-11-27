@@ -3,42 +3,58 @@ name: Distribute Documentation
 on:
   push:
     branches:
-      - '**'
+      - DEV
+      - main
+      - master
+    tags:
+      - 'v*.*.*'
 
 jobs:
   build-docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker
+      - name: Set up docker
         uses: docker/setup-buildx-action@v2
 
-      - name: Sanitize Branch Name
-        id: sanitize
-        run: echo "SANITIZED_REF_NAME=${GITHUB_REF_NAME//\//_}" >> $GITHUB_ENV
-
-      - name: Build The Documentation
+      - name: Build mkdocs
         run: |
-          sed -i 's/##CI_ENVIROMENT_BRANCH##/${{ env.SANITIZED_REF_NAME }}/g' mkdocs.yml
           docker run --rm \
             -v ${{ github.workspace }}:/docs \
             squidfunk/mkdocs-material \
-            build --site-dir public/${{ env.SANITIZED_REF_NAME }}
+            build --site-dir website_docs/
 
       - name: Build phpDocumentor
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/app \
             phpdoc/phpdoc:3.1 \
-            phpdoc -d /app -t /app/public/${{ env.SANITIZED_REF_NAME }}/api --ignore ./adminer --ignore ./docs
+            phpdoc -d /app -t /app/website_docs/api --ignore ./adminer --ignore ./docs
 
       - name: Ensure correct permissions
-        run: sudo chmod -R 777 public/
+        run: |
+          sudo chmod -R 777 website_docs
+          ls -lah
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          destination_dir: docs
+      - name: Deploy docs to the zubzet/website repository
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.WEBSITE_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_DEPLOY_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git clone --branch gh-pages git@github.com:zubzet/website.git deploy_website
+
+          rm -rf deploy_website/docs
+          mv website_docs/ deploy_website/docs
+          cd deploy_website
+
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+          git add .
+          git commit -m "Update documentation for ${{ github.ref_name }}"
+          git push

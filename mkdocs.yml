@@ -6,7 +6,7 @@ site_description: A modular, prototyping speed oriented PHP framework.
 
 # Repository
 repo_name: zubzet/framework
-repo_url: https://github.com/zubzet/framework/blob/##CI_ENVIROMENT_BRANCH##
+repo_url: https://github.com/zubzet/framework
 edit_uri: docs/
 
 # Copyright
