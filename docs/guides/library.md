@@ -99,10 +99,11 @@ INSERT INTO `book` (`title`, `author`, `description`) VALUES
 </details>
 
 ## Setting up our Application
-To start working with permissions, we first need the basic structure of our application. The framework provides pre-built files in the "Resources" section, including templates for controllers, models, and views. Using these resources ensures an organized setup and allows us to focus on implementing functionality and permissions efficiently.
+To start working with permissions, we first need the basic structure of our application. This guide provides pre-built files in the "Resources" section, including templates for controllers, models, and views. Using these resources ensures an organized setup and allows us to focus on implementing functionality and permissions efficiently.
 
 ## How does Permissions works?
 The framework includes a robust and fully implemented permission system designed to manage access control efficiently. This system is built around roles and the associated **permissions** assigned to those roles.
+
 #### Key Features:
 
 A user can have multiple roles, and each role can be assigned multiple permissions.  
@@ -153,7 +154,7 @@ The line `$req->checkPermission("library.list")` verifies if the currently logge
 ## How to use Permissions in a View
 Checking permissions directly in a view can be very useful for controlling the visibility of specific elements based on the user's access level.  
 
-In this example, we will check if the user has the `library.edit` permission. If they do, they will see a button to edit a book. Otherwise, a message saying "No permissions" will be displayed.
+In this example, we will check if the user has the `library.delete` permission. If they do, they will see a button to delete a book. Otherwise, a message saying "No permissions" will be displayed.
 
 ```php
 <?php return ["body" => function ($opt) { ?>
@@ -173,8 +174,8 @@ In this example, we will check if the user has the `library.edit` permission. If
                     <td><?= $book["title"] ?></td>
                     <td><?= $book["description"] ?></td>
                     <td>
-                        <?php if($opt["user"]->checkPermission("library.edit")) { ?>
-                            <button>Edit</button>
+                        <?php if($opt["user"]->checkPermission("library.delete")) { ?>
+                            <button>Delete</button>
                         <?php } else { ?>
                             <i>No Permissions</i>
                         <?php } ?>
@@ -189,5 +190,48 @@ In this example, we will check if the user has the `library.edit` permission. If
 
 - **Opening PHP**: We start by opening PHP to write server-side logic. Here, we access the `$opt` object, which contains the current user (`$opt["user"]`) and the books to be displayed.
 - **Getting the User Object**: The `$opt["user"]` object represents the currently logged-in user. Using its `checkPermission()` method, we verify if the user has the required permission (`library.edit`).
-- **Checking Permissions**: The checkPermission(`"library.edit"`) method returns `true` if the user has the required permission, and `false` otherwise.
+- **Checking Permissions**: The checkPermission(`"library.delete"`) method returns `true` if the user has the required permission, and `false` otherwise.
 - **Closing PHP for HTML Rendering**: Inside the `if` condition, we close PHP to render the HTML (e.g., a button for editing the book). If the user lacks the permission, the `else` block displays a message (`No Permissions`).
+
+## How to create Roles and Permissions
+Now that we understand how to use permissions, it’s essential to know how to create them. Here’s a step-by-step guide using the admin panel provided by the framework:
+
+1) **Access the Admin Panel**  
+Open your browser and navigate to the admin panel at `http://localhost:8080/z`.
+
+2) **Login In as Admin**  
+Use the default administrator credentials:
+
+- Email: `admin@zierhut-it.de`
+- Password: `password`
+
+3) **Create a New Role**  
+
+- Once logged in, click on the `Roles` section in the admin panel.
+- Click the `Create Role` button
+- Enter a name for the role, e.g., `Library`.
+- In the permissions section, add the following permissions:
+    - `library.list`
+    - `library.delete`
+- Click **Submit** to save the role and its permissions.
+
+4) **Assign Role to a User**
+
+- In the navigation panel, select **Edit Users**
+- Choose the user you want to assign the role to.
+- Under the **Roles**, select your created role and click **Submit** to save the changes.
+
+Now the suer assigned with your role will have access to the `library.delete` and `library.edit` permissions, ensuring they can access and manage the respective parts of the application securely.
+
+### Summary
+
+- **Roles**: Create roles like `Library` to group relevant permissions.
+- **Permissions**: Assign permissions such as `library.list` to control access to specific features
+- **Access Control**: Enforce permission checks in controllers and views to ensure only authorized users can access specific features.
+
+This guide highlights how to implement a secure, permission-based access control system for your application.
+
+## Next Guide
+As you can see, we’ve implemented a button that is visible only to users with the `library.delete` permission. However, the button currently has no functionality. In the next guide, we’ll explore how to create backend requests to handle actions triggered from the view, enabling dynamic and secure interactions between the front-end and the back-end.
+
+[Shop](shop.md)
