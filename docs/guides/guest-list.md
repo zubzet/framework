@@ -245,3 +245,8 @@ The use of `$guest["first_name"]` corresponds to the column names defined in the
 This simple application demonstrates how to connect a model, controller, and view to create a guest list application.  
 To start your Website run "npm run start" inside your terminal.  
 And to view your result, navigate to `http://localhost:8080/Guests/list` in your browser.
+
+## Next Guide
+In the next guide, we’ll take a closer look at how to secure your website using roles and permissions. This is a key step to make sure that only authorized users can access certain features or parts of your application. By setting up roles and assigning specific permissions, you’ll create a solid system to manage access and keep your website both secure and organized.  
+
+[Library](library.md)
