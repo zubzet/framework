@@ -92,6 +92,7 @@ nav:
     - Getting Started: index.md
     - Setup:
         - Installation: setup/installation.md
+        - How To Contribute: setup/how-to-contribute.md
         - How To Update: setup/how-to-update.md
         - How to Upgrade:
             - 0.10 to 0.11: setup/upgrade/0.10-to-0.11.md
@@ -124,3 +125,10 @@ nav:
         - Sitemap Generation: advanced-features/sitemap-generation.md
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
         - Commands: advanced-features/commands.md
+    - Guides:
+        - Guest List: guides/guest-list.md
+        - Library: guides/library.md
+        - Shop: guides/shop.md
+        - Todo: guides/todo.md
+        - Layouts: guides/layout.md
+        - Emails: guides/email.md
