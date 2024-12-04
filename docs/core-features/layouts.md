@@ -7,18 +7,29 @@ When using `$res->render`, a third optional parameter accepts a path to a layout
 
 ### Example layout
 ```html
-<?php  return ["layout" => function($opt, $body, $head) { ?>
-    <!doctype html>
-    <html class="no-js" lang="en">
-        <head>
-            <?php $opt["layout_essentials_head"]($opt); ?>
-            <?php $head($opt); ?>
-        </head>
-        <body>
-            <?php $body($opt); ?> <!-- View ist rendered here-->
-            <?php $opt["layout_essentials_body"]($opt); ?>
-        </body>
-    </html>
+<?php return ["layout" => function($opt, $body, $head) { ?>
+<!doctype html>
+<html lang="en">
+    <head>
+        <?php $head($opt); ?>
+        <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <header>
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <a class="navbar-brand">Adminpage</a>
+            </nav>
+        </header>
+
+        <main class="container mt-5">
+            <?php $body($opt); ?>
+        </main>
+
+        <footer class="my-2 footer fixed-bottom">
+            <p class="text-center text-body-secondary">© 2024 Company</p>
+        </footer>
+    </body>
+</html>
 <?php }, "lang" => [
     "en" => [
         "key" => "word",
@@ -29,4 +40,12 @@ When using `$res->render`, a third optional parameter accepts a path to a layout
         "key2" => "wort2"
     ]
 ]]; ?>
+
+```
+
+### Example usage
+```php
+public function action_index(Request $req, Response $res) {
+    return $res->render("admin/index.php", [], "admin/layout.php");
+}
 ```
