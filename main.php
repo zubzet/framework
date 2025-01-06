@@ -60,7 +60,7 @@
         public $reroutes = 0;
 
         /** @var string $z_framework_root Directory where the framework files live */
-        public $z_framework_root = "z_framework/";
+        public $z_framework_root = __DIR__ . DIRECTORY_SEPARATOR;
 
         /** @var string $z_controllers Directory in which the controllers live */
         public $z_controllers = "z_controllers/";
@@ -105,9 +105,6 @@
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct($params = []) {
-
-            chdir(__DIR__."/../");
-
             $param_keys = [
                 "root" => &$this->z_framework_root, 
                 "controllers" => &$this->z_controllers, 
