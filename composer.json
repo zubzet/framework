@@ -1,13 +1,8 @@
 {
     "name": "zubzet/framework",
     "version": "0.11.0",
-    "authors": [{
-        "name": "Alexander Zierhut",
-        "email": "alex@zierhut-it.de"
-    }],
     "license": "GPL-3.0-or-later",
     "support": {
-        "email": "info@zierhut-it.de",
         "wiki": "https://docs.zubzet.de"
     },
     "require": {
