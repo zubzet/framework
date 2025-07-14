@@ -1,14 +1,14 @@
 <?php
     /**
-     * Also known as the booter 
+     * Also known as the booter.
      */
 
     /**
-     * First class that is instantiated at a request
+     * First class that is instantiated during a request.
      */
     class z_framework {
 
-        /** @var string $rootDirectory Path to the root */
+        /** @var string $rootDirectory Path to the root directory */
         private $rootDirectory;
 
         /** @var string $host Name of the host of this page */
@@ -20,10 +20,10 @@
         /** @var string $url URL to reach this page */
         public $url;
 
-        /** @var mysqli $host Database connection object */
+        /** @var mysqli $conn Database connection object */
         private $conn;
 
-        /** @var string $dbhost Hostname of the machine on that the database lives */
+        /** @var string $dbhost Hostname of the machine on which the database resides */
         public $dbhost;
 
         /** @var string $dbusername Username for the database connection */
@@ -35,10 +35,10 @@
         /** @var string $dbname Name of the database */
         public $dbname;
 
-        /** @var string $default Name of the controller when no specific is selected */
+        /** @var string $defaultIndex Name of the controller when none is specifically selected */
         private $defaultIndex;
 
-        /** @var string[] $urlParts Exploded url */
+        /** @var string[] $urlParts Exploded URL */
         public $urlParts;
 
         /** @var array $settings Stores the z_framework settings */
@@ -53,19 +53,19 @@
         /** @var string $rootFolder Path to the root folder */
         public $rootFolder;
 
-        /** @var int $maxReroutes Number of reroutes controller can do before abort */
+        /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
         public $maxReroutes = 10;
 
-        /** @var int $reroutes Number of how many times this request war rerouted */
+        /** @var int $reroutes Number of times this request was rerouted */
         public $reroutes = 0;
 
-        /** @var string $z_framework_root Directory where the framework stuff lives */
-        public $z_framework_root = "z_framework/";
+        /** @var string $z_framework_root Directory where the framework files live */
+        public $z_framework_root = __DIR__ . DIRECTORY_SEPARATOR;
 
-        /** @var string $z_cnontrollers Directory in which the controllers live */
+        /** @var string $z_controllers Directory in which the controllers live */
         public $z_controllers = "z_controllers/";
 
-        /** @var string $z_models Directory in which the models live in */
+        /** @var string $z_models Directory in which the models live */
         public $z_models = "z_models/";
 
         /** @var string $z_views Directory of the views */
@@ -74,13 +74,16 @@
         /** @var string $config_file Path to the config file */
         public $config_file = "z_config/z_settings.ini";
 
+        /** @var array $config An associative array of key-value config parameters  */
+        public $config = [];
+
         /** @var User $user The requesting user */
         public $user;
 
-        /** @var string[] $ControllerStack All visted controllers as an array */
+        /** @var string[] $ControllerStack All visited controllers as an array */
         public $ControllerStack = [];
 
-        /** @var string[] $ActionStack All visted actions as an array */
+        /** @var string[] $ActionStack All visited actions as an array */
         public $ActionStack = [];
 
         /** @var Response $res A reference to an instance of the Response class */
@@ -99,12 +102,9 @@
         ];
         
         /**
-         * Parses all the options as vars and instantiate the z_db and establish the db connection
+         * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct($params = []) {
-
-            chdir(__DIR__."/../");
-
             $param_keys = [
                 "root" => &$this->z_framework_root, 
                 "controllers" => &$this->z_controllers, 
@@ -177,22 +177,25 @@
             $this->url = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "cli");
             $this->urlParts = $this->parseUrl();
 
-            //Import of the z_db
-            require_once $this->z_framework_root.'z_db.php';
-            $this->z_db = new z_db($this);
-
-            //Import the standard controller;
+            // Import the standard controller;
             require_once $this->z_framework_root.'z_controller.php';
 
-            //Import the standard model
+            // Import the standard model
             require_once $this->z_framework_root.'z_model.php';
 
-            //RR System
+            // RR System
             require_once $this->z_framework_root."z_requestResponseHandler.php";
             require_once $this->z_framework_root."z_response.php";
             require_once $this->z_framework_root."z_request.php";
 
-            //User
+            $this->req = new Request($this);
+            $this->res = new Response($this);
+
+            // Import of the z_db
+            require_once $this->z_framework_root.'z_db.php';
+            $this->z_db = new z_db($this);
+
+            // User
             require_once $this->z_framework_root.'z_user.php';
             $this->user = new User($this);
             $this->user->identify();
@@ -200,7 +203,7 @@
 
         /**
          * Updates the error handling state
-         * @param Number $state
+         * @param int|null $state
          */
         public function updateErrorHandling($state = null) {
             //State or attribute check
@@ -222,8 +225,8 @@
         }
 
         /**
-         * Used to parse the url into parts and parameters
-         * Format: root/class/method/parameter/parmameter/...
+         * Used to parse the URL into parts and parameters
+         * Format: root/class/method/parameter/parameter/...
          */
         private function parseUrl() {
             $path = parse_url($this->url, PHP_URL_PATH);
@@ -241,8 +244,8 @@
         }
 
         /** 
-         * The Execution of the requested action 
-         * @param Array $customUrlParts example: ["panel", "index"]
+         * Executes the requested action
+         * @param array|null $customUrlParts Example: ["panel", "index"]
          */
         public function execute($customUrlParts = null) {
             global $argv;
@@ -260,8 +263,8 @@
         }
 
         /**
-        * Executes a action for a specified path
-        * @param Array $parts exmaple: ["auth", "login"]
+        * Executes an action for a specified path
+        * @param array $parts Example: ["auth", "login"]
         */
         public function executePath($parts) {
             $this->reroutes++;
@@ -309,8 +312,6 @@
             $this->ActionStack[] = $method;
             
             try {
-                $this->req = new Request($this);
-                $this->res = new Response($this);
                 $CTRL_obj = new $controller($this->req, $this->res);
                 if (method_exists($controller, $method)) {
                     return $CTRL_obj->{$method}($this->req, $this->res);
@@ -335,7 +336,7 @@
         }
 
         /**
-         * Decodes all data send via post. Decode method can be determined on the prefix of the value
+         * Decodes all data sent via POST. Decoding method can be determined by the prefix of the value.
          */
         private function decodePost() {
             array_walk_recursive($_POST, function(&$item) {
@@ -393,8 +394,8 @@
         }
 
         /**
-         * Returns the path of a view. If the view does not exists, this function will fallback to the framework defaults
-         * @param string $document Filename of the view
+         * Returns the path of a view. If the view does not exist, this function will fall back to the framework defaults.
+         * @param string $document Filename of the views
          * @return string Relative path to the view file
          */
         public function getViewPath(...$documents) {
@@ -413,7 +414,7 @@
         }
 
         /**
-         * Answers this request with a rest
+         * Answers this request with a REST
          */
         private function rest($options) {
             require_once $this->z_framework_root.'z_rest.php';

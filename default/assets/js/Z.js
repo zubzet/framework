@@ -15,7 +15,7 @@
  * @type {object} Z
  * Namespace object for Z.js
  */
- Z = {
+Z = {
 
   /**
    * Debug mode
@@ -214,7 +214,7 @@
      * @param {string} errorLabelId ID if the DOM elemnt to show errors in
      * @param {string} redirect URL to redirect to after a successfull signup
      */
-    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "", alertErrors = false) {
+    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "", alertErrors = false, additionalData = {}) {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
@@ -240,7 +240,12 @@
         loader.style.display = "";
       }
 
-      Z.Request.root('login/signup', 'signup', {email: eName.value, password: ePassword.value}, (res) => {
+      let postData = {
+        email: eName.value,
+        password: ePassword.value,
+      };
+
+      Z.Request.root('login/signup', 'signup', Object.assign(postData, additionalData), (res) => {
         if (loader) {
           loader.style.display = "none";
         }

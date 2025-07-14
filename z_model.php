@@ -20,16 +20,16 @@
         protected $booter;
 
         /**
-         * @var int $lastInsertId Holds the last id returned of an insert query. Does not change on logging
+         * @var int $lastInsertId Holds the last ID returned from an insert query. Does not change during logging.
          */
         protected $lastInsertId;
 
         /**
          * Creates a z_model instance.
          * 
-         * This constructor should only called from the booter. If you need a model, use $booter->getModel() instead.
+         * This constructor should only be called from the booter. If you need a model, use $booter->getModel() instead.
          * 
-         * @param z_db $z_db The database proxy class (Usally one lives in the booter)
+         * @param z_db $z_db The database proxy class (Usually one lives in the booter)
          * @param z_framework $booter Booter object
          */
         function __construct(&$z_db, $booter) {
@@ -50,9 +50,9 @@
 
         /**
          * Executes a query as a prepared statement.
-         * @param string $query The query written as a prepared statement (With the question marks).
+         * @param string $query The query written as a prepared statement (with question marks).
          * @param string $types The types for the individual parameters (i for int, s for string...).
-         * @param ...string $params to insert in the prepared statement
+         * @param ...string $params Parameters to insert into the prepared statement
          * @return z_db Returning this for chaining 
          */
         function exec($query, $types = "", $params = null) {
@@ -61,8 +61,8 @@
         }
 
         /**
-         * Returns the last insert id. Ignores insers done by log.
-         * @return int The id of the in the last insert created dataset
+         * Returns the last insert id. Ignores inserts done by log.
+         * @return int The ID of the dataset created in the last insert
          */
         function getInsertId() {
             return $this->z_db->getInsertId();
@@ -70,36 +70,36 @@
 
         /**
          * Converts the result of the last query into an array and returns it.
-         * @return any[][] Results of the last query as two dimensional array
+         * @return mixed[][] Results of the last query as two-dimensional array
          */
-        function resultToArray() {
+        function resultToArray(): array {
             return $this->z_db->resultToArray(...func_get_args());
         }
         
         /**
          * Returns one line of the last query.
-         * @return any[] Line of the last result
+         * @return array|null Line of the last result
          */
-        function resultToLine() {
-            return $this->z_db->resultToLine(...func_get_args());
+        function resultToLine(): ?array {
+            return $this->z_db->resultToLine();
         }
 
         /**
-         * Selects a full table or specified fields of it and returns the result as two dimensional array.
+         * Selects a full table or specified fields of it and returns the result as two-dimensional array.
          * @param string $table Name of the table in the database
-         * @param string $fields Fields to select. Formated as in an SQL query ("*", "a, b, c"...)
-         * @return any[][] A two dimensional array with the results of the select statement
+         * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
+         * @return array[] A two-dimensional array with the results of the select statement
          */
         function getFullTable($table, $fields = "*") {
             return $this->z_db->getFullTable(...func_get_args());
         }
 
         /**
-         * Selects a full table of specified fields of it filtered with an additional where statement. It returns the result as two dimensional array.
+         * Selects a full table or specified fields, filtered with an additional where statement. It returns the result as a two-dimensional array.
          * @param string $table Name of the table in the database
-         * @param string $fields Fields to select. Formated as in a SQL query ("*", "a, b, c"...)
-         * @param string $where The where statement in the query. Formated as in a SQL query (a = 4 AND c = 4...);
-         * @return any[][] two dimensional array with table data
+         * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
+         * @param string $where The where statement in the query. Formatted as in an SQL query ("a = 4 AND c = 4"...);
+         * @return array[] Two-dimensional array with table data
          */
         function getTableWhere($table, $fields, $where) {
             return $this->z_db->getTableWhere(...func_get_args());
@@ -115,8 +115,8 @@
         }
 
         /**
-         * Run a very lightweight query to keep the connection alive
-         * @param string $waitForTimeout If set to true, only ping if no other query has been made within the timeout period
+         * Runs a very lightweight query to keep the connection alive.
+         * @param bool $waitForTimeout If set to true, only ping if no other query has been made within the timeout period
          * @return void
          */
         public function heartbeat($waitForTimeout = true) {
@@ -125,7 +125,7 @@
 
         /**
          * Returns the result of the last query.
-         * @return any Result of the last query
+         * @return null|bool|mysqli_result Result of the last query
          */
         function getResult() {
             return $this->z_db->result;
@@ -136,14 +136,14 @@
          * @return int Number of results in the last query
          */
         function countResults() {
-            return $this->z_db->countResults(...func_get_args());
+            return $this->z_db->countResults();
         }
 
         /**
-         * Gets the id of a log category. If a category does not exists, this function will create it.
+         * Gets the ID of a log category. If a category does not exist, this function will create it.
          * 
          * @param string $name Name of the category
-         * @return int Id of the log category
+         * @return int ID of the log category
          */
         function getLogCategoryIdByName($name) {
             if($this->z_db->booter->lite_mode) return;
@@ -165,7 +165,7 @@
          * 
          * Does not increase the insertId.
          * 
-         * @param int $categoryId Id of the category in the database
+         * @param int $categoryId ID of the category in the database
          * @param string $text Text
          * @param int $value Optional value
          */
@@ -187,7 +187,7 @@
          *
          * Does not increase the insertId. If the category does not exist, it will be created.
          *
-         * @param int $categoryName Name of the category in the database.S
+         * @param string $categoryName Name of the category in the database.
          * @param string $text Text
          * @param int $value Optional value
          */

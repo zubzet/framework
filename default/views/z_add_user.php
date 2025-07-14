@@ -1,26 +1,44 @@
-<?php
-/**
- * The add user view. Only accessible with permission
- */
+<?php return ["body" => function($opt) { ?>
 
-return ["head" => function ($opt) { ?> <!-- File header -->
-
-
-<?php }, "body" => function($opt) { ?> <!-- File body -->	
-
-    <h2><?php $opt["lang"]("title"); ?></h2>
-
-    <script>
-        $(function() {
-            var form = Z.Forms.create({doReload: true});
-            form.createField({name: "email", type: "email", required: true, text: "<?php $opt["lang"]('email') ?>", placeholder: "name@example.com"});
-            form.createField({name: "languageId", type: "select", required: true, text: "<?php $opt["lang"]('language') ?>"}).feedData(<?php echo $opt["languages"] ?>);
-            form.createField({name: "password", type: "password", required: false, text: "<?php $opt["lang"]('password') ?>", placeholder: "******"});
-            $("#create-user-form").append(form.dom);
-        });
-    </script>
+    <h2>
+        <?php $opt["lang"]("title"); ?>
+    </h2>
 
     <div id="create-user-form"></div>
+
+    <script>
+        var form = Z.Forms.create({
+            dom: "create-user-form",
+            doReload: true,
+        });
+
+        form.createField({
+            name: "email",
+            type: "email",
+            required: true,
+            text: "<?php $opt["lang"]('email') ?>",
+            placeholder: "name@example.com"
+        });
+
+        form.createField({
+            name: "languageId",
+            type: "select",
+            required: true,
+            text: "<?php $opt["lang"]('language') ?>",
+            food: <?= $opt["languages"] ?>,
+        });
+
+        form.createField({
+            name: "password",
+            type: "password",
+            required: true,
+            text: "<?php $opt["lang"]('password') ?>",
+            placeholder: "******",
+        });
+
+        $("label").addClass("mb-0");
+    </script>
+
 <?php }, "lang" => [
             "de_formal" => [
                 "title" => "Benutzer erstellen",
@@ -30,7 +48,7 @@ return ["head" => function ($opt) { ?> <!-- File header -->
                 "permission_level" => "Zugriffseinstellung",
                 "password" => "Passwort",
                 "save" => "Speichern"
-            ], 
+            ],
             "en" => [
                 "title" => "Add User",
                 "email" => "Email",

@@ -121,44 +121,58 @@
          * @param Response $res The response object
          */
         public function action_signup($req, $res) {
-            
             if ($req->isAction("signup")) {
-
                 $formResult = $req->validateForm([
-                    (new FormField("email"))      -> required() -> filter(FILTER_VALIDATE_EMAIL) -> unique("z_user", "email"),
-                    (new FormField("password"))   -> required() -> length(3, 64)
+                    (new FormField("email"))
+                        -> required()
+                        -> filter(FILTER_VALIDATE_EMAIL)
+                        -> unique("z_user", "email"),
+                    (new FormField("password"))
+                        -> required()
+                        -> length(3, 64),
                 ]);
 
-                if ($formResult->hasErrors) {
-                    $res->error("This email is not allowed!");
-                } else {
-                    $userModel = $req->getModel("z_user");
-                    require_once $req->getZRoot().'z_libs/passwordHandler.php';
+                if ($formResult->hasErrors) return $res->error(
+                    "This email is not allowed!",
+                );
 
-                    $userId = $userModel->add(
-                        $req->getPost("email"),
-                        0,
-                        $req->getPost("password")
-                    );
-                    
-                    if ($userId) {
-                        if($req->getBooterSettings("registerRoleId") != -1) {
-                            $userModel->addRoleToUserByRoleId(
-                                $userId, 
-                                $req->getBooterSettings("registerRoleId")
-                            );
-                        }
-                        $this->send_verify_mail($req, $res, $userId);
-                        $res->success();
-                    } else {
-                        $res->error();
-                    }
+                // Create the new user account
+                require_once $req->getZRoot().'z_libs/passwordHandler.php';
+                $userId =  $req->getModel("z_user")->add(
+                    $req->getPost("email"),
+                    0,
+                    $req->getPost("password"),
+                );
+
+                // Return if the user was not created
+                if(empty($userId) || !is_numeric($userId)) {
+                    return $res->error();
                 }
+
+                // Allow for two types of accounts
+                $userRoleType = $req->getPost("userRoleType", "");
+                if(!in_array($userRoleType, ["", "Secondary"])) $userRoleType = "";
+
+                // Read the config parameter
+                $configKey = "registerRoleId".$userRoleType;
+                $newUserRoleId = $req->getBooterSettings($configKey);
+
+                // Assign the role if an initial role was defined
+                if(!empty($newUserRoleId) && is_numeric($newUserRoleId)) {
+                    $req->getModel("z_user")->addRoleToUserByRoleId(
+                        $userId,
+                        (int) $newUserRoleId,
+                    );
+                }
+
+                // Send the verification mail
+                $this->send_verify_mail($req, $res, $userId);
+                return $res->success();
             }
 
             $res->render("login_signup.php", [], "layout/min_layout.php");
         }
-        
+
         /**
          * @var bool $action_forgot_password_sitemap If set to true the action_forgot_password will appear in the sitemap
          */

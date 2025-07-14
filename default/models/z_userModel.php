@@ -14,7 +14,7 @@
         /**
          * Returns a user row of the database, selected by the users id
          * @param int $userid ID of the user we want the data about
-         * @return any[] The dataset
+         * @return bool|array|null The dataset
          */
         function getUserById($userid) {
             $query = "SELECT * FROM `z_user` WHERE `id`=?";
@@ -29,7 +29,7 @@
         /**
          * Returns a user row of the database, selected by the users email address
          * @param string $email Email of the user from who we want the data about
-         * @return any[] The dataset
+         * @return bool|array|null The dataset
          */
         function getUserByEmail($email) {
             $query = "SELECT * FROM `z_user` WHERE `email`=?";
@@ -42,8 +42,8 @@
         }
 
         /**
-         * Returns all userdata from the database
-         * @return any[][] The table as a two dimensional array
+         * Returns all user data from the database
+         * @return array[] The table as a two dimensional array
          */
         function getUserList() {
             return $this->getFullTable("z_user");
@@ -112,7 +112,7 @@
         /**
          * Gets all the roles a user has
          * @param int $userId The id of the target user
-         * @return any[] The datasets of the user_role table
+         * @return array[] The datasets of the user_role table
          */
         function getRoles($userId) {
             $sql = "SELECT * FROM z_user_role WHERE user = ? AND active = 1";
@@ -203,33 +203,44 @@
         /**
          * Verifies an users mail address
          * @param string $token. The token from the url the user clicked on.
+         * @return bool True if the user was successfully verified or already was verified
          */
-        function verifyUser($token) {
-            if (!$token) return false;
+        function verifyUser($token): bool {
+            if(!$token) return false;
 
             // Retrieve the token from the database
-            $sql = "SELECT * 
-                    FROM `z_email_verify` 
-                    WHERE token = ? 
-                    AND `active` = 1";
+            $sql = "SELECT zev.*
+                    FROM `z_email_verify` AS zev
+                    LEFT JOIN `z_user` AS zu
+                    ON zev.`user` = zu.`id`
+                    WHERE `token` = ?
+                    AND (
+                        -- Either the token is still valid and unused
+                        (
+                            zev.`active` = 1
+                            -- Verification is invalid if the token is too old
+                            AND zev.`end` > CURRENT_TIMESTAMP()
+                        )
+                        -- Or the user is already verified
+                        OR zu.`verified` IS NOT NULL
+                    )
+                    LIMIT 1";
             $this->exec($sql, "s", $token);
             $result = $this->resultToLine();
 
             // If the token was not found, the attempt is invalid
-            if (!isset($result)) return false;
-
-            // Verification is invalid if the token is too old
-            if (time() > strtotime($result["end"])) return false;
+            if(!isset($result)) return false;
+            if(!empty($result["verified"])) return true;
 
             // Remove the token from the database
-            $sql = "UPDATE z_email_verify 
+            $sql = "UPDATE z_email_verify
                     SET active = 0
                     WHERE id = ?";
             $this->exec($sql, "i", $result["id"]);
 
             // Mark the user as verified
-            $sql = "UPDATE z_user 
-                    SET verified = CURRENT_TIMESTAMP() 
+            $sql = "UPDATE z_user
+                    SET verified = CURRENT_TIMESTAMP()
                     WHERE id = ?";
             $this->exec($sql, "i", $result["user"]);
 
