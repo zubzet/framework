@@ -1,0 +1,29 @@
+{
+    "name": "zubzet/framework",
+    "version": "0.11.0",
+    "authors": [{
+        "name": "Alexander Zierhut",
+        "email": "alex@zierhut-it.de",
+        "homepage": "https://alzlper.com"
+    }, {
+        "name": "Adrian Urban",
+        "email": "adrian.urban@zierhut-it.de"
+    }],
+    "license": "GPL-3.0-or-later",
+    "support": {
+        "email": "info@zierhut-it.de",
+        "wiki": "https://docs.zubzet.de"
+    },
+    "require": {
+        "php": ">=8.0",
+        "zubzet/password-hash-utilities": "1.0.*"
+    },
+    "autoload": {
+        "classmap": [
+            "main.php"
+        ],
+        "psr-4": {
+            "ZubZet\\": ""
+        }
+    }
+}
