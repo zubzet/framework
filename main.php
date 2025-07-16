@@ -1,4 +1,6 @@
 <?php
+    use Slim\Factory\AppFactory;
+
     /**
      * Also known as the booter.
      */
@@ -71,6 +73,9 @@
         /** @var string $z_views Directory of the views */
         public $z_views = "z_views/";
 
+        /** @var string $routes Directory of the routes */
+        public $routes = "routes/";
+
         /** @var string $config_file Path to the config file */
         public $config_file = "z_config/z_settings.ini";
 
@@ -110,6 +115,7 @@
                 "controllers" => &$this->z_controllers, 
                 "models" => &$this->z_models, 
                 "views" => &$this->z_views, 
+                "routes" => &$this->routes,
                 "config" => &$this->config_file
             ];
 
@@ -241,6 +247,58 @@
             for ($i = 0; $i < count($this->rootDirectory); $i++) array_shift($urlParts);
 
             return $urlParts;
+        }
+
+        /*
+         * Handles the incoming request
+         * Firstly, it tryes to load routes from Slim, then it falls back to the ZubZet framework.
+         */
+        public function handleRequest() {
+            // Create a new Slim App instance
+            $app = AppFactory::create();
+
+            // Initialize the Route class with the Slim app and this framework instance
+            Route::init($app, $this);
+
+            // Uses to register all routes for Slim
+            $this->loadRoutes($app);
+
+            // If no routes were registered, use the ZubZet framework
+            $app->addErrorMiddleware(true, true, true)
+                ->setErrorHandler(
+                    \Slim\Exception\HttpNotFoundException::class,
+                    function (
+                        \Psr\Http\Message\ServerRequestInterface $request,
+                        \Throwable $exception,
+                        bool $displayErrorDetails,
+                        bool $logErrors,
+                        bool $logErrorDetails
+                    ) {
+                        // Fallback to ZubZet
+                        $this->execute();
+
+                        // exit the Slim app to prevent further processing
+                        exit;
+                    }
+                );
+
+            // Execute the Slim Route
+            $app->run();
+        }
+
+        /*
+        * Loads all routes in "z_routes"
+        */
+        private function loadRoutes($app) {
+            // get all php files in the z_routes directory
+            $routeFiles = glob($this->routes . "/*.php");
+
+            // require them to register the routes
+            foreach ($routeFiles as $file) {
+                require_once $file;
+            }
+
+            Route::registerDeferredFallbacks();
         }
 
         /** 
