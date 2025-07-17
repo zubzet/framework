@@ -11,6 +11,8 @@
      */
     class Request extends RequestResponseHandler {
 
+        public array $urlParameters = [];
+
         /**
          * @var array Store values within the Request to pass through data within internal redirects
          */

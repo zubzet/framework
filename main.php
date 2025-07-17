@@ -321,28 +321,12 @@
             $this->executePath($this->urlParts);
         }
 
-        /**
-        * Executes an action for a specified path
-        * @param array $parts Example: ["auth", "login"]
-        */
-        public function executePath($parts) {
-            $this->reroutes++;
-            if ($this->reroutes > $this->maxReroutes) die("Error: Too many reroutes. Please contact the webmaster.");
-            
-            if (isset($parts[0])) {
-                $controller = ucfirst($parts[0]) . 'Controller';
-            } else {
-                $controller = $this->defaultIndex;
-            }
 
-            if (isset($parts[1])) {
-                $method = "action_" . strtolower($parts[1]);
-            } else {
-                $method = "action_index";
-            }
-            
-            $method = urldecode($method);
+        public function executeControllerAction($controller, $action, array $params = []) {
+            $this->req->urlParameters = $params;
+
             $controller = urldecode($controller);
+            $method = urldecode($action);
 
             foreach ($this->action_pattern_replacement as $apr) {
                 $method = str_replace($apr[0], $apr[1], $method);
@@ -391,7 +375,29 @@
                     return $this->executePath(["error", "500"]);
                 }
             }
-            
+        }
+
+        /**
+        * Executes an action for a specified path
+        * @param array $parts Example: ["auth", "login"]
+        */
+        public function executePath($parts) {
+            $this->reroutes++;
+            if ($this->reroutes > $this->maxReroutes) die("Error: Too many reroutes. Please contact the webmaster.");
+
+            if (isset($parts[0])) {
+                $controller = ucfirst($parts[0]) . 'Controller';
+            } else {
+                $controller = $this->defaultIndex;
+            }
+
+            if (isset($parts[1])) {
+                $method = "action_" . strtolower($parts[1]);
+            } else {
+                $method = "action_index";
+            }
+
+            $this->executeControllerAction($controller, $method);
         }
 
         /**
