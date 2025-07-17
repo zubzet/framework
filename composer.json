@@ -16,7 +16,7 @@
             "main.php"
         ],
         "psr-4": {
-            "ZubZet\\": "src/"
+            "ZubZet\\Framework\\": "src/"
         }
     }
 }

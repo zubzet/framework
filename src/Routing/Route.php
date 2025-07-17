@@ -1,65 +1,16 @@
 <?php
 
-    use Slim\App;
-    use Slim\Routing\RouteCollectorProxy;
-    use Psr\Http\Message\ServerRequestInterface as sRequest;
-    use Psr\Http\Message\ResponseInterface as sResponse;
-    use Slim\Interfaces\RouteInterface;
-    use Slim\Interfaces\RouteGroupInterface;
+namespace ZubZet\Framework\Routing;
 
-    class PendingRoutingState {
+use Exception;
+use Slim\App;
+use Slim\Routing\RouteCollectorProxy;
+use Psr\Http\Message\ServerRequestInterface as sRequest;
+use Psr\Http\Message\ResponseInterface as sResponse;
+use Slim\Interfaces\RouteInterface;
+use Slim\Interfaces\RouteGroupInterface;
 
-        public array $middleware = [];
-
-        public function middleware(array $middleware): self {
-            $this->middleware[] = $middleware;
-            return $this;
-        }
-    }
-
-    class PendingRoute extends PendingRoutingState{
-
-        public function __construct(
-            private string $method,
-            private string $endpoint,
-            private array $action,
-        ) {}
-
-        public function __destruct() {
-            if(str_ends_with($this->endpoint, '/*')) {
-                $this->endpoint = substr_replace($this->endpoint, '{param:.*}', -1);
-            }
-
-            Route::performRoute(
-                $this->method,
-                $this->endpoint,
-                $this->action,
-                ...$this->middleware
-            );
-        }
-    }
-
-    class PendingGroup extends PendingRoutingState {
-
-        private string $prefix;
-        private $callback;
-
-        public function __construct(string $prefix, callable $callback) {
-            $this->prefix = $prefix;
-            $this->callback = $callback;
-        }
-
-        public function __destruct() {
-            Route::performGroup(
-                $this->prefix, 
-                $this->callback, 
-                ...$this->middleware
-            );
-        }
-    }
-
-
-    class Route {
+class Route {
 
         /**
          * The framework bootstrapper instance.
@@ -104,7 +55,7 @@
          */
         private static function getCurrentRouter(): App|RouteCollectorProxy {
             if (empty(self::$routerStack)) {
-                throw new LogicException("Router has not been initialized. Please call Route::init() first.");
+                throw new Exception("Router has not been initialized. Please call Route::init() first.");
             }
             return end(self::$routerStack);
         }
@@ -196,4 +147,5 @@
             }
         }
     }
+
 ?>

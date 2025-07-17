@@ -1,5 +1,6 @@
 <?php
     use Slim\Factory\AppFactory;
+    use ZubZet\Framework\Routing\Route;
 
     /**
      * Also known as the booter.
