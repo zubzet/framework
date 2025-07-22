@@ -13,6 +13,14 @@
 
         public array $urlParameters = [];
 
+        public function getRouteParameter($key = null) {
+            if(isset($key)) {
+                return $this->urlParameters[$key] ?? null;
+            }
+
+            return $this->urlParameters;
+        }
+
         /**
          * @var array Store values within the Request to pass through data within internal redirects
          */
