@@ -278,8 +278,8 @@
                         // Fallback to ZubZet
                         $this->execute();
 
-                        // exit the Slim app to prevent further processing
-                        exit;
+                        // return the Slim app to prevent further processing
+                        return new \Slim\Psr7\Response();
                     }
                 );
 

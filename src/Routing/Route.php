@@ -124,7 +124,7 @@ class Route {
 
             $route = $router->$method($endpoint, function (sRequest $request, sResponse $response, $args) use ($controllerClass, $actionMethod) {
                 self::$booter->executeControllerAction($controllerClass, $actionMethod, $args);
-                exit;
+                return new \Slim\Psr7\Response();
             });
 
             self::performMiddlewareChecks($middlewares, $route);
@@ -142,13 +142,9 @@ class Route {
 
                     $result = self::$booter->executeControllerAction($middlewareClass, $middlewareMethod, $args);
 
-                    if($result !== true) {
-                        $res = new \Slim\Psr7\Response();
-                        $res->getBody()->write("Middleware $middlewareClass::$middlewareMethod denied access");
-                        return $res->withStatus(403);
-                    }
+                    if($result === true) return $handler->handle($request);
 
-                    return $handler->handle($request);
+                    return new \Slim\Psr7\Response();
                 });
             }
         }
