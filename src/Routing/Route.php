@@ -74,25 +74,33 @@ class Route {
             return new PendingGroup($prefix, $callback);
         }
 
-        static function performFallback(string $endpoint, array $action) {
+        static function performFallback(string $endpoint, string $method, array $action, array ...$middlewares): void {
             $fullPrefix = implode('', self::$prefixStack);
 
             // Saves the fallback details for later registration.
             self::$deferredFallbacks[] = [
+                'method'   => 'get',
                 'prefix'   => $fullPrefix,
                 'endpoint' => $endpoint,
-                'action'   => $action
+                'action'   => $action,
+                'middlewares' => $middlewares
             ];
         }
 
         public static function registerDeferredFallbacks(): void {
+            usort(self::$deferredFallbacks, function ($a, $b) {
+                $countA = substr_count($a['prefix'] . $a['endpoint'], '/');
+                $countB = substr_count($b['prefix'] . $b['endpoint'], '/');
+                return $countB <=> $countA; // Absteigend sortieren
+            });
+
             foreach (self::$deferredFallbacks as $fallback) {
-                // Combine the stored prefix and the endpoint.
                 $fullPath = $fallback['prefix'] . $fallback['endpoint'];
                 self::performRoute(
-                    'get',
-                    $fullPath, // Add the wildcard pattern
-                    $fallback['action']
+                    $fallback['method'],
+                    $fullPath,
+                    $fallback['action'],
+                    ...$fallback['middlewares']
                 );
             }
         }

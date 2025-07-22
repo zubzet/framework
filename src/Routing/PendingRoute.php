@@ -13,6 +13,14 @@ class PendingRoute extends PendingRoutingState {
     public function __destruct() {
         if(str_ends_with($this->endpoint, '/*')) {
             $this->endpoint = substr_replace($this->endpoint, '{param:.*}', -1);
+
+            Route::performFallback(
+                $this->endpoint, 
+                $this->method, 
+                $this->action, 
+                ...$this->middleware
+            );
+            return;
         }
 
         Route::performRoute(
