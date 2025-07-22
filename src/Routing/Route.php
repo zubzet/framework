@@ -9,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface as sRequest;
 use Psr\Http\Message\ResponseInterface as sResponse;
 use Slim\Interfaces\RouteInterface;
 use Slim\Interfaces\RouteGroupInterface;
+use Slim\Routing\RouteContext;
 
 class Route {
 
@@ -134,7 +135,12 @@ class Route {
                 [$middlewareClass, $middlewareMethod] = $middleware;
 
                 $routable->add(function ($request, $handler) use ($middlewareClass, $middlewareMethod) {
-                    $result = self::$booter->executeControllerAction($middlewareClass, $middlewareMethod);
+                    // Get the current route context and arguments.
+                    $route = RouteContext::fromRequest($request)->getRoute();
+                    // If the route is null, we assume no arguments are needed.
+                    $args = $route?->getArguments() ?? [];
+
+                    $result = self::$booter->executeControllerAction($middlewareClass, $middlewareMethod, $args);
 
                     if($result !== true) {
                         $res = new \Slim\Psr7\Response();
