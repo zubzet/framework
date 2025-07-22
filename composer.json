@@ -7,14 +7,16 @@
     },
     "require": {
         "php": ">=8.0",
-        "zubzet/password-hash-utilities": "1.0.*"
+        "zubzet/password-hash-utilities": "1.0.*",
+        "slim/slim": "^4.14",
+        "slim/psr7": "^1.7"
     },
     "autoload": {
         "classmap": [
             "main.php"
         ],
         "psr-4": {
-            "ZubZet\\": "src/"
+            "ZubZet\\Framework\\": "src/"
         }
     }
 }
