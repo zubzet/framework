@@ -499,6 +499,34 @@
             return $result;
         }
 
+        /**
+         * Get the JSON body of the request
+         * 
+         * This method reads the raw input from the request body and decodes it as JSON.
+         * If the body is empty or contains invalid JSON, an empty array is returned.
+         * 
+         * @return array An associative array containing the JSON data, or an empty array if the body is empty or invalid.
+         */
+        public function getJsonBody(): array {
+            // Retrieve the raw body content from the request
+            $body = file_get_contents('php://input');
+
+            // If the body is empty, return an empty array
+            if (empty($body)) {
+                return [];
+            }
+
+            // Convert the JSON body to an associative array
+            $json = json_decode($body, true);
+
+            // If json_decode fails (e.g., due to invalid JSON), return an empty array
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return [];
+            }
+
+            return $json;
+        }
+
     }
 
     /**
