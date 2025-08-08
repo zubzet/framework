@@ -16,7 +16,8 @@ class PendingGroup extends PendingRoutingState {
         Route::performGroup(
             $this->prefix, 
             $this->callback, 
-            ...$this->middleware
+            $this->middleware,
+            $this->afterMiddleware
         );
     }
 }

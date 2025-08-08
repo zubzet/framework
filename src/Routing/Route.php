@@ -70,10 +70,46 @@ class Route {
             return new PendingGroup($prefix, $callback);
         }
 
+<<<<<<< HEAD
+=======
+        static function performFallback(string $endpoint, string $method, array $action, array $middlewares, array $afterMiddleware): void {
+            $fullPrefix = implode('', self::$prefixStack);
+
+            // Saves the fallback details for later registration.
+            self::$deferredFallbacks[] = [
+                'method'   => 'get',
+                'prefix'   => $fullPrefix,
+                'endpoint' => $endpoint,
+                'action'   => $action,
+                'middlewares' => $middlewares,
+                'afterMiddleware' => $afterMiddleware
+            ];
+        }
+
+        public static function registerDeferredFallbacks(): void {
+            usort(self::$deferredFallbacks, function ($a, $b) {
+                $countA = substr_count($a['prefix'] . $a['endpoint'], '/');
+                $countB = substr_count($b['prefix'] . $b['endpoint'], '/');
+                return $countB <=> $countA; // Absteigend sortieren
+            });
+
+            foreach (self::$deferredFallbacks as $fallback) {
+                $fullPath = $fallback['prefix'] . $fallback['endpoint'];
+                self::performRoute(
+                    $fallback['method'],
+                    $fullPath,
+                    $fallback['action'],
+                    $fallback['middlewares'],
+                    $fallback['afterMiddleware']
+                );
+            }
+        }
+
+>>>>>>> dc14d76 (✨ Afterware)
         /**
          * Creates a route group.
          */
-        static function performGroup(string $prefix, callable $callback, array ...$middlewares): void {
+        static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware): void {
             $parentRouter = self::getCurrentRouter();
 
             // Push the prefix onto the stack.
@@ -89,9 +125,10 @@ class Route {
             array_pop(self::$prefixStack);
 
             self::performMiddlewareChecks($middlewares, $group);
+            self::performAfterMiddlewareChecks($afterMiddleware, $group);
         }
 
-        public static function performRoute(string $method, string $endpoint, array $action, array ...$middlewares): void {
+        public static function performRoute(string $method, string $endpoint, array $action, array $middlewares, array $afterMiddleware): void {
             [$controllerClass, $actionMethod] = $action;
             $router = self::getCurrentRouter();
 
@@ -101,6 +138,7 @@ class Route {
             });
 
             self::performMiddlewareChecks($middlewares, $route);
+            self::performAfterMiddlewareChecks($afterMiddleware, $route);
         }
 
         private static function performMiddlewareChecks(array $middlewares, RouteInterface|RouteGroupInterface $routable): void {
@@ -116,6 +154,27 @@ class Route {
                     $result = self::$booter->executeControllerAction($middlewareClass, $middlewareMethod, $args);
 
                     if($result === true) return $handler->handle($request);
+
+                    return new \Slim\Psr7\Response();
+                });
+            }
+        }
+
+        private static function performAfterMiddlewareChecks(array $afterMiddlewares, RouteInterface|RouteGroupInterface $routable): void {
+            foreach($afterMiddlewares as $afterMiddleware) {
+                [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
+
+                $routable->add(function ($request, $handler) use ($afterMiddlewareClass, $afterMiddlewareMethod) {
+                    $handler->handle($request);
+
+                    // Get the current route context and arguments.
+                    $route = RouteContext::fromRequest($request)->getRoute();
+
+                    // If the route is null, we assume no arguments are needed.
+                    $args = $route?->getArguments() ?? [];
+
+                    // Execute the after middleware action.
+                    self::$booter->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
 
                     return new \Slim\Psr7\Response();
                 });
