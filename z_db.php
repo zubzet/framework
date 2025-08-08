@@ -3,10 +3,24 @@
      * z_db is used as a proxy for all database actions
      */
 
+    use Cake\Database\Driver\Mysql;
+    use Cake\Database\Connection;
+    use Cake\Database\QueryCompiler;
+    use Cake\Database\ValueBinder;
+
     /**
      * Proxy for all database access. Also holds utility functions
      */
     class z_db {
+
+        public Connection $cakeConnection;
+
+        public function convertToQuery($query) {
+            $compiler = new QueryCompiler();
+            $sql = $compiler->compile($query, new ValueBinder());
+
+            return $sql;
+        }
         
         /**
          * @var mysqli $conn Connection to the database
@@ -52,6 +66,10 @@
          * When instanced, a db connection is given as a refrence
          */
         public function __construct(&$booter) {
+            $this->cakeConnection = new Connection([
+                'driver' => Mysql::class,
+            ]);
+
             $this->booter = $booter;
             $this->connectTimeout = $booter->req->getBooterSettings(
                 "db_connection_timeout",
