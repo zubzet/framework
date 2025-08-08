@@ -507,7 +507,7 @@
          * 
          * @return array An associative array containing the JSON data, or an empty array if the body is empty or invalid.
          */
-        public function getJsonBody(): array {
+        public function getBody(): array {
             // Retrieve the raw body content from the request
             $body = file_get_contents('php://input');
 
