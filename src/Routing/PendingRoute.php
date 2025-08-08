@@ -11,11 +11,28 @@ class PendingRoute extends PendingRoutingState {
     ) {}
 
     public function __destruct() {
+<<<<<<< HEAD
+=======
+        if(str_ends_with($this->endpoint, '/*')) {
+            $this->endpoint = substr_replace($this->endpoint, '{param:.*}', -1);
+
+            Route::performFallback(
+                $this->endpoint, 
+                $this->method, 
+                $this->action, 
+                $this->middleware,
+                $this->afterMiddleware
+            );
+            return;
+        }
+
+>>>>>>> dc14d76 (✨ Afterware)
         Route::performRoute(
             $this->method,
             $this->endpoint,
             $this->action,
-            ...$this->middleware
+            $this->middleware,
+            $this->afterMiddleware
         );
     }
 }
