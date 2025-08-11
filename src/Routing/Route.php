@@ -124,8 +124,7 @@ class Route {
             // Pop the prefix from the stack after leaving the group.
             array_pop(self::$prefixStack);
 
-            self::performMiddlewareChecks($middlewares, $group);
-            self::performAfterMiddlewareChecks($afterMiddleware, $group);
+            self::performRouteInclusions($middlewares, $afterMiddleware, $group);
         }
 
         public static function performRoute(string $method, string $endpoint, array $action, array $middlewares, array $afterMiddleware): void {
@@ -137,48 +136,39 @@ class Route {
                 return new \Slim\Psr7\Response();
             });
 
-            self::performMiddlewareChecks($middlewares, $route);
-            self::performAfterMiddlewareChecks($afterMiddleware, $route);
+            self::performRouteInclusions($middlewares, $afterMiddleware, $route);
         }
 
-        private static function performMiddlewareChecks(array $middlewares, RouteInterface|RouteGroupInterface $routable): void {
-            foreach($middlewares as $middleware) {
-                [$middlewareClass, $middlewareMethod] = $middleware;
+        private static function performRouteInclusions(array $middlewares, array $afterMiddlewares, RouteInterface|RouteGroupInterface $routable): void {
 
-                $routable->add(function ($request, $handler) use ($middlewareClass, $middlewareMethod) {
-                    // Get the current route context and arguments.
-                    $route = RouteContext::fromRequest($request)->getRoute();
-                    // If the route is null, we assume no arguments are needed.
-                    $args = $route?->getArguments() ?? [];
+            $routable->add(function ($request, $handler) use ($middlewares, $afterMiddlewares) {
+                // Get the current route context and arguments.
+                $route = RouteContext::fromRequest($request)->getRoute();
+                // If the route is null, we assume no arguments are needed.
+                $args = $route?->getArguments() ?? [];
+
+                foreach($middlewares as $middleware) {
+                    [$middlewareClass, $middlewareMethod] = $middleware;
 
                     $result = self::$booter->executeControllerAction($middlewareClass, $middlewareMethod, $args);
 
-                    if($result === true) return $handler->handle($request);
+                    if($result === true) continue;
 
+                    // If any middleware returns false, we stop processing and return an empty response.
                     return new \Slim\Psr7\Response();
-                });
-            }
-        }
+                }
 
-        private static function performAfterMiddlewareChecks(array $afterMiddlewares, RouteInterface|RouteGroupInterface $routable): void {
-            foreach($afterMiddlewares as $afterMiddleware) {
-                [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
+                $handler->handle($request);
 
-                $routable->add(function ($request, $handler) use ($afterMiddlewareClass, $afterMiddlewareMethod) {
-                    $handler->handle($request);
+                foreach($afterMiddlewares as $afterMiddleware) {
+                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
 
-                    // Get the current route context and arguments.
-                    $route = RouteContext::fromRequest($request)->getRoute();
-
-                    // If the route is null, we assume no arguments are needed.
-                    $args = $route?->getArguments() ?? [];
-
-                    // Execute the after middleware action.
                     self::$booter->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
+                }
 
-                    return new \Slim\Psr7\Response();
-                });
-            }
+                return new \Slim\Psr7\Response();
+            });
+
         }
     }
 
