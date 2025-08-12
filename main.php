@@ -298,8 +298,6 @@
             foreach ($routeFiles as $file) {
                 require_once $file;
             }
-
-            Route::registerDeferredFallbacks();
         }
 
         /** 
