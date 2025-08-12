@@ -26,12 +26,6 @@ class Route {
         private static array $routerStack = [];
 
         /**
-         * Array to store fallback routes.
-         * @var array
-         */
-        private static array $deferredFallbacks = [];
-
-        /**
          * Stack to manage group prefixes.
          * @var string[]
          */
@@ -74,37 +68,6 @@ class Route {
 
         static function group(string $prefix, callable $callback): PendingGroup {
             return new PendingGroup($prefix, $callback);
-        }
-
-        static function performFallback(string $endpoint, string $method, array $action, array ...$middlewares): void {
-            $fullPrefix = implode('', self::$prefixStack);
-
-            // Saves the fallback details for later registration.
-            self::$deferredFallbacks[] = [
-                'method'   => 'get',
-                'prefix'   => $fullPrefix,
-                'endpoint' => $endpoint,
-                'action'   => $action,
-                'middlewares' => $middlewares
-            ];
-        }
-
-        public static function registerDeferredFallbacks(): void {
-            usort(self::$deferredFallbacks, function ($a, $b) {
-                $countA = substr_count($a['prefix'] . $a['endpoint'], '/');
-                $countB = substr_count($b['prefix'] . $b['endpoint'], '/');
-                return $countB <=> $countA; // Absteigend sortieren
-            });
-
-            foreach (self::$deferredFallbacks as $fallback) {
-                $fullPath = $fallback['prefix'] . $fallback['endpoint'];
-                self::performRoute(
-                    $fallback['method'],
-                    $fullPath,
-                    $fallback['action'],
-                    ...$fallback['middlewares']
-                );
-            }
         }
 
         /**
