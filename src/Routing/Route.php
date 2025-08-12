@@ -67,6 +67,8 @@ class Route {
         public static function put(string $endpoint, array $action): PendingRoute { return new PendingRoute('put', $endpoint, $action); }
         public static function delete(string $endpoint, array $action): PendingRoute { return new PendingRoute('delete', $endpoint, $action); }
         public static function patch(string $endpoint, array $action): PendingRoute { return new PendingRoute('patch', $endpoint, $action); }
+        public static function options(string $endpoint, array $action): PendingRoute { return new PendingRoute('options', $endpoint, $action); }
+        public static function define(string $method, string $endpoint, array $action): PendingRoute { return new PendingRoute($method, $endpoint, $action); }
 
 
 
