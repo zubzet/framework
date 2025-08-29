@@ -26,13 +26,13 @@
         public $z_framework_root = __DIR__ . DIRECTORY_SEPARATOR;
 
         /** @var string $z_controllers Directory in which the controllers live */
-        public $z_controllers = "z_controllers/";
+        public $z_controllers = "app/Controller/";
 
         /** @var string $z_models Directory in which the models live */
-        public $z_models = "z_models/";
+        public $z_models = "app/Model/";
 
         /** @var string $z_views Directory of the views */
-        public $z_views = "z_views/";
+        public $z_views = "app/View/";
 
         /** @var string $routes Directory of the routes */
         public $routes = "routes/";
