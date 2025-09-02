@@ -20,9 +20,6 @@
         /** @var string $url URL to reach this page */
         public $url;
 
-        /** @var mysqli $conn Database connection object */
-        private $conn;
-
         /** @var string $dbhost Hostname of the machine on which the database resides */
         public $dbhost;
 
