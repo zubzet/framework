@@ -244,7 +244,11 @@
          * @param array<string, string> $types Associative array containing the types to be used for casting.
          * @return \Cake\Database\Query\SelectQuery
         */
-        public function dbSelect($fields = [], $table = [], array $types = []) {
+        public function dbSelect(
+            $fields = [],
+            $table = [],
+            array $types = []
+        ) {
             return $this->getQueryBuilder()->selectQuery($fields, $table, $types);
         }
 
@@ -257,7 +261,12 @@
          * @param array<string, string> $types Associative array containing the types to be used for casting.
          * @return \Cake\Database\Query\UpdateQuery
         */
-        public function dbUpdate($table = null, array $values = [], array $conditions = [], array $types = []) {
+        public function dbUpdate(
+            $table = null,
+            array $values = [],
+            array $conditions = [],
+            array $types = []
+        ) {
             return $this->getQueryBuilder()->updateQuery($table, $values, $conditions, $types);
         }
 
@@ -269,7 +278,7 @@
          * @param array<string, string> $types Associative array containing the types to be used for casting.
          * @return \Cake\Database\Query\DeleteQuery
         */
-        public function dbDelete(string $table, array $conditions = [], array $types = []) {
+        public function dbDelete(?string $table = null, array $conditions = [], array $types = []) {
             return $this->getQueryBuilder()->deleteQuery($table, $conditions, $types);
         }
 
@@ -281,7 +290,7 @@
          * @param array<int|string, string> $types Associative array containing the types to be used for casting.
          * @return \Cake\Database\Query\InsertQuery
         */
-        public function dbInsert(string $table = null, array $values = [], array $types = []) {
+        public function dbInsert(?string $table = null, array $values = [], array $types = []) {
             return $this->getQueryBuilder()->insertQuery($table, $values, $types);
         }
 
