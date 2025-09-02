@@ -95,6 +95,7 @@ nav:
         - How To Contribute: setup/how-to-contribute.md
         - How To Update: setup/how-to-update.md
         - How to Upgrade:
+            - 0.11 to 1.0.0: setup/upgrade/0.11-to-1.0.0.md
             - 0.10 to 0.11: setup/upgrade/0.10-to-0.11.md
             - 0.9 to 0.10: setup/upgrade/0.9-to-0.10.md
     - Core Features:
@@ -108,6 +109,8 @@ nav:
         - Configuration: core-features/configuration.md
         - REST API: core-features/rest-api.md
         - Parameter Abstraction: core-features/parameter-abstraction.md
+        - Routing: core-features/routing.md
+        - QueryBuilder: core-features/query-builder.md
     - Z-Admin:
         - Genral Usage: z-admin/usage.md
         - Login as another User: z-admin/login-as-another-user.md
