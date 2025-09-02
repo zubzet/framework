@@ -138,6 +138,7 @@ class Route {
 
             self::performRouteInclusions($middlewares, $afterMiddleware, $route);
         }
+        private static $isCancelled = false;
 
         private static function performRouteInclusions(array $middlewares, array $afterMiddlewares, RouteInterface|RouteGroupInterface $routable): void {
 
@@ -154,12 +155,20 @@ class Route {
 
                     if($result === true) continue;
 
+                    self::$isCancelled = true;
+
                     // If any middleware returns false, we stop processing and return an empty response.
                     return new \Slim\Psr7\Response();
                 }
 
                 $handler->handle($request);
 
+                // Cancel if route processing was cancelled by middleware
+                if(self::$isCancelled) {
+                    return new \Slim\Psr7\Response();
+                }
+
+                // Applying after middlewares
                 foreach($afterMiddlewares as $afterMiddleware) {
                     [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
 
