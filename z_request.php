@@ -509,6 +509,33 @@
             return $result;
         }
 
+        /**
+         * Get the body of the request
+         *
+         * Reads the raw input from the request body.
+         *
+         * @return string The raw body content of the request (Returns an empty string if empty or unavailable).
+         */
+        public function getBody(): string {
+            $body = file_get_contents('php://input'); // string|false
+            return false === $body ? "" : $body;
+        }
+
+        /**
+         * Decode request body as JSON.
+         *
+         * This method decodes the raw request body as JSON and returns the resulting value.
+         * Objects and arrays are returned as associative arrays.
+         *
+         * @return mixed The decoded JSON value, or null if the body is empty.
+         * @throws \JsonException If the body contains invalid JSON.
+         */
+        public function getJson(): mixed {
+            $data = $this->getBody();
+            if('' === $data) return null;
+
+            return json_decode($data, true, flags: JSON_THROW_ON_ERROR);
+        }
     }
 
     /**
