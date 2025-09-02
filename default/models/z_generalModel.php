@@ -10,7 +10,7 @@
 
         /**
          * Gets a list of all languages in the database
-         * @return any[][] The language datasets
+         * @return array[] The language datasets
          */
         function getLanguageList() {
             return $this->getFullTable("z_language");
@@ -19,7 +19,7 @@
         /**
          * Gets a single dataset of a language by its id
          * @param int $id ID of the language
-         * @return any[] Language dataset
+         * @return array|null Language dataset
          */
         function getLanguageById($id) {
             $sql = "SELECT * FROM `z_language` WHERE `id`=?";

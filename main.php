@@ -1,10 +1,13 @@
 <?php
+    use Slim\Factory\AppFactory;
+    use ZubZet\Framework\Routing\Route;
+
     /**
-     * Also known as the booter 
+     * Also known as the booter.
      */
 
     /**
-     * First class that is instantiated at a request
+     * First class that is instantiated during a request.
      */
     class z_framework {
         /** @var array $settings Stores the z_framework settings */
@@ -13,37 +16,40 @@
         /** @var z_db $z_db Database proxy object  */
         public $z_db;
 
-        /** @var int $maxReroutes Number of reroutes controller can do before abort */
+        /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
         public $maxReroutes = 10;
 
-        /** @var int $reroutes Number of how many times this request war rerouted */
+        /** @var int $reroutes Number of times this request was rerouted */
         public $reroutes = 0;
 
-        /** @var string $z_framework_root Directory where the framework stuff lives */
-        public $z_framework_root = "z_framework/";
+        /** @var string $z_framework_root Directory where the framework files live */
+        public $z_framework_root = __DIR__ . DIRECTORY_SEPARATOR;
 
-        /** @var string $z_cnontrollers Directory in which the controllers live */
+        /** @var string $z_controllers Directory in which the controllers live */
         public $z_controllers = "z_controllers/";
 
-        /** @var string $z_models Directory in which the models live in */
+        /** @var string $z_models Directory in which the models live */
         public $z_models = "z_models/";
 
         /** @var string $z_views Directory of the views */
         public $z_views = "z_views/";
 
+        /** @var string $routes Directory of the routes */
+        public $routes = "routes/";
+
         /** @var string $config_file Path to the config file */
         public $config_file = "z_config/z_settings.ini";
 
-        /** @var string $config An associative array of key value config parameters  */
+        /** @var array $config An associative array of key-value config parameters  */
         public $config = [];
 
         /** @var User $user The requesting user */
         public $user;
 
-        /** @var string[] $ControllerStack All visted controllers as an array */
+        /** @var string[] $ControllerStack All visited controllers as an array */
         public $ControllerStack = [];
 
-        /** @var string[] $ActionStack All visted actions as an array */
+        /** @var string[] $ActionStack All visited actions as an array */
         public $ActionStack = [];
 
         /** @var Response $res A reference to an instance of the Response class */
@@ -62,17 +68,15 @@
         ];
         
         /**
-         * Parses all the options as vars and instantiate the z_db and establish the db connection
+         * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct($params = []) {
-
-            chdir(__DIR__."/../");
-
             $param_keys = [
                 "root" => &$this->z_framework_root, 
                 "controllers" => &$this->z_controllers, 
                 "models" => &$this->z_models, 
                 "views" => &$this->z_views, 
+                "routes" => &$this->routes,
                 "config" => &$this->config_file
             ];
 
@@ -175,7 +179,7 @@
 
         /**
          * Updates the error handling state
-         * @param Number $state
+         * @param int|null $state
          */
         public function updateErrorHandling($state = null) {
             //State or attribute check
@@ -197,8 +201,8 @@
         }
 
         /**
-         * Used to parse the url into parts and parameters
-         * Format: root/class/method/parameter/parmameter/...
+         * Used to parse the URL into parts and parameters
+         * Format: root/class/method/parameter/parameter/...
          */
         private function parseUrl() {
             $path = parse_url($this->url, PHP_URL_PATH);
@@ -215,9 +219,59 @@
             return $urlParts;
         }
 
+        /*
+         * Handles the incoming request
+         * Firstly, it tryes to load routes from Slim, then it falls back to the ZubZet framework.
+         */
+        public function handleRequest() {
+            // Create a new Slim App instance
+            $app = AppFactory::create();
+
+            // Initialize the Route class with the Slim app and this framework instance
+            Route::init($app, $this);
+
+            // Uses to register all routes for Slim
+            $this->loadRoutes($app);
+
+            // If no routes were registered, use the ZubZet framework
+            $app->addErrorMiddleware(true, true, true)
+                ->setErrorHandler(
+                    \Slim\Exception\HttpNotFoundException::class,
+                    function (
+                        \Psr\Http\Message\ServerRequestInterface $request,
+                        \Throwable $exception,
+                        bool $displayErrorDetails,
+                        bool $logErrors,
+                        bool $logErrorDetails
+                    ) {
+                        // Fallback to ZubZet
+                        $this->execute();
+
+                        // return the Slim app to prevent further processing
+                        return new \Slim\Psr7\Response();
+                    }
+                );
+
+            // Execute the Slim Route
+            $app->run();
+        }
+
+        /*
+        * Loads all routes in "z_routes"
+        */
+        private function loadRoutes($app) {
+            // get all php files in the z_routes directory
+            $routeFiles = glob($this->routes . "/*.php");
+
+            // require them to register the routes
+            foreach ($routeFiles as $file) {
+                require_once $file;
+            }
+        }
+
         /** 
-         * The Execution of the requested action 
-         * @param Array $customUrlParts example: ["panel", "index"]
+         * Executes the requested action
+         * @param array|null $customUrlParts Example: ["panel", "index"]
          */
         public function execute($customUrlParts = null) {
             global $argv;
@@ -234,28 +288,12 @@
             $this->executePath($this->urlParts);
         }
 
-        /**
-        * Executes a action for a specified path
-        * @param Array $parts exmaple: ["auth", "login"]
-        */
-        public function executePath($parts) {
-            $this->reroutes++;
-            if ($this->reroutes > $this->maxReroutes) die("Error: Too many reroutes. Please contact the webmaster.");
-            
-            if (isset($parts[0])) {
-                $controller = ucfirst($parts[0]) . 'Controller';
-            } else {
-                $controller = $this->defaultIndex;
-            }
 
-            if (isset($parts[1])) {
-                $method = "action_" . strtolower($parts[1]);
-            } else {
-                $method = "action_index";
-            }
-            
-            $method = urldecode($method);
+        public function executeControllerAction($controller, $action, array $params = []) {
+            $this->req->urlParameters = $params;
+
             $controller = urldecode($controller);
+            $method = urldecode($action);
 
             foreach ($this->action_pattern_replacement as $apr) {
                 $method = str_replace($apr[0], $apr[1], $method);
@@ -304,11 +342,33 @@
                     return $this->executePath(["error", "500"]);
                 }
             }
-            
         }
 
         /**
-         * Decodes all data send via post. Decode method can be determined on the prefix of the value
+        * Executes an action for a specified path
+        * @param array $parts Example: ["auth", "login"]
+        */
+        public function executePath($parts) {
+            $this->reroutes++;
+            if ($this->reroutes > $this->maxReroutes) die("Error: Too many reroutes. Please contact the webmaster.");
+
+            if (isset($parts[0])) {
+                $controller = ucfirst($parts[0]) . 'Controller';
+            } else {
+                $controller = $this->defaultIndex;
+            }
+
+            if (isset($parts[1])) {
+                $method = "action_" . strtolower($parts[1]);
+            } else {
+                $method = "action_index";
+            }
+
+            $this->executeControllerAction($controller, $method);
+        }
+
+        /**
+         * Decodes all data sent via POST. Decoding method can be determined by the prefix of the value.
          */
         private function decodePost() {
             array_walk_recursive($_POST, function(&$item) {
@@ -366,8 +426,8 @@
         }
 
         /**
-         * Returns the path of a view. If the view does not exists, this function will fallback to the framework defaults
-         * @param string $document Filename of the view
+         * Returns the path of a view. If the view does not exist, this function will fall back to the framework defaults.
+         * @param string $document Filename of the views
          * @return string Relative path to the view file
          */
         public function getViewPath(...$documents) {
@@ -386,7 +446,7 @@
         }
 
         /**
-         * Answers this request with a rest
+         * Answers this request with a REST
          */
         private function rest($options) {
             require_once $this->z_framework_root.'z_rest.php';

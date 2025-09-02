@@ -11,7 +11,7 @@
         /**
          * Validate a login token retrieved from the users Cookie
          * @param string $token The login token that is saved in the clients cookie
-         * @return any[]|false The user data from the database or false if the token is wrong
+         * @return array|false The user data from the database or false if the token is wrong
          */
         public function validateCookie(string $token): bool|array {
             $sql = "SELECT *
@@ -64,7 +64,7 @@
         /**
          * Gets an user by its email
          * @param string $email The email of the user to get
-         * @return any[] The dataset of the user
+         * @return bool|array|null The dataset of the user
          */
         function getUserByLogin($email) {
             $query = "SELECT * FROM `z_user` WHERE email=?";
@@ -125,7 +125,7 @@
          * Gets the dataset of a reset code
          * @param string $code The reset code
          * @param string $timespan A sql conform formatted time
-         * @param any[]|false The dataset or false
+         * @param false|array The dataset or false
          */
         function getResetCode($code, $timespan) {
             $sql = "SELECT * FROM `z_password_reset` WHERE `refId` = ? AND `created` >= ? AND `active` = 1";

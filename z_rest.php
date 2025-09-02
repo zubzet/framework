@@ -14,13 +14,13 @@
         private $data;
 
         /**
-         * @var string $json The payload formated as json
+         * @var string $json The payload formatted as json
          */
         private $json;
 
         /**
          * Creates a rest object
-         * @param object $data Data should be send.
+         * @param array $data Data should be send.
          * @param string[] $urlParts to which the request was targeted at
          */
         function __construct($data, $urlParts) {

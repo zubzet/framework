@@ -1,0 +1,23 @@
+{
+    "name": "zubzet/framework",
+    "version": "0.11.0",
+    "license": "GPL-3.0-or-later",
+    "support": {
+        "wiki": "https://docs.zubzet.de"
+    },
+    "require": {
+        "php": ">=8.0",
+        "zubzet/password-hash-utilities": "1.0.*",
+        "slim/slim": "^4.14",
+        "slim/psr7": "^1.7",
+        "phpmailer/phpmailer": "^6.7"
+    },
+    "autoload": {
+        "classmap": [
+            "main.php"
+        ],
+        "psr-4": {
+            "ZubZet\\Framework\\": "src/"
+        }
+    }
+}

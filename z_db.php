@@ -19,7 +19,7 @@
         private $stmt;
 
         /**
-         * @var any $result Result of the last query
+         * @var null|bool|mysqli_result $result Result of the last query
          */
         public $result;
 
@@ -194,7 +194,7 @@
          * Converts the result of the last query into a grouped array
          * @param string $groupBy The field, by which the array is grouped by
          * @param string $subElement If set, the only a sub element of the grouped element is returned
-         * @return any[groupBy][] Results of the last query as two dimensional array with the index as thr groupBy value
+         * @return mixed[][] Results of the last query as two dimensional array with the index as thr groupBy value
          */
         public function mergeAsGroup($groupBy, $subElement = null) {
             $elements = $this->resultToArray();
@@ -224,7 +224,7 @@
          * Selects a full table or specified fields of it and returns the result as two dimensional array
          * @param string $table Name of the table in the database
          * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
-         * @return any[][] A two dimensional array with the results of the select statement
+         * @return array[] A two dimensional array with the results of the select statement
          */
         public function getFullTable($table, $fields = "*") {
             $sql = "SELECT $fields FROM $table";
@@ -238,8 +238,8 @@
          * @param string $fields Fields to select. Formatted as in a SQL query ("*", "a, b, c"...)
          * @param string $where The where statement in the query. Formatted as in a SQL query (a = 4 AND c = 4...);
          * @param string $types String with the types. Conform to prepared statements ("ssis")
-         * @param any[] $values The values to insert in the prepared statement
-         * @return any[][] two dimensional array with table data
+         * @param mixed[] $values The values to insert in the prepared statement
+         * @return array[] two dimensional array with table data
          */
         public function getTableWhere($table, $fields = "*", $where = "", $types="", $values = []) {
             $sql = "SELECT $fields FROM $table WHERE $where";
@@ -271,7 +271,7 @@
          * 
          * @param string $table Name of the table to check in
          * @param string $field Field to check in
-         * @param any $value Value to check for
+         * @param mixed $value Value to check for
          * @param string $ignoreField field of a dataset to ignore
          * @param string $ignoreValue value of the in the argument before defined field of the dataset to ignore
          * @return bool True when not exists
@@ -292,7 +292,7 @@
          * 
          * @param string $table Name of the table to check in
          * @param string $field Name of the field in that a value should exist
-         * @param any $value Value to check for
+         * @param mixed $value Value to check for
          * @return bool True when exists
          */
         public function checkIfExists($table, $field, $value) {
