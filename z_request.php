@@ -499,21 +499,16 @@
             return $result;
         }
 
-        private ?string $cachedBody = null;
-
         /**
          * Get the body of the request
-         * 
-         * This method reads the raw input from the request body.
-         * 
-         * @return string The raw body content of the request, or an empty string if the body is empty or invalid.
+         *
+         * Reads the raw input from the request body.
+         *
+         * @return string The raw body content of the request (Returns an empty string if empty or unavailable).
          */
         public function getBody(): string {
-            if($this->cachedBody === null) {
-                $this->cachedBody = file_get_contents('php://input') ?: "";
-            }
-
-            return $this->cachedBody;
+            $body = file_get_contents('php://input'); // string|false
+            return false === $body ? "" : $body;
         }
 
     }
