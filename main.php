@@ -35,7 +35,7 @@
         public $z_views = "app/View/";
 
         /** @var string $routes Directory of the routes */
-        public $routes = "routes/";
+        public $routes = "app/Routes/";
 
         /** @var string $config_file Path to the config file */
         public $config_file = "z_config/z_settings.ini";
