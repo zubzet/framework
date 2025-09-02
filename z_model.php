@@ -89,6 +89,10 @@
                     }
                 }
 
+                if($types === '') {
+                    return $this->z_db->exec($sql);
+                }
+
                 return $this->z_db->exec($sql, $types, ...$values);
             }
 
