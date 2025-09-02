@@ -610,6 +610,11 @@
         public $noSave;
 
         /**
+         * @var boolean $isFile Mark a form field as a file
+         */
+        public bool $isFile = false;
+
+        /**
          * Creates a form field representation
          * @param string $name Name of the field. Should match the name in the post header
          * @param string $dbName Name of the field in the database. If not set it will be equal to the name
@@ -621,7 +626,6 @@
             $this->dataType = "s";
             $this->isRequired = false;
             $this->value = null;
-            $this->isFile = false;
             $this->noSave = false;
         }
 
