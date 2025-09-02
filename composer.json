@@ -3,10 +3,10 @@
     "version": "0.11.0",
     "license": "GPL-3.0-or-later",
     "support": {
-        "wiki": "https://docs.zubzet.de"
+        "wiki": "https://zubzet.com/docs"
     },
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.0 <=8.4",
         "zubzet/password-hash-utilities": "1.0.*",
         "slim/slim": "^4.14",
         "slim/psr7": "^1.7",
