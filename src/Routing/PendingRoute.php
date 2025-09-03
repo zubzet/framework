@@ -11,8 +11,6 @@ class PendingRoute extends PendingRoutingState {
     ) {}
 
     public function __destruct() {
-<<<<<<< HEAD
-=======
         if(str_ends_with($this->endpoint, '/*')) {
             $this->endpoint = substr_replace($this->endpoint, '{param:.*}', -1);
 
@@ -26,7 +24,6 @@ class PendingRoute extends PendingRoutingState {
             return;
         }
 
->>>>>>> dc14d76 (✨ Afterware)
         Route::performRoute(
             $this->method,
             $this->endpoint,

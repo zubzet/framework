@@ -31,6 +31,11 @@ class Route {
          */
         private static array $prefixStack = [];
 
+        /**
+         * Holds deferred fallback routes to be registered later.
+         * @var array[]
+         */
+        private static array $deferredFallbacks = [];
 
         /**
          * Initializes the static Router.
@@ -70,8 +75,6 @@ class Route {
             return new PendingGroup($prefix, $callback);
         }
 
-<<<<<<< HEAD
-=======
         static function performFallback(string $endpoint, string $method, array $action, array $middlewares, array $afterMiddleware): void {
             $fullPrefix = implode('', self::$prefixStack);
 
@@ -105,7 +108,6 @@ class Route {
             }
         }
 
->>>>>>> dc14d76 (✨ Afterware)
         /**
          * Creates a route group.
          */
