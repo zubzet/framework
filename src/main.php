@@ -26,13 +26,13 @@
         public $z_framework_root = __DIR__ . DIRECTORY_SEPARATOR;
 
         /** @var string $z_controllers Directory in which the controllers live */
-        public $z_controllers = "app/Controller/";
+        public $z_controllers = "app/Controllers/";
 
         /** @var string $z_models Directory in which the models live */
-        public $z_models = "app/Model/";
+        public $z_models = "app/Models/";
 
         /** @var string $z_views Directory of the views */
-        public $z_views = "app/View/";
+        public $z_views = "app/Views/";
 
         /** @var string $routes Directory of the routes */
         public $routes = "app/Routes/";
@@ -82,14 +82,6 @@
 
             foreach ($param_keys as $key => $param) {
                 if (isset($params[$key])) $param = $params[$key];
-            }
-
-            //Config file
-            if (!file_exists($this->config_file)) {
-                chdir("./z_framework");
-                require_once "./installer.php";
-                //Open installer
-                exit;
             }
 
             //Parse ini file with inline comments ignored

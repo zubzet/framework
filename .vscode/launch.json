@@ -10,7 +10,8 @@
             "request": "launch",
             "port": 9003,
             "pathMappings": {
-              "/var/www/html/": "${workspaceRoot}/tests/e2e"
+                "/var/www/framework": "${workspaceRoot}",
+                "/var/www/html/": "${workspaceRoot}/tests/e2e"
             }
         }
     ]
