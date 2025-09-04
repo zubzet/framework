@@ -1,2 +1,7 @@
 docs/TODO
+TODO
 vendor/
+node_modules
+log.sql
+sql.log
+**/cypress/screenshots/**
