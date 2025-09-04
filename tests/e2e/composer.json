@@ -1,0 +1,22 @@
+{
+    "type": "project",
+
+    "repositories": [{
+        "type": "path",
+        "url": "../framework",
+        "options": {
+            "symlink": true
+        }
+    }],
+
+    "require": {
+        "zubzet/framework": "*"
+    },
+
+    "config": {
+        "platform": {
+            "ext-ctype": "0"
+        },
+        "sort-packages": true
+    }
+}

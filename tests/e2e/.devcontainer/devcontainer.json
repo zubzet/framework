@@ -1,0 +1,17 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/shyim/devcontainers-features/php:0": {
+      "version": "8.0",
+      "installComposer": true
+    }
+  },
+  "initializeCommand": "sudo apt-get update && sudo apt-get install -y xvfb",
+  "postCreateCommand": "npm install && composer install && npm run start",
+  "forwardPorts": [8080, 8081, 3300],
+  "portsAttributes": {
+    "4000": {"label": "ZubZet Application"},
+    "8081": {"label": "phpMyAdmin"},
+    "3300": {"label": "Mailer"}
+  }
+}

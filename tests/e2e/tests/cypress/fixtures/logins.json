@@ -1,0 +1,32 @@
+{
+    "wrong": {
+        "name": "wrong-user@domain.de",
+        "password": "wrong password"
+    },
+
+    "not_activated": {
+        "name": "not-activated@domain.de",
+        "password": "password"
+    },
+
+    "admin": {
+        "name": "admin@zierhut-it.de",
+        "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa01"
+    },
+
+    "support": {
+        "name": "support@zierhut-it.de",
+        "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa02"
+    },
+
+    "customer": {
+        "name": "customer@zierhut-it.de",
+        "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa03",
+        "password": "password"
+    },
+
+    "customer_new": {
+        "name": "customer-new@zierhut-it.de",
+        "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa05"
+    }
+}

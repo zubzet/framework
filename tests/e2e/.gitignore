@@ -1,0 +1,10 @@
+# This file is named like this by purpose!
+vendor
+scraper/node_modules
+z_config/users
+TODO
+node_modules
+log.sql
+sql.log
+**/cypress/screenshots/**
+uploads/**
