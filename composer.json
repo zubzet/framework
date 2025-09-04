@@ -15,7 +15,7 @@
     },
     "autoload": {
         "classmap": [
-            "main.php"
+            "src/main.php"
         ],
         "psr-4": {
             "ZubZet\\Framework\\": "src/"
