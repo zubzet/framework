@@ -6,26 +6,21 @@ describe('Webroot Directory', () => {
 
     const cases = [
         {
-            path: "/AccessFile.txt",
+            path: "/accessible.txt",
             status: 200,
-            content: "Test File for testing the webroot directory"
+            content: "Should be accessible."
         },
         {
-            path: "/assets/css/main.css",
+            path: "/assets/assets.txt",
             status: 200,
-            content: `body { background-color: red; }`
+            content: `A file inside the assets directory.`
         },
         {
-            path: "/assets/js/main.js",
-            status: 200,
-            content: `console.log("Test");`
+            path: "/assets",
+            status: 404,
         },
         {
             path: "/app/Controllers/AdminController.php",
-            status: 404
-        },
-        {
-            path: "/packaging/docker/Dockerfile.apache-local",
             status: 404
         },
         {

@@ -1,7 +1,5 @@
 <?php return ["body" => function ($opt) { ?>
 
-    TEST
-
     <div id="login-error-label" data-test="error"></div>
 
     <input type="email" id="username" data-test="username">

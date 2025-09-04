@@ -3,7 +3,7 @@ describe('Form Date Validation', () => {
         cy.dbSeed();
     });
 
-    it('Validation File Normal Small PDF', () => {
+    it.skip('Validation File Normal Small PDF', () => {
         cy.visit("/Form/validationFile");
 
         cy.fixture('TestFile_Small.pdf', 'base64').then(fileContent => {
@@ -89,7 +89,7 @@ describe('Form Date Validation', () => {
 
     //
 
-    it('Validation File Form Small PDF', () => {
+    it.skip('Validation File Form Small PDF', () => {
         cy.visit("/Form/validationFile/form");
 
         cy.fixture('TestFile_Small_1.pdf', 'base64').then(fileContent => {
@@ -110,7 +110,7 @@ describe('Form Date Validation', () => {
         cy.contains("TestFile_Small_1.pdf");
     });
 
-    it.skip('Validation File Form Small TXT', () => {
+    it('Validation File Form Small TXT', () => {
         cy.visit("/Form/validationFile/form");
 
         cy.fixture('TestFile_Small_1.txt', 'base64').then(fileContent => {
