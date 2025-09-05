@@ -1,6 +1,19 @@
-# How to Contribute
+# How To Contribute
 
-1. **Clone the Repository**  
+## Commit Messages
+We previously used [gitmoji](https://gitmoji.dev/) for commits.
+From now on, we use [Conventional Commits](https://www.conventionalcommits.org/) instead, to respond to feedback and align with standard practices.
+
+**Format:**
+```<type>(<scope>): <short summary>```
+
+**Examples:**
+- `feat: add a query builder`
+- `chore(dev): setup docker development environment`
+- `test: migrate all qa-suite tests`
+
+## Documentation
+1. **Clone the Repository**
 ```bash
 git clone https://github.com/zubzet/framework.git
 ```

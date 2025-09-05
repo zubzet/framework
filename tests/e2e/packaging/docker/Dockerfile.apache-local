@@ -1,0 +1,10 @@
+FROM registry.zierhut-it.de/internal/php:8.0-xdebug
+
+## Change uid mapping for linux/osx
+ARG USER_UID=1000
+USER root
+RUN usermod --uid $USER_UID apache \
+ && chown -R apache:apache /run/apache2 /var/log/apache2 /var/www
+
+## Switch back to low privilege user
+USER apache

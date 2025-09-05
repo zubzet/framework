@@ -8,7 +8,7 @@ Since there are no actual paths, controllers are tightly bound to the requested 
 
 
 
-## Routing
+## File Routing
 
 The url is separated into 4 relevant parts
 
