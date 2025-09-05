@@ -32,12 +32,6 @@ class Route {
         private static array $prefixStack = [];
 
         /**
-         * Holds deferred fallback routes to be registered later.
-         * @var array[]
-         */
-        private static array $deferredFallbacks = [];
-
-        /**
          * Initializes the static Router.
          * This must be called once before loading route files.
          *
@@ -73,39 +67,6 @@ class Route {
 
         static function group(string $prefix, callable $callback): PendingGroup {
             return new PendingGroup($prefix, $callback);
-        }
-
-        static function performFallback(string $endpoint, string $method, array $action, array $middlewares, array $afterMiddleware): void {
-            $fullPrefix = implode('', self::$prefixStack);
-
-            // Saves the fallback details for later registration.
-            self::$deferredFallbacks[] = [
-                'method'   => 'get',
-                'prefix'   => $fullPrefix,
-                'endpoint' => $endpoint,
-                'action'   => $action,
-                'middlewares' => $middlewares,
-                'afterMiddleware' => $afterMiddleware
-            ];
-        }
-
-        public static function registerDeferredFallbacks(): void {
-            usort(self::$deferredFallbacks, function ($a, $b) {
-                $countA = substr_count($a['prefix'] . $a['endpoint'], '/');
-                $countB = substr_count($b['prefix'] . $b['endpoint'], '/');
-                return $countB <=> $countA; // Absteigend sortieren
-            });
-
-            foreach (self::$deferredFallbacks as $fallback) {
-                $fullPath = $fallback['prefix'] . $fallback['endpoint'];
-                self::performRoute(
-                    $fallback['method'],
-                    $fullPath,
-                    $fallback['action'],
-                    $fallback['middlewares'],
-                    $fallback['afterMiddleware']
-                );
-            }
         }
 
         /**
