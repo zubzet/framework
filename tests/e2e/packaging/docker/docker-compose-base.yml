@@ -45,7 +45,7 @@ services:
   # Backend Services
   database:
     container_name: database
-    image: harbor.zierhut-it.de/hub.docker.com/library/mariadb:10.5.22
+    image: mariadb:10.5.22
     restart: on-failure
     environment:
       MYSQL_DATABASE: app
@@ -63,7 +63,7 @@ services:
 
   # Management Tools
   database_dashboard:
-    image: harbor.zierhut-it.de/hub.docker.com/library/phpmyadmin:latest
+    image: phpmyadmin:latest
     restart: on-failure
     environment:
       PMA_HOSTS: database
@@ -74,7 +74,7 @@ services:
       - 8081:80
 
   mailer:
-    image: harbor.zierhut-it.de/hub.docker.com/rnwood/smtp4dev:latest
+    image: rnwood/smtp4dev:latest
     restart: on-failure
     ports:
       - 3300:80
