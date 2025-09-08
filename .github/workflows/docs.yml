@@ -1,3 +1,16 @@
+name: Distribute Documentation
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+
 jobs:
   build-docs:
     runs-on: ubuntu-latest

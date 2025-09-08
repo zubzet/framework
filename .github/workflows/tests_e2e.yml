@@ -1,10 +1,30 @@
 name: E2E tests
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
+    branches: [ '*' ]
+    types: [ opened, reopened, synchronize, ready_for_review ]
+    paths:
+      - 'tests/e2e/**'
+      - 'composer*'
+      - 'src/**'
+      - '.github/workflows/tests_e2e.yml'
+  push:
+    branches: [ '*' ]
+    tags: [ 'v*.*.*' ]
+    paths:
+      - 'tests/e2e/**'
+      - 'composer*'
+      - 'src/**'
+      - '.github/workflows/tests_e2e.yml'
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Run scope'
+        required: false
+        default: 'smoke'
+        type: choice
+        options: [ smoke, full ]
 
 concurrency:
   group: e2e-${{ github.ref }}
