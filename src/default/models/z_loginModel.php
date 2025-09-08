@@ -3,6 +3,8 @@
      * This file holds the login model
      */
 
+    use ZubZet\Utilities\PasswordHash\PasswordHash;
+
     /**
      * The login model holds logging in and out of users
      */
@@ -73,14 +75,38 @@
             return $this->getResult()->fetch_assoc();
         }
 
-        /** 
+        /**
          * Updates the password of an user
          * @param int $id The id of the user
-         * @param object $pw A password created by the password handler
+         * @param string $password The raw user password
          */
-        function updatePassword($id, $pw) {
-            $sql = "UPDATE `z_user` SET `password`=?, `Salt`=? WHERE `id`=?";
-            $this->exec($sql, "ssi", $pw["hash"], $pw["salt"], $id);
+        public function updatePassword(int $id, string $password): void {
+            $password = PasswordHash::create(
+                $password,
+                "sha512",
+                "0.9",
+            );
+
+            $sql = "UPDATE `z_user`
+                    SET `password`=?, `salt`=?
+                    WHERE `id`=?";
+
+            $this->exec(
+                $sql, "ssi",
+                $password->hash,
+                $password->salt,
+                $id,
+            );
+        }
+
+        public function checkPassword(string $password, string $hash, string $salt): bool {
+            return PasswordHash::checkWithoutUpdate(
+                $password,
+                $hash,
+                $salt,
+                "sha512",
+                "0.9",
+            );
         }
 
         /**

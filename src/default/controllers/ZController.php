@@ -57,8 +57,6 @@
                     return $res->formErrors($formResult->errors);
                 }
 
-                require_once $req->getZRoot().'z_libs/passwordHandler.php';
-
                 $result = $req->getModel("z_user", $res->getZRoot())->add(
                     $req->getPost("email"),
                     $req->getPost("languageId"),

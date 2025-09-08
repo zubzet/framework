@@ -70,21 +70,13 @@
             $this->logActionByCategory("user", "User $email created");
 
             if ($passwordString !== null) {
-                $password = passwordHandler::createPassword($passwordString);
-                $this->updatePassword($insertId, $password);
+                $this->getModel("z_login")->updatePassword(
+                    $insertId,
+                    $passwordString,
+                );
             }
 
             return $insertId;
-        }
-
-        /**
-         * Sets the password for a user
-         * @param int $id Id of the user which password should be changed
-         * @param string $pw The raw unhashed new password
-         */
-        function updatePassword($id, $pw) {
-            $sql = "UPDATE `z_user` SET `password`=?, `Salt`=? WHERE `id`=?";
-            $this->exec($sql, "ssi", $pw["hash"], $pw["salt"], $id);
         }
 
         /**

@@ -1,6 +1,10 @@
 <?php
+
     use Slim\Factory\AppFactory;
     use ZubZet\Framework\Routing\Route;
+    use \Slim\Psr7\Response as HttpResponse;
+    use Slim\Exception\HttpNotFoundException;
+    use Psr\Http\Message\ServerRequestInterface;
 
     /**
      * Also known as the booter.
@@ -228,9 +232,9 @@
             // If no routes were registered, use the ZubZet framework
             $app->addErrorMiddleware(true, true, true)
                 ->setErrorHandler(
-                    \Slim\Exception\HttpNotFoundException::class,
+                    HttpNotFoundException::class,
                     function (
-                        \Psr\Http\Message\ServerRequestInterface $request,
+                        ServerRequestInterface $request,
                         \Throwable $exception,
                         bool $displayErrorDetails,
                         bool $logErrors,
@@ -239,8 +243,8 @@
                         // Fallback to ZubZet
                         $this->execute();
 
-                        // return the Slim app to prevent further processing
-                        return new \Slim\Psr7\Response();
+                        // Return a PSR response to stop further processing
+                        return new HttpResponse();
                     }
                 );
 

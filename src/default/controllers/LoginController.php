@@ -34,9 +34,6 @@
                     $res->error("Username or password is wrong");
                 }
                 
-                //Password handler import
-                require_once $req->getZRoot().'z_libs/passwordHandler.php';
-
                 if ($user["verified"] == NULL) {
                     $link = $req->booter->rootFolder . "login/verify";
                     $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
@@ -79,7 +76,11 @@
                 }
 
                 //Check the password
-                if (passwordHandler::checkPassword($req->getPost("password"), $user["password"], $user["salt"])) {
+                if ($req->getModel("z_login")->checkPassword(
+                    $req->getPost("password"),
+                    $user["password"],
+                    $user["salt"],
+                )) {
                     $res->loginAs($user["id"]);
                     $res->success();
                 } else {
@@ -137,7 +138,6 @@
                 );
 
                 // Create the new user account
-                require_once $req->getZRoot().'z_libs/passwordHandler.php';
                 $userId =  $req->getModel("z_user")->add(
                     $req->getPost("email"),
                     0,
@@ -244,9 +244,11 @@
             if ($req->getPost("password", false) !== false) {
                 
                 //Generating a new password
-                require_once $req->getZRoot().'z_libs/passwordHandler.php';
-                $req->getModel("z_login", $req->getZRoot())->updatePassword($DBResetCode["userId"], passwordHandler::createPassword($req->getPost("password")));
-                
+                $req->getModel("z_login", $req->getZRoot())->updatePassword(
+                    $DBResetCode["userId"],
+                    $req->getPost("password"),
+                );
+
                 //Update reset code active attribute
                 $req->getModel("z_login", $req->getZRoot())->disableResetCode($DBResetCode["id"]);
 
