@@ -1,20 +1,32 @@
 <?php
+    // Config
+    $DB_HOST = 'database';
+    $DB_NAME = 'app';
+    $ROOT_USER = 'root';
+    $ROOT_PASS = 'root_password';
+
+    function db(): mysqli {
+        global $DB_HOST, $DB_NAME, $ROOT_USER, $ROOT_PASS;
+        return new mysqli($DB_HOST, $ROOT_USER, $ROOT_PASS, $DB_NAME);
+    }
+
     function import(string $file) {
-        $cmd = <<<END
-            docker exec -i database \
-            mysql -uapp -papp_password \
-            app < $file;
-        END;
-        echo shell_exec($cmd);
+        $conn = db();
+        $sql = file_get_contents($file);
+        if ($sql) {
+            $conn->multi_query($sql);
+            while ($conn->more_results() && $conn->next_result()) {}
+        }
+        $conn->close();
     }
 
     function drop() {
-        $cmd = <<<END
-            docker exec -i database \
-            mysql -uroot -proot_password \
-            -e 'DROP DATABASE IF EXISTS app; CREATE DATABASE app;';
-        END;
-        shell_exec($cmd);
+        global $DB_NAME;
+        $conn = db();
+        $sql = "DROP DATABASE IF EXISTS `$DB_NAME`; CREATE DATABASE `$DB_NAME`";
+        $conn->multi_query($sql);
+        while ($conn->more_results() && $conn->next_result()) {}
+        $conn->close();
     }
 
     function getFiles(string $path): array {
@@ -23,7 +35,6 @@
         foreach ($rii as $file) {
             if ($file->isDir()) continue;
             $file = $file->getPathname();
-        //    if(str_contains($file, "support")) continue;
             $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if("sql" !== $extension) continue;
             $files[] = $file;
@@ -57,4 +68,5 @@
     // Time difference
     $finishTime = microtime(true);
     echo "Time taken: ".number_format(($finishTime - $importTime), 3)."s\n";
+
 ?>
