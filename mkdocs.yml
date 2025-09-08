@@ -49,8 +49,6 @@ extra:
 # Plugins
 plugins:
     - search
-    - minify:
-        minify_html: true
     - mike:
       deploy_prefix: docs
 
