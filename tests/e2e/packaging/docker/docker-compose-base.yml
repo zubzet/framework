@@ -29,6 +29,7 @@ x-built-application-image: &built-application-image
   volumes:
     - ../../:/var/www/html
     - ../../../../:/var/www/framework
+    - ./site-000-default.conf:/etc/apache2/sites-enabled/000-default.conf:ro
   depends_on:
     database:
       condition: service_healthy
@@ -39,7 +40,7 @@ services:
     container_name: application
     <<: *built-application-image
     ports:
-      - 8080:8080
+      - 8080:80
 
   # Backend Services
   database:

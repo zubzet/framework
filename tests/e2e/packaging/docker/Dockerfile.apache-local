@@ -1,10 +1,35 @@
-FROM registry.zierhut-it.de/internal/php:8.0-xdebug
+# Use the official PHP 8.4 Apache image as base (latest stable PHP with Apache)
+FROM php:8.4-apache
 
-## Change uid mapping for linux/osx
+# ARG for adjusting container user UID to match host (default 1000 for typical Linux/macOS)
 ARG USER_UID=1000
-USER root
-RUN usermod --uid $USER_UID apache \
- && chown -R apache:apache /run/apache2 /var/log/apache2 /var/www
 
-## Switch back to low privilege user
-USER apache
+# Install system packages and PHP extensions
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git nano \
+    libcurl4-openssl-dev libbz2-dev libonig-dev libicu-dev libxml2-dev \
+    libjpeg-dev libpng-dev libwebp-dev libfreetype6-dev \
+    libzip-dev zlib1g-dev \
+    default-libmysqlclient-dev default-mysql-client \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+ && docker-php-ext-install -j$(nproc) bcmath bz2 calendar curl exif gd intl mbstring mysqli pdo_mysql \
+        simplexml sockets xmlreader xmlwriter dom iconv session zip \
+ && pecl install xdebug && docker-php-ext-enable xdebug \
+ && a2enmod rewrite \
+ && rm -rf /var/lib/apt/lists/*
+
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Install Composer (download and install to /usr/local/bin)
+RUN curl -sSL https://getcomposer.org/installer -o /tmp/composer-setup.php && \
+    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
+    rm /tmp/composer-setup.php
+
+# Adjust www-data user UID and GID to match host USER_UID, and fix ownership
+RUN usermod -u $USER_UID www-data && groupmod -g $USER_UID www-data && \
+    chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
+
+# Switch to non-root user for safety
+USER www-data

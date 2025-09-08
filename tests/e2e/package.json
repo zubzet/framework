@@ -1,8 +1,6 @@
 {
-    "name": "sales-stream-dashboard",
-    "description": "Sales Stream Lead Dashboard - Core customer portal",
     "version": "1.0.0",
-    "author": "Zierhut IT Inh. Alexander Zierhut",
+    "author": "Alexander Zierhut",
     "directories": {
         "test": "tests"
     },
@@ -11,24 +9,17 @@
         "docker-compose": "docker compose -f packaging/docker/docker-compose-base.yml",
         "start": "npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed",
         "stop": "npm run docker-compose -- down -v",
-        "shell": "docker exec -it application ash",
-        "seed": "php app/Database/import.php",
+        "shell": "docker exec -it application bash",
+        "seed": "docker exec application php app/Database/import.php",
         "cypress": "cypress open --project tests",
         "tests": "cypress run --project tests"
-    },
-    "repository": {
-        "type": "git",
-        "url": "ssh://git@git.zierhut-it.de:2310/bauTalents/application.git"
     },
     "devDependencies": {
         "chai": "*",
         "cypress": "^13.6.3",
         "mocha": "^10.2.0",
         "node-fetch": "^2.6.1",
-        "puppeteer": "^19.11.1",
+        "puppeteer": "^24.19.0",
         "unicode-substring": "^1.0.0"
-    },
-    "dependencies": {
-        "express-openapi-validator": "^5.3.5"
     }
 }
