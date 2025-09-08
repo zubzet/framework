@@ -1,4 +1,4 @@
-  <?php
+<?php
 
     // -----------------------------
     // Do not change this file as it is the entrypoint for web requests.
