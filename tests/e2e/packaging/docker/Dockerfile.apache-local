@@ -1,35 +1,74 @@
-# Use the official PHP 8.4 Apache image as base (latest stable PHP with Apache)
-FROM php:8.4-apache
+# Use the official PHP Apache image (matrix-friendly: set in CI as 8.0-apache .. 8.4-apache)
+ARG PHP_TAG=8.4-apache
+FROM php:${PHP_TAG}
 
-# ARG for adjusting container user UID to match host (default 1000 for typical Linux/macOS)
 ARG USER_UID=1000
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system packages and PHP extensions
+# Make bash the default shell for nicer heredocs
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git nano \
-    libcurl4-openssl-dev libbz2-dev libonig-dev libicu-dev libxml2-dev \
-    libjpeg-dev libpng-dev libwebp-dev libfreetype6-dev \
-    libzip-dev zlib1g-dev \
-    default-libmysqlclient-dev default-mysql-client \
- && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
- && docker-php-ext-install -j$(nproc) bcmath bz2 calendar curl exif gd intl mbstring mysqli pdo_mysql \
-        simplexml sockets xmlreader xmlwriter dom iconv session zip \
- && pecl install xdebug && docker-php-ext-enable xdebug \
- && a2enmod rewrite \
- && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Buckets to keep things readable
+ARG APT_PACKAGES="git nano curl unzip \
+  libcurl4-openssl-dev libbz2-dev libonig-dev libicu-dev libxml2-dev \
+  libjpeg62-turbo-dev libpng-dev libwebp-dev libfreetype6-dev \
+  libzip-dev zlib1g-dev \
+  libmariadb-dev-compat libmariadb-dev \
+  ${PHPIZE_DEPS}"
 
-# Install Composer (download and install to /usr/local/bin)
-RUN curl -sSL https://getcomposer.org/installer -o /tmp/composer-setup.php && \
-    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
+ARG PHP_EXT_CORE="bcmath bz2 calendar curl exif gd intl mbstring mysqli pdo_mysql sockets iconv session zip"
+ARG PHP_EXT_XML="xmlreader xmlwriter simplexml" # dom is built first, see below
+
+RUN <<BASH
+    set -euo pipefail
+
+    # OS packages
+    apt-get update
+    apt-get install -y --no-install-recommends ${APT_PACKAGES}
+
+    # Setup PHP extensions
+    docker-php-source extract
+
+    # Install GD
+    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
+
+    # Core extensions (no DOM dependency)
+    docker-php-ext-install -j"$(nproc)" ${PHP_EXT_CORE}
+
+    # DOM must be built before XML* that include its headers
+    docker-php-ext-install -j"$(nproc)" dom
+
+    # XML* that depend on DOM
+    CFLAGS="${CFLAGS-} -I/usr/src/php" \
+    CPPFLAGS="${CPPFLAGS-} -I/usr/src/php" \
+    docker-php-ext-install -j"$(nproc)" ${PHP_EXT_XML}
+
+    # XDEBUG START
+    pecl install xdebug
+    docker-php-ext-enable xdebug
+    # XDEBUG END
+
+    # Apache Rewrite engine
+    a2enmod rewrite
+
+    # Cleanup
+    docker-php-source delete
+    apt-get purge -y --auto-remove
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+BASH
+
+# Setup Composer
+RUN <<BASH
+    set -euo pipefail
+    php -r "copy('https://getcomposer.org/installer','/tmp/composer-setup.php');"
+    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
     rm /tmp/composer-setup.php
+BASH
 
-# Adjust www-data user UID and GID to match host USER_UID, and fix ownership
-RUN usermod -u $USER_UID www-data && groupmod -g $USER_UID www-data && \
+# Align www-data UID/GID and ownership
+RUN usermod -u "${USER_UID}" www-data && groupmod -g "${USER_UID}" www-data && \
     chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
 
-# Switch to non-root user for safety
 USER www-data

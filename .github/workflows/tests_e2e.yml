@@ -16,6 +16,22 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        php_tag: [
+          "8.0-apache",
+          "8.1-apache",
+          "8.2-apache",
+          "8.3-apache",
+          "8.4-apache"
+        ]
+
+    env:
+      DISABLE_XDEBUG: "1"
+      COMPOSE_DOCKER_CLI_BUILD: "1"
+      DOCKER_BUILDKIT: "1"
+
     defaults:
       run:
         working-directory: tests/e2e
@@ -42,8 +58,54 @@ jobs:
       - name: Install NPM dependencies
         run: npm ci
 
-      - name: Start application stack
-        run: npm run start
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set PHP base tag in Dockerfile (matrix)
+        run: |
+          DOCKERFILE="packaging/docker/Dockerfile.apache-local"
+
+          # Ensure file exists where compose expects it
+          test -f "$DOCKERFILE"
+
+          # Replace only the very first line (ARG PHP_TAG=...)
+          sed -i "1s|^ARG PHP_TAG=.*$|ARG PHP_TAG=${{ matrix.php_tag }}|" "$DOCKERFILE"
+          echo "Dockerfile first line is now: $(head -n1 "$DOCKERFILE")"
+
+          # Remove XDebug in CI
+          sed -i -E '/^[[:space:]]*# XDEBUG START[[:space:]]*$/,/^[[:space:]]*# XDEBUG END[[:space:]]*$/c\
+          # XDEBUG START\
+          # XDEBUG END' "$DOCKERFILE"
+
+      # Build & cache application image once (reuse across future runs)
+      - name: Docker build (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./tests/e2e/packaging/docker
+          file: ./tests/e2e/packaging/docker/Dockerfile.apache-local
+          tags: docker-application:latest
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=app-${{ matrix.php_tag }}
+          cache-to: type=gha,mode=max,scope=app-${{ matrix.php_tag }}
+
+      # Warm dependent images so compose doesn't have to pull them during up
+      - name: Pre-pull compose services (best effort)
+        run: |
+          docker compose -f packaging/docker/docker-compose-base.yml pull || true
+
+      # Bring stack up without rebuilding the already-built image
+      - name: Start application stack (no rebuild)
+        run: |
+          docker compose -f packaging/docker/docker-compose-base.yml up -d --remove-orphans --wait
+          docker compose -f packaging/docker/docker-compose-base.yml ps
+
+      - name: Install PHP dependencies (inside container)
+        run: |
+          docker exec application composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Seed database
+        run: docker exec application php app/Database/import.php
 
       - name: Run E2E tests (Cypress)
         env:
@@ -51,7 +113,7 @@ jobs:
         run: npm run tests
 
       - name: Upload Cypress videos
-        if: failure() || success()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: cypress-videos
