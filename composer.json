@@ -6,7 +6,7 @@
         "wiki": "https://zubzet.com/docs"
     },
     "require": {
-        "php": ">=8.0 <=8.4",
+        "php": ">=8.0 <8.5",
         "zubzet/password-hash-utilities": "1.0.*",
         "cakephp/database": "^4.5",
         "slim/slim": "^4.14",

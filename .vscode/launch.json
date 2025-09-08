@@ -11,7 +11,8 @@
             "port": 9003,
             "pathMappings": {
                 "/var/www/framework": "${workspaceRoot}",
-                "/var/www/html/": "${workspaceRoot}/tests/e2e"
+                "/var/www/html/": "${workspaceRoot}/tests/e2e",
+                "/var/www/vendor/": "${workspaceRoot}/vendor"
             }
         }
     ]

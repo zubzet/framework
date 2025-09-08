@@ -1133,11 +1133,11 @@
             "dist": {
                 "type": "path",
                 "url": "../framework",
-                "reference": "c313085c75e283f5fae06578032df165f2648621"
+                "reference": "df84c6c19240317d5b169ab4a8dcbbdbbacfb867"
             },
             "require": {
                 "cakephp/database": "^4.5",
-                "php": ">=8.0 <=8.4",
+                "php": ">=8.0 <8.5",
                 "phpmailer/phpmailer": "^6.7",
                 "slim/psr7": "^1.7",
                 "slim/slim": "^4.14",
@@ -1206,13 +1206,13 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
-    "platform-dev": [],
+    "platform": {},
+    "platform-dev": {},
     "platform-overrides": {
         "ext-ctype": "0"
     },
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }
