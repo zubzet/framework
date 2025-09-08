@@ -53,20 +53,20 @@ jobs:
 
       - name: Deploy Documentation (versioned)
         env:
-          # Pass the ref name and type to the script (provided by GitHub Actions)
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
         run: |
+          # Make sure the current state of the remote gh-pages is known
+          git fetch website gh-pages || true
+
           if [ "$REF_TYPE" = "tag" ]; then
-            # On a tagged release -> deploy a new version and update 'latest' alias
             version="$REF_NAME"
-
-            mike deploy --update-aliases "$version" latest \
+            mike deploy --rebase --update-aliases "$version" latest \
                         --deploy-prefix docs -b gh-pages -r website -p
-
-            # Set 'latest' as the default version (for /docs base URL redirect)
-            mike set-default latest --deploy-prefix docs -b gh-pages -r website -p
+            mike set-default --rebase latest \
+                        --deploy-prefix docs -b gh-pages -r website -p
           else
-            # On main branch push -> deploy/update the 'unstable' docs version
-            mike deploy unstable --deploy-prefix docs -b gh-pages -r website -p
+            # main branch -> rolling "unstable"
+            mike deploy --rebase unstable \
+                        --deploy-prefix docs -b gh-pages -r website -p
           fi
