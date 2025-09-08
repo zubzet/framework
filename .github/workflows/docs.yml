@@ -31,6 +31,12 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
           fetch-depth: 0
 
+      # Remove the minify plugin to be able to deploy old versions
+      - name: Remove minify plugin
+        run: |
+          sed -i -E '/^[[:space:]]*-\s*minify:/d' mkdocs.yml
+          sed -i -E '/^[[:space:]]*minify_.*:/d' mkdocs.yml
+
       - name: Set up Python and MkDocs
         uses: actions/setup-python@v4
         with:
