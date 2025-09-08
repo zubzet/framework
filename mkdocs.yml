@@ -1,6 +1,6 @@
 # Project information
 site_name: ZubZet
-site_url: https://zubzet.com/docs
+site_url: https://zubzet.com/docs/
 site_author: Alexander Zierhut
 site_description: A modular, prototyping speed oriented PHP framework.
 
@@ -42,10 +42,22 @@ extra:
         link: https://www.linkedin.com/company/30680659/
       - icon: fontawesome/brands/github
         link: https://github.com/zubzet
-    
+    version:
+        provider: mike
+        alias: true
+
+# Plugins
+plugins:
+    - search
+    - minify:
+        minify_html: true
+    - mike:
+      deploy_prefix: docs
+
 extra_css:
   - stylesheets/extra.css
-# Extensions
+
+# MD Extensions
 markdown_extensions:
     - toc:
         permalink: ⚓
@@ -69,8 +81,8 @@ markdown_extensions:
     - pymdownx.keys
     - pymdownx.magiclink:
         repo_url_shorthand: true
-        user: squidfunk
-        repo: mkdocs-material
+        user: zubzet
+        repo: framework
     - pymdownx.mark
     - pymdownx.smartsymbols
     - pymdownx.snippets:
@@ -80,12 +92,6 @@ markdown_extensions:
     - pymdownx.tasklist:
         custom_checkbox: true
     - pymdownx.tilde
-
-# Plugins
-plugins:
-    - search
-    - minify:
-        minify_html: true
 
 # Navigation
 nav:
@@ -128,6 +134,7 @@ nav:
         - Sitemap Generation: advanced-features/sitemap-generation.md
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
         - Commands: advanced-features/commands.md
+    - API Reference: api/index.html
     - Guides:
         - Guest List: guides/guest-list.md
         - Library: guides/library.md
