@@ -50,7 +50,7 @@ extra:
 plugins:
     - search
     - mike:
-      deploy_prefix: docs
+        deploy_prefix: docs
 
 extra_css:
   - stylesheets/extra.css
