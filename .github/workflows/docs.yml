@@ -2,14 +2,23 @@ name: Distribute Documentation
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*.*.*'
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or branch to build (e.g. v0.11.0)'
+        required: true
+        default: 'v0.11.0'
+      promote_latest:
+        description: 'Also update "latest" alias and default?'
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   build-docs:
@@ -17,6 +26,10 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
+        with:
+          # When manually dispatched, checkout the requested ref, otherwise use the event ref
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+          fetch-depth: 0
 
       - name: Set up Python and MkDocs
         uses: actions/setup-python@v4
@@ -47,27 +60,49 @@ jobs:
 
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-
-          # Add remote for the GitHub Pages repository
           git remote add website git@github.com:zubzet/website.git
 
-      - name: Deploy Documentation (versioned)
-        env:
-          REF_NAME: ${{ github.ref_name }}
-          REF_TYPE: ${{ github.ref_type }}
+      - name: Determine ref context
+        id: ctx
         run: |
-          # Make sure the current state of the remote gh-pages is known
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if git rev-parse -q --verify "refs/tags/${{ inputs.ref }}" >/dev/null; then
+              echo "REF_TYPE=tag" >> $GITHUB_ENV
+              echo "REF_NAME=${{ inputs.ref }}" >> $GITHUB_ENV
+            else
+              echo "REF_TYPE=branch" >> $GITHUB_ENV
+              echo "REF_NAME=${{ inputs.ref }}" >> $GITHUB_ENV
+            fi
+            echo "PROMOTE=${{ inputs.promote_latest }}" >> $GITHUB_ENV
+          else
+            echo "REF_TYPE=${{ github.ref_type }}" >> $GITHUB_ENV
+            echo "REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+            # For normal tag pushes we DO promote latest
+            if [ "${{ github.ref_type }}" = "tag" ]; then
+              echo "PROMOTE=true" >> $GITHUB_ENV
+            else
+              echo "PROMOTE=false" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Deploy Documentation (versioned)
+        run: |
           git fetch website gh-pages --depth=1 || true
 
           if [ "$REF_TYPE" = "tag" ]; then
-            version="$REF_NAME"  # e.g. v1.2.3 (keeps the 'v' in the URL: /docs/v1.2.3/)
-            mike deploy --update-aliases "$version" latest \
-              --deploy-prefix docs -b gh-pages -r website -p
-            mike set-default latest \
-              --deploy-prefix docs -b gh-pages -r website -p
+            version="$REF_NAME" # e.g. v0.11.0
+            if [ "$PROMOTE" = "true" ]; then
+              mike deploy --update-aliases "$version" latest \
+                --deploy-prefix docs -b gh-pages -r website -p
+              mike set-default latest \
+                --deploy-prefix docs -b gh-pages -r website -p
+            else
+              # just publish the old version without changing 'latest'
+              mike deploy "$version" \
+                --deploy-prefix docs -b gh-pages -r website -p
+            fi
           else
-            # main branch -> rolling "unstable"
+            # main (or any branch via manual trigger) -> 'unstable'
             mike deploy unstable \
               --deploy-prefix docs -b gh-pages -r website -p
           fi
-
