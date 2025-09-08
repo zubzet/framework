@@ -1,8 +1,8 @@
 # Library Application
 
-In the [last guide](guest-list.md), we learned how to set up basic [controllers](../core-features/controllers-and-actions.md), [models](../core-features/models.md) and [views](../core-features/views.md) to display data from the database. We focused on how to structure a project and create a simple output.
+In the [last guide](guest-list), we learned how to set up basic [controllers](../core-features/controllers-and-actions), [models](../core-features/models) and [views](../core-features/views) to display data from the database. We focused on how to structure a project and create a simple output.
 
-In this guide, we’ll explore how to add [permissions](../core-features/permission-system.md) and security to your application. Using a Library example, we will ensure that only authorized users can access specific parts of the application. This will give you a strong foundation in managing user roles and permissions within your projects.
+In this guide, we’ll explore how to add [permissions](../core-features/permission-system) and security to your application. Using a Library example, we will ensure that only authorized users can access specific parts of the application. This will give you a strong foundation in managing user roles and permissions within your projects.
 
 
 ### Resources
@@ -234,4 +234,4 @@ This guide highlights how to implement a secure, permission-based access control
 ## Next Guide
 As you can see, we’ve implemented a button that is visible only to users with the `library.delete` permission. However, the button currently has no functionality. In the next guide, we’ll explore how to create backend requests to handle actions triggered from the view, enabling dynamic and secure interactions between the front-end and the back-end.
 
-[Shop](shop.md)
+[Shop](shop)

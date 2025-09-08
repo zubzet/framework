@@ -7,7 +7,7 @@ To send an email there are two methods in response called `sendEmail()` and `sen
 
 This method uses `render()` internally.
 
-For this feature to work a mail address needs to be configured in the [booter settings](../core-features/configuration.md) and a SMTP service needs to be available. PHP need to be setup correctly too.
+For this feature to work a mail address needs to be configured in the [booter settings](../core-features/configuration) and a SMTP service needs to be available. PHP need to be setup correctly too.
 
 Example code for sending a mail:
 ```php

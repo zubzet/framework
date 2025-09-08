@@ -1,5 +1,5 @@
 # Layout Guide
-In the [previous guide](todo.md), we explored how to create and manage forms effectively.
+In the [previous guide](todo), we explored how to create and manage forms effectively.
 
 In this guide, we'll focus on using **layouts**, a powerful feature in the ZubZet framework. Layouts help you structure your application by organizing your website into distinct sections, such as a **Main Page** and an **Admin Panel**, ensuring a consistent look and feel across multiple pages.
 
@@ -114,4 +114,4 @@ The framework's default layout, located at `z_views/layout/default_layout.php`, 
 ## Next Guide
 In the next guide, we will learn how to send emails and configure our SMTP server.
 
-[Email](email.md)
+[Email](email)

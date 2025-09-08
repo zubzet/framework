@@ -52,6 +52,8 @@ plugins:
     - mike:
         deploy_prefix: docs
 
+use_directory_urls: true
+
 extra_css:
   - stylesheets/extra.css
 
@@ -93,50 +95,50 @@ markdown_extensions:
 
 # Navigation
 nav:
-    - Getting Started: index.md
+    - Getting Started: index
     - Setup:
-        - Installation: setup/installation.md
-        - How To Contribute: setup/how-to-contribute.md
-        - How To Update: setup/how-to-update.md
+        - Installation: setup/installation
+        - How To Contribute: setup/how-to-contribute
+        - How To Update: setup/how-to-update
         - How to Upgrade:
-            - 0.11 to 1.0.0: setup/upgrade/0.11-to-1.0.0.md
-            - 0.10 to 0.11: setup/upgrade/0.10-to-0.11.md
-            - 0.9 to 0.10: setup/upgrade/0.9-to-0.10.md
+            - 0.11 to 1.0.0: setup/upgrade/0.11-to-1.0.0
+            - 0.10 to 0.11: setup/upgrade/0.10-to-0.11
+            - 0.9 to 0.10: setup/upgrade/0.9-to-0.10
     - Core Features:
-        - MVC:  core-features/mvc.md
-        - Controllers And Actions: core-features/controllers-and-actions.md
-        - Models: core-features/models.md
-        - Views: core-features/views.md
-        - Layouts: core-features/layouts.md
-        - Permission System: core-features/permission-system.md
-        - Localization: core-features/localization.md
-        - Configuration: core-features/configuration.md
-        - REST API: core-features/rest-api.md
-        - Parameter Abstraction: core-features/parameter-abstraction.md
-        - Routing: core-features/routing.md
-        - QueryBuilder: core-features/query-builder.md
+        - MVC:  core-features/mvc
+        - Controllers And Actions: core-features/controllers-and-actions
+        - Models: core-features/models
+        - Views: core-features/views
+        - Layouts: core-features/layouts
+        - Permission System: core-features/permission-system
+        - Localization: core-features/localization
+        - Configuration: core-features/configuration
+        - REST API: core-features/rest-api
+        - Parameter Abstraction: core-features/parameter-abstraction
+        - Routing: core-features/routing
+        - QueryBuilder: core-features/query-builder
     - Z-Admin:
-        - Genral Usage: z-admin/usage.md
-        - Login as another User: z-admin/login-as-another-user.md
+        - Genral Usage: z-admin/usage
+        - Login as another User: z-admin/login-as-another-user
     - Forms:
-        - Auto Validation: forms/auto-form-validation.md
-        - CED Validation: forms/ced-validation.md
-        - File Uploads: forms/file-uploads.md
+        - Auto Validation: forms/auto-form-validation
+        - CED Validation: forms/ced-validation
+        - File Uploads: forms/file-uploads
     - Frontend Integration:
-        - Backend Requests: frontend-integration/backend-requests.md
-        - Presets: frontend-integration/presets.md
+        - Backend Requests: frontend-integration/backend-requests
+        - Presets: frontend-integration/presets
     - Template Rendering Usages:
-        - Generating PDFs: template-rendering-usages/generating-pdfs.md
-        - Sending Mails: template-rendering-usages/sending-an-email.md
+        - Generating PDFs: template-rendering-usages/generating-pdfs
+        - Sending Mails: template-rendering-usages/sending-an-email
     - Advanced Features:
-        - Sitemap Generation: advanced-features/sitemap-generation.md
-        - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links.md
-        - Commands: advanced-features/commands.md
+        - Sitemap Generation: advanced-features/sitemap-generation
+        - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links
+        - Commands: advanced-features/commands
     - API Reference: api/index.html
     - Guides:
-        - Guest List: guides/guest-list.md
-        - Library: guides/library.md
-        - Shop: guides/shop.md
-        - Todo: guides/todo.md
-        - Layouts: guides/layout.md
-        - Emails: guides/email.md
+        - Guest List: guides/guest-list
+        - Library: guides/library
+        - Shop: guides/shop
+        - Todo: guides/todo
+        - Layouts: guides/layout
+        - Emails: guides/email

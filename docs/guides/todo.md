@@ -1,7 +1,7 @@
 # Todo Application
-In the [last guide](shop.md), we explored how to make backend requests and manage them effectively on the server side.
+In the [last guide](shop), we explored how to make backend requests and manage them effectively on the server side.
 
-In this guide, we will learn how to create [forms](../forms/auto-form-validation.md) within our website. Using a simple Todo application as an example, we will demonstrate how to implement functionality to add data to our database using forms.
+In this guide, we will learn how to create [forms](../forms/auto-form-validation) within our website. Using a simple Todo application as an example, we will demonstrate how to implement functionality to add data to our database using forms.
 
 ### Resources
 <details>
@@ -242,7 +242,7 @@ Fields can now be added to the form. For example, to include a text input field 
     - `text`: Displays a label for the field above the input.
     - `required`: Specifies whether the field must be filled before submission.
 
-    There are additional attributes available to customize your fields. You can find the full list [here](../forms/auto-form-validation.md)
+    There are additional attributes available to customize your fields. You can find the full list [here](../forms/auto-form-validation)
 
 ## Handle Form in the backend
 To handle submitted form data, go to your controller which send you the view of the form. Begin by checking for the presence of form data with `$req->hasFormData()`. This function ensures the backend processes only valid form submissions:
@@ -362,4 +362,4 @@ By following these steps, the form can be created, validated, and handled effici
 ## Next Guide
 In the upcoming guide, we will explore how to create and use layouts to organize your website into distinct sections for better structure and maintainability.
 
-[Layouts](layout.md)
+[Layouts](layout)

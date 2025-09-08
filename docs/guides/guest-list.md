@@ -49,10 +49,10 @@ While the file names are customizable, it is recommended to follow a clear and c
 
     An **Action** is a specific method within a controller that is responsible for executing a particular task or process in response to a user request. Actions are mapped to URL routes and determine the logic to be performed for a given endpoint, such as processing input data, applying business rules, or initiating a redirect.
 
-    More information can be found [here](../core-features/controllers-and-actions.md)
+    More information can be found [here](../core-features/controllers-and-actions)
 
-To handle all requests, we need to create a [Controller](../core-features/controllers-and-actions.md).
-For this example, create a file named `GuestsController.php` in the `z_controllers` folder.  
+To handle all requests, we need to create a [Controller](../core-features/controllers-and-actions).
+For this example, create a file named `GuestsController.php` in the `z_controllers` folder.
 The file name, controller name, and action name are flexible but should be chosen for clear, logical understanding and consistency.
 
 ```php
@@ -64,7 +64,7 @@ The file name, controller name, and action name are flexible but should be chose
 ```
 Every controller follows this structure. It is important that the class name matches the file name and that it extends `z_controller`.
 
-To handle a request, you also need to define a method for the specific [action](../core-features/controllers-and-actions.md/#default-actions):
+To handle a request, you also need to define a method for the specific [action](../core-features/controllers-and-actions/#default-actions):
 ```php
 <?php
     class GuestsController extends z_controller {
@@ -82,8 +82,8 @@ To handle a request, you also need to define a method for the specific [action](
 
     The purpose of a **Model** is to separate data management and business logic from other layers, ensuring cleaner, more maintainable code. By centralizing database interactions, models promote reusability, reduce duplication, and enhance security, while allowing controllers to focus on application flow and views on presentation.
 
-    More information can be found [here](../core-features/models.md)
-To interact with the database where the guests are stored, we need a [Model](../core-features/models.md).  
+    More information can be found [here](../core-features/models)
+To interact with the database where the guests are stored, we need a [Model](../core-features/models).  
 For this example, create a file named `GuestsModel.php` in the `z_models` folder.  
 You have flexibility in the naming of the file and model, but it is best to use a clear and logical structure for better understanding.
 
@@ -141,9 +141,9 @@ Finally, we need to render a view and pass the guest list to it.
 ??? info "What is a View"
     A **View** is a key part of the MVC (Model-View-Controller) pattern responsible for presenting data to the user. It defines the structure and layout of the user interface, rendering dynamic content based on data provided by the controller. Views focus solely on presentation, avoiding business logic or direct data handling, to ensure a clean separation of concerns.
 
-    More information can be found [here](../core-features/views.md)
+    More information can be found [here](../core-features/views)
 
-To create a [view](../core-features/views.md), add a folder named `guests` in the `z_views` folder and inside this folder add a file named `guests_list.php`:
+To create a [view](../core-features/views), add a folder named `guests` in the `z_views` folder and inside this folder add a file named `guests_list.php`:
 ```php
 <?php return ["body" => function ($opt) { ?>
 
@@ -249,4 +249,4 @@ And to view your result, navigate to `http://localhost:8080/Guests/list` in your
 ## Next Guide
 In the next guide, we’ll take a closer look at how to secure your website using roles and permissions. This is a key step to make sure that only authorized users can access certain features or parts of your application. By setting up roles and assigning specific permissions, you’ll create a solid system to manage access and keep your website both secure and organized.  
 
-[Library](library.md)
+[Library](library)

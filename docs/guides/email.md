@@ -1,5 +1,5 @@
 # Email Guide
-In the [previous guide](layout.md.md), we learned how to create and use layouts to structure our websites effectively.
+In the [previous guide](layout), we learned how to create and use layouts to structure our websites effectively.
 
 In this guide, we'll delve into the process of sending **emails**, a crucial functionality for web applications to communicate with users, whether for notifications, confirmations, or newsletters.
 
