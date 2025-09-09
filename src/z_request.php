@@ -322,29 +322,37 @@
             $this->booter->updateErrorHandling($state);
         }
 
+        public function checkSuperPermission(string $permission, bool $boolResult = false): bool {
+            return $this->checkPermission($permission, $boolResult, true);
+        }
+
         /**
          * Checks if the current user has a permission. If the user is not logged in, they will be redirected to the login page. 
          * If the user is logged in but does not have the permission, they will be redirected to 403.
          * @param string $permission Permission to check for
          * @param bool $boolResult If true, the function will return a boolean result instead of redirecting
          */
-        public function checkPermission($permission, $boolResult = false) {
+        public function checkPermission(string $permission, bool $boolResult = false, bool $includeSuperUser = false): bool {
             $user = $this->getRequestingUser();
 
             if($permission == "console") {
                 if($this->isCli()) return true;
                 if($boolResult) return false;
                 $this->booter->executePath(["error", "403"]);
-                exit; 
+                exit;
             }
 
-            if (!$user->isLoggedIn) {
+            if(!$user->isLoggedIn) {
                 if($boolResult) return false;
                 $this->booter->executePath(["login", "index"]);
                 exit;
             }
 
-            if (!$user->checkPermission($permission)) {
+            $hasPermission = $includeSuperUser
+                ? $user->checkSuperPermission($permission)
+                : $user->checkPermission($permission);
+
+            if(!$hasPermission) {
                 if($boolResult) return false;
                 $this->booter->executePath(["error", "403"]);
                 exit;
