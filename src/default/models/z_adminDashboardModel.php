@@ -22,11 +22,7 @@
             return $status;
         }
 
-        public function getRowStatus(string $table, int $page = 1): array {
-            // Pagination
-            $perPage = 20;
-            $offset = ($page - 1) * $perPage;
-
+        public function getRowStatus(string $table, ?int $page = null): array {
             // Validate the table name
             $tables = array_map(
                 fn($t) => $t["Name"],
@@ -44,13 +40,34 @@
             // TODO: Find the primary key to order by or default to the first column
             $orderBy = $columns[0]["Field"];
 
+
+            $types = "";
+            $params = [];
+
             // Request the data
             $sql = "SELECT *
                     FROM `$table`
-                    ORDER BY `$orderBy` DESC
-                    LIMIT ?
-                    OFFSET ?";
-            $rows = $this->exec($sql, "ii", $perPage, $offset)->resultToArray();
+                    ORDER BY `$orderBy` DESC";
+
+
+            if(!is_null($page)) {
+                $perPage = 20;
+                $offset = ($page - 1) * $perPage;
+
+                $sql .= "
+                        LIMIT ?
+                        OFFSET ?";
+
+                $types = "ii";
+                $params = [$perPage, $offset];
+            }
+
+
+            if(empty($types)) {
+                 $rows = $this->exec($sql)->resultToArray();
+            } else {
+                 $rows = $this->exec($sql, $types, ...$params)->resultToArray();
+            }
 
             // TODO: Calculate the total number of rows
 
