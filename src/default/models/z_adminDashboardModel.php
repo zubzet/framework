@@ -45,7 +45,9 @@
             $params = [];
 
             // Request the data
-            $sql = "SELECT *
+            $sql = "SELECT
+                        *,
+                        (SELECT COUNT(*) FROM `$table`) AS totalRows
                     FROM `$table`
                     ORDER BY `$orderBy` DESC";
 
@@ -64,15 +66,17 @@
 
 
             if(empty($types)) {
-                 $rows = $this->exec($sql)->resultToArray();
+                $rows = $this->exec($sql)->resultToArray();
             } else {
-                 $rows = $this->exec($sql, $types, ...$params)->resultToArray();
+                $rows = $this->exec($sql, $types, ...$params)->resultToArray();
             }
 
-            // TODO: Calculate the total number of rows
+            $totalRows = $rows[0]["totalRows"];
 
             // Hide sensitive values
             foreach($rows as &$row) {
+                unset($row["totalRows"]);
+
                 foreach(["password", "pw", "salt", "hash"] as $key) {
                     if(!array_key_exists($key, $row)) continue;
                     $row[$key] = str_repeat("*", 8);
@@ -83,7 +87,7 @@
                 "name" => $table,
                 "rows" => $rows,
                 "columns" => $columns,
-                "totalRows" => 100,
+                "totalRows" => $totalRows,
             ];
         }
 
