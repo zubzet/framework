@@ -80,7 +80,7 @@
                 $rows = $this->exec($sql, $types, ...$params)->resultToArray();
             }
 
-            $totalRows = $rows[0]["totalRows"];
+            $totalRows = $rows[0]["totalRows"] ?? 0;
 
             // Hide sensitive values
             foreach($rows as &$row) {
