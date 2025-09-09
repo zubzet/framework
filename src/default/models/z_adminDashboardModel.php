@@ -22,6 +22,16 @@
             return $status;
         }
 
+        private function getPrimaryKey(array $columns): string {
+            foreach($columns as $col) {
+                if($col["Key"] === "PRI") {
+                    return $col["Field"];
+                }
+            }
+
+            return $columns[0]["Field"];
+        }
+
         public function getRowStatus(string $table, ?int $page = null): array {
             // Validate the table name
             $tables = array_map(
@@ -37,8 +47,7 @@
             $sql = "SHOW COLUMNS FROM `$table`";
             $columns = $this->exec($sql)->resultToArray();
 
-            // TODO: Find the primary key to order by or default to the first column
-            $orderBy = $columns[0]["Field"];
+            $orderBy = $this->getPrimaryKey($columns);
 
 
             $types = "";
