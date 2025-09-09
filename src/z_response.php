@@ -452,8 +452,6 @@
                 throw new \Exception("mail_user '$from' is not a valid mail. Try using mail_from instead.");
             }
 
-            require_once 'vendor/autoload.php';
-
             try {
                 $mail = new PHPMailer\PHPMailer\PHPMailer(true);
 
