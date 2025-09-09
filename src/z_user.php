@@ -98,7 +98,7 @@
 
         private function chooseNonLoginLanguage() {
             if(empty($this->language) && !in_array($this->booter->settings["anonymous_language"], ["", " ", "  ", "\t"])) {
-                $lang;
+                $lang = null;
                 if(isset($_COOKIE["z_lang"]) && !isset($_GET["lang"])){
                     $lang = $_COOKIE["z_lang"]; 
                 } else {
@@ -136,9 +136,33 @@
          * @param string $permission Name of the permission
          * @return bool True when the permission is given
          */
-        public function checkPermission($permission) {
+        public function checkPermission($permission): bool {
+            return $this->checkPermissionOf($permission, $this->userId);
+        }
+
+        public function checkSuperPermission($permission): bool {
+            // Check if the user has the permission themselves
+            if($this->checkPermissionOf($permission, $this->userId)) {
+                return true;
+            }
+
+            // Skip checks if there is no exec user
+            if($this->userId === $this->execUserId || is_null($this->execUserId)) {
+                return false;
+            }
+
+            // Otherwise check if the exec user has the permission
+            return $this->checkPermissionOf(
+                $permission,
+                $this->execUserId,
+            );
+        }
+
+        public function checkPermissionOf($permission, int $userId): bool {
             if (!isset($this->permissions)) {
-                $this->permissions = $this->booter->getModel("z_user")->getPermissionsByUserId($this->userId);
+                $this->permissions = $this->booter->getModel("z_user")->getPermissionsByUserId(
+                    $userId,
+                );
             }
             $parts = explode(".", $permission);
 
