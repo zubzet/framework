@@ -279,6 +279,9 @@
                     $page = (int)$req->getParameters(2, 1);
                 }
 
+                // Ensure page is at least 1
+                $page = max(1, $page);
+
                 $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
 
                 if("csv" == $task) {
@@ -287,7 +290,6 @@
                         $table["name"]."_export_".date("Y-m-d").".csv");
                 }
 
-                $page = max(1, $page);
                 $totalPages = max(1, (int)ceil($table["totalRows"] / 20));
                 $start = max(1, min($page - 2, $totalPages - 4));
                 $end = min($totalPages, $start + 4);
