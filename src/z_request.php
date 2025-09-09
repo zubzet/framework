@@ -438,6 +438,12 @@
                                 if ($file["size"] > $rule["maxSize"]) {
                                     $errors[] = ["name" => $name, "type" => "file_to_big"];
                                 }
+
+                                $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
+
+                                if(isset($rule["types"]) && !empty($rule["types"]) && !in_array($extension, $rule["types"])) {
+                                    $errors[] = ["name" => $name, "type" => "file_type"];
+                                }
                             } else {
                                 $errors[] = ["name" => $name, "type" => "file"];
                             }
@@ -812,10 +818,8 @@
          * @param string[] $types Accepted file types
          * @return FormField Returns itself to allow chaining
          */
-        function file($maxSize, $types) {
+        function file($maxSize, $types = []) {
             $this->isFile = true;
-            $this->fileMaxSize = $maxSize;
-            $this->fileTypes = $types;
 
             $this->rules[] = [
                 "name" => $this->name, 
