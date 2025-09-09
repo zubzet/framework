@@ -7,7 +7,7 @@
                 <i class="fa fa-arrow-left"></i> Back
             </a>
         <div>
-            <a class="btn btn-sm btn-outline-secondary" href="<?= "$opt[root]z/database/$table[name]/export" ?>">
+            <a class="btn btn-sm btn-outline-secondary" href="<?= "$opt[root]z/database/$table[name]/csv" ?>">
                 <i class="fa fa-cloud-download"></i> Export
             </a>
         </div>

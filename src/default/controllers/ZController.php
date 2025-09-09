@@ -279,11 +279,12 @@
                 //     $page = (int)$req->getParameters(2, 1);
                 // }
 
-                $table = $req->getModel("z_adminDashboard")->getRowStatus($table);
+                $table = $req->getModel("z_adminDashboard")->getRowStatus($table, 1);
 
                 if("csv" == $task) {
-                    echo "CSV";
-                    return;
+                    return $this->send_csv(
+                        $req->getModel("z_adminDashboard")->getRowStatus($table["name"])["rows"],
+                        $table["name"]."_export_".date("Y-m-d").".csv");
                 }
 
                 return $res->render("database/rows.php", [
@@ -296,6 +297,32 @@
             ], "layout/z_admin_layout.php");
         }
 
+        function send_csv(array $data, string $filename = 'export.csv', string $delimiter = ','): void {
+            while (ob_get_level()) { ob_end_clean(); }
+
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+
+            if (empty($data)) {
+                fclose($out);
+                exit;
+            }
+
+            fputcsv($out, array_keys(reset($data)), $delimiter, "\"", "\\");
+
+            foreach ($data as $row) {
+                fputcsv($out, $row, $delimiter, "\"", "\\");
+            }
+
+            fclose($out);
+            exit;
+        }
     }
 
 ?>
