@@ -270,22 +270,30 @@
         public function action_database(Request $req, Response $res) {
             $req->checkPermission("admin.database");
 
-            if($req->getParameters(0, 1, "adminer.css")) {
-                return require_once "z_framework/adminer/adminer.css";
+            $table = $req->getParameters(0, 1);
+            if(!empty($table)) {
+                $task = $req->getParameters(1, 1);
+
+                // $page = 1;
+                // if("page" == $task) {
+                //     $page = (int)$req->getParameters(2, 1);
+                // }
+
+                $table = $req->getModel("z_adminDashboard")->getRowStatus($table);
+
+                if("csv" == $task) {
+                    echo "CSV";
+                    return;
+                }
+
+                return $res->render("database/rows.php", [
+                    "table" => $table,
+                ], "layout/z_admin_layout.php");
             }
 
-            if($req->getParameters(0, 1, "internal")) {
-
-
-                $GLOBALS["credentials"]["host"] = $req->getBooterSettings("dbhost");
-                $GLOBALS["credentials"]["username"] = $req->getBooterSettings("dbusername");
-                $GLOBALS["credentials"]["password"] = $req->getBooterSettings("dbpassword");
-                $GLOBALS["credentials"]["database"] = $req->getBooterSettings("dbname");
-
-                return require "z_framework/adminer/index.php";
-            }
-
-            $res->render("database_viewer.php", [], "layout/z_admin_layout.php");
+            return $res->render("database/tables.php", [
+                "status" => $req->getModel("z_adminDashboard")->getTableStatus(),
+            ], "layout/z_admin_layout.php");
         }
 
     }
