@@ -96,4 +96,32 @@
         </div>
     <?php } ?>
 
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item <?= $opt["page"] <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="./1">« First</a>
+            </li>
+
+            <li class="page-item <?= $opt["page"] <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="./<?= max(1, $opt["page"] - 1) ?>">‹ Previous</a>
+            </li>
+
+            <?php
+            for ($i = $opt["start"]; $i <= $opt["end"]; $i++): ?>
+                <li class="page-item <?= $i === $opt["page"] ? 'active' : '' ?>" <?= $i === $opt["page"] ? 'aria-current="page"' : '' ?>>
+                    <a class="page-link" href="./<?= $i ?>"><?= $i ?></a>
+                </li>
+            <?php endfor; ?>
+
+            <li class="page-item <?= $opt["page"] >= $opt["totalPages"] ? 'disabled' : '' ?>">
+                <a class="page-link" href="./<?= min($opt["totalPages"], $opt["page"] + 1) ?>">Next ›</a>
+            </li>
+
+            <li class="page-item <?= $opt["page"] >= $opt["totalPages"] ? 'disabled' : '' ?>">
+                <a class="page-link" href="./<?= $opt["totalPages"] ?>">Last »</a>
+            </li>
+        </ul>
+    </nav>
+
+
 <?php }]; ?>

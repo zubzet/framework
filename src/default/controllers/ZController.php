@@ -274,12 +274,12 @@
             if(!empty($table)) {
                 $task = $req->getParameters(1, 1);
 
-                // $page = 1;
-                // if("page" == $task) {
-                //     $page = (int)$req->getParameters(2, 1);
-                // }
+                $page = 1;
+                if("page" == $task) {
+                    $page = (int)$req->getParameters(2, 1);
+                }
 
-                $table = $req->getModel("z_adminDashboard")->getRowStatus($table, 1);
+                $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
 
                 if("csv" == $task) {
                     return $this->send_csv(
@@ -287,8 +287,17 @@
                         $table["name"]."_export_".date("Y-m-d").".csv");
                 }
 
+                $page = max(1, $page);
+                $totalPages = max(1, (int)ceil($table["totalRows"] / 20));
+                $start = max(1, min($page - 2, $totalPages - 4));
+                $end = min($totalPages, $start + 4);
+
                 return $res->render("database/rows.php", [
                     "table" => $table,
+                    "page" => $page,
+                    "totalPages" => $totalPages,
+                    "start" => $start,
+                    "end" => $end,
                 ], "layout/z_admin_layout.php");
             }
 
