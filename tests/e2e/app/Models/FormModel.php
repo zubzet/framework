@@ -22,13 +22,7 @@
                 return false;
             }
 
-            $this->ref = $ref;
-            $this->mime = $file["type"];
-            $this->srcName = basename($file["name"]);
-            $this->extension = $extension;
-            $this->size = $file["size"];
-            $this->filePath = $target_file;
-            $this->fileId = $this->getModel("z_file", $zRoot)->add(
+            $this->getModel("z_file", $zRoot)->add(
                 $ref, 
                 $file["type"], 
                 basename($file["name"]), 
