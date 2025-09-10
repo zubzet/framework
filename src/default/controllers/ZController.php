@@ -274,65 +274,37 @@
             if(!empty($table)) {
                 $task = $req->getParameters(1, 1);
 
+                // Find the current page
                 $page = 1;
-                if("page" == $task) {
-                    $page = (int)$req->getParameters(2, 1);
-                }
-
-                // Ensure page is at least 1
-                $page = max(1, $page);
+                if("page" == $task) $page = max(1, (int)$req->getParameters(2, 1));
+                if("csv" == $task) $page = null;
 
                 $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
 
                 if("csv" == $task) {
-                    return $this->send_csv(
-                        $req->getModel("z_adminDashboard")->getRowStatus($table["name"])["rows"],
-                        $table["name"]."_export_".date("Y-m-d").".csv");
+                    $req->getModel("z_adminDashboard")->exportToCsv($table);
+                    return;
                 }
 
-                $totalPages = max(1, (int)ceil($table["totalRows"] / 20));
-                $start = max(1, min($page - 2, $totalPages - 4));
-                $end = min($totalPages, $start + 4);
+                $paginationStart = max(1, min($page - 2, $table["totalPages"] - 4));
+                $paginationEnd = min($table["totalPages"], $paginationStart + 4);
 
                 return $res->render("database/rows.php", [
+                    "wideContent" => true,
+                    "pageLink" => "/z/database/$table[name]/page/",
                     "table" => $table,
                     "page" => $page,
-                    "totalPages" => $totalPages,
-                    "start" => $start,
-                    "end" => $end,
+                    "paginationStart" => $paginationStart,
+                    "paginationEnd" => $paginationEnd,
+                    "paginationNext" => min($table["totalPages"], $page + 1),
+                    "paginationLast" => max(1, $page - 1),
+                    "totalPages" => $table["totalPages"],
                 ], "layout/z_admin_layout.php");
             }
 
             return $res->render("database/tables.php", [
                 "status" => $req->getModel("z_adminDashboard")->getTableStatus(),
             ], "layout/z_admin_layout.php");
-        }
-
-        function send_csv(array $data, string $filename = 'export.csv', string $delimiter = ','): void {
-            while (ob_get_level()) { ob_end_clean(); }
-
-            header('Content-Type: text/csv; charset=UTF-8');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
-            header('Cache-Control: no-store, no-cache, must-revalidate');
-            header('Pragma: no-cache');
-            header('Expires: 0');
-
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-
-            if (empty($data)) {
-                fclose($out);
-                exit;
-            }
-
-            fputcsv($out, array_keys(reset($data)), $delimiter, "\"", "\\");
-
-            foreach ($data as $row) {
-                fputcsv($out, $row, $delimiter, "\"", "\\");
-            }
-
-            fclose($out);
-            exit;
         }
     }
 

@@ -22,16 +22,6 @@
             return $status;
         }
 
-        private function getPrimaryKey(array $columns): string {
-            foreach($columns as $col) {
-                if($col["Key"] === "PRI") {
-                    return $col["Field"];
-                }
-            }
-
-            return $columns[0]["Field"];
-        }
-
         public function getRowStatus(string $table, ?int $page = null): array {
             // Validate the table name
             $tables = array_map(
@@ -47,59 +37,78 @@
             $sql = "SHOW COLUMNS FROM `$table`";
             $columns = $this->exec($sql)->resultToArray();
 
-            $orderBy = $this->getPrimaryKey($columns);
+            // Find a column to order by
+            $orderBy = $columns[0]["Field"];
+            foreach($columns as $col) {
+                if("PRI" !== $col["Key"]) continue;
+                $orderBy = $col["Field"];
+            }
 
-
-            $types = "";
-            $params = [];
+            // Pagination
+            $perPage = 20;
+            $limit = is_null($page) ? 10000 : $perPage;
+            $offset = (($page ?? 0) - 1) * $perPage;
 
             // Request the data
-            $sql = "SELECT
-                        *,
-                        (SELECT COUNT(*) FROM `$table`) AS totalRows
-                    FROM `$table`
-                    ORDER BY `$orderBy` DESC";
-
-
-            if(!is_null($page)) {
-                $perPage = 20;
-                $offset = ($page - 1) * $perPage;
-
-                $sql .= "
-                        LIMIT ?
-                        OFFSET ?";
-
-                $types = "ii";
-                $params = [$perPage, $offset];
-            }
-
-
-            if(empty($types)) {
-                $rows = $this->exec($sql)->resultToArray();
-            } else {
-                $rows = $this->exec($sql, $types, ...$params)->resultToArray();
-            }
-
-            $totalRows = $rows[0]["totalRows"] ?? 0;
+            $sql = $this->dbSelect(["*"])
+                        ->from($table)
+                        ->orderDesc($orderBy)
+                        ->limit($limit)
+                        ->offset($offset);
+            $rows = $this->exec($sql)->resultToArray();
 
             // Hide sensitive values
             foreach($rows as &$row) {
-                unset($row["totalRows"]);
-
                 foreach(["password", "pw", "salt", "hash"] as $key) {
                     if(!array_key_exists($key, $row)) continue;
                     $row[$key] = str_repeat("*", 8);
                 }
             }
 
+            // Find total row count
+            $this->exec($this->dbSelect(['total' => 'COUNT(*)'])->from($table));
+            $totalRows = $this->resultToLine()["total"] ?? 0;
+
             return [
                 "name" => $table,
                 "rows" => $rows,
                 "columns" => $columns,
                 "totalRows" => $totalRows,
+                "totalColumns" => count($columns),
+                "totalPages" => max(1, (int) ceil($totalRows / $perPage)),
+                "orderBy" => $orderBy,
             ];
         }
 
+        public function exportToCsv(array $table) {
+            $filename = "export_" . date("Y-m-d_H-i-s") . ".csv";
+
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+
+            if(empty($table["rows"])) {
+                fclose($out);
+                return;
+            }
+
+            fputcsv(
+                $out,
+                array_keys(reset($table["rows"])),
+                ",", "\"", "\\",
+            );
+
+            foreach($table["rows"] as $row) {
+                fputcsv($out, $row, ",", "\"", "\\");
+            }
+
+            fclose($out);
+        }
     }
 
 ?>

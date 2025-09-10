@@ -157,7 +157,7 @@ return [
                         </div>
                     </div>
                 </div>
-                <div class="content pb-2 pt-2 col-md-10">
+                <div class="content<?= ($opt["wideContent"] ?? false) ? "-fluid" : "" ?> pb-2 pt-2 col-md-10">
                     <?php $body($opt); ?>
                 </div>
             </div>
