@@ -6,7 +6,7 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
                         <div class="text-muted small">
-                            Amount of tables
+                            Amount Of Tables
                         </div>
                         <div class="h4 mb-0"><?= number_format(count($opt["status"]["tables"])) ?></div>
                     </div>
@@ -19,7 +19,7 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
                         <div class="text-muted small">
-                            Approx. amount of rows
+                            Approx. Amount Of Rows
                         </div>
                         <div class="h4 mb-0"><?= number_format($opt["status"]["approxRows"]) ?></div>
                     </div>
