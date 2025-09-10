@@ -27,7 +27,7 @@
                     <div class="card-body d-flex align-items-center justify-content-between">
                         <div class="mb-0">
                             <div class="text-muted small">
-                                Total Rows
+                                Amount Of Rows
                             </div>
                             <div class="h4 mb-0">
                                 <?= number_format($opt["table"]["totalRows"]) ?>
@@ -42,7 +42,7 @@
                     <div class="card-body d-flex align-items-center justify-content-between">
                         <div class="mb-0">
                             <div class="text-muted small">
-                                Columns
+                                Amount Of Columns
                             </div>
                             <div class="h4 mb-0">
                                 <?= number_format($table["totalColumns"]) ?>
