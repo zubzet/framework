@@ -18,9 +18,12 @@ x-config-z-settings: &config-z-settings
   CONFIG_MAIL_PASSWORD: password
 
 x-built-application-image: &built-application-image
+  image: docker-application:latest
   build:
     context: .
     dockerfile: Dockerfile.apache-local
+    args:
+      USER_UID: ${HOST_UID:-1000}
   restart: on-failure
   environment:
       <<: *config-z-settings

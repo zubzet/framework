@@ -115,6 +115,10 @@ jobs:
             PHP_TAG=${{ matrix.php_tag }}
             USER_UID=${{ env.HOST_UID }}
 
+      - name: Debug container UID
+        run: |
+          docker run --rm docker-application:latest id
+
       # Warm dependent images so compose doesn't have to pull them during up
       - name: Pre-pull compose services (best effort)
         run: |
