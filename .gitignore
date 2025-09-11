@@ -6,3 +6,4 @@ log.sql
 sql.log
 **/cypress/screenshots/**
 **/cypress/videos/**
+uploads
