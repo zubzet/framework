@@ -743,12 +743,11 @@
                         $field->noSave = true;
                         continue;
                     } //TODO: Might take required into account
-                    //TODO: Should use the uploads folder
                     $uploadCode = $upload->upload(
                         $_FILES[$field->name], 
-                        "uploads/", 
-                        $field->fileMaxSize, 
-                        $field->fileTypes
+                        $this->booter->req->getBooterSettings("uploadFolder", default: "uploads/"), 
+                        $field->rules["fileMaxSize"] ?? 0, 
+                        $field->rules["types"] ?? []
                     );
                     if ($uploadCode) $this->error("Upload error: " . $uploadCode);
                     $field->value = $upload->fileId;

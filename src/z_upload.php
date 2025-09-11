@@ -58,13 +58,13 @@
             $ref = $this->res->getModel("z_general")->getUniqueRef();
 
             $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
+            if(!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
             $target_file = $uploadDir . $ref . "." . $extension;
-
-            if (!in_array($extension, $typeArray)) {
+            if (!empty($typeArray) && !in_array($extension, $typeArray)) {
                 return UPLOAD_ERROR_WRONG_TYPE;
             }
 
-            if ($file["size"] > $maxSize) {
+            if ($maxSize != 0 && $file["size"] > $maxSize) {
                 return UPLOAD_ERROR_TOO_BIG;
             }
 
