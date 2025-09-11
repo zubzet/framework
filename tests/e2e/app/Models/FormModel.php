@@ -8,6 +8,13 @@
             return $this->exec($sql)->resultToArray();
         }
 
+        public function getMediaFiles() {
+            $sql = "SELECT * 
+                    FROM `media`";
+
+            return $this->exec($sql)->resultToArray();
+        }
+
         public function uploadFile($file, $uploadDir, $zRoot) {
             if (empty($file) || !isset($file["name"]) || $file === null) {
                 return false;

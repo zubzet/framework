@@ -27,3 +27,8 @@ CREATE TABLE `model_test_lastid` (
     `id` INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
     `value` VARCHAR(255) NOT NULL
 );
+
+CREATE TABLE `media` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    `file` VARCHAR(255) NOT NULL
+);
