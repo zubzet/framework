@@ -111,6 +111,9 @@ jobs:
           provenance: false
           cache-from: type=gha,scope=app-${{ matrix.php_tag }}
           cache-to: type=gha,mode=max,scope=app-${{ matrix.php_tag }}
+          build-args: |
+            PHP_TAG=${{ matrix.php_tag }}
+            USER_UID=${{ env.HOST_UID }}
 
       # Warm dependent images so compose doesn't have to pull them during up
       - name: Pre-pull compose services (best effort)
