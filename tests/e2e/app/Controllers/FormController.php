@@ -152,6 +152,24 @@
                     return $res->success();
                 }
 
+                if($req->getParameters(0, 1, "formUpload")) {
+                    $formResult = $req->validateForm([
+                        (new FormField("file"))
+                            ->required()
+                            ->file(262144, ["pdf"]),
+                    ]);
+
+                    if($formResult->hasErrors) {
+                        return $res->formErrors($formResult->errors);
+                    }
+
+                    return $res->insertDatabase(
+                        "media",
+                        $formResult
+                    );
+                }
+
+
                 // Upload Validation
                 $upload = $res->upload();
                 if ($upload->upload(
@@ -167,7 +185,8 @@
             }
 
             return $res->render("form/validationFile",[
-                "files" => $req->getModel("Form")->getUploadedFiles()
+                "files" => $req->getModel("Form")->getUploadedFiles(),
+                "media" => $req->getModel("Form")->getMediaFiles(),
             ]);
         }
 

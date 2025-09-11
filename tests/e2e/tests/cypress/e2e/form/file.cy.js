@@ -9,6 +9,7 @@ describe('Form Date Validation', () => {
         { name: 'TestFile_Small.pdf',   size: 1 },
         { name: 'TestFile_Small_1.txt', size: 1 },
         { name: 'TestFile_Small.txt',   size: 1 },
+        { name: 'TestFile_Small_2.pdf', size: 1 },
     ];
 
     const dir = 'cypress/fixtures';
@@ -130,5 +131,16 @@ describe('Form Date Validation', () => {
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Big_1.txt").should("not.exist");
+    });
+
+    it("Validation File FormUpload Small PDF", () => {
+        cy.visit("/Form/validationFile/formUpload");
+
+        uploadFile("TestFile_Small_2.pdf", "application/pdf");
+        cy.get('button').click();
+
+        cy.visit("/Form/validationFile");
+        cy.contains("TestFile_Small_2.pdf");
+        cy.contains("FormUpload:3");
     });
 });

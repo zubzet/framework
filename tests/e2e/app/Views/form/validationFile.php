@@ -5,6 +5,12 @@
          <?php } ?>
     </div>
 
+    <div>
+        <?php foreach($opt["media"] as $file) {?>
+            <li>FormUpload:<?= $file["file"] ?></li>
+         <?php } ?>
+    </div>
+
     <div id="form"></div>
 
     <script>
