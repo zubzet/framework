@@ -9,11 +9,6 @@
     class LoginController extends z_controller {
 
         /**
-         * @var bool $action_index_sitemap If set to true the action_index will appear in the sitemap
-         */
-        public static $action_index_sitemap = true;
-
-        /**
          * The index action
          * 
          * It will be called when no action is specified
@@ -112,11 +107,6 @@
         }
 
         /**
-         * @var bool $action_register_sitemap If set to true the action_register will appear in the sitemap
-         */
-        public static $action_register_sitemap = true;
-
-        /**
          * Controls the view for registering as a user
          * @param Request $req The request object
          * @param Response $res The response object
@@ -172,11 +162,6 @@
 
             $res->render("login_signup.php", [], "layout/min_layout.php");
         }
-
-        /**
-         * @var bool $action_forgot_password_sitemap If set to true the action_forgot_password will appear in the sitemap
-         */
-        public static $action_forgot_password_sitemap = true;
 
         /**
          * Serves the forgot password page and resets the a users password
