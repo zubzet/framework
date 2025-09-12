@@ -139,34 +139,10 @@
                     });
                 }
 
-                if($options["minify"] ?? false) {
-                    $rendered = $this->minifyHTML($rendered);
-                }
-
                 echo $rendered;
             } else {
                 $this->reroute(["error", "404"]);
             }
-        }
-
-        /**
-         * Minifies HTML
-         * @param string $htmlContent The HTML content
-         * @return string The minified version of the input HTML content
-         */
-        public function minifyHTML(string $htmlContent) {
-            $patterns = [
-                '/(\n|^)(\x20+|\t)/',
-                '/(\n|^)\/\/(.*?)(\n|$)/',
-                '/\n/',
-                '/\<\!--.*?-->/',
-                '/(\x20+|\t)/', # Delete multispace (Without \n)
-                '/\>\s+\</', # strip whitespaces between tags
-                '/(\"|\')\s+\>/', # strip whitespaces between quotation ("') and end tags
-                '/=\s+(\"|\')/' # strip whitespaces between = "'
-            ];
-            $replace = ["\n", "\n", " ", "", " ", "><", "$1>", "=$1"];
-            return preg_replace($patterns, $replace, $htmlContent);
         }
 
         /**
