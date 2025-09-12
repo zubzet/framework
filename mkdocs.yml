@@ -130,7 +130,6 @@ nav:
     - Template Rendering Usages:
         - Sending Mails: template-rendering-usages/sending-an-email
     - Advanced Features:
-        - Sitemap Generation: advanced-features/sitemap-generation
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links
         - Commands: advanced-features/commands
     - API Reference: api/index.html
