@@ -128,7 +128,6 @@ nav:
         - Backend Requests: frontend-integration/backend-requests
         - Presets: frontend-integration/presets
     - Template Rendering Usages:
-        - Generating PDFs: template-rendering-usages/generating-pdfs
         - Sending Mails: template-rendering-usages/sending-an-email
     - Advanced Features:
         - Sitemap Generation: advanced-features/sitemap-generation
