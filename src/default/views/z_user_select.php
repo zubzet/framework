@@ -6,7 +6,7 @@
 return ["head" => function($opt) { ?> <!-- File header -->
 
 <?php }, "body" => function($opt) { ?> <!-- File body -->	
-    <h2><?php $opt["lang"]("edit_user"); ?></h2>
+    <h2>Edit User</h2>
 
     <div class="list-group">
       <?php foreach($opt["users"] as $user) { ?>
@@ -14,13 +14,4 @@ return ["head" => function($opt) { ?> <!-- File header -->
       <?php } ?>
     </div>
 
-<?php }, "lang" => [
-        "de_formal" => [
-            "edit_user" => "Benutzer bearbeiten",
-        ], 
-        "en" => [
-            "edit_user" => "Edit user",
-        ]
-    ]
-];
-?>
+<?php }];?>
