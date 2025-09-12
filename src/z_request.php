@@ -232,52 +232,6 @@
         }
 
         /**
-         * A backend implementation of the Google reCAPTCHA v3 API
-         * @param string $response The response you have received from the Google reCAPTCHA execution
-         * @param string $action The action name used in reCAPTCHA verification
-         * @param string $secretKey Your reCAPTCHA secret key. (Can be retrieved from https://www.google.com/recaptcha/intro/v3.html)
-         * @param bool $checkHostname Whether to check if the hostname matches
-         * @return float The score between 0-1 returned by Google
-         */
-        public function getReCaptchaV3Score($response, $action, $secretKey, $checkHostname = true) {
-            // Build POST request:
-            $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
-
-            try {
-
-                // Make and decode POST request:
-                $recaptcha = file_get_contents($recaptcha_url . '?secret=' . $secretKey . '&response=' . $response );
-                $recaptcha = json_decode($recaptcha);
-
-                //Make sure the actions are the same
-                if($recaptcha->action != $action) return 0;
-
-                //Make sure the hostname is the same
-                if($checkHostname) {
-                    //Remove paths and www subdomains to prevent errors
-                    function cleanHostname($hostname) {
-                        $hostname = trim($hostname, '/');
-                        $hostname = str_replace('http://', '', $hostname);
-                        $hostname = str_replace('https://', '', $hostname);
-                        return preg_replace('/^www\./', '', $hostname);
-                    }
-                    if(cleanHostname($recaptcha->hostname) !== cleanHostname($this->getBooterSettings("host"))) {
-                        return 0;
-                    }
-                }
-
-                //TODO: Add a time limit
-
-                // Take action based on the score returned:
-                return $recaptcha->score;
-
-            //Return a score of zero if the checks produce errors (Usually a relay attack)
-            } catch(Exception $ex) {
-                return 0;
-            }
-        }
-
-        /**
          * Works like getParameters and decodes an SEO optimized URL. Example: test.com/episodes/this-is-some-text-64 The 64 is an id
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @return string[] [id, text] of the URL
