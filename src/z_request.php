@@ -137,33 +137,6 @@
         }
 
         /**
-         * Returns a list of all visited controllers
-         * @return string[] All visited controllers as an array
-         */
-        public function getControllerStack() {
-            return $this->booter->ControllerStack;
-        }
-
-        /**
-         * Returns the last controller visited before the current one
-         * @return string The last controller visited before the current one
-         */
-        public function getLastController() {
-            if(isset($this->booter->ControllerStack[count($this->booter->ControllerStack) - 2])) {
-                return $this->booter->ControllerStack[count($this->booter->ControllerStack) - 2];
-            }
-            return false;
-        }
-
-        /**
-         * Returns a list of all visited actions
-         * @return string[] All visited actions as an array
-         */
-        public function getActionStack() {
-            return $this->booter->ActionStack;
-        }
-
-        /**
          * Returns the current URL
          * @return string The actual URL that was requested including parameters and host
          */
@@ -192,17 +165,6 @@
                     (string) $this->getBooterSettings("host"),
                 ),
             )[0];
-        }
-
-        /**
-         * Returns the last action visited before the current one
-         * @return string The last action visited before the current one
-         */
-        public function getPreAction() {
-            if(isset($this->booter->ActionStack[count($this->booter->ActionStack) - 2])) {
-                return $this->booter->ActionStack[count($this->booter->ActionStack) - 2];
-            }
-            return false;
         }
 
         /**
@@ -253,27 +215,11 @@
         }
 
         /**
-         * Gets the relative path to the config file of the framework
-         * @return string Relative path to the config file
-         */
-        public function getConfigFile() {
-            return $this->booter->config_file;
-        }
-
-        /**
          * Gets the path to the root folder of the project.
          * @return string Path to the root folder
          */
         public function getRootFolder() {
             return $this->booter->rootFolder;
-        }
-
-        /**
-         * Updates the error handling state.
-         * @param int $state Error state. See: z_framework::updateErrorHandling($state)
-         */
-        public function updateErrorHandling($state) {
-            $this->booter->updateErrorHandling($state);
         }
 
         public function checkSuperPermission(string $permission, bool $boolResult = false): bool {
