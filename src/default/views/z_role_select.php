@@ -10,7 +10,7 @@ return ["head" => function($opt) { ?> <!-- File header -->
     <script>
         $(function() {
             $("#create-group").click(() => {
-                if (confirm("<?php $opt["lang"]("confirm_create"); ?>")) {
+                if (confirm("Do you really want to create a new role?")) {
                     Z.Request.action("create", {}, function(response) {
                         window.location.href = "<?php echo $opt["root"]. "z/roles/" ?>" + response.roleId;
                     });
@@ -19,7 +19,7 @@ return ["head" => function($opt) { ?> <!-- File header -->
         });
     </script>
 
-    <h2><?php $opt["lang"]("edit_role"); ?></h2>
+    <h2>Roles</h2>
 
     <div class="list-group">
       <?php foreach($opt["roles"] as $role) { ?>
@@ -27,19 +27,6 @@ return ["head" => function($opt) { ?> <!-- File header -->
       <?php } ?>
     </div>
 
-    <button class="btn btn-primary mt-2" id="create-group"><?php $opt["lang"]("create_role"); ?></button>
+    <button class="btn btn-primary mt-2" id="create-group">Create role</button>
 
-<?php }, "lang" => [
-        "de_formal" => [
-            "edit_role" => "Rollen",
-            "create_role" => "Rolle erstellen",
-            "confirm_create" => "Wollen Sie wirklich eine neue Rolle anlegen?"
-        ], 
-        "en" => [
-            "edit_role" => "Roles",
-            "create_role" => "Create role",
-            "confirm_create" => "Do you really want to create a new role?"
-        ]
-    ]
-];
-?>
+<?php }]; ?>

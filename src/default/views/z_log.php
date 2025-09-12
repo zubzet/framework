@@ -1,34 +1,29 @@
-<?php 
-/**
- * The log view. Only accessible with permission
- */
-
-return ["head" => function($opt) { ?> <!-- File header -->
+<?php return ["head" => function($opt) { ?> <!-- File header -->
 
     <style>
         thead, tr {
             min-width: 100%;
         }
     </style>
-    
-<?php }, "body" => function($opt) { ?> <!-- File body -->	
 
-    <h2><?php $opt["lang"]("title") ?></h2>
+<?php }, "body" => function($opt) { ?> <!-- File body -->
+
+    <h2>Log / Statistics</h2>
 
     <!-- Time span -->
     <div class="input-group">
         <div class="input-group-prepend">
-            <label for="input-start" class="input-group-text"><?php $opt["lang"]("start_date") ?></label>
+            <label for="input-start" class="input-group-text">From</label>
         </div>
         <input type="datetime-local" id="input-start" class="form-control">
         <div class="input-group-prepend">
-            <label for="input-end" class="input-group-text"><?php $opt["lang"]("end_date") ?></label>
+            <label for="input-end" class="input-group-text">To</label>
         </div>
         <input type="datetime-local" id="input-end" class="form-control">
     </div>
 
     <!-- Categories -->
-    <label><?php $opt["lang"]("categories") ?> <span class="hide-for-small-only"><?php $opt["lang"]("ctrl_for_multiple") ?></span></label>
+    <label>Categories <span class="hide-for-small-only">(Hold CTRL to select multiple)</span></label>
     <div class="input-group mb-1">
         <select id="input-cats" class="form-control" multiple style="height: 150px;">
         <?php 
@@ -39,26 +34,26 @@ return ["head" => function($opt) { ?> <!-- File header -->
         </select>
     </div>
 
-    <button id="button-submit" class="btn btn-primary" disabled><?php $opt["lang"]("request") ?></button>
+    <button id="button-submit" class="btn btn-primary" disabled>Request</button>
     <div class="btn-group">
-        <a target="_blanc" id="download-csv" class="btn btn-secondary"><?php $opt["lang"]("download_csv") ?></a>
-        <a target="_blanc" id="download-json" class="btn btn-secondary"><?php $opt["lang"]("download_json") ?></a>
-        <a target="_blanc" id="download-txt" class="btn btn-secondary"><?php $opt["lang"]("download_txt") ?></a>
+        <a target="_blanc" id="download-csv" class="btn btn-secondary">Download as .csv</a>
+        <a target="_blanc" id="download-json" class="btn btn-secondary">Download as .json</a>
+        <a target="_blanc" id="download-txt" class="btn btn-secondary">Download as .txt</a>
     </div>
 
     <hr>
 
-    <h2><?php $opt["lang"]("results") ?></h2>
+    <h2>Results</h2>
 
     <table class="table">
         <thead>
             <tr>
-                <th scope="col"><?php $opt["lang"]("index") ?></th>
-                <th scope="col"><?php $opt["lang"]("table-date") ?></th>
-                <th scope="col"><?php $opt["lang"]("category") ?></th>
-                <th scope="col"><?php $opt["lang"]("user") ?></th>
-                <th scope="col"><?php $opt["lang"]("exec_user") ?></th>
-                <th scope="col"><?php $opt["lang"]("text") ?></th>
+                <th scope="col">ID</th>
+                <th scope="col">Datetime</th>
+                <th scope="col">Category</th>
+                <th scope="col">user</th>
+                <th scope="col">Exec user</th>
+                <th scope="col">Text</th>
             </tr>
         <thead>
         <tbody id="result-table"></tbody>
@@ -146,48 +141,4 @@ return ["head" => function($opt) { ?> <!-- File header -->
         updateLink();
     </script>
 
-<?php }, "lang" => [
-        "de_formal" => [
-            "table-date" => "Zeit",
-            "table-name" => "Benutzer",
-            "table-text" => "Text",
-            "title" => "Log / Statistiken",
-            "request" => "Anfordern",
-            "categories" => "Kategorien",
-            "ctrl_for_multiple" => "(STRG halten für mehrfachauswahl)",
-            "start_date" => "Von",
-            "end_date" => "Bis",
-            "download_txt" => "Download als .txt",
-            "download_json" => "Download als .json",
-            "download_csv" => "Download als .csv",
-            "category" => "Kategorie",
-            "user" => "Mitarbeiter",
-            "exec_user" => "Exec Mitarbeiter",
-            "text" => "Text",
-            "value" => "Wert",
-            "results" => "Ergebnisse",
-            "index" => "ID"
-        ], 
-        "en" => [
-            "table-date" => "Datetime",
-            "table-name" => "User",
-            "table-text" => "Text",
-            "title" => "Log / Statistics",
-            "request" => "Request",
-            "categories" => "Categories",
-            "ctrl_for_multiple" => "(Hold CTRL to select multiple)",
-            "start_date" => "From",
-            "end_date" => "To",
-            "download_txt" => "Download as .txt",
-            "download_json" => "Download as .json",
-            "download_csv" => "Download as .csv",
-            "category" => "Category",
-            "user" => "user",
-            "exec_user" => "Exec user",
-            "text" => "Text",
-            "value" => "Value",
-            "results" => "Results",
-            "index" => "ID"
-        ]
-    ]
-]; ?>
+<?php }]; ?>
