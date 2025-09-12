@@ -237,32 +237,6 @@
         }
 
         /**
-         * Renders a PDF file
-         * @param string $document Path to the view
-         * @param array $opt Array of data to be used by the view
-         * @param string $name Name of the output file
-         * @param string $dlOpt Html2Pdf options
-         * @param array $pdfOptions PDF options (see Html2Pdf constructor)
-         */
-        public function renderPDF($document, $opt, $name = "CV.pdf", $dlOpt = "I", $pdfOptions = ['P', 'A4', 'en', true, 'UTF-8', array(20, 20, 20, 5)]) {
-            // Library laden
-            require_once('vendor/autoload.php');
-            //PDF obj
-            $html2pdf = new \Spipu\Html2Pdf\Html2Pdf(...$pdfOptions);
-
-            //HTML Account
-            require_once($this->getZViews()."/$document");
-            ob_start();
-            layout($opt, null, null);
-            $html = ob_get_clean();
-
-            //export the PDF
-            $html2pdf->writeHTML($html);
-            $html2pdf->output($name, $dlOpt);
-
-        }
-
-        /**
          * Sends simple text. Use only for debugging purposes!
          * @param string $text The text to send
          */
