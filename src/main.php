@@ -50,12 +50,6 @@
         /** @var User $user The requesting user */
         public $user;
 
-        /** @var string[] $ControllerStack All visited controllers as an array */
-        public $ControllerStack = [];
-
-        /** @var string[] $ActionStack All visited actions as an array */
-        public $ActionStack = [];
-
         /** @var Response $res A reference to an instance of the Response class */
         public $res;
 
@@ -313,10 +307,6 @@
                 return $this->executePath(["error", "500"]);
             }
 
-            //Update values
-            $this->ControllerStack[] = $controller;
-            $this->ActionStack[] = $method;
-            
             try {
                 $CTRL_obj = new $controller($this->req, $this->res);
                 if (method_exists($controller, $method)) {
@@ -325,7 +315,6 @@
                     //Checks if the fallback method exists before rerouting to the 404 page
                     $method = "action_fallback";
                     if (method_exists($controller, $method)) {
-                        $this->ActionStack[] = $method;
                         return $CTRL_obj->{$method}($this->req, $this->res);
                     } else {
                         return $this->executePath(["error", "404"]);
