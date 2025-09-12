@@ -84,22 +84,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set PHP base tag in Dockerfile (matrix)
-        run: |
-          DOCKERFILE="packaging/docker/Dockerfile.apache-local"
-
-          # Ensure file exists where compose expects it
-          test -f "$DOCKERFILE"
-
-          # Replace only the very first line (ARG PHP_TAG=...)
-          sed -i "1s|^ARG PHP_TAG=.*$|ARG PHP_TAG=${{ matrix.php_tag }}|" "$DOCKERFILE"
-          echo "Dockerfile first line is now: $(head -n1 "$DOCKERFILE")"
-
-          # Remove XDebug in CI
-          sed -i -E '/^[[:space:]]*# XDEBUG START[[:space:]]*$/,/^[[:space:]]*# XDEBUG END[[:space:]]*$/c\
-          # XDEBUG START\
-          # XDEBUG END' "$DOCKERFILE"
-
       # Build & cache application image once (reuse across future runs)
       - name: Docker build (cached)
         uses: docker/build-push-action@v6
@@ -114,13 +98,10 @@ jobs:
           build-args: |
             PHP_TAG=${{ matrix.php_tag }}
             USER_UID=${{ env.HOST_UID }}
-
-      - name: Debug container UID
-        run: |
-          docker run --rm docker-application:latest id
+            DISABLE_XDEBUG=${{ env.DISABLE_XDEBUG }}
 
       # Warm dependent images so compose doesn't have to pull them during up
-      - name: Pre-pull compose services (best effort)
+      - name: Pre-pull compose services
         run: |
           docker compose -f packaging/docker/docker-compose-base.yml pull || true
 

@@ -2,6 +2,7 @@
 ARG PHP_TAG=8.4-apache
 FROM php:${PHP_TAG}
 
+ARG DISABLE_XDEBUG=0
 ARG USER_UID=1000
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -45,10 +46,22 @@ RUN <<BASH
     CPPFLAGS="${CPPFLAGS-} -I/usr/src/php" \
     docker-php-ext-install -j"$(nproc)" ${PHP_EXT_XML}
 
-    # XDEBUG START
-    pecl install xdebug
-    docker-php-ext-enable xdebug
-    # XDEBUG END
+    # XDEBUG (conditional)
+    if [[ "${DISABLE_XDEBUG}" == "1" ]]; then
+        echo "Skipping Xdebug install (DISABLE_XDEBUG=1)"
+    else
+        # Install Xdebug
+        pecl install xdebug
+        docker-php-ext-enable xdebug
+
+        # Configure debugging
+        {
+            echo "xdebug.mode=debug"
+            echo "xdebug.start_with_request=yes"
+            echo "xdebug.client_host=host.docker.internal"
+            echo "xdebug.client_port=9003"
+        } > /usr/local/etc/php/conf.d/99-xdebug.ini
+    fi
 
     # Apache Rewrite engine
     a2enmod rewrite
