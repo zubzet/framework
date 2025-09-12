@@ -8,7 +8,7 @@
                         <div class="text-muted small">
                             Amount Of Tables
                         </div>
-                        <div class="h4 mb-0"><?= number_format(count($opt["status"]["tables"])) ?></div>
+                        <div class="h4 mb-0" data-test="table-amount"><?= number_format(count($opt["status"]["tables"])) ?></div>
                     </div>
                     <i class="fa fa-table fa-lg text-muted"></i>
                 </div>
@@ -21,7 +21,7 @@
                         <div class="text-muted small">
                             Approx. Amount Of Rows
                         </div>
-                        <div class="h4 mb-0"><?= number_format($opt["status"]["approxRows"]) ?></div>
+                        <div class="h4 mb-0" data-test="row-amount"><?= number_format($opt["status"]["approxRows"]) ?></div>
                     </div>
                     <i class="fa fa-database fa-lg text-muted"></i>
                 </div>
@@ -47,7 +47,7 @@
                 <?php foreach($opt["status"]["tables"] as $t) { ?>
                     <?php $rows = (int)($t["Rows"] ?? 0); ?>
                     <tr class="align-middle">
-                        <td class="font-weight-bold text-break" title="<?= e($t['Name']) ?>">
+                        <td class="font-weight-bold text-break" title="<?= e($t['Name']) ?>" data-test="table-name-<?= e($t["Name"]) ?>">
                             <a href="<?= "$opt[root]z/database/$t[Name]" ?>" class="<?= 0 === $rows ? 'text-secondary' : '' ?>">
                                 <?= e($t["Name"]) ?>
                             </a>
