@@ -67,7 +67,7 @@
          * The properties $isLoggedIn, $userId, and $execUserId will be set after calling this function.
          */
         public function identify() {
-            if ($this->booter->lite_mode || !isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
+            if (!isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
                 return $this->anonymousRequest();
             }
 
@@ -113,16 +113,11 @@
                     
                     setcookie("z_lang", $lang, time() + TIMESPAN_DAY_365, "/");
                 }
-                if($this->booter->lite_mode) {
-                    $this->language = [
-                        "value" => $lang
-                    ];
-                } else {
-                    $this->language = [
-                        "value" => $lang,
-                        "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang, $defaultLanguageId = 1)
-                    ];
-                }
+
+                $this->language = [
+                    "value" => $lang,
+                    "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang, $defaultLanguageId = 1)
+                ];
             } else {
                 $this->language = [
                     "value" => "EN",

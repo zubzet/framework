@@ -185,8 +185,6 @@
          * @return int ID of the log category
          */
         function getLogCategoryIdByName($name) {
-            if($this->z_db->booter->lite_mode) return;
-
             $sql = "SELECT `id` FROM `z_interaction_log_category` WHERE LOWER(`name`) = LOWER(?)";
             $this->exec($sql, "s", $name);
             if ($this->countResults() > 0) {
@@ -209,7 +207,6 @@
          * @param int $value Optional value
          */
         function logAction($categoryId, $text, $value = null) {
-            if($this->z_db->booter->lite_mode) return;
             $user = $this->booter->user;
             $insertId = $this->getInsertId(); //Store to restore later
 
