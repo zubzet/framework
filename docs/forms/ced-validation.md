@@ -8,11 +8,11 @@ var form = Z.Forms.create({dom: "form"});
 
 form.createCED({
     name: "permissions",
-    text: "<?php $opt["lang"]("permissions"); ?>",
+    text: "Permissions",
     fields: [{ 
         name: "name", 
         type: "text", 
-        text: "<?php $opt["lang"]("permission"); ?>"
+        text: "Permission"
     }],
     value: <?php echo $opt["permissions"]; ?>
 });

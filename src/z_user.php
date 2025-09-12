@@ -28,13 +28,6 @@
         public $execUserId = null;
 
         /**
-         * @var array $language Holds information about the language of the user.
-         * 
-         * Array with the keys "id" and "value".
-         */
-        public $language = []; //TODO: Insert default language here
-
-        /**
          * @var mixed[] $fields Holds the dataset from the database of this user
          */
         public $fields = []; //Stores custom per project properties
@@ -83,8 +76,6 @@
                 $user = $this->booter->getModel("z_user")->getUserById($this->userId);
                 if ($user !== false) {
                     $this->isLoggedIn = true;
-                    $this->language["id"] = $user["languageId"];
-                    $this->language["value"] = $this->booter->getModel("z_general")->getLanguageById($this->language["id"])["value"];
                     $this->fields = $user;
                 }
             }
@@ -92,38 +83,7 @@
 
         private function anonymousRequest() {
             $this->isLoggedIn = false;
-            $this->chooseNonLoginLanguage();
             return;
-        }
-
-        private function chooseNonLoginLanguage() {
-            if(empty($this->language) && !in_array($this->booter->settings["anonymous_language"], ["", " ", "  ", "\t"])) {
-                $lang = null;
-                if(isset($_COOKIE["z_lang"]) && !isset($_GET["lang"])){
-                    $lang = $_COOKIE["z_lang"]; 
-                } else {
-                    $default = str_replace(" ", "", $this->booter->settings["anonymous_language"]);
-                    $lang = isset($_GET["lang"]) && strlen($_GET["lang"]) == 2 ? $_GET["lang"] : (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2) : $default);
-                    
-                    $availableLang = []; 
-                    foreach (explode(",", str_replace(" ", "", $this->booter->settings["anonymous_available_languages"])) as $langCode) {
-                        $availableLang[] = $langCode;
-                    }
-                    $lang = in_array($lang, $availableLang) ? $lang : $default;
-                    
-                    setcookie("z_lang", $lang, time() + TIMESPAN_DAY_365, "/");
-                }
-
-                $this->language = [
-                    "value" => $lang,
-                    "id" => $this->booter->getModel("z_general")->getLanguageByValue($lang, $defaultLanguageId = 1)
-                ];
-            } else {
-                $this->language = [
-                    "value" => "EN",
-                    "id" => 0
-                ];
-            }
         }
 
         /**

@@ -54,16 +54,6 @@
                     essentialsHead($opt, $customBootstrap);
                 };
 
-                $userLang = "en";
-                if (isset($opt["overwrite_lang"])) {
-                    $userLang = $opt["overwrite_lang"];
-                } else {
-                    $userLang = $this->booter->user->language["value"];
-                }
-                $userLang = strtolower($userLang);
-
-                $opt["layout_lang"] = $userLang;
-
                 //Log view
                 $catId = $this->booter->getModel("z_general")->getLogCategoryIdByName("view");
                 $user = $this->booter->user->userId;
@@ -73,46 +63,9 @@
                 //Load the document
                 $view = include($viewPath);
 
-                global $langStorage;
-                $langStorage = array();
-
-                $arr = $this->parse_i18n($view, $document);
-                
-                foreach($arr["en"] as $key => $val) {
-                    if (isset($arr[$userLang][$key])) {
-                        $langStorage[strtolower($key)] = $arr[$userLang][$key];
-                    } else {
-                        $langStorage[strtolower($key)] = $arr["en"][$key];
-                    }
-                }
-        
                 //Load the layout
                 $layout_url = $layout;
                 $layout = include($this->booter->getViewPath($layout));
-                $arr = $this->parse_i18n($layout, $layout_url);
-
-                //TODO: Document $arr["en"]
-                foreach($arr["en"] as $key => $val) {
-                    if (isset($arr[$userLang][$key])) {
-                        $langStorage[strtolower($key)] = $arr[$userLang][$key];
-                    } else {
-                        $langStorage[strtolower($key)] = $arr["en"][$key];
-                    }
-                }
-
-                $opt["lang"] = function($key, $echo = true) {
-                    global $langStorage;
-                    $out = "";
-                    if (isset($langStorage[$key])) {
-                        $out = $langStorage[$key];
-                    } else {
-                        $out = $key;
-                    }
-                    if ($echo) {
-                        echo $out;
-                    }
-                    return $out;
-                };
 
                 $opt["generateResourceLink"] = function($url, $root = true) {
                     $v = $this->getBooterSettings("assetVersion");
@@ -132,84 +85,10 @@
                 $rendered = ob_get_contents();
                 ob_end_clean();
 
-                //Replace languages via string
-                if(strpos($rendered, '##-') !== false && strpos($rendered, '-##') !== false) {
-                    $rendered = $this->parse_opt_lang($rendered, "##-", "-##", function($inTag) use ($opt) {
-                        return $opt["lang"]($inTag, false);
-                    });
-                }
-
                 echo $rendered;
             } else {
                 $this->reroute(["error", "404"]);
             }
-        }
-
-        /**
-         * Replaces tags with data
-         * @param string $rendered The rendered document
-         * @param string $startTag The opening tag
-         * @param string $endTag The closing tag
-         * @param callable $cb Callback function to generate the replacement content
-         * @return string The output after replacing the tags
-         */
-        private function parse_opt_lang($rendered, $startTag, $endTag, $cb) {
-            $output = $rendered;
-            $rendered = str_split($rendered);
-            $startTagLength = strlen($startTag);
-            $endTagLength = strlen($endTag);
-            $buffer = "";
-            $inTag = false;
-            $inTagData = "";
-            foreach($rendered as $char) {
-                if($inTag) {
-                    $inTagData .= $char;
-                    if(strlen($buffer) == $endTagLength) {
-                        if($buffer == $endTag) {
-                            $inTag = false;
-                            $inTagData = substr($inTagData, 0, -4);
-                            $output = str_replace($startTag.$inTagData.$endTag, $cb($inTagData), $output);
-                        }
-                        $buffer = substr($buffer, 1);
-                    }
-                    $buffer .= $char;
-                } else {
-                    if(strlen($buffer) == $startTagLength) {
-                        if($buffer == $startTag) {
-                            $inTag = true;
-                            $inTagData = $char;
-                            $buffer = "";
-                        } 
-                        $buffer = substr($buffer, 1);
-                    }
-                    $buffer .= $char;
-                }
-            }
-            return $output;
-        }
-
-        /**
-         * Parses the i18n data into language arrays
-         * @param array $i18n The i18n data
-         * @param string $document The file location of the view
-         * @return array The parsed language array
-         */
-        private function parse_i18n($i18n, $document) {
-            $arr = [];
-            if(isset($i18n["lang"])) {
-                if(is_array($i18n["lang"])) {
-                    $arr = $i18n["lang"];
-                } else {
-                    $filename = $i18n["lang"];
-                    if($filename == "i18n") {
-                        $filename = "z_views/i18n/".str_replace(".php", ".ini", $document);
-                    }
-                    if(!file_exists($filename)) throw new Exception("$filename i18n ini file does not exist!");
-                    $arr = parse_ini_file($filename, true);
-                }
-            }
-            if (!isset($arr["en"])) $arr["en"] = [];
-            return $arr;
         }
 
         /**
