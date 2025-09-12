@@ -7,7 +7,7 @@ Database access and heavy logic should not be used in the view as that belong in
 ## Structure
 A view should be placed in the `z_views` directory of your project, otherwise it will not be found when called from the render method.
 
-It is a php file which returns an array with up to three attributes. `head` and `body` are functions that get executed in the layout at the matching place. `lang` is optional and holds language data useable by `$opt["lang"]`.
+It is a php file which returns an array with up to three attributes. `head` and `body` are functions that get executed in the layout at the matching place.
 
 `head` and `body` should accept a parameter called $opt. It contains data passed into the $opt parameter of the `render` method. For the view to communicate back to a controller, asynchronous methods must be used.
 
@@ -33,30 +33,6 @@ public function action_index(Request $req, Response $res) {
 <?php return ["body" => function($opt) { ?>
     <h1>$opt["value"]</h1>
 <?php }]; ?>
-```
-
-
-## Complete example view with localization
-```php
-<?php return ["head" => function($opt) { ?>
-    <title>Mitarbeiterverwaltung</title>
-<?php }, "body" => function($opt) { ?> 
-    <div class="card">
-        <div class="card-header">
-            <h1><?= $opt["lang"]("header") ?></h1>
-        </div>
-        <div class="card-body">
-            <h1>$opt["value"]</h1>
-        </div>
-    </div>
-<?php }, "lang" => [
-    "en" => [
-        "header" => "Welcome!"
-    ],
-    "DE_Formal" => [
-        "header" => "Willkommen"
-    ]
-]]; ?>
 ```
 
 More examples for views can be found in [`z_framework/default/views`](https://git.zierhut-it.de/Zierhut-IT/z_framework/src/branch/DEV/default/views).

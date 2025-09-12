@@ -30,12 +30,6 @@ function essentialsHead($opt, $customBootstrap) { ?>
         Z.Request.rootPath = "<?= $opt["root"]; ?>";
         Z.Request.rootHost = "<?= $opt["request"]->getRoot(); ?>";
         Z.Request.absRoot = "<?= $opt["absRoot"]; ?>";
-        //TODO: make this better
-        /*Z.Lang.addElement = "<?php $opt["lang"]("form_add_element"); ?>",
-        Z.Lang.submit = "<?php $opt["lang"]("form_submit") ?>",
-        Z.Lang.saved = "<?php $opt["lang"]("form_saved") ?>",
-        Z.Lang.saveError = "<?php $opt["lang"]("form_save_error") ?>",
-        Z.Lang.unsaved = "<?php $opt["lang"]("form_unsaved_changes") ?>"*/
     </script>
 
     <meta charset="utf-8"/>

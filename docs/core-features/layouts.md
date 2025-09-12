@@ -30,16 +30,7 @@ When using `$res->render`, a third optional parameter accepts a path to a layout
         </footer>
     </body>
 </html>
-<?php }, "lang" => [
-    "en" => [
-        "key" => "word",
-        "key2" => "word2"
-    ],
-    "DE_Formal" => [
-        "key" => "wort",
-        "key2" => "wort2"
-    ]
-]]; ?>
+<?php }]; ?>
 
 ```
 
