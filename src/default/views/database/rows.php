@@ -29,7 +29,7 @@
                             <div class="text-muted small">
                                 Amount Of Rows
                             </div>
-                            <div class="h4 mb-0">
+                            <div class="h4 mb-0" data-test="amount-rows">
                                 <?= number_format($opt["table"]["totalRows"]) ?>
                             </div>
                         </div>
@@ -44,7 +44,7 @@
                             <div class="text-muted small">
                                 Amount Of Columns
                             </div>
-                            <div class="h4 mb-0">
+                            <div class="h4 mb-0" data-test="amount-columns">
                                 <?= number_format($table["totalColumns"]) ?>
                             </div>
                         </div>
@@ -59,8 +59,8 @@
                             <div class="text-muted small">
                                 Sorted By
                             </div>
-                            <div class="h5 mb-0 text-break">
-                              <?= e($table["orderBy"]) ?>
+                            <div class="h5 mb-0 text-break" data-test="sort-by">
+                                <?= e($table["orderBy"]) ?>
                             </div>
                         </div>
                         <i class="fa fa-sort-amount-desc fa-lg text-muted"></i>
@@ -70,16 +70,16 @@
         </div>
 
         <nav class="mb-4">
-            <ul class="pagination">
+            <ul class="pagination" data-test="pagination">
                 <li class="page-item shadow-sm <?= $opt["page"] <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= $opt["pageLink"] ?>1">
+                    <a class="page-link" data-test="pagination-first" href="<?= $opt["pageLink"] ?>1">
                         <i class="fa fa-fw fa-step-backward"></i>
                         First
                     </a>
                 </li>
     
                 <li class="page-item shadow-sm <?= $opt["page"] <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= "$opt[pageLink]$opt[paginationLast]" ?>">
+                    <a class="page-link" data-test="pagination-previous" href="<?= "$opt[pageLink]$opt[paginationLast]" ?>">
                         <i class="fa fa-fw fa-step-backward"></i>
                         Previous
                     </a>
@@ -87,21 +87,21 @@
     
                 <?php for ($p = $opt["paginationStart"]; $p <= $opt["paginationEnd"]; $p++) { ?>
                     <li class="page-item shadow-sm <?= $p == $opt["page"] ? 'active' : '' ?>">
-                        <a class="page-link" href="<?= "$opt[pageLink]$p" ?>">
+                        <a class="page-link" data-test="pagination-page-<?= e($p) ?>" href="<?= "$opt[pageLink]$p" ?>">
                             <?= e($p) ?>
                         </a>
                     </li>
                 <?php } ?>
     
                 <li class="page-item shadow-sm <?= $opt["page"] >= $opt["totalPages"] ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= "$opt[pageLink]$opt[paginationNext]" ?>">
+                    <a class="page-link" data-test="pagination-next" href="<?= "$opt[pageLink]$opt[paginationNext]" ?>">
                         Next
                         <i class="fa fa-fw fa-step-forward"></i>
                     </a>
                 </li>
     
                 <li class="page-item shadow-sm <?= $opt["page"] >= $opt["totalPages"] ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= "$opt[pageLink]$opt[totalPages]" ?>">
+                    <a class="page-link" data-test="pagination-last" href="<?= "$opt[pageLink]$opt[totalPages]" ?>">
                         Last
                         <i class="fa fa-fw fa-fast-forward"></i>
                     </a>
@@ -116,7 +116,7 @@
                 <thead class="thead-light">
                     <tr>
                         <?php foreach($table["columns"] as $col) { ?>
-                            <th class="text-nowrap">
+                            <th class="text-nowrap" data-test="column-<?= e($col["Field"]) ?>">
                                 <?= e($col["Field"]) ?>
                                 <?php if("PRI" == $col["Key"]) { ?>
                                     <i class="fa fa-key text-warning"></i>
@@ -129,7 +129,7 @@
                     <?php foreach ($opt["table"]["rows"] as $r) { ?>
                         <tr class="align-middle">
                             <?php foreach ($table["columns"] as $col) { ?>
-                                <td class="text-nowrap">
+                                <td class="text-nowrap" data-test="row-<?= e($col["Field"]) ?>">
                                     <?php if(is_null($r[$col["Field"]])) { ?>
                                         <span class="text-muted">—</span>
                                     <?php } else { ?>

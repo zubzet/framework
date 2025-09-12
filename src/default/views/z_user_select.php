@@ -10,7 +10,7 @@ return ["head" => function($opt) { ?> <!-- File header -->
 
     <div class="list-group">
       <?php foreach($opt["users"] as $user) { ?>
-        <a href="<?php echo $opt["root"]. "z/edit_user/" . $user["id"]; ?>" class="list-group-item list-group-item-action"><?php echo $user["email"]; ?></a>
+        <a data-test="user" href="<?php echo $opt["root"]. "z/edit_user/" . $user["id"]; ?>" class="list-group-item list-group-item-action"><?= e($user["email"]); ?></a>
       <?php } ?>
     </div>
 

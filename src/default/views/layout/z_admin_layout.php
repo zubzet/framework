@@ -86,7 +86,7 @@
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/log"><i class="fa fa-file"></i>Log / Statistics</a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.database")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/database">
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-database" href="<?= $opt["root"]; ?>z/database">
                                     <i class="fa fa-database"></i>
                                     Database
                                 </a>
@@ -94,13 +94,13 @@
                         </div>
                         <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/edit_user"><i class="fa fa-user-edit"></i>Edit User</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-edit-user" href="<?= $opt["root"]; ?>z/edit_user"><i class="fa fa-user-edit"></i>Edit User</a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.user.add")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/add_user"><i class="fa fa-user-plus"></i></i>Add User</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-add-user" href="<?= $opt["root"]; ?>z/add_user"><i class="fa fa-user-plus"></i></i>Add User</a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.roles.list")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>z/roles"><i class="fa fa-user-tag"></i>Roles</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-roles" href="<?= $opt["root"]; ?>z/roles"><i class="fa fa-user-tag"></i>Roles</a>
                             <?php } ?>
                         </div>
                         <div class="list-group mb-1">

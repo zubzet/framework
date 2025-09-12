@@ -477,6 +477,11 @@
          */
         public $fields;
 
+         /**
+         * @var string $name Holds the name of a form result. Used for CED forms
+         */
+        public ?string $name;
+
         /**
          * Creates a new FormResult object
          */
