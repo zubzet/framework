@@ -2,12 +2,17 @@
 
     namespace ZubZet\Tooling\Version;
 
+    use ZubZet\Tooling\ReleaseState;
+    use ZubZet\Tooling\Modifiers\Folder;
     use ZubZet\Tooling\Version\BaseVersion;
+    use ZubZet\Tooling\Modifiers\RemoveFile;
     use ZubZet\Tooling\Modifiers\SettingsIni;
     use ZubZet\Tooling\Modifiers\FileContent;
-    use ZubZet\Tooling\Modifiers\Folder;
+    use ZubZet\Tooling\Modifiers\ComposerModifier;
 
     class V0_11_0 extends BaseVersion implements VersionInterface {
+        public string $stability = ReleaseState::Stable;
+
         public function upgrade(): bool {
             // New mail security setting
             $settings = new SettingsIni($this, "mail-settings");
@@ -80,13 +85,8 @@
                 'require_once "vendor/autoload.php";',
             ]);
 
-            // TODO: Replace with a composer modifier
-            $fileContent = new FileContent($this, "composer-zubzet");
-            $fileContent->find("composer.json");
-            $fileContent->shouldChangeIfNotIncludes("zubzet/framework");
-            $fileContent->shouldChangeIfNotIncludes("0.11");
-            $fileContent->automateChangeCmd("composer require zubzet/framework:^0.11");
-            $fileContent->demandChange("Install ZubZet framework via Composer");
+            $composer = new ComposerModifier($this, "composer");
+            $composer->upgradeToCurrentVersion();
 
             $fileContent = new FileContent($this, "composer-zubzet-install");
             $fileContent->find("composer.lock");
@@ -104,6 +104,14 @@
 
             $folder = new Folder($this, "folder-submodule-zubzet");
             $folder->shouldNotExist(["z_framework"]);
+
+            // Remove old framework files
+            $zFramework = new RemoveFile($this, "old-file-cleanup");
+            $zFramework->from([
+                ".z_framework",
+                "composer.phar",
+                "cv.txt",
+            ]);
 
             return true;
         }

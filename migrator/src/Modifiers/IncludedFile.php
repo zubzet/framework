@@ -4,6 +4,11 @@
 
     class IncludedFile extends BaseModifier {
 
+        private bool $isOptional = false;
+        public function optionalIfNotFound(): void {
+            $this->isOptional = true;
+        }
+
         private ?string $fromFile = null;
         public function from(string $file) {
             $this->fromFile = $this->version->upgrade->rootDir . DIRECTORY_SEPARATOR;
@@ -20,6 +25,10 @@
             $path = rtrim($path, DIRECTORY_SEPARATOR);
 
             if(!is_dir($path)) {
+                if($this->isOptional || $this->upgrade->dry) {
+                    $this->out->writeln("The target folder <comment>$path</comment> does not exist. Skipping...");
+                    return;
+                }
                 throw new \RuntimeException("The target folder '$path' does not exist.");
             }
 
@@ -30,11 +39,17 @@
                     return;
                 }
 
-                $this->out->writeln("The target file <comment>$path</comment> already exists, but the contents are different. It will be replaced.");
+                $this->out->writeln("The target file <info>$path</info> already exists, but the contents are different. It will be replaced.");
                 if(!$this->confirmAutomatedChange()) $this->abortRequiringUserAction();
             }
 
-            $this->out->writeln("Moving example file <info>{$this->fromFile}</info> to <info>$path</info>");
+            if($this->isOptional && !is_file($path)) {
+                $this->out->writeln("The target file <comment>$path</comment> does not exist, not replacing. Skipping...");
+                return;
+            }
+
+            $fromFileName = basename($this->fromFile);
+            $this->out->writeln("Moving included file <info>$fromFileName</info> to <info>$path</info>");
             if($this->upgrade->dry) return;
 
             if(!copy($this->fromFile, $path) || !chmod($path, 0644)) {

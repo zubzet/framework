@@ -3,9 +3,11 @@
     namespace ZubZet\Tooling\Modifiers;
 
     use SebastianBergmann\Diff\Differ;
+    use ZubZet\Tooling\Interactions\CommandInteraction;
     use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
 
     class FileContent extends BaseModifier {
+        use CommandInteraction;
 
         protected string $fileContent;
         protected string $filePath;
@@ -127,21 +129,8 @@
 
             // Propose automated command if available
             if(!is_null($this->automatedChangeCmd)) {
-                $this->out->writeln("");
-                $this->out->writeln("You can run the following command to fix this issue:");
-                $this->out->writeln("<info>{$this->automatedChangeCmd}</info>");
-
-                if($this->confirmAutomatedChange()) {
-                    $this->out->writeln("Executing command <comment>{$this->automatedChangeCmd}</comment> ...");
-                    exec($this->automatedChangeCmd . ' 2>&1', $output, $exitCode);
-
-                    // Successful execution
-                    if(0 === $exitCode) return;
-
-                    $this->out->writeln("<error>Command exited with code $exitCode, please check the output:</error>");
-                    foreach($output as $line) {
-                        $this->out->writeln("\t$line");
-                    }
+                if($this->runCommand($this->automatedChangeCmd)) {
+                    return;
                 }
             }
 
