@@ -14,6 +14,6 @@
 
     //z_framework init
     $z_framework = new z_framework();
-    $z_framework->handleRequest();
+    $z_framework->execute();
 
 ?>
