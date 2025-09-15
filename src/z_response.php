@@ -99,13 +99,13 @@
          */
         public function reroute($path = [], $alias = false, $final = false) {
             if(!$alias) {
-                $this->booter->executePath($path);
+                $this->booter->reroute($path);
             } else {
                 $parts = array_values($this->booter->urlParts);
                 foreach ($path as $i => $path_part) {
                     $parts[$i] = $path_part;
                 }
-                $this->booter->executePath($parts);
+                $this->booter->reroute($parts);
             }
             if($final) exit;
         }

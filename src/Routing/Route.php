@@ -35,12 +35,11 @@ class Route {
          * Initializes the static Router.
          * This must be called once before loading route files.
          *
-         * @param App $app The main Slim App instance.
          * @param mixed $booter The main framework class for callbacks.
          */
-        public static function init(App $app, $booter): void {
+        public static function init($booter): void {
             self::$booter = $booter;
-            self::$routerStack = [$app];
+            self::$routerStack = [$booter->slimApplication];
         }
 
         /**
