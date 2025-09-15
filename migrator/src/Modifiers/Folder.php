@@ -50,6 +50,16 @@
         }
 
         public function shouldNotExistIfEmpty(string|array $paths) {
+            if(!is_array($paths)) {
+                $paths = [$paths];
+            }
+
+            // Remove paths that are not empty
+            $paths = array_filter($paths, function($path) {
+                $path = rtrim($path, DIRECTORY_SEPARATOR);
+                return is_dir($path) && empty(glob("$path/*"));
+            });
+
             $this->shouldNotExist($paths);
         }
     }

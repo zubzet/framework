@@ -9,8 +9,8 @@
             $this->isOptional = true;
         }
 
-        private array $data = [];
-        private string $file;
+        protected array $data = [];
+        protected string $file;
 
         public function from(string $file) {
             if(!file_exists($file)) {
@@ -32,21 +32,36 @@
             }
         }
 
+        private bool $hasBeenModified = false;
         public function modify(\Closure $callback): void {
+            if(!isset($this->file)) {
+                $this->out->writeln("No JSON file loaded, skipping modification.");
+                return;
+            }
+
             $modifiedData = $callback($this->data);
 
-            if($modifiedData === $this->data || is_null($modifiedData)) {
+            $noChangesMade = is_null($modifiedData);
+
+            $sourceData = json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            $modifiedData = json_encode($modifiedData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+            $noChangesMade = $noChangesMade || $modifiedData === $sourceData;
+            if($noChangesMade) {
                 $this->out->writeln("No changes made to <comment>{$this->file}</comment>. Skipping...");
                 return;
             }
 
-            $this->out->writeln("Modifying JSON file <comment>{$this->file}</comment>...");
-            if($this->upgrade->dry) return;
+            $this->out->writeln("Modifying JSON file <info>{$this->file}</info>...");
+            $this->hasBeenModified = true;
 
-            file_put_contents(
-                $this->file,
-                json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-            );
+            if($this->upgrade->dry) return;
+            file_put_contents($this->file, $modifiedData);
+        }
+
+        public function ifModified(\Closure $callback): void {
+            if(!$this->hasBeenModified) return;
+            $callback();
         }
     }
 ?>

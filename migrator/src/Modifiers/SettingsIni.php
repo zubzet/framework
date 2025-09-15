@@ -11,7 +11,8 @@
                 throw new \RuntimeException('Settings file not found: ' . $this->fileLocation);
             }
 
-            $this->settings = file($this->fileLocation, FILE_IGNORE_NEW_LINES);
+            $content = file_get_contents($this->fileLocation);
+            $this->settings = preg_split('/\R/', $content);
         }
 
         private function propertyExistsAt(string $name): ?int {
@@ -118,7 +119,7 @@
 
             $property = &$this->settings[$propertyAt];
             if(str_contains($property, $value)) {
-                $this->out->writeln("Property <comment>$name</comment> is already set to <info>$value</info>, skipping modification.");
+                $this->out->writeln("Property <comment>$name</comment> is already set to <comment>$value</comment>, skipping modification.");
                 return;
             }
 
@@ -129,38 +130,51 @@
 
         private bool $shouldCollapseConsecutiveEmptyRows = false;
         public function collapseConsecutiveEmptyRows(): void {
-            $this->out->writeln("Styling <info>consecutive empty rows</info> to be collapsed into one.");
             $this->shouldCollapseConsecutiveEmptyRows = true;
         }
 
         private bool $shouldAssertEmptyLastRow = false;
         public function assertEmptyLastRow(): void {
-            $this->out->writeln("Styling <info>last empty row</info> to exist.");
             $this->shouldAssertEmptyLastRow = true;
         }
 
         public function save(): void {
-            if($this->upgrade->dry) return;
-
             // Collapse consecutive empty rows
             if($this->shouldCollapseConsecutiveEmptyRows) {
+                $collapsedRows = 0;
                 $prevEmpty = false;
                 $this->settings = array_values(array_filter(
                     $this->settings,
-                    function($line) use (&$prevEmpty) {
-                        if(empty($line) && $prevEmpty) return false;
+                    function($line) use (&$prevEmpty, &$collapsedRows) {
+                        if(empty($line) && $prevEmpty) {
+                            $collapsedRows++;
+                            return false;
+                        }
                         $prevEmpty = empty($line);
                         return true;
                     },
                 ));
+
+                if($collapsedRows > 0) {
+                    $this->out->writeln("Styling <info>$collapsedRows consecutive empty rows</info> to be collapsed into one.");
+                } else {
+                    $this->out->writeln("No <comment>consecutive empty rows</comment> found, Skipping...");
+                }
             }
 
             // Add empty last row
             if($this->shouldAssertEmptyLastRow) {
                 $lastRow = $this->settings[count($this->settings) - 1];
-                if(!empty($lastRow)) $this->settings[] = "";
+
+                if(!empty($lastRow)) {
+                    $this->out->writeln("Styling <info>last empty row</info> to exist.");
+                    $this->settings[] = "";
+                } else {
+                    $this->out->writeln("Last row is already <comment>empty</comment>, Skipping...");
+                }
             }
 
+            if($this->upgrade->dry) return;
             file_put_contents(
                 $this->fileLocation,
                 implode(PHP_EOL, $this->settings),

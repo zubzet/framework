@@ -47,11 +47,15 @@
 
         public string $rootDir;
 
+        public SymfonyStyle $io;
+
         public function execute(InputInterface $input, OutputInterface $output): int {
             $this->input = $input;
             $this->output = $output;
 
             $this->rootDir = realpath(__DIR__ . '/..');
+
+            $this->io = new SymfonyStyle($input, $output);
 
             $location = (string) $input->getArgument('location');
             $from = (string) $input->getArgument('from');
@@ -100,8 +104,8 @@
                 $toIndex - $fromIndex,
             );
 
-            $output->writeln(sprintf(
-                '<info>Planning upgrade from %s to %s (%d step%s)</info>',
+            $this->io->title(sprintf(
+                'Planning upgrade from <info>%s</info> to <info>%s</info> (in %d step%s)',
                 $from,
                 $to,
                 count($steps),
@@ -128,11 +132,11 @@
                     return Command::FAILURE;
                 }
 
-                $output->writeln(sprintf(
-                    '<info>Upgrading %s -> %s</info> via <comment>%s</comment>',
+                $this->io->writeln("");
+                $this->io->section(sprintf(
+                    'Upgrading <info>%s</info> -> <info>%s</info>',
                     $current,
                     $target,
-                    $class,
                 ));
 
                 $migration = new $class($this, $target);
@@ -149,7 +153,9 @@
                 }
             }
 
-            $output->writeln('<info>Upgrade complete.</info>');
+            $this->io->newLine();
+            $this->io->title('Upgrade complete');
+
             return Command::SUCCESS;
         }
     }

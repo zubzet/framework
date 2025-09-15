@@ -39,8 +39,8 @@
             }
 
             // Count what will be moved (recursive)
-            $filesCount = iterator_count((new Finder())->files()->in($fromReal));
-            $dirsCount = iterator_count((new Finder())->directories()->in($fromReal));
+            $filesCount = iterator_count((new Finder())->ignoreDotFiles(false)->ignoreVCS(false)->files()->in($fromReal));
+            $dirsCount = iterator_count((new Finder())->ignoreDotFiles(false)->ignoreVCS(false)->directories()->in($fromReal));
 
             $this->out->writeln(sprintf(
                 "Moving <info>%d</info> file%s and <info>%d</info> director%s from <info>%s</info> to <info>%s</info>.",
@@ -60,8 +60,14 @@
                     'copy_on_windows' => true,
                 ]);
 
+                $finder = (new Finder())
+                    ->ignoreDotFiles(false)
+                    ->ignoreVCS(false)
+                    ->depth('== 0')
+                    ->in($fromReal);
+
                 // Remove the content in the source directory
-                foreach ((new Finder())->depth('== 0')->in($fromReal) as $child) {
+                foreach ($finder as $child) {
                     $fs->remove($child->getPathname());
                 }
             } catch (IOExceptionInterface $e) {

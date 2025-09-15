@@ -39,7 +39,7 @@
             if($this->shouldSkipStep()) return false;
 
             $helper = new QuestionHelper();
-            $question = new ConfirmationQuestion('Do you want to apply the automated change now? [Y/N]: ', false);
+            $question = new ConfirmationQuestion('Do you want to apply the automated change now? [Y/n]: ', false);
 
             $this->out->writeln("");
             return $helper->ask($this->in, $this->out, $question);
