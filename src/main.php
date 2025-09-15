@@ -1,10 +1,9 @@
-<?php
-
+<?php 
+    use Slim\Factory\ServerRequestCreatorFactory;
     use Slim\Factory\AppFactory;
     use ZubZet\Framework\Routing\Route;
     use \Slim\Psr7\Response as HttpResponse;
     use Slim\Exception\HttpNotFoundException;
-    use Psr\Http\Message\ServerRequestInterface;
 
     /**
      * Also known as the booter.
@@ -55,6 +54,9 @@
 
         /** @var Request $req A reference to an instance of the Request class */
         public $req;
+
+        /** @var Slim\App $slimApplication The instance of the Slim application */
+        public $slimApplication;
 
         /** @var array[] $action_pattern_replacement Replacement patterns for action names */
         public $action_pattern_replacement = [
@@ -213,43 +215,32 @@
          * Handles the incoming request
          * Firstly, it tryes to load routes from Slim, then it falls back to the ZubZet framework.
          */
-        public function handleRequest() {
+        public function execute($customUrlParts = null) {
             // Create a new Slim App instance
-            $app = AppFactory::create();
+            $this->slimApplication = AppFactory::create();
 
             // Initialize the Route class with the Slim app and this framework instance
-            Route::init($app, $this);
+            Route::init($this);
 
             // Uses to register all routes for Slim
-            $this->loadRoutes($app);
-
-            // If no routes were registered, use the ZubZet framework
-            $app->addErrorMiddleware(true, true, true)
-                ->setErrorHandler(
-                    HttpNotFoundException::class,
-                    function (
-                        ServerRequestInterface $request,
-                        \Throwable $exception,
-                        bool $displayErrorDetails,
-                        bool $logErrors,
-                        bool $logErrorDetails
-                    ) {
-                        // Fallback to ZubZet
-                        $this->execute();
-
-                        // Return a PSR response to stop further processing
-                        return new HttpResponse();
-                    }
-                );
+            $this->loadRoutes();
 
             // Execute the Slim Route
-            $app->run();
+            try  {
+                $this->slimApplication->run();
+            } catch (HttpNotFoundException $e) {
+                // Fallback to ZubZet
+                $this->handleRequest($customUrlParts);
+
+                // Return a PSR response to stop further processing
+                return new HttpResponse();
+            }
         }
 
         /*
         * Loads all routes in "z_routes"
         */
-        private function loadRoutes($app) {
+        private function loadRoutes() {
             // get all php files in the z_routes directory
             $routeFiles = glob($this->routes . "/*.php");
 
@@ -263,7 +254,7 @@
          * Executes the requested action
          * @param array|null $customUrlParts Example: ["panel", "index"]
          */
-        public function execute($customUrlParts = null) {
+        private function handleRequest($customUrlParts = null) {
             global $argv;
             if(isset($argv)) {
                 if(($argv[1] ?? null) == "run") {
@@ -326,6 +317,31 @@
                 } else {
                     return $this->executePath(["error", "500"]);
                 }
+            }
+        }
+
+        /**
+         * Tries to reroute the request using Slim first, if the route does not exist, it falls back to the ZubZet framework.
+         *
+         * @param mixed $parts The parts of the new route. Example: ["auth", "login"]
+         * @return void
+         */
+        public function reroute($parts) {
+            try {
+                $joinedParts = implode("/", $parts);
+
+                $request = ServerRequestCreatorFactory::create()->createServerRequestFromGlobals();
+
+                $request = $request->withUri(
+                    $request->getUri()->withPath(
+                        "/$joinedParts"
+                    )
+                );
+
+                $this->slimApplication->run($request);
+            } catch(HttpNotFoundException $e) {
+                // Fallback to ZubZet
+                $this->executePath($parts);
             }
         }
 
