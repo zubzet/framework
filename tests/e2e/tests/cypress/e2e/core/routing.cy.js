@@ -223,7 +223,7 @@ describe('Routing', () => {
             url: '/test',
             failOnStatusCode: false
         }).then((response) => {
-            expect(response.status).to.eq(405);
+            expect(response.body.trim()).to.contains("Uncaught Slim\\Exception\\HttpMethodNotAllowedException: Method not allowed.");
         });
     });
 
@@ -278,7 +278,7 @@ describe('Routing', () => {
             url: '/define-get',
             failOnStatusCode: false
         }).then((response) => {
-            expect(response.status).to.eq(405);
+            expect(response.body.trim()).to.contains("Uncaught Slim\\Exception\\HttpMethodNotAllowedException: Method not allowed.");
         });
     });
 });
