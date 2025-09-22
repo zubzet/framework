@@ -197,12 +197,10 @@
          * Format: root/class/method/parameter/parameter/...
          */
         private function parseUrl() {
-            $path = parse_url($this->url, PHP_URL_PATH);
-            $path = ltrim($path, '/');
-            $path = rtrim($path, '/');
-            $this->rootDirectory = ltrim($this->rootDirectory, '/');
-            $this->rootDirectory = rtrim($this->rootDirectory, '/');
-            
+            $path = parse_url($this->url, PHP_URL_PATH) ?: "";
+            $path = trim($path, '/');
+            $this->rootDirectory = trim($this->rootDirectory, '/');
+
             $urlParts = $path !== "" ? explode("/", $path) : [];
 
             $this->rootDirectory = $this->rootDirectory !== "" ? explode("/", $this->rootDirectory) : [];
