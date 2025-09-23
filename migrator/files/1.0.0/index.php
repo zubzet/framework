@@ -22,6 +22,7 @@
 
         require_once $entryScript;
         $entryScriptFound = true;
+        break;
     }
 
     // If no entry script is found, return a 500 error
