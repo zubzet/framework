@@ -92,10 +92,13 @@
          * @return bool True when the permission is given
          */
         public function checkPermission($permission): bool {
+            if(!$this->isLoggedIn) return false;
             return $this->checkPermissionOf($permission, $this->userId);
         }
 
         public function checkSuperPermission($permission): bool {
+            if(!$this->isLoggedIn) return false;
+
             // Check if the user has the permission themselves
             if($this->checkPermissionOf($permission, $this->userId)) {
                 return true;
