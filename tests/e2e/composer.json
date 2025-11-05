@@ -14,9 +14,6 @@
     },
 
     "config": {
-        "platform": {
-            "ext-ctype": "0"
-        },
         "sort-packages": true
     }
 }
