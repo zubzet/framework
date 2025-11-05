@@ -1,6 +1,7 @@
 <?php 
     use Slim\Factory\ServerRequestCreatorFactory;
     use Slim\Factory\AppFactory;
+    use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Routing\Route;
     use \Slim\Psr7\Response as HttpResponse;
     use Slim\Exception\HttpNotFoundException;
@@ -253,11 +254,10 @@
          * @param array|null $customUrlParts Example: ["panel", "index"]
          */
         private function handleRequest($customUrlParts = null) {
-            global $argv;
-            if(isset($argv)) {
-                if(($argv[1] ?? null) == "run") {
-                    $customUrlParts = array_slice($argv, 2);
-                }
+            if($this->req->isCli()) {
+                $console = Application::bootstrap($this);
+                $console->run();
+                return;
             }
 
             //Be able to force custom 
