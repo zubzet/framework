@@ -32,7 +32,7 @@
             );
 
             $this->addArgument(
-                "params",
+                "parameters",
                 InputArgument::IS_ARRAY | InputArgument::OPTIONAL,
                 "Optional Parameters",
             );
@@ -41,7 +41,7 @@
         protected function execute(InputInterface $in, OutputInterface $out): int {
             $controller = strtolower((string) $in->getArgument('controller'));
             $action = strtolower((string) $in->getArgument('action'));
-            $params = $in->getArgument('params') ?? [];
+            $parameters = $in->getArgument("parameters") ?? [];
 
             // Load the underlying data
             $actionsByController = ActionDiscovery::find($this->booter->z_controllers);
@@ -69,7 +69,7 @@
             $this->booter->executePath([
                 $controller,
                 $action,
-                ...$params,
+                ...$parameters,
             ]);
 
             return 0;

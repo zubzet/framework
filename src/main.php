@@ -348,6 +348,8 @@
         * @param array $parts Example: ["auth", "login"]
         */
         public function executePath($parts) {
+            $this->urlParts = $parts;
+
             $this->reroutes++;
             if ($this->reroutes > $this->maxReroutes) die("Error: Too many reroutes. Please contact the webmaster.");
 
