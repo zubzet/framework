@@ -9,10 +9,8 @@
         }
     }],
 
-    "minimum-stability": "dev",
-
     "require": {
-        "zubzet/framework": "*"
+        "zubzet/framework": "*@dev"
     },
 
     "config": {
