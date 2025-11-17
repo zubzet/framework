@@ -25,7 +25,7 @@
         <ul>
             <?php foreach($opt["users"] as $user) {?>
                 <li>
-                    <div data-test="user"><?= $user["email"] ?></div>
+                    <div data-test="user"><?= $user["email"] ?? "No EMail" ?></div>
                     <div><?= $user["password"] ?></div>
                     <div><? $user["salt"] ?></div>
                 </li>

@@ -69,7 +69,7 @@
          * @return bool|array|null The dataset of the user
          */
         function getUserByLogin($email) {
-            $query = "SELECT * FROM `z_user` WHERE email=?";
+            $query = "SELECT * FROM `z_user` WHERE email=? AND email IS NOT NULL";
             $this->exec($query, "s", $email);
             if ($this->getResult()->num_rows < 1) return false;
             return $this->getResult()->fetch_assoc();
