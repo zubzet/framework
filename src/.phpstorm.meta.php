@@ -19,6 +19,9 @@
             '' => '@Model'
         ]));
 
+        override(model(), map([
+            '' => '@Model'
+        ]));
     }
 
 ?>
