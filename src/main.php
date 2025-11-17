@@ -60,13 +60,23 @@
 
         /** @var array[] $action_pattern_replacement Replacement patterns for action names */
         public $action_pattern_replacement = [
-            ["-", "_"], 
+            ["-", "_"],
             [".", "§2E"],
-            ["ä", "ae"], 
-            ["ö", "oe"], 
+            ["ä", "ae"],
+            ["ö", "oe"],
             ["ü", "ue"]
         ];
-        
+
+        /** @var z_framework The instance of the framework */
+        private static ?z_framework $instance = null;
+
+        /**
+         * @internal z_framework::getInstance()
+         */
+        public static function getInstance(): ?z_framework {
+            return self::$instance;
+        }
+
         /**
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
@@ -153,6 +163,8 @@
             require_once $this->z_framework_root.'z_user.php';
             $this->user = new User($this);
             $this->user->identify();
+
+            self::$instance = $this;
         }
 
         public function __set(string $name, mixed $value): void {
