@@ -68,13 +68,12 @@
         ];
 
         /** @var z_framework The instance of the framework */
-        private static z_framework $instance;
+        private static ?z_framework $instance = null;
 
         /**
-         * Get in instance of the framework after initiation
-         * @internal
+         * @internal z_framework::getInstance()
          */
-        public static function getInstance(): z_framework {
+        public static function getInstance(): ?z_framework {
             return self::$instance;
         }
 
