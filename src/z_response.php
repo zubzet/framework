@@ -301,6 +301,15 @@
          */
         public function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
             $target = $this->booter->getModel("z_user")->getUserById($userId);
+
+            if(is_null($target)) {
+                throw new \Exception("User with ID $userId not found.");
+            }
+
+            if(is_null($target["email"])) {
+                throw new \Exception("User with ID $userId has no email address.");
+            }
+
             $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
             $language = isset($langObj["value"]) ? $langObj["value"] : $this->getBooterSettings("anonymous_language");
             return $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
@@ -391,7 +400,7 @@
 
             $this->booter->getModel("z_general")->logActionByCategory(
                 "logout",
-                "User logged out (" . $user->fields["email"] . ")",
+                "User logged out (" . ($user->fields["email"] ?? "~No Email~") . ")",
                 $user->fields["email"],
             );
 
