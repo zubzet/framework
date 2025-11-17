@@ -17,6 +17,9 @@
         "classmap": [
             "src/main.php"
         ],
+        "files": [
+            "src/Support/GlobalReferences.php"
+        ],
         "psr-4": {
             "ZubZet\\Framework\\": "src/"
         }
