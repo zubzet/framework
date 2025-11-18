@@ -2,11 +2,11 @@
 
 namespace ZubZet\Framework\Permission;
 
-// Indicate if permissions have changed globally
-// If true, permissions will be reloaded for each access
-$permissionChanged = false;
-
 trait Permission {
+
+    // Indicate if permissions have changed globally
+    // If true, permissions will be reloaded for each access
+    protected static $permissionChanged = false;
 
     /**
      * Add permissions to an permission object (user or role)
