@@ -92,6 +92,26 @@ use ZubZet\Framework\Permission\User;
             $this->exec($insertQuery);
         }
 
+        /**
+         * Remove permissions from a permission object (user or role)
+         *
+         * @param int|string $objectId The id of the object to remove permissions from
+         * @param string $permissionsTable The permissions table
+         * @param string $column The column name for the object ID
+         * @param string[] $permissionNames The names of the permissions to remove
+         * @return void
+         * @internal
+         */
+        public function removePermissionsFromObject(int|string $objectId, string $permissionsTable, string $column, string ...$permissionNames): void {
+            $deleteQuery = $this->dbUpdate($permissionsTable, [
+                "active" => 0
+            ])->where([
+                $column => $objectId
+            ])->whereInList("name", $permissionNames);
+
+            $this->exec($deleteQuery);
+        }
+
 
         /**
          * @internal
