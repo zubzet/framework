@@ -14,6 +14,10 @@
             echo "Controller Fallback";
         }
 
+        public function action_command(Request $req, Response $res) {
+            echo json_encode($req->getParameters());
+        }
+
         public function action_parameters(Request $req, Response $res) {
             print_r($req->getParameters());
         }
