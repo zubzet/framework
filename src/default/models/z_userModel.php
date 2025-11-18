@@ -61,7 +61,7 @@
         function add($email, $passwordString = null, $verified = null) {
             if($verified === null) {
                 $query = "INSERT INTO `z_user`(`email`) VALUES (?)";
-                $this->exec($query, "ss", $email);
+                $this->exec($query, "s", $email);
             } else {
                 $query = "INSERT INTO `z_user`(`email`, `verified`) VALUES (?, ?)";
                 $this->exec($query, "ss", $email, $verified);
