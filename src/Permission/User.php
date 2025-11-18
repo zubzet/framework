@@ -89,6 +89,7 @@ class User extends AuthenticationObject {
     public function loadObject(array $data): void {
         $this->data = $data;
         $this->setField("permissions", null);
+        $this->setField("user-permissions", null);
         $this->setField("roles", null);
     }
 
@@ -259,7 +260,20 @@ class User extends AuthenticationObject {
     public function getPermissions(): array {
         global $permissionChanged;
 
-        if(is_null($this->getField("permissions")) || $permissionChanged) $this->refreshPermissions();
+        if(is_null($this->getField("user-permissions")) || $permissionChanged) $this->refreshPermissions();
+
+        return $this->getField("user-permissions");
+    }
+
+    /**
+     * Get the user's permissions including those inherited from roles
+     *
+     * @return string[] Array of permissions
+     */
+    public function getPermissionsAll(): array {
+        global $permissionChanged;
+
+        if(is_null($this->getField("permissions")) || $permissionChanged) $this->refreshAllPermissions();
 
         return $this->getField("permissions");
     }
@@ -270,6 +284,15 @@ class User extends AuthenticationObject {
      * @return void
      */
     public function refreshPermissions(): void {
-        $this->setField("permissions", model("z_permission")->getPermissionsByUser($this));
+        $this->setField("user-permissions", model("z_permission")->getPermissionsByUser($this));
+    }
+
+    /**
+     * Reset the permissions cache
+     *
+     * @return void
+     */
+    public function refreshAllPermissions(): void {
+        $this->setField("permissions", model("z_permission")->getPermissionsByUserAll($this));
     }
 }

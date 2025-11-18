@@ -182,7 +182,7 @@ use ZubZet\Framework\Permission\User;
         /**
          * @internal
          */
-        public function getPermissionsByUser(User $user): array {
+        public function getPermissionsByUserAll(User $user): array {
             $userPermissions = $this->dbSelect("zup.name", [
                 "zup" => "z_user_permission"
             ])->where([
@@ -211,6 +211,20 @@ use ZubZet\Framework\Permission\User;
             ])->distinct(true);
 
             return $this->exec($finalPermissions)->resultToArray();
+        }
+
+        /**
+         * @internal
+         */
+        public function getPermissionsByUser(User $user): array {
+            $userPermissions = $this->dbSelect("zup.name", [
+                "zup" => "z_user_permission"
+            ])->where([
+                "zup.user" => $user->id(),
+                "zup.active" => 1
+            ])->distinct(true);
+
+            return $this->exec($userPermissions)->resultToArray();
         }
 
         /**

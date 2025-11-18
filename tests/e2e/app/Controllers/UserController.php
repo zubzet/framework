@@ -247,7 +247,7 @@ class UserController extends z_controller {
         ];
 
         if ($includePermissions) {
-            $userData['permissions'] = $user->getPermissions();
+            $userData['permissions'] = $user->getPermissionsAll();
         }
 
         if ($includeRoles) {
