@@ -257,7 +257,7 @@ class User extends AuthenticationObject {
      *
      * @return string[] Array of permissions
      */
-    public function getPermissions(): array {
+    public function getUserPermissions(): array {
         global $permissionChanged;
 
         if(is_null($this->getField("user-permissions")) || $permissionChanged) $this->refreshPermissions();
@@ -270,7 +270,7 @@ class User extends AuthenticationObject {
      *
      * @return string[] Array of permissions
      */
-    public function getPermissionsAll(): array {
+    public function getPermissions(): array {
         global $permissionChanged;
 
         if(is_null($this->getField("permissions")) || $permissionChanged) $this->refreshAllPermissions();
