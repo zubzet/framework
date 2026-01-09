@@ -34,7 +34,13 @@ describe('Core Features', () => {
 
     it('Presets Register', () => {
         cy.visit("/Frontend/register");
-        cy.query("user").should('not.contain.text', 'creation@zierhut-it.de');
+
+        cy.get('#response').invoke('text').then((text) => {
+            const data = JSON.parse(text);
+            const exists = data.some(item => item.email === 'creation@zierhut-it.de');
+
+            expect(exists).to.be.false;
+        });
 
         cy.query("email").click().type("creation@zierhut-it.de");
         cy.query("password").click().type("password");
@@ -42,7 +48,14 @@ describe('Core Features', () => {
         cy.query("submit").click();
 
         cy.visit("/Frontend/register");
-        cy.query("user").should('contain.text', 'creation@zierhut-it.de');
+
+        cy.get('#response').invoke('text').then((text) => {
+            const data = JSON.parse(text);
+            const exists = data.some(item => item.email === 'creation@zierhut-it.de');
+
+            expect(exists).to.be.true;
+        });
+
     });
 
     it('Presets Register Duplicate EMail', () => {

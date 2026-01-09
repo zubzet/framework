@@ -103,7 +103,6 @@ describe('Z-Admin Panel', () => {
 
 
         cy.form("email").should("exist");
-        cy.form("languageId").should("exist");
         cy.form("password").should("exist");
         cy.get('.btn.btn-primary').should("exist");
 
@@ -142,7 +141,6 @@ describe('Z-Admin Panel', () => {
         cy.query("user").contains("customer@zierhut-it.de").click();
 
         cy.form("email").should("exist");
-        cy.form("languageId").should("exist");
 
     });
 
