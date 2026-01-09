@@ -12,10 +12,9 @@ describe('Commands', () => {
     });
 
     it('Execute Command with Parameters', () => {
-        cy.exec('docker exec application php index.php run core parameters test und so').then((result) => {
-            const output = result.stdout;
-
-            expect(output).to.include('Array\n(\n    [0] => test\n    [1] => und\n    [2] => so\n)');
+        cy.exec('docker exec application php index.php run core command test und so').then((result) => {
+            const output = JSON.parse(result.stdout);
+            expect(output).to.be.an('array').that.includes('test', 'und', 'so');
         });
     });
 

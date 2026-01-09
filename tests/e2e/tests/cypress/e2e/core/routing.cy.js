@@ -4,6 +4,15 @@ describe('Routing', () => {
     });
 
     const cases = [
+        // Controller Routing cases
+        {
+            route: "/RouteDeny/check",
+            expected: "Route Middleware Accept ExecutedArray ( ) Route Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/RouteAccept/check",
+            expected: "Route Middleware Accept ExecutedArray ( ) Middleware Accept Executed Route Afterware ExecutedArray ( )"
+        },
         // Default cases
         {
             route: "/test",

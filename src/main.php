@@ -1,6 +1,7 @@
 <?php 
     use Slim\Factory\ServerRequestCreatorFactory;
     use Slim\Factory\AppFactory;
+    use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Routing\Route;
     use \Slim\Psr7\Response as HttpResponse;
     use Slim\Exception\HttpNotFoundException;
@@ -60,13 +61,23 @@
 
         /** @var array[] $action_pattern_replacement Replacement patterns for action names */
         public $action_pattern_replacement = [
-            ["-", "_"], 
+            ["-", "_"],
             [".", "§2E"],
-            ["ä", "ae"], 
-            ["ö", "oe"], 
+            ["ä", "ae"],
+            ["ö", "oe"],
             ["ü", "ue"]
         ];
-        
+
+        /** @var z_framework The instance of the framework */
+        private static ?z_framework $instance = null;
+
+        /**
+         * @internal z_framework::getInstance()
+         */
+        public static function getInstance(): ?z_framework {
+            return self::$instance;
+        }
+
         /**
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
@@ -153,6 +164,8 @@
             require_once $this->z_framework_root.'z_user.php';
             $this->user = new User($this);
             $this->user->identify();
+
+            self::$instance = $this;
         }
 
         public function __set(string $name, mixed $value): void {
@@ -253,18 +266,21 @@
          * @param array|null $customUrlParts Example: ["panel", "index"]
          */
         private function handleRequest($customUrlParts = null) {
-            global $argv;
-            if(isset($argv)) {
-                if(($argv[1] ?? null) == "run") {
-                    $customUrlParts = array_slice($argv, 2);
-                }
+            if($this->req->isCli()) {
+                $console = Application::bootstrap($this);
+                $console->run();
+                return;
             }
 
             //Be able to force custom 
             if(isset($customUrlParts)) {
                 $this->urlParts = $customUrlParts;
             }
-            $this->executePath($this->urlParts);
+
+            // it should perform the middleware groups matching the prefix
+            Route::performStoredGroupsMatchingPrefix($this->urlParts, function() {
+                return $this->executePath($this->urlParts);
+            });
         }
 
 
@@ -348,6 +364,8 @@
         * @param array $parts Example: ["auth", "login"]
         */
         public function executePath($parts) {
+            $this->urlParts = $parts;
+
             $this->reroutes++;
             if ($this->reroutes > $this->maxReroutes) die("Error: Too many reroutes. Please contact the webmaster.");
 

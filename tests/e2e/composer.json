@@ -12,13 +12,10 @@
     "minimum-stability": "dev",
 
     "require": {
-        "zubzet/framework": "*"
+        "zubzet/framework": "*@dev"
     },
 
     "config": {
-        "platform": {
-            "ext-ctype": "0"
-        },
         "sort-packages": true
     }
 }

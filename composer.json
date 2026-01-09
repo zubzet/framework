@@ -11,11 +11,15 @@
         "cakephp/database": "^4.5",
         "slim/slim": "^4.14",
         "slim/psr7": "^1.7",
-        "phpmailer/phpmailer": "^6.7"
+        "phpmailer/phpmailer": "^6.7",
+        "symfony/console": "6.* || 7.*"
     },
     "autoload": {
         "classmap": [
             "src/main.php"
+        ],
+        "files": [
+            "src/Support/GlobalReferences.php"
         ],
         "psr-4": {
             "ZubZet\\Framework\\": "src/"
