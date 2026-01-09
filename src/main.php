@@ -276,7 +276,11 @@
             if(isset($customUrlParts)) {
                 $this->urlParts = $customUrlParts;
             }
-            $this->executePath($this->urlParts);
+
+            // it should perform the middleware groups matching the prefix
+            Route::performStoredGroupsMatchingPrefix($this->urlParts, function() {
+                return $this->executePath($this->urlParts);
+            });
         }
 
 

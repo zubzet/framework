@@ -31,6 +31,8 @@ class Route {
          */
         private static array $prefixStack = [];
 
+        public static array $storedPrefixedGroups = [];
+
         /**
          * Initializes the static Router.
          * This must be called once before loading route files.
@@ -63,9 +65,54 @@ class Route {
         public static function define(string $method, string $endpoint, array $action): PendingRoute { return new PendingRoute($method, $endpoint, $action); }
 
 
-
         static function group(string $prefix, callable $callback): PendingGroup {
             return new PendingGroup($prefix, $callback);
+        }
+
+        /**
+         * Performs middleware matching for stored groups based on the current URL parts.
+         */
+        static function performStoredGroupsMatchingPrefix(array $urlParts, $callback): void {
+            // Construct the current path from URL parts
+            $currentPath = '/' . implode('/', $urlParts);
+
+            // Collect middlewares to execute
+            $toExecuteMiddleware = [];
+            $toExecuteAfterMiddleware = [];
+
+            foreach(self::$storedPrefixedGroups as $groupPath => $data) {
+                // Check if the current path matches the group prefix
+                $isMatch = ($currentPath === $groupPath) ||
+                        (str_starts_with($currentPath, $groupPath . '/'));
+
+
+                if(!$isMatch) continue;
+
+                // Collect middlewares and afterwares to execute
+                foreach($data['middleware'] as $mw) {
+                    $toExecuteMiddleware[] = $mw;
+                }
+
+                foreach($data['afterMiddleware'] as $amw) {
+                    $toExecuteAfterMiddleware[] = $amw;
+                }
+            }
+
+            // Execute collected middlewares and exit if any returns any other than true
+            foreach($toExecuteMiddleware as $mw) {
+                [$class, $method] = $mw;
+                $result = self::$booter->executeControllerAction($class, $method, []);
+                if($result !== true) exit;
+            }
+
+            // Execute the main callback (route handling)
+            $callback();
+
+            // Execute after middlewares
+            foreach($toExecuteAfterMiddleware as $amw) {
+                [$class, $method] = $amw;
+                self::$booter->executeControllerAction($class, $method, []);
+            }
         }
 
         /**
@@ -82,6 +129,11 @@ class Route {
                 $callback();
                 array_pop(self::$routerStack);
             });
+
+            self::$storedPrefixedGroups[(implode("", self::$prefixStack))] = [
+                'middleware' => $middlewares,
+                'afterMiddleware' => $afterMiddleware,
+            ];
 
             // Pop the prefix from the stack after leaving the group.
             array_pop(self::$prefixStack);

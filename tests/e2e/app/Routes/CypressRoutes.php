@@ -1,6 +1,18 @@
 <?php
     use ZubZet\Framework\Routing\Route;
 
+    // it should execute "Route_Middleware_Accept" and then block by "Route_Middleware_Block" (no afterware or route action should be executed)
+    Route::group('/RouteDeny', function() {})
+        ->middleware([CoreController::class, 'Route_Middleware_Accept'])
+        ->middleware([CoreController::class, 'Route_Middleware_Block'])
+        ->afterMiddleware([CoreController::class, 'Route_Afterware']);
+
+    // it should execute "Route_Middleware_Accept", then the route action, then "Route_Afterware"
+    Route::group('/RouteAccept', function() {})
+        ->middleware([CoreController::class, 'Route_Middleware_Accept'])
+        ->afterMiddleware([CoreController::class, 'Route_Afterware']);
+
+
     Route::get('/test', [CoreController::class, 'TestRoute']);
 
     Route::get('/abc/{userId}/{postId}', [CoreController::class, 'TestRoute']);
@@ -25,7 +37,6 @@
 
     // Testing all Stages with a Group-Middleware which accepts the request
     Route::group('/accept', function() {
-
         Route::get('/test', [CoreController::class, 'TestRoute']);
 
         Route::get('/middleware-accept', [CoreController::class, 'TestRoute'])
