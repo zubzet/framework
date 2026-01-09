@@ -45,20 +45,21 @@
             if ($req->hasFormData()) {
                 $formResult = $req->validateForm([
                     (new FormField("email"))
+                        -> required()
+                        -> filter(FILTER_VALIDATE_EMAIL)
                         -> unique("z_user", "email"),
+                    (new FormField("languageId"))
+                        -> required()
+                        -> exists("z_language", "id"),
                 ]);
-
-                if(!empty($req->getPost("email")) &&
-                   !filter_var($req->getPost("email"), FILTER_VALIDATE_EMAIL)) {
-                    $formResult->addCustomError("email", "filter");
-                }
 
                 if ($formResult->hasErrors) {
                     return $res->formErrors($formResult->errors);
                 }
 
                 $result = $req->getModel("z_user", $res->getZRoot())->add(
-                    (empty($req->getPost("email")) ? null : $req->getPost("email")),
+                    $req->getPost("email"),
+                    $req->getPost("languageId"),
                     $req->getPost("password"),
                     date("Y-m-d H:i:s"),
                 );
@@ -68,7 +69,8 @@
             }
 
             $res->render("z_add_user.php", [
-                "title" => "Add user"
+                "title" => "Add user",
+                "languages" => $this->makeFood($req->getModel("z_general")->getLanguageList(), "id", "name")
             ], "layout/z_admin_layout.php");
         }
 
@@ -89,29 +91,18 @@
 
                 if ($req->hasFormData()) {
                     $formResult = $req->validateForm([
-                        (new FormField("email"))        -> unique("z_user", "email", "id", $userId),
+                        (new FormField("email"))        -> required() -> filter(FILTER_VALIDATE_EMAIL) -> unique("z_user", "email", "id", $userId),
+                        (new FormField("languageId"))   -> required() -> exists("z_language", "id")
                     ]);
 
                     $subformResult = $req->validateCED("roles", [
                         (new FormField("role")) -> required() -> exists("z_role", "id")
                     ]);
-
-                    $subPermissionForm = $req->validateCED("permissions", [
-                        (new FormField("name")) -> required() -> length(3, 100)
-                    ]);
-
-                    $newEmail = $req->getPost("email");
-
-                    if(!empty($newEmail) &&
-                        !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-                            $formResult->addCustomError("email", "filter");
-                        }
     
                     if ($formResult->hasErrors || $subformResult->hasErrors) {
                         $res->formErrors($formResult->errors, $subformResult->errors);
                     } else {
                         $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
-                        $res->doCED("z_user_permission", $subPermissionForm, ["user" => $userId]);
                         $res->updateDatabase("z_user", "id", "i", $userId, $formResult);
                         $res->log("user", "User $email changed", 0);
                         $res->success();
@@ -120,12 +111,13 @@
 
                 $res->render("z_edit_user.php", [
                     "title" => "Edit user", 
+                    "languages" => $this->makeFood($req->getModel("z_general")->getLanguageList(), "id", "name"),
                     "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
                     "roles" => $this->makeFood($req->getModel("z_general")->getTableWhere("z_role", "*", "active = ?", "i", [1]), "id", "name"),
-                    "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
                     "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
                     "result" => "success",
                     "email" => $user["email"],
+                    "language" => $user["languageId"],
                     "userId" => $userId
                 ], "layout/z_admin_layout.php");
             } else {

@@ -32,7 +32,7 @@
          * @return bool|array|null The dataset
          */
         function getUserByEmail($email) {
-            $query = "SELECT * FROM `z_user` WHERE `email`=? AND `email` IS NOT NULL";
+            $query = "SELECT * FROM `z_user` WHERE `email`=?";
             $this->exec($query, "s", $email);
             
             if ($this->getResult()->num_rows > 0) {
@@ -46,25 +46,23 @@
          * @return array[] The table as a two dimensional array
          */
         function getUserList() {
-            $query = "SELECT *
-                        FROM `z_user`
-                        WHERE `active` = 1";
-            return $this->exec($query)->resultToArray();
+            return $this->getFullTable("z_user");
         }
 
         /**
          * Creates an user account
          * @param string $email Email of the user
+         * @param int $language Id of users language
          * @param string $passwordString The raw users password. Not hashed! It will be hashed in this function
          * @return int The id of the new created user
          */
-        function add($email, $passwordString = null, $verified = null) {
+        function add($email, $language, $passwordString = null, $verified = null) {
             if($verified === null) {
-                $query = "INSERT INTO `z_user`(`email`) VALUES (?)";
-                $this->exec($query, "s", $email);
+                $query = "INSERT INTO `z_user`(`email`, `languageId`) VALUES (?, ?)";
+                $this->exec($query, "ss", $email, $language);
             } else {
-                $query = "INSERT INTO `z_user`(`email`, `verified`) VALUES (?, ?)";
-                $this->exec($query, "ss", $email, $verified);
+                $query = "INSERT INTO `z_user`(`email`, `languageId`, `verified`) VALUES (?, ?, ?)";
+                $this->exec($query, "sss", $email, $language, $verified);
             }
             $insertId = $this->getInsertId();
 
@@ -184,28 +182,8 @@
          * @return string[] Array filled with permissions
          */
         function getPermissionsByUserId($userId) {
-            $sql = "SELECT name FROM (
-                        SELECT p.name
-                        FROM z_role_permission p
-                        LEFT JOIN z_user_role u
-                        ON p.role = u.role
-                        LEFT JOIN z_role zr
-                        ON u.role = zr.id
-                        WHERE u.active = 1
-                        AND p.active = 1
-                        AND zr.active = 1
-                        AND u.user = ?
-
-                        UNION
-
-                        SELECT up.name
-                        FROM z_user_permission up
-                        WHERE up.active = 1
-                        AND up.user = ?
-                        ) AS all_permissions
-                        ORDER BY name;";
-                $this->exec($sql, "ii", $userId, $userId);
-
+            $sql = "SELECT p.name FROM z_role_permission p LEFT JOIN z_user_role u ON p.role = u.role WHERE u.active = 1 ANd p.active = 1 AND u.user = ?";
+            $this->exec($sql, "i", $userId);
             $arr = $this->resultToArray();
             $out = [];
             foreach ($arr as $perm) {

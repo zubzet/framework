@@ -21,7 +21,15 @@
         });
     </script>
 
-    <div id="response">
-        <?php print_r(json_encode($opt["users"])); ?>
+    <div>
+        <ul>
+            <?php foreach($opt["users"] as $user) {?>
+                <li>
+                    <div data-test="user"><?= $user["email"] ?></div>
+                    <div><?= $user["password"] ?></div>
+                    <div><? $user["salt"] ?></div>
+                </li>
+             <?php } ?>
+        </ul>
     </div>
 <?php }]; ?>

@@ -15,8 +15,17 @@
         form.createField({
             name: "email",
             type: "email",
+            required: true,
             text: "Email",
             placeholder: "name@example.com"
+        });
+
+        form.createField({
+            name: "languageId",
+            type: "select",
+            required: true,
+            text: "Language",
+            food: <?= $opt["languages"] ?>,
         });
 
         form.createField({

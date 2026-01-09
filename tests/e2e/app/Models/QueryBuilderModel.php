@@ -2,6 +2,19 @@
 
     class QueryBuilderModel extends z_model {
 
+        public function selectAllUsers() {
+            $query = $this->dbSelect("id, email", "z_user");
+
+            return $this->exec($query)->resultToArray();
+        }
+
+        public function selectUserById($id) {
+            $query = $this->dbSelect("id, email", "z_user")
+                            ->where(["id" => $id]);
+
+            return $this->exec($query)->resultToArray();
+        }
+
         public function selectUserExtended() {
             $query = $this->dbSelect("u.id, u.email", "z_user u")
                             ->where(["u.id" => 1])
@@ -67,6 +80,19 @@
             $query = $this->dbSelect("u.id, u.email", "z_user u")
                             ->limit(2)
                             ->page(2);
+            return $this->exec($query)->resultToArray();
+        }
+
+        public function selectUserOrder() {
+            $query = $this->dbSelect("u.id, u.email", "z_user u")
+                            ->order("u.id DESC");
+            return $this->exec($query)->resultToArray();
+        }
+
+        public function selectUserGroup() {
+            $query = $this->dbSelect("COUNT(*)", "z_user u")
+                            ->group("u.languageId")
+                            ->having(["COUNT(u.id) >" => 1]);
             return $this->exec($query)->resultToArray();
         }
 
