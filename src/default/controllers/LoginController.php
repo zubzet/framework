@@ -130,7 +130,6 @@
                 // Create the new user account
                 $userId =  $req->getModel("z_user")->add(
                     $req->getPost("email"),
-                    0,
                     $req->getPost("password"),
                 );
 
