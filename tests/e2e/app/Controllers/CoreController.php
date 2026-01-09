@@ -178,58 +178,70 @@
         /**
          * Testing the Query Builder
          */
+
+        public function action_querybuilderSelect(Request $req, Response $res) {
+            print_r($req->getModel("QueryBuilder")->selectAllUsers());
+        }
+
+        public function action_querybuilderSelectWhere(Request $req, Response $res) {
+            print_r($req->getModel("QueryBuilder")->selectUserById(1));
+        }
+
         public function action_querybuilderSelectWhereExtended(Request $req, Response $res) {
-            echo json_encode(($req->getModel("QueryBuilder")->selectUserExtended()));
+            print_r($req->getModel("QueryBuilder")->selectUserExtended());
         }
 
         public function action_querybuilderSelectJoin(Request $req, Response $res) {
-            echo json_encode($req->getModel("QueryBuilder")->selectUserJoin());
+            print_r($req->getModel("QueryBuilder")->selectUserJoin());
         }
 
         public function action_querybuilderSelectLike(Request $req, Response $res) {
-            echo json_encode($req->getModel("QueryBuilder")->selectUserLike()); 
+            print_r($req->getModel("QueryBuilder")->selectUserLike()); 
         }
 
         public function action_querybuilderSelectLT(Request $req, Response $res) {
-            echo json_encode($req->getModel("QueryBuilder")->selectUserLT());
+            print_r($req->getModel("QueryBuilder")->selectUserLT());
         }
 
         public function action_querybuilderSelectIn(Request $req, Response $res) {
-            echo json_encode($req->getModel("QueryBuilder")->selectUserIn());
+            print_r($req->getModel("QueryBuilder")->selectUserIn());
         }
 
         public function action_querybuilderSelectORAND(Request $req, Response $res) {
-            echo json_encode($req->getModel("QueryBuilder")->selectUserORAND());
+            print_r($req->getModel("QueryBuilder")->selectUserORAND());
         }
 
         public function action_querybuilderSelectLimit(Request $req, Response $res) {
-            echo json_encode($req->getModel("QueryBuilder")->selectUserLimit());
+            print_r($req->getModel("QueryBuilder")->selectUserLimit());
 
+        }
+
+        public function action_querybuilderSelectOrder(Request $req, Response $res) {
+            print_r($req->getModel("QueryBuilder")->selectUserOrder());
+        }
+
+        public function action_querybuilderSelectGroup(Request $req, Response $res) {
+            print_r($req->getModel("QueryBuilder")->selectUserGroup());
         }
 
         public function action_queryBuilderInsert(Request $req, Response $res) {
             $req->getModel("QueryBuilder")->insertLanguage();
 
-            echo json_encode([
-                "1" => $req->getModel("QueryBuilder")->selectLanguageById(2),
-                "2" => $req->getModel("QueryBuilder")->selectLanguageById(3),
-                "3" => $req->getModel("QueryBuilder")->selectLanguageById(4)
-            ]);
-
+            print_r($req->getModel("QueryBuilder")->selectLanguageById(2));
+            print_r($req->getModel("QueryBuilder")->selectLanguageById(3));
+            print_r($req->getModel("QueryBuilder")->selectLanguageById(4));
         }
 
         public function action_queryBuilderUpdate(Request $req, Response $res) {
             $req->getModel("QueryBuilder")->updateLanguage();
 
-            echo json_encode($req->getModel("QueryBuilder")->selectLanguageById(1));
+            print_r($req->getModel("QueryBuilder")->selectLanguageById(1));
         }
 
         public function action_queryBuilderDelete(Request $req, Response $res) {
             $req->getModel("QueryBuilder")->deleteLanguage();
 
-            echo json_encode([
-                "null" => $req->getModel("QueryBuilder")->selectLanguageById(1) == null ? "null" : "not null"
-            ]);
+            print_r($req->getModel("QueryBuilder")->selectLanguageById(1));
         }
     }
 

@@ -3,66 +3,63 @@ describe('Query Builder', () => {
         cy.dbSeed();
     });
 
+
     const cases = [
         {
+            route: '/Core/querybuilderSelect',
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) [1] => Array ( [id] => 2 [email] => support@zierhut-it.de ) [2] => Array ( [id] => 3 [email] => customer@zierhut-it.de ) [3] => Array ( [id] => 4 [email] => not-activated@domain.de ) [4] => Array ( [id] => 5 [email] => customer-new@zierhut-it.de ) ) "
+        },
+        {
+            route: '/Core/querybuilderSelectWhere',
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) ) "
+        },
+        {
             route: '/Core/querybuilderSelectWhereExtended',
-            expected: [
-                {"id":1, "email":"admin@zierhut-it.de"}
-            ]
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) ) "
         },
         {
             route: '/Core/querybuilderSelectJoin',
-            expected: [
-                {"id":1, "email":"admin@zierhut-it.de", "name":"Admin"}
-            ]
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de [name] => Admin ) ) "
         },
         {
             route: '/Core/querybuilderSelectLike',
-            expected: [
-                {"id":1,"email":"admin@zierhut-it.de"}
-            ]
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) ) "
         },
         {
             route: '/Core/querybuilderSelectLT',
-            expected: [
-                {"id":1,"email":"admin@zierhut-it.de"},
-                {"id":2,"email":"support@zierhut-it.de"}
-            ]
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) [1] => Array ( [id] => 2 [email] => support@zierhut-it.de ) ) "
         },
         {
             route: '/Core/querybuilderSelectIn',
-            expected: [
-                {"id":1,"email":"admin@zierhut-it.de"},
-                {"id":2,"email":"support@zierhut-it.de"}
-            ]
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) [1] => Array ( [id] => 2 [email] => support@zierhut-it.de ) ) "
         },
         {
             route: '/Core/querybuilderSelectORAND',
-            expected: [
-                {"id":1,"email":"admin@zierhut-it.de"},
-                {"id":2,"email":"support@zierhut-it.de"}
-            ]
+            expected: "Array ( [0] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) [1] => Array ( [id] => 2 [email] => support@zierhut-it.de ) ) "
         },
         {
             route: '/Core/querybuilderSelectLimit',
-            expected: [
-                {"id":3,"email":"customer@zierhut-it.de"},
-                {"id":4,"email":"not-activated@domain.de"}
-            ]
+            expected: "Array ( [0] => Array ( [id] => 3 [email] => customer@zierhut-it.de ) [1] => Array ( [id] => 4 [email] => not-activated@domain.de ) ) "
+        },
+        {
+            route: '/Core/querybuilderSelectOrder',
+            expected: "Array ( [0] => Array ( [id] => 5 [email] => customer-new@zierhut-it.de ) [1] => Array ( [id] => 4 [email] => not-activated@domain.de ) [2] => Array ( [id] => 3 [email] => customer@zierhut-it.de ) [3] => Array ( [id] => 2 [email] => support@zierhut-it.de ) [4] => Array ( [id] => 1 [email] => admin@zierhut-it.de ) ) "
+        },
+        {
+            route: '/Core/querybuilderSelectGroup',
+            expected: "Array ( [0] => Array ( [COUNT(*)] => 4 ) ) "
         },
         {
             route: '/Core/queryBuilderInsert',
-            expected: {"1":null,"2":{"id":3,"name":"TestLanguage1","nativeName":"TestLanguageNative1","value":"tl1"},"3":{"id":4,"name":"TestLanguage2","nativeName":"TestLanguageNative2","value":"tl2"}}
+            expected: "Array ( [id] => 3 [name] => TestLanguage1 [nativeName] => TestLanguageNative1 [value] => tl1 ) Array ( [id] => 4 [name] => TestLanguage2 [nativeName] => TestLanguageNative2 [value] => tl2 ) "
         },
         {
             route: '/Core/queryBuilderUpdate',
-            expected: {"id":1,"name":"UpdatedTestLanguage1","nativeName":"UpdatedTestLanguageNative1","value":"utl1"}
+            expected: "Array ( [id] => 1 [name] => UpdatedTestLanguage1 [nativeName] => UpdatedTestLanguageNative1 [value] => utl1 ) "
         },
         {
             route: '/Core/queryBuilderDelete',
-            expected: {
-                "null":"null"
-            }
+            expected: ""
         }
     ];
 
@@ -72,11 +69,11 @@ describe('Query Builder', () => {
             cy.request('GET', route).then((response) => {
                 expect(response.status).to.eq(200);
 
-                let body = JSON.parse(response.body);
+                let actual = response.body.replace(/\s+/g, ' ').trim();
+                expected = expected.replace(/\s+/g, ' ').trim();
 
-                expect(body).to.deep.equal(expected);
+                expect(actual).to.equals(expected);
             });
         });
     });
-
 });
