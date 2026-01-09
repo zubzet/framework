@@ -18,12 +18,13 @@
 <br>
 
 ### **Why ZubZet?**
+ZubZet is especially well-suited for process-driven web apps, from internal enterprise tools that manage company workflows and day-to-day operations, to high-traffic public platforms like job boards, and even larger products like media streaming services. Thanks to its lightweight, opinionated core, it’s also a great teaching framework for students who want to learn MVC and build real projects without getting buried in complexity.
 
 - **Get Started Quickly:** With sensible defaults and out-of-the-box features, like routing and templating, there’s no steep learning curve. Just install and start building.
 
 - **Rapid Development:** Skip the boilerplate. ZubZet’s pre-configured components allow you to prototype and develop your projects faster, while maintaining clean and structured code.
 
-- **No Barriers for Newcomers:** We believe everyone should have access to good tools. ZubZet is welcoming, friendly, and empoweres newcomers.
+- **No Barriers for Newcomers:** We believe everyone should have access to great tools. ZubZet is welcoming to newcomers by adhering to principle values like default configurations being ready out of the box, while still allowing for complex setups by advanced users.
 
 - **Great Portability:** Whether you're developing locally or deploying in a complex production environment, ZubZet is designed to be lightweight, flexible, and portable.
 
@@ -36,9 +37,9 @@ The framework follows the **Model-View-Controller** (MVC) pattern, but you don�
 3. **Views** allow you to easily create templates that integrate with your data.
 
 ### **Documentation**
-Looking for step-by-step guides and practical examples? The [ZubZet Documentation](https://zubzet.com/docs/DEV) is the right place to look. It’s packed with tutorials and detailed guides to help you learn the ins and outs of the framework and get started quickly.
+Looking for step-by-step guides and practical examples? The [ZubZet Documentation](https://zubzet.com/docs) is the right place to look. It’s packed with tutorials and detailed guides to help you learn the ins and outs of the framework and get started quickly.
 
 ### **API Reference**
-Dive deep into the technical details. The comprehensive [API Reference](https://zubzet.com/docs/DEV/api) covers every class, method, and parameter to help you customize and extend ZubZet for your specific needs.
+Dive deep into the technical details. The comprehensive [API Reference](https://zubzet.com/docs/latest/api) covers every class, method, and parameter to help you customize and extend ZubZet for your specific needs.
 
-There’s no need to trade clarity for capability — build something great without getting bogged down by complexity. ZubZet is here to support your ideas, big or small—let’s build something great, together. 
+There’s no need to trade clarity for capability — build something great without getting bogged down by complexity. ZubZet is here to support your ideas, big or small—let’s build something great, together.
