@@ -49,8 +49,6 @@ extra:
 # Plugins
 plugins:
     - search
-    - mike:
-        deploy_prefix: docs
 
 use_directory_urls: true
 
