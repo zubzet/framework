@@ -54,11 +54,18 @@
                     essentialsHead($opt, $customBootstrap);
                 };
 
-                //Log view
-                $catId = $this->booter->getModel("z_general")->getLogCategoryIdByName("view");
-                $user = $this->booter->user->userId;
-
-                $this->booter->getModel("z_general")->logAction($catId, "URL viewed (User ID: ".$user." ,URL: ".(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "console").")", $document);
+                // Optional log view
+                try {
+                    $catId = model("z_general")->getLogCategoryIdByName("view");
+                    $location = $_SERVER['REQUEST_URI'] ?? "console";
+                    model("z_general")->logAction(
+                        $catId,
+                        "URL viewed (User ID: " . user()->userId . " , URL: $location)",
+                        $document,
+                    );
+                } catch (\Exception $e) {
+                    // Do not log this render to avoid having to require a database
+                }
 
                 //Load the document
                 $view = include($viewPath);

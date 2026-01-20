@@ -1,10 +1,13 @@
-<?php 
-    use Slim\Factory\ServerRequestCreatorFactory;
+<?php
+
     use Slim\Factory\AppFactory;
-    use ZubZet\Framework\Console\Application;
-    use ZubZet\Framework\Routing\Route;
-    use \Slim\Psr7\Response as HttpResponse;
+    use Slim\Psr7\Response as HttpResponse;
     use Slim\Exception\HttpNotFoundException;
+    use Slim\Factory\ServerRequestCreatorFactory;
+
+    use ZubZet\Framework\Routing\Route;
+    use ZubZet\Framework\Console\Application;
+    use ZubZet\Framework\Database\Connection;
 
     /**
      * Also known as the booter.
@@ -17,8 +20,8 @@
         /** @var array $settings Stores the z_framework settings */
         public $settings;
 
-        /** @var z_db $z_db Database proxy object  */
-        public $z_db;
+        /** @var Connection $z_db Database proxy object  */
+        public Connection $z_db;
 
         /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
         public $maxReroutes = 10;
@@ -156,9 +159,8 @@
             $this->req = new Request($this);
             $this->res = new Response($this);
 
-            // Import of the z_db
-            require_once $this->z_framework_root.'z_db.php';
-            $this->z_db = new z_db($this);
+            // Import of the database connection
+            $this->z_db = new Connection($this);
 
             // User
             require_once $this->z_framework_root.'z_user.php';
