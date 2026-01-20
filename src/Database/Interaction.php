@@ -1,187 +1,18 @@
 <?php
-    /**
-     * z_db is used as a proxy for all database actions
-     */
 
-    use Cake\Database\Driver\Mysql;
-    use Cake\Database\Connection;
+    namespace ZubZet\Framework\Database;
 
-    /**
-     * Proxy for all database access. Also holds utility functions
-     */
-    class z_db {
+    trait Interaction {
 
         /**
-         * @var Connection $cakePHPDatabase CakePHP Database connection for query builder usage
-         */
-        public Connection $cakePHPDatabase;
-        
-        /**
-         * @var mysqli $conn Connection to the database
-         */
-        private $conn;
-
-        /**
-         * @var mysqli_stmt $stmt Prepared statement object used for queries
-         */
-        private $stmt;
-
-        /**
-         * @var null|bool|mysqli_result $result Result of the last query
+         * @var null|bool|\mysqli_result $result Result of the last query
          */
         public $result;
-
-        /**
-         * @var z_framework $booter Reference to the booter
-         */
-        public $booter;
 
         /**
          * @var int $insertId Last insert id
          */
         public $insertId;
-
-        /**
-         * @var int $lastConnect Unix timestamp of the last database connect
-         */
-        public $lastConnect;
-
-        /**
-         * @var int $lastConnect Unix timestamp of the last database connect
-         */
-        public $lastHeartbeat;
-
-        /**
-         * @var int $connectTimeout Database connection timeout in seconds. Defaults to 0.5 hours
-         */
-        public int $connectTimeout;
-        
-        /**
-         * When instanced, a db connection is given as a refrence
-         */
-        public function __construct(&$booter) {
-            $this->cakePHPDatabase = new Connection([
-                'driver' => Mysql::class,
-            ]);
-
-            $this->booter = $booter;
-            $this->connectTimeout = $booter->req->getBooterSettings(
-                "db_connection_timeout",
-                $useDefault = true,
-                900,
-            );
-            $this->connect(firstConnection: true);
-        }
-
-        /**
-         * Closes the database connection on exit
-         */
-        public function __destruct() {
-            $this->disconnect();
-        }
-
-        /**
-         * Make a connection to the database
-         * @param string $charset
-         * @param bool $firstConnection Determine if this a reconnect
-         * @return void
-         */
-        public function connect($charset = "utf8mb4", $firstConnection = false) {
-            // Try to close the connection if it exists
-            if(!$firstConnection) {
-                $this->disconnect();
-            }
-
-            // Connect to the database
-            $this->conn = new mysqli(
-                $this->booter->dbhost,
-                $this->booter->dbusername,
-                $this->booter->dbpassword,
-                $this->booter->dbname
-            );
-
-            // Set the connection charset
-            $this->conn->set_charset($charset);
-
-            // Remember the connection time
-            $this->lastConnect = time();
-        }
-
-        public function assertConnection() {
-            try {
-                $this->heartbeat(waitForTimeout: false);
-            } catch(\Exception) {
-                $this->connect();
-            }
-        }
-
-        /**
-         * Disconnect from the database
-         * @param boolean $forceClose Close the connection regardless of if it seems to be open
-         * @return void
-         */
-        public function disconnect($forceClose = false) {
-            if($forceClose || $this->heartbeat()) {
-                $this->conn->close();
-            }
-        }
-
-        /**
-         * Executes a query as prepared statement
-         * @param string $query Query written as prepared statement (that thing with the question marks as placeholders)
-         * @return z_db Returning this for chaining 
-         */
-        public function exec($query) {
-            // Make sure a connection was made and has not timed out
-            if(!isset($this->lastConnect) || time() - $this->lastConnect >= $this->connectTimeout) {
-                if(!isset($this->lastHeartbeat) || time() - $this->lastHeartbeat >= $this->connectTimeout) {
-                    $this->assertConnection();
-                }
-            }
-
-            $args = func_get_args();
-            $this->stmt = $this->conn->prepare($query);
-
-            if(count($args) > 1) {
-                array_shift($args);
-                if (is_bool($this->stmt)) {
-                    throw new Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
-                }
-                $this->stmt->bind_param(...$args);
-            }
-
-            if(is_bool($this->stmt)) {
-                throw new Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
-            }
-            $this->stmt->execute();
-            $this->insertId = $this->conn->insert_id;
-
-            if($this->stmt->errno) {
-                throw new Exception("SQL Error: " . $this->stmt->error . "\nQuery: " . $query);
-            }
-
-            $this->result = $this->stmt->get_result();
-            $this->stmt->close();
-
-            $this->lastHeartbeat = time();
-
-            return $this;
-        }
-
-        /**
-         * Run a very lightweight query to keep the connection alive
-         * @return void
-         */
-        public function heartbeat($waitForTimeout = true) {
-            if($waitForTimeout) {
-                // Only ping if the timeout 
-                if(isset($this->lastHeartbeat) && time() - $this->lastHeartbeat < max(1, $this->connectTimeout - 30)) {
-                    return;
-                }
-            }
-            $this->lastHeartbeat = time();
-            $this->exec("SELECT 1");
-        }
 
         /**
          * Returns the id of the last inserted element
@@ -311,7 +142,6 @@
             $this->exec("SELECT `" . $field . "` FROM `". $table . "` WHERE `" . $field . "` = ?", "s", $value);
             return ($this->result->num_rows > 0);
         }
-
     }
 
 ?>
