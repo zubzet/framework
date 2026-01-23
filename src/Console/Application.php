@@ -3,15 +3,27 @@
     namespace ZubZet\Framework\Console;
 
     use Symfony\Component\Console\Application as ConsoleApplication;
+    use ZubZet\Framework\Migration\Commands\Import;
+    use ZubZet\Framework\Migration\Commands\Seed;
+    use ZubZet\Framework\Migration\Commands\Status;
+    use ZubZet\Framework\Migration\Commands\Sync;
 
     class Application {
         public static function bootstrap(\z_framework $booter): ConsoleApplication {
-            $runCommand = new RunCommand($booter);
-
             // TODO: Automatically load commands from a commands directory
+            $automaticallyLoadedCommands =  [];
 
             $console = new ConsoleApplication("ZubZet CLI");
-            $console->addCommands([$runCommand]);
+            $console->addCommands(array_merge(
+                $automaticallyLoadedCommands,
+                [
+                    new RunCommand(),
+                    new Import(),
+                    new Status(),
+                    new Sync(),
+                    new Seed(),
+                ],
+            ));
             return $console;
         }
     }

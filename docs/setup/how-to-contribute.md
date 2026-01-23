@@ -81,7 +81,7 @@ git clone https://github.com/zubzet/framework.git
 2. **Start a Live Preview:**
 Use the following Docker command to start a live [preview of the documentation](http://127.0.0.1:8000/docs/) on port 8000:
 ```bash
-docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
+docker run --rm -it -p 8000:8000 -v ${PWD}:/docs --entrypoint sh squidfunk/mkdocs-material -c "pip install mike && mkdocs serve -a 0.0.0.0:8000"
 ```
 
 3. **Make Changes:**

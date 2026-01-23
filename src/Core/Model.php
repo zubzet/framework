@@ -2,19 +2,19 @@
 
     namespace ZubZet\Framework\Core;
 
-    use Cake\Database\Query;
-    use ZubZet\Framework\Database\Connection;
     use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\Database\Connection;
+    use ZubZet\Framework\Querybuilder\HelperTrait;
 
-    /**
-     * Holds the base model class
-     */
+    use Cake\Database\Query;
 
     /**
      * Base class for all models. Models should inherit from this.
      * It holds utility classes for working with the database
      */
     class Model {
+
+        use HelperTrait;
 
         /**
          * @var Connection $z_db Reference to the database proxy
@@ -39,7 +39,7 @@
          * @param Connection $z_db The database proxy class (Usually one lives in the booter)
          * @param ZubZet $booter Booter object
          */
-        function __construct(&$z_db, $booter) {
+        public function __construct(&$z_db, $booter) {
             $this->z_db =& $z_db;
             $this->booter = $booter;
             $this->lastInsertId;
@@ -62,7 +62,7 @@
          * @param ...string $params Parameters to insert into the prepared statement
          * @return Connection Returning this for chaining 
          */
-        function exec(string|Query $query, $types = "", $params = null): Connection {
+        public function exec(string|Query $query, $types = "", $params = null): Connection {
             if ($query instanceof Query) {
                 $sql = $query->sql();
 
@@ -108,7 +108,7 @@
          * Returns the last insert id. Ignores inserts done by log.
          * @return int The ID of the dataset created in the last insert
          */
-        function getInsertId() {
+        public function getInsertId() {
             return $this->z_db->getInsertId();
         }
 
@@ -116,7 +116,7 @@
          * Converts the result of the last query into an array and returns it.
          * @return mixed[][] Results of the last query as two-dimensional array
          */
-        function resultToArray(): array {
+        public function resultToArray(): array {
             return $this->z_db->resultToArray(...func_get_args());
         }
         
@@ -124,7 +124,7 @@
          * Returns one line of the last query.
          * @return array|null Line of the last result
          */
-        function resultToLine(): ?array {
+        public function resultToLine(): ?array {
             return $this->z_db->resultToLine();
         }
 
@@ -134,7 +134,7 @@
          * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
          * @return array[] A two-dimensional array with the results of the select statement
          */
-        function getFullTable($table, $fields = "*") {
+        public function getFullTable($table, $fields = "*") {
             return $this->z_db->getFullTable(...func_get_args());
         }
 
@@ -145,7 +145,7 @@
          * @param string $where The where statement in the query. Formatted as in an SQL query ("a = 4 AND c = 4"...);
          * @return array[] Two-dimensional array with table data
          */
-        function getTableWhere($table, $fields, $where) {
+        public function getTableWhere($table, $fields, $where) {
             return $this->z_db->getTableWhere(...func_get_args());
         }
 
@@ -154,7 +154,7 @@
          * @param string $table Name of the table in the database
          * @return int Number of datasets in the specified table
          */
-        function countTableEntries($table) {
+        public function countTableEntries($table) {
             return $this->z_db->countTableEntries(...func_get_args());
         }
 
@@ -171,7 +171,7 @@
          * Returns the result of the last query.
          * @return null|bool|\mysqli_result Result of the last query
          */
-        function getResult() {
+        public function getResult() {
             return $this->z_db->result;
         }
 
@@ -179,7 +179,7 @@
          * Returns the number of results in the last query.
          * @return int Number of results in the last query
          */
-        function countResults() {
+        public function countResults() {
             return $this->z_db->countResults();
         }
 
@@ -189,7 +189,7 @@
          * @param string $name Name of the category
          * @return int ID of the log category
          */
-        function getLogCategoryIdByName($name) {
+        public function getLogCategoryIdByName($name) {
             $sql = "SELECT `id` FROM `z_interaction_log_category` WHERE LOWER(`name`) = LOWER(?)";
             $this->exec($sql, "s", $name);
             if ($this->countResults() > 0) {
@@ -211,7 +211,7 @@
          * @param string $text Text
          * @param int $value Optional value
          */
-        function logAction($categoryId, $text, $value = null) {
+        public function logAction($categoryId, $text, $value = null) {
             $user = $this->booter->user;
             $insertId = $this->getInsertId(); //Store to restore later
 
@@ -232,77 +232,9 @@
          * @param string $text Text
          * @param int $value Optional value
          */
-        function logActionByCategory($categoryName, $text, $value = null) {
+        public function logActionByCategory($categoryName, $text, $value = null) {
             $catId = $this->getLogCategoryIdByName($categoryName);
             $this->logAction($catId, $text, $value);
-        }
-
-
-        /**
-         * Create a new SelectQuery instance for the CakePHP\Database Connection.
-         *
-         * @param \Cake\Database\ExpressionInterface|callable|array|string $fields fields to be added to the list.
-         * @param array|string $table The table or list of tables to query.
-         * @param array<string, string> $types Associative array containing the types to be used for casting.
-         * @return \Cake\Database\Query\SelectQuery
-        */
-        public function dbSelect(
-            $fields = [],
-            $table = [],
-            array $types = []
-        ) {
-            return $this->getQueryBuilder()->selectQuery($fields, $table, $types);
-        }
-
-        /**
-         * Create a new UpdateQuery instance for the CakePHP\Database Connection.
-         *
-         * @param \Cake\Database\ExpressionInterface|string|null $table The table to update rows of.
-         * @param array $values Values to be updated.
-         * @param array $conditions Conditions to be set for the update statement.
-         * @param array<string, string> $types Associative array containing the types to be used for casting.
-         * @return \Cake\Database\Query\UpdateQuery
-        */
-        public function dbUpdate(
-            $table = null,
-            array $values = [],
-            array $conditions = [],
-            array $types = []
-        ) {
-            return $this->getQueryBuilder()->updateQuery($table, $values, $conditions, $types);
-        }
-
-        /**
-         * Create a new DeleteQuery instance for the CakePHP\Database Connection.
-         *
-         * @param string|null $table The table to delete rows from.
-         * @param array $conditions Conditions to be set for the delete statement.
-         * @param array<string, string> $types Associative array containing the types to be used for casting.
-         * @return \Cake\Database\Query\DeleteQuery
-        */
-        public function dbDelete(?string $table = null, array $conditions = [], array $types = []) {
-            return $this->getQueryBuilder()->deleteQuery($table, $conditions, $types);
-        }
-
-        /**
-         * Create a new InsertQuery instance for the CakePHP\Database Connection.
-         *
-         * @param string|null $table The table to insert rows into.
-         * @param array $values Associative array of column => value to be inserted.
-         * @param array<int|string, string> $types Associative array containing the types to be used for casting.
-         * @return \Cake\Database\Query\InsertQuery
-        */
-        public function dbInsert(?string $table = null, array $values = [], array $types = []) {
-            return $this->getQueryBuilder()->insertQuery($table, $values, $types);
-        }
-
-        /*
-        * Returns the Query Builder instance for the CakePHP\Database Connection.
-        *
-        * @return \Cake\Database\Connection The Query Builder instance
-        */
-        public function getQueryBuilder() {
-            return $this->z_db->cakePHPDatabase;
         }
     }
 

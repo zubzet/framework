@@ -2,3 +2,11 @@
     --md-primary-fg-color:        #00783e;
     --md-primary-fg-color--light: #05934e;
 }
+
+.md-nav__toggle ~ .md-nav {
+    grid-template-rows: minmax(.4rem,0fr) !important;
+}
+
+.md-nav__toggle:checked ~ .md-nav {
+    grid-template-rows: minmax(.4rem,1fr) !important;
+}

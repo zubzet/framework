@@ -11,6 +11,7 @@
     }
 
     function import(string $file) {
+        return;
         $conn = db();
         $sql = file_get_contents($file);
         if ($sql) {

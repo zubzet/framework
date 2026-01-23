@@ -115,6 +115,7 @@ nav:
         - Parameter Abstraction: core-features/parameter-abstraction
         - Routing: core-features/routing
         - QueryBuilder: core-features/query-builder
+        - Migrations: core-features/migrations
     - Z-Admin:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
