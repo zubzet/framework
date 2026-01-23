@@ -3,8 +3,8 @@
 use Cake\Database\Expression\IdentifierExpression;
 use Cake\Database\Expression\QueryExpression;
 use Cake\Database\Query\InsertQuery;
-use ZubZet\Framework\Permission\Role;
-use ZubZet\Framework\Permission\User;
+use ZubZet\Framework\Authentication\Permission\Role;
+use ZubZet\Framework\Authentication\Permission\User;
 
     class z_permissionModel extends z_model {
 

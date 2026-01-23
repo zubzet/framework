@@ -1,7 +1,6 @@
-<?php 
-    /**
-     * This file holds the user class
-     */
+<?php
+
+    namespace ZubZet\Framework\Authentication;
 
     /**
      * The User class holds information about the user
@@ -33,11 +32,6 @@
         public $fields = []; //Stores custom per project properties
 
         /**
-         * @var z_framework $booter Holds a reference to the booter
-         */
-        private $booter;
-
-        /**
          * @var string[] $permissions Array of permissions the user has.
          */
         private $permissions;
@@ -47,12 +41,8 @@
          */
         private ?string $sessionToken = null;
 
-        /**
-         * Creates a new user object
-         * @param z_framework $booter The booter object
-         */
-        public function __construct($booter) {
-            $this->booter = $booter;
+        public function __construct() {
+            $this->identify();
         }
 
         /**
@@ -64,7 +54,7 @@
                 return $this->anonymousRequest();
             }
 
-            $tokenResult = $this->booter->getModel("z_login")->validateCookie($_COOKIE["z_login_token"]);
+            $tokenResult = model("z_login")->validateCookie($_COOKIE["z_login_token"]);
             if(!isset($tokenResult["userId"]) || !isset($tokenResult["userId_exec"])) {
                 return $this->anonymousRequest();
             }
@@ -73,7 +63,7 @@
             $this->sessionToken = $tokenResult["token"];
 
             if ($this->userId !== false) {
-                $user = $this->booter->getModel("z_user")->getUserById($this->userId);
+                $user = model("z_user")->getUserById($this->userId);
                 if ($user !== false) {
                     $this->isLoggedIn = true;
                     $this->fields = $user;
@@ -118,7 +108,7 @@
 
         public function checkPermissionOf($permission, int $userId): bool {
             if (!isset($this->permissions)) {
-                $this->permissions = $this->booter->getModel("z_user")->getPermissionsByUserId(
+                $this->permissions = model("z_user")->getPermissionsByUserId(
                     $userId,
                 );
             }

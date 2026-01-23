@@ -1,10 +1,12 @@
 <?php
-    /**
-     * Route handling system documentation:
-     * Every action takes two parameters.
-     * Request => used to access incoming data and session information
-     * Response => used to handle outgoing data
-     */
+
+    namespace ZubZet\Framework\Message;
+
+    use PHPMailer\PHPMailer\PHPMailer;
+    use ZubZet\Framework\Form\Upload;
+    use ZubZet\Framework\Support\Rest;
+    use ZubZet\Framework\Rendering\View;
+    use ZubZet\Framework\Form\Validation\Result;
 
     /**
      * @var object $opt Holds options needed for rendering
@@ -15,88 +17,8 @@
      * The Response class provides functions used by controllers to respond to requests
      */
     class Response extends RequestResponseHandler {
-        /**
-         * Shows a document to the user
-         * @param string $document Path to the view
-         * @param array $opt Associative array with values to replace in the view
-         * @param string|array $options Rendering options, e.g., or a string for layout
-         */
-        public function render($document, $opt = [], $options = []) {
-            // Legacy as $options used to be $layout
-            if(!is_array($options)) {
-                $options = [
-                    "layout" => $options
-                ];
-            }
 
-            $layout = $options["layout"] ?? "layout/default_layout.php";
-            $viewPath = $this->booter->getViewPath($document);
-
-            if ($viewPath !== false) {
-
-                //Set default parameter values
-                $opt["response"] = $this;
-                $opt["request"] = $this->booter->req;
-                $opt["root"] = $this->booter->rootFolder;
-                $opt["host"] = $this->booter->host;
-                $opt["absRoot"] = $this->booter->host.$this->booter->rootFolder;
-
-                if (!isset($opt["title"])) $opt["title"] = $this->getBooterSettings("pageName");
-
-                //logged in user information
-                $opt["user"] = $this->booter->user;
-
-                include_once "layout_essentials.php";
-                $opt["layout_essentials_body"] = function($opt) {
-                    essentialsBody($opt);
-                };
-                $opt["layout_essentials_head"] = function($opt, $customBootstrap = false) {
-                    essentialsHead($opt, $customBootstrap);
-                };
-
-                // Optional log view
-                try {
-                    $catId = model("z_general")->getLogCategoryIdByName("view");
-                    $location = $_SERVER['REQUEST_URI'] ?? "console";
-                    model("z_general")->logAction(
-                        $catId,
-                        "URL viewed (User ID: " . user()->userId . " , URL: $location)",
-                        $document,
-                    );
-                } catch (\Exception $e) {
-                    // Do not log this render to avoid having to require a database
-                }
-
-                //Load the document
-                $view = include($viewPath);
-
-                //Load the layout
-                $layout_url = $layout;
-                $layout = include($this->booter->getViewPath($layout));
-
-                $opt["generateResourceLink"] = function($url, $root = true) {
-                    $v = $this->getBooterSettings("assetVersion");
-                    echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
-                };
-
-                $opt["echo"] = function($val) {
-                    echo nl2br(htmlspecialchars($val));
-                };
-                
-                //Makes $body and $head optional
-                if(!isset($view["body"])) $view["body"] = function(){};
-                if(!isset($view["head"])) $view["head"] = function(){};
-
-                ob_start();
-                $layout["layout"]($opt, $view["body"], $view["head"]);
-                $rendered = ob_get_contents();
-                ob_end_clean();
-
-                echo $rendered;
-            } else {
-                $this->reroute(["error", "404"]);
-            }
-        }
+        use View;
 
         /**
          * Reroutes to another action
@@ -156,11 +78,10 @@
 
         /**
          * Creates an upload object that handles the rest of the upload.
-         * @return z_upload A new instance of the z_upload class
+         * @return Upload A new instance of the Upload class
          */
         public function upload() {
-            require_once $this->getZRoot()."z_upload.php";
-            return new z_upload($this);
+            return new Upload;
         }
 
         /**
@@ -168,7 +89,6 @@
          * @param array $payload Data payload
          */
         private function getNewRest($payload) {
-            require_once $this->booter->z_framework_root.'z_rest.php';
             return new Rest($payload, $this->booter->urlParts);
         }
 
@@ -178,7 +98,6 @@
          * @param bool $die Whether to exit after generating the Rest object
          */
         public function generateRest($payload, $die = true) {
-            //if (@$payload["result"] == "error") $this->generateRestError("ergc", getCaller(1));
             $this->getNewRest($payload)->execute($die);
         }
 
@@ -188,7 +107,7 @@
          * @param string $message Error message
          */
         public function generateRestError($code, $message) {
-            $model = $this->booter->getModel("z_general");
+            $model = model("z_general");
             $model->logAction($model->getLogCategoryIdByName("resterror"), "Rest error (Code: $code): $message", $code);
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
@@ -220,7 +139,7 @@
                     throw new \Exception("'$layout.php' does not exist.");
                 }
                 
-                $template = $this->booter->getViewPath(
+                $template = View::resolvePath(
                     $layout,
                     (strpos($layout, "/mail") !== FALSE ? str_replace("/mail", "/email", $layout) : null)
                 );
@@ -261,7 +180,7 @@
             }
 
             try {
-                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+                $mail = new PHPMailer(true);
 
                 //Server settings
                 $mail->SMTPDebug = 0;
@@ -290,7 +209,7 @@
                 }
 
                 $mail->send();
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
                 return false;
             }
@@ -307,7 +226,7 @@
          * @param string $layout Layout to use
          */
         public function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
-            $target = $this->booter->getModel("z_user")->getUserById($userId);
+            $target = model("z_user")->getUserById($userId);
 
             if(is_null($target)) {
                 throw new \Exception("User with ID $userId not found.");
@@ -317,7 +236,7 @@
                 throw new \Exception("User with ID $userId has no email address.");
             }
 
-            $langObj = $this->booter->getModel("z_general")->getLanguageById($target["languageId"]);
+            $langObj = model("z_general")->getLanguageById($target["languageId"]);
             $language = isset($langObj["value"]) ? $langObj["value"] : $this->getBooterSettings("anonymous_language");
             return $this->sendEmail($target["email"], $subject, $document, $language, $options, $layout);
         }
@@ -329,7 +248,7 @@
          */
         public function loginAs($userId, $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
-            $token = $this->booter->getModel("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
+            $token = model("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
 
             $this->setCookie(
                 "z_login_token",
@@ -341,9 +260,9 @@
             $this->deleteOldLoginCookieDomainScope();
 
             if ($userId == $user_exec) {
-                $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
+                model("z_general")->logAction(model("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
             } else {
-                $this->booter->getModel("z_general")->logAction($this->booter->getModel("z_general")->getLogCategoryIdByName("loginas"), "User $user_exec logged in.", $user_exec);
+                model("z_general")->logAction(model("z_general")->getLogCategoryIdByName("loginas"), "User $user_exec logged in.", $user_exec);
             }
         }
 
@@ -393,7 +312,7 @@
 
             // Deactivate the session in the db
             if(!is_null($user->getSessionToken())) {
-                $this->booter->getModel("z_login")->invalidateSession(
+                model("z_login")->invalidateSession(
                     $user->getSessionToken(),
                 );
             }
@@ -405,7 +324,7 @@
             );
             $this->deleteOldLoginCookieDomainScope();
 
-            $this->booter->getModel("z_general")->logActionByCategory(
+            model("z_general")->logActionByCategory(
                 "logout",
                 "User logged out (" . ($user->fields["email"] ?? "~No Email~") . ")",
                 $user->fields["email"],
@@ -441,7 +360,7 @@
          * @param int $value Log value
          */
         public function log($categoryName, $text, $value) {
-            $this->booter->getModel("z_general")->logActionByCategory($categoryName, $text, $value);
+            model("z_general")->logActionByCategory($categoryName, $text, $value);
         }
 
         /**
@@ -450,10 +369,10 @@
          * @param string $pkField Name of the primary key field in the database
          * @param string $pkType Type of the primary key field ("s"/"i"...)
          * @param string $pkValue Value of the primary key in the row to change
-         * @param FormResult $validationResult Result of the validation
+         * @param Result $validationResult Result of the validation
          * @param array $fixed Fixed values to add, which are not coming from the form
          */
-        public function insertOrUpdateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult, array $fixed = []) {
+        public function insertOrUpdateDatabase(string $table, string $pkField, string $pkType, $pkValue, Result $validationResult, array $fixed = []) {
             $db = $this->booter->z_db;
             $sql = "SELECT `$pkField` FROM `$table` WHERE `$pkField`=?";
             $db->exec($sql, $pkType, $pkValue);
@@ -470,9 +389,9 @@
          * @param string $pkField Name of the primary key field in the database
          * @param string $pkType Type of the primary key field ("s"/"i"...)
          * @param string $pkValue Value of the primary key in the row to change
-         * @param FormResult $validationResult Result of the validation
+         * @param Result $validationResult Result of the validation
          */
-        public function updateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult, array $fixed = []) {
+        public function updateDatabase(string $table, string $pkField, string $pkType, $pkValue, Result $validationResult, array $fixed = []) {
             //First check for file uploads
             $this->uploadFromForm($validationResult);
 
@@ -513,10 +432,10 @@
         /**
          * Inserts a set into the database with data from a form
          * @param string $table Table name in the database
-         * @param FormResult $validationResult Result of the validation
+         * @param Result $validationResult Result of the validation
          * @param array $fixed Some values to add to the database that were not in the FormResult
          */
-        public function insertDatabase(string $table, FormResult $validationResult, array $fixed = []) {
+        public function insertDatabase(string $table, Result $validationResult, array $fixed = []) {
             $this->uploadFromForm($validationResult);
 
             //then do other stuff for normal database activity
@@ -552,7 +471,7 @@
             return $db->getInsertId();
         }
 
-        private function uploadFromForm(FormResult $validationResult) {
+        private function uploadFromForm(Result $validationResult) {
             foreach ($validationResult->fields as $field) {
                 if ($field->isFile) {
                     $upload = $this->upload();
@@ -575,7 +494,7 @@
         /**
          * Executes a "Create Edit Delete"
          * @param string $table The name of the affected table in the database
-         * @param FormResult $validationResult The result of a validated CED
+         * @param Result $validationResult The result of a validated CED
          * @param array $fix Fixed values. For example, fix user ID not set by the client
          */
         public function doCED($table, $validationResult, $fix = []) {

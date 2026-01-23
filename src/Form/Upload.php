@@ -1,13 +1,14 @@
 <?php
-    /**
-     * This file holds the upload class
-     */
+
+    namespace ZubZet\Framework\Form;
+
+    use ZubZet\Framework\Message\Request;
 
     /**
      * Class that handles file uploads and checking types
      */
-    class z_upload {
-        
+    class Upload {
+
         /** @var string $ref Reference */
         public $ref;
 
@@ -32,13 +33,6 @@
         /** @var Request $req Request object of the current request*/
         private $res;
 
-        /**
-         * Creates the upload object
-         */
-        function __construct($res) {
-            $this->res = $res;
-        }
-
        /**
         * Uploads a file to an upload folder
         *
@@ -55,7 +49,7 @@
                 return UPLOAD_ERROR_NO_FILE;
             }
 
-            $ref = $this->res->getModel("z_general")->getUniqueRef();
+            $ref = model("z_general")->getUniqueRef();
 
             $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
             if(!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
@@ -78,7 +72,7 @@
             $this->extension = $extension;
             $this->size = $file["size"];
             $this->filePath = $target_file;
-            $this->fileId = $this->res->getModel("z_file", $this->res->getZRoot())->add(
+            $this->fileId = model("z_file")->add(
                 $this->ref, 
                 $this->mime, 
                 $this->srcName, 
