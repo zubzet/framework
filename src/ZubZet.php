@@ -1,22 +1,24 @@
 <?php
 
+    namespace ZubZet\Framework;
+
+    use Slim\App;
     use Slim\Factory\AppFactory;
     use Slim\Psr7\Response as HttpResponse;
     use Slim\Exception\HttpNotFoundException;
     use Slim\Factory\ServerRequestCreatorFactory;
 
+    use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Routing\Route;
+    use ZubZet\Framework\Core\Constants;
+    use ZubZet\Framework\Support\Helpers;
+    use ZubZet\Framework\Message\Request;
+    use ZubZet\Framework\Message\Response;
     use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Database\Connection;
+    use ZubZet\Framework\Support\GlobalReferences;
 
-    /**
-     * Also known as the booter.
-     */
-
-    /**
-     * First class that is instantiated during a request.
-     */
-    class z_framework {
+    class ZubZet {
         /** @var array $settings Stores the z_framework settings */
         public $settings;
 
@@ -50,16 +52,16 @@
         /** @var array $config An associative array of key-value config parameters  */
         public $config = [];
 
-        /** @var User $user The requesting user */
+        /** @var \User $user The requesting user */
         public $user;
 
-        /** @var Response $res A reference to an instance of the Response class */
+        /** @var \Response $res A reference to an instance of the Response class */
         public $res;
 
-        /** @var Request $req A reference to an instance of the Request class */
+        /** @var \Request $req A reference to an instance of the Request class */
         public $req;
 
-        /** @var Slim\App $slimApplication The instance of the Slim application */
+        /** @var App $slimApplication The instance of the Slim application */
         public $slimApplication;
 
         /** @var array[] $action_pattern_replacement Replacement patterns for action names */
@@ -71,20 +73,19 @@
             ["ü", "ue"]
         ];
 
-        /** @var z_framework The instance of the framework */
-        private static ?z_framework $instance = null;
-
         /**
-         * @internal z_framework::getInstance()
+         * @internal
+         * @var ZubZet The instance of the framework
          */
-        public static function getInstance(): ?z_framework {
-            return self::$instance;
-        }
+        public static ?ZubZet $instance = null;
 
         /**
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct($params = []) {
+            self::$instance = $this;
+            new GlobalReferences;
+
             $param_keys = [
                 "root" => &$this->z_framework_root, 
                 "controllers" => &$this->z_controllers, 
@@ -130,11 +131,9 @@
             //Error handling
             $this->updateErrorHandling();
 
-            //Import constants
-            require_once $this->z_framework_root . "z_constants.php";
-
-            //Import helpers
-            include($this->z_framework_root."helpers.php");
+            // Static Imports
+            new Constants;
+            new Helpers;
 
             //Parse Post request
             $this->decodePost();
@@ -145,17 +144,7 @@
             $this->url = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "cli");
             $this->urlParts = $this->parseUrl();
 
-            // Import the standard controller;
-            require_once $this->z_framework_root.'z_controller.php';
-
-            // Import the standard model
-            require_once $this->z_framework_root.'z_model.php';
-
-            // RR System
-            require_once $this->z_framework_root."z_requestResponseHandler.php";
-            require_once $this->z_framework_root."z_response.php";
-            require_once $this->z_framework_root."z_request.php";
-
+            // Message System
             $this->req = new Request($this);
             $this->res = new Response($this);
 
@@ -163,11 +152,7 @@
             $this->z_db = new Connection($this);
 
             // User
-            require_once $this->z_framework_root.'z_user.php';
-            $this->user = new User($this);
-            $this->user->identify();
-
-            self::$instance = $this;
+            $this->user = new User();
         }
 
         public function __set(string $name, mixed $value): void {
@@ -196,7 +181,7 @@
                 //Custom error function (even triggers for warnings)
                 set_error_handler(function($severity, $message, $file, $line) {
                     if (error_reporting() & $severity) {
-                        throw new ErrorException($message, 0, $severity, $file, $line);
+                        throw new \ErrorException($message, 0, $severity, $file, $line);
                     }
                 });
             } else {
@@ -301,8 +286,8 @@
                 $controllerFile = null;
                 if (file_exists($this->z_controllers . $controller . ".php")) {
                     $controllerFile = $this->z_controllers . $controller . ".php";
-                } else if (file_exists($this->z_framework_root . "default/controllers/" . $controller . ".php")) {
-                    $controllerFile = $this->z_framework_root . "default/controllers/" . $controller . ".php";
+                } else if (file_exists($this->z_framework_root . "IncludedComponents/controllers/" . $controller . ".php")) {
+                    $controllerFile = $this->z_framework_root . "IncludedComponents/controllers/" . $controller . ".php";
                 }
 
                 if ($controllerFile !== null) {
@@ -310,7 +295,7 @@
                 } else {
                     return $this->executePath(["error", "404"]);
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 return $this->executePath(["error", "500"]);
             }
 
@@ -327,7 +312,7 @@
                         return $this->executePath(["error", "404"]);
                     }
                 }
-            } catch(Exception $e) {
+            } catch(\Exception $e) {
                 if ($this->showErrors != 0) {
                     throw $e;
                 } else {
@@ -402,14 +387,14 @@
             });
         }
 
-        /** @var z_Model[] Stores all already used models for this request */
+        /** @var \z_model[] Stores all already used models for this request */
         private $modelCache = [];
 
         /**
          * Returns a model
          * @param string $model Name of the model
          * @param string $dir Set this when the model is stored in a specific directory
-         * @return z_model The model
+         * @return \z_model The model
          */
         public function getModel($model, $dir = null) {
             $modelParts = explode(".", $model);
@@ -427,11 +412,11 @@
                 if (file_exists($path)) {
                     require_once $path;
                 } else {
-                    $path = $this->z_framework_root . "default/models/" . $model . ".php";
+                    $path = $this->z_framework_root . "IncludedComponents/models/" . $model . ".php";
                     if (file_exists($path)) {
                         require_once $path;
                     } else {
-                        throw new Exception("Model: $model does not exist!");
+                        throw new \Exception("Model: $model does not exist!");
                     }
                 }
                 
@@ -442,35 +427,6 @@
                 $this->modelCache[$model] = new $model($this->z_db, $this);
             }
             return $this->modelCache[$model];
-        }
-
-        /**
-         * Returns the path of a view. If the view does not exist, this function will fall back to the framework defaults.
-         * @param string $document Filename of the views
-         * @return string Relative path to the view file
-         */
-        public function getViewPath(...$documents) {
-            foreach($documents as $document) {
-                if(substr($document, -4, 4) != ".php") {
-                    $document .= ".php";
-                }
-                if (file_exists($this->z_views.$document)) {
-                    return $this->z_views.$document;
-                }
-                if (file_exists($this->z_framework_root."default/views/$document")) {
-                    return $this->z_framework_root."default/views/$document";
-                }
-            }
-            return $this->z_framework_root."default/views/500.php";
-        }
-
-        /**
-         * Answers this request with a REST
-         */
-        private function rest($options) {
-            require_once $this->z_framework_root.'z_rest.php';
-            $rest = new Rest($options, $this->urlParts);
-            $rest->execute();
         }
 
     }

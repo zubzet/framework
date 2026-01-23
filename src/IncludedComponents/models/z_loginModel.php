@@ -35,7 +35,7 @@
             }
 
             // Delete expired sessions that were tried anyways
-            $this->booter->getModel("z_login")->invalidateSession(
+            model("z_login")->invalidateSession(
                 $session["token"],
             );
             return false;

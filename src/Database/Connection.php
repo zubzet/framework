@@ -143,6 +143,4 @@
         }
     }
 
-    class_alias(Connection::class, "z_db");
-
 ?>

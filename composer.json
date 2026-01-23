@@ -15,11 +15,8 @@
         "symfony/console": "6.* || 7.*"
     },
     "autoload": {
-        "classmap": [
-            "src/main.php"
-        ],
         "files": [
-            "src/Support/GlobalReferences.php"
+            "src/Aliases.php"
         ],
         "psr-4": {
             "ZubZet\\Framework\\": "src/"

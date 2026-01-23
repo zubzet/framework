@@ -1,7 +1,6 @@
 <?php
-    /**
-     * This file holds the rest class
-     */
+
+    namespace ZubZet\Framework\Support;
 
     /**
      * The rest class is used to provide raw JSON API data to the client
@@ -39,7 +38,7 @@
         /**
          * Sends an error to the client
          * @param string $code The error code
-         * @param string $message A human readable message, explaning the error
+         * @param string $message A human readable message, explaining the error
          */
         public function ShowError($code, $message) {
             $this->data = [

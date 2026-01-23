@@ -1,4 +1,7 @@
 <?php
+
+    namespace ZubZet\Framework\Core;
+
     /**
      * Holds the base controller class
      */
@@ -6,7 +9,7 @@
     /**
      * Base class for all controllers. Controllers should inherit from this class.
      */
-    class z_controller { 
+    class Controller {
 
         /**
          * Makes food edible for input selects

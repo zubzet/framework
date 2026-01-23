@@ -1,6 +1,11 @@
 <?php
 
+    namespace ZubZet\Framework\Core;
+
     use Cake\Database\Query;
+    use ZubZet\Framework\Database\Connection;
+    use ZubZet\Framework\ZubZet;
+
     /**
      * Holds the base model class
      */
@@ -9,15 +14,15 @@
      * Base class for all models. Models should inherit from this.
      * It holds utility classes for working with the database
      */
-    class z_model {
+    class Model {
 
         /**
-         * @var z_db $z_db Reference to the database proxy
+         * @var Connection $z_db Reference to the database proxy
          */
         protected $z_db;
 
         /**
-         * @var z_framework $booter Reference to the booter
+         * @var ZubZet $booter Reference to the booter
          */
         protected $booter;
 
@@ -31,8 +36,8 @@
          * 
          * This constructor should only be called from the booter. If you need a model, use $booter->getModel() instead.
          * 
-         * @param z_db $z_db The database proxy class (Usually one lives in the booter)
-         * @param z_framework $booter Booter object
+         * @param Connection $z_db The database proxy class (Usually one lives in the booter)
+         * @param ZubZet $booter Booter object
          */
         function __construct(&$z_db, $booter) {
             $this->z_db =& $z_db;
@@ -44,10 +49,10 @@
          * Returns a model
          * @param string $model Name of the model
          * @param string $dir Set this when the model is stored in a specific directory
-         * @return z_model The model
+         * @return Model The model
          */
-        public function getModel() {
-            return $this->booter->getModel(...func_get_args());
+        public function getModel() { 
+            return model(...func_get_args());
         }
 
         /**
@@ -55,9 +60,9 @@
          * @param string $query The query written as a prepared statement (with question marks).
          * @param string $types The types for the individual parameters (i for int, s for string...).
          * @param ...string $params Parameters to insert into the prepared statement
-         * @return z_db Returning this for chaining 
+         * @return Connection Returning this for chaining 
          */
-        function exec(string|Query $query, $types = "", $params = null): z_db {
+        function exec(string|Query $query, $types = "", $params = null): Connection {
             if ($query instanceof Query) {
                 $sql = $query->sql();
 
@@ -164,7 +169,7 @@
 
         /**
          * Returns the result of the last query.
-         * @return null|bool|mysqli_result Result of the last query
+         * @return null|bool|\mysqli_result Result of the last query
          */
         function getResult() {
             return $this->z_db->result;

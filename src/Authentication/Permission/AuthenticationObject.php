@@ -1,6 +1,6 @@
 <?php
 
-namespace ZubZet\Framework\Permission;
+namespace ZubZet\Framework\Authentication\Permission;
 
 class AuthenticationObject {
 

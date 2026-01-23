@@ -1,7 +1,9 @@
-<?php 
-    /**
-     * RequestResponse handler
-     */
+<?php
+
+    namespace ZubZet\Framework\Message;
+
+    use ZubZet\Framework\Core\Model;
+    use ZubZet\Framework\ZubZet;
 
     /**
      * Base class for the response and request objects
@@ -9,13 +11,13 @@
     class RequestResponseHandler {
 
         /**
-         * @var z_framework $booter The framework object
+         * @var ZubZet $booter The framework object
          */
         public $booter;
 
         /**
          * Constructor that every request and response object should have
-         * @param z_framework $booter The framework object
+         * @param ZubZet $booter The framework object
          */
         public function __construct($booter) {
             $this->booter = $booter;
@@ -47,10 +49,10 @@
 
         /**
          * Gets the database communication interface
-         * @return z_model
+         * @return Model
          */
         public function getModel() {
-            return $this->booter->getModel(...func_get_args());
+            return model(...func_get_args());
         }
 
         /**
