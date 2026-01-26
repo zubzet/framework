@@ -1,23 +1,20 @@
 <?php
 
-namespace ZubZet\Framework\Routing;
+    namespace ZubZet\Framework\Routing;
 
-use Exception;
-use Slim\App;
-use Slim\Routing\RouteCollectorProxy;
-use Psr\Http\Message\ServerRequestInterface as sRequest;
-use Psr\Http\Message\ResponseInterface as sResponse;
-use Slim\Interfaces\RouteInterface;
-use Slim\Interfaces\RouteGroupInterface;
-use Slim\Routing\RouteContext;
+    use Slim\App;
+    use Slim\Psr7\Response;
+    use Slim\Routing\RouteContext;
+    use Slim\Interfaces\RouteInterface;
+    use Slim\Routing\RouteCollectorProxy;
+    use Slim\Interfaces\RouteGroupInterface;
 
-class Route {
+    use Psr\Http\Message\ResponseInterface;
+    use Psr\Http\Message\ServerRequestInterface;
 
-        /**
-         * The framework bootstrapper instance.
-         * @var z_framework|null
-         */
-        private static $booter = null;
+    class Route {
+
+        use HttpMethod;
 
         /**
          * A stack to hold the current router context (App or RouteCollectorProxy).
@@ -40,7 +37,6 @@ class Route {
          * @param mixed $booter The main framework class for callbacks.
          */
         public static function init($booter): void {
-            self::$booter = $booter;
             self::$routerStack = [$booter->slimApplication];
         }
 
@@ -50,29 +46,20 @@ class Route {
          */
         private static function getCurrentRouter(): App|RouteCollectorProxy {
             if (empty(self::$routerStack)) {
-                throw new Exception("Router has not been initialized. Please call Route::init() first.");
+                throw new \Exception("Router has not been initialized. Please call Route::init() first.");
             }
             return end(self::$routerStack);
         }
 
-        static function any(string $endpoint, array $action): PendingRoute {return new PendingRoute("any", $endpoint, $action);}
-        static function get(string $endpoint, array $action): PendingRoute {return new PendingRoute('get', $endpoint, $action);}
-        public static function post(string $endpoint, array $action): PendingRoute { return new PendingRoute('post', $endpoint, $action); }
-        public static function put(string $endpoint, array $action): PendingRoute { return new PendingRoute('put', $endpoint, $action); }
-        public static function delete(string $endpoint, array $action): PendingRoute { return new PendingRoute('delete', $endpoint, $action); }
-        public static function patch(string $endpoint, array $action): PendingRoute { return new PendingRoute('patch', $endpoint, $action); }
-        public static function options(string $endpoint, array $action): PendingRoute { return new PendingRoute('options', $endpoint, $action); }
-        public static function define(string $method, string $endpoint, array $action): PendingRoute { return new PendingRoute($method, $endpoint, $action); }
-
-
-        static function group(string $prefix, callable $callback): PendingGroup {
+        public static function group(string $prefix = "", ?callable $callback = null): PendingGroup {
+            if(is_null($callback)) $callback = function() {};
             return new PendingGroup($prefix, $callback);
         }
 
         /**
          * Performs middleware matching for stored groups based on the current URL parts.
          */
-        static function performStoredGroupsMatchingPrefix(array $urlParts, $callback): void {
+        public static function performStoredGroupsMatchingPrefix(array $urlParts, $callback): void {
             // Construct the current path from URL parts
             $currentPath = '/' . implode('/', $urlParts);
 
@@ -101,7 +88,7 @@ class Route {
             // Execute collected middlewares and exit if any returns any other than true
             foreach($toExecuteMiddleware as $mw) {
                 [$class, $method] = $mw;
-                $result = self::$booter->executeControllerAction($class, $method, []);
+                $result = zubzet()->executeControllerAction($class, $method, []);
                 if($result !== true) exit;
             }
 
@@ -111,14 +98,14 @@ class Route {
             // Execute after middlewares
             foreach($toExecuteAfterMiddleware as $amw) {
                 [$class, $method] = $amw;
-                self::$booter->executeControllerAction($class, $method, []);
+                zubzet()->executeControllerAction($class, $method, []);
             }
         }
 
         /**
          * Creates a route group.
          */
-        static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware): void {
+        public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware): void {
             $parentRouter = self::getCurrentRouter();
 
             // Push the prefix onto the stack.
@@ -141,14 +128,21 @@ class Route {
             self::performRouteInclusions($middlewares, $afterMiddleware, $group);
         }
 
-        public static function performRoute(string $method, string $endpoint, array $action, array $middlewares, array $afterMiddleware): void {
-            [$controllerClass, $actionMethod] = $action;
+        public static function performRoute(string $method, string $endpoint, array|callable $action, array $middlewares, array $afterMiddleware): void {
             $router = self::getCurrentRouter();
 
-            $route = $router->$method($endpoint, function (sRequest $request, sResponse $response, $args) use ($controllerClass, $actionMethod) {
-                self::$booter->executeControllerAction($controllerClass, $actionMethod, $args);
-                return new \Slim\Psr7\Response();
-            });
+            $route = $router->$method(
+                $endpoint,
+                function(ServerRequestInterface $request, ResponseInterface $response, $args) use ($action) {
+                    if(is_callable($action)) {
+                        return $action($request, $response, $args);
+                    }
+
+                    [$controllerClass, $actionMethod] = $action;
+                    zubzet()->executeControllerAction($controllerClass, $actionMethod, $args);
+                    return new Response();
+                },
+            );
 
             self::performRouteInclusions($middlewares, $afterMiddleware, $route);
         }
@@ -165,31 +159,31 @@ class Route {
                 foreach($middlewares as $middleware) {
                     [$middlewareClass, $middlewareMethod] = $middleware;
 
-                    $result = self::$booter->executeControllerAction($middlewareClass, $middlewareMethod, $args);
+                    $result = zubzet()->executeControllerAction($middlewareClass, $middlewareMethod, $args);
 
                     if($result === true) continue;
 
                     self::$isCancelled = true;
 
                     // If any middleware returns false, we stop processing and return an empty response.
-                    return new \Slim\Psr7\Response();
+                    return new Response();
                 }
 
                 $handler->handle($request);
 
                 // Cancel if route processing was cancelled by middleware
                 if(self::$isCancelled) {
-                    return new \Slim\Psr7\Response();
+                    return new Response();
                 }
 
                 // Applying after middlewares
                 foreach($afterMiddlewares as $afterMiddleware) {
                     [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
 
-                    self::$booter->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
+                    zubzet()->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
                 }
 
-                return new \Slim\Psr7\Response();
+                return new Response();
             });
 
         }
