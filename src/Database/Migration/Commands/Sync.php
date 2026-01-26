@@ -66,10 +66,10 @@
             );
 
             $this->addOption(
-                "exclude-external",
+                "include-external",
                 null,
                 InputOption::VALUE_NONE,
-                "Exclude external migrations from the sync",
+                "Include external migrations in the sync",
             );
 
             $this->setDatabaseConnection();
@@ -88,7 +88,7 @@
             $excludedEnvironments = $in->getOption("environments-excluded");
 
             $dryMode = $in->getOption("dry");
-            $excludeExternal = $in->getOption("exclude-external");
+            $includeExternal = $in->getOption("include-external");
 
             // Validate options
             if($startVersion && !$startDate) {
@@ -125,7 +125,7 @@
 
             $fileMigrationsRaw = model("z_migration")->getFiles("./app/Database/migrations");
 
-            if(!$excludeExternal) {
+            if($includeExternal) {
                 $fileMigrationsRaw = array_merge(
                     $fileMigrationsRaw,
                     model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration")

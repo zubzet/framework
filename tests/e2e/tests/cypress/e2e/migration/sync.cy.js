@@ -213,19 +213,16 @@ describe('Migration System - Sync', () => {
 
     let zubzetMigrationPath = "../../../src/IncludedComponents/database/Migration";
 
-    it("should check the --exclude-external option", () => {
+    it("should check the --include-external option", () => {
         cy.dbSeed();
         const file = "2025-01-01_Ex_Ex.sql";
 
         cy.exec(`cp ${fixturesDir}/${file} ${zubzetMigrationPath}/${file}`);
-        cy.exec('docker exec application php index.php db:sync --exclude-external');
+        cy.exec('docker exec application php index.php db:sync --include-external');
 
         cy.request('/migration/syncMigrations').then((res) => {
-            let jsonData = JSON.parse(res.body);
 
-            const tables = (jsonData.tables || []).map(t => t.Tables_in_app);
-
-            expect(tables).to.not.include("migration_sync_exclude_external");
+            expect(res.body).to.include("2025-01-01_Ex_Ex.sql");
         });
 
         cy.exec(`rm -f ${zubzetMigrationPath}/${file} || true`);
