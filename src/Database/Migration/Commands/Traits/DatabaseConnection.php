@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Migration\Commands\Traits;
+    namespace ZubZet\Framework\Database\Migration\Commands\Traits;
 
     trait DatabaseConnection {
         private function setDatabaseConnection() {

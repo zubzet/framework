@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Migration\Commands;
+    namespace ZubZet\Framework\Database\Migration\Commands;
 
     use Cake\Database\Query;
     use Exception;
@@ -8,9 +8,9 @@
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\BufferedOutput;
     use Symfony\Component\Console\Output\OutputInterface;
-    use ZubZet\Framework\Migration\Commands\Traits\DatabaseConnection;
-    use ZubZet\Framework\Migration\Parser\SeedPHP;
-    use ZubZet\Framework\Migration\Parser\SeedSQL;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
+    use ZubZet\Framework\Database\Migration\Parser\SeedPHP;
+    use ZubZet\Framework\Database\Migration\Parser\SeedSQL;
 
     final class Seed extends Command {
 

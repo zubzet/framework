@@ -18,7 +18,7 @@ describe('Migration System - Sync', () => {
             cy.exec(`rm -f ${target} || true`);
         });
 
-        cy.exec(`rm -f ../../../src/default/database/Migration/2025-01-01_Ex_Ex.sql || true`);
+        cy.exec(`rm -f ../../../src/IncludedComponents/database/Migration/2025-01-01_Ex_Ex.sql || true`);
     });
 
     let baseDir = '../app/Database/migrations';
@@ -211,7 +211,7 @@ describe('Migration System - Sync', () => {
         });
     });
 
-    let zubzetMigrationPath = "../../../src/default/database/Migration";
+    let zubzetMigrationPath = "../../../src/IncludedComponents/database/Migration";
 
     it("should check the --exclude-external option", () => {
         cy.dbSeed();

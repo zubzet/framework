@@ -93,7 +93,7 @@ The Migration system supports **two different file formats**, which can also be 
 
     **Structure:**
     ```php
-    use ZubZet\Framework\Migration\Migration;
+    use ZubZet\Framework\Database\Migration\Migration;
 
     class Migration_2025_10_01_MigrationEnv extends Migration {
 
@@ -271,7 +271,7 @@ The Seed system supports **two different file formats**, which can also be mixed
 
     **Structure:**
     ```php
-    use ZubZet\Framework\Migration\Seed;
+    use ZubZet\Framework\Database\Migration\Seed;
 
     class TestSeed extends Seed {
 

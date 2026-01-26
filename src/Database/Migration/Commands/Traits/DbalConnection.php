@@ -1,10 +1,10 @@
 <?php
-    namespace ZubZet\Framework\Migration\Commands\Traits;
+    namespace ZubZet\Framework\Database\Migration\Commands\Traits;
 
     use Doctrine\DBAL\DriverManager;
     use Doctrine\DBAL\Connection;
     use Doctrine\DBAL\Types\Type;
-    use ZubZet\Framework\Migration\Type\TimeStamp;
+    use ZubZet\Framework\Database\Migration\Type\TimeStamp;
 
     trait DbalConnection {
         private function createDbalConnection(): Connection {

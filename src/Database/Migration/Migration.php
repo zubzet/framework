@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Migration;
+    namespace ZubZet\Framework\Database\Migration;
 
     use Doctrine\DBAL\Schema\Schema;
     use Doctrine\DBAL\Schema\Table;

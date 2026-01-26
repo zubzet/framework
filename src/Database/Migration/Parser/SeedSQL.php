@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Migration\Parser;
+    namespace ZubZet\Framework\Database\Migration\Parser;
 
     // Loads a PHP migration file
     class SeedSQL {

@@ -1,6 +1,6 @@
 <?php
 
-    namespace ZubZet\Framework\Migration\Parser;
+    namespace ZubZet\Framework\Database\Migration\Parser;
 
     class SeedPHP {
 

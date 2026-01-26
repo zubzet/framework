@@ -1,10 +1,10 @@
 <?php
-    namespace ZubZet\Framework\Migration\Commands   ;
+    namespace ZubZet\Framework\Database\Migration\Commands   ;
 
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
-    use ZubZet\Framework\Migration\Commands\Traits\DatabaseConnection;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Status extends Command {
 

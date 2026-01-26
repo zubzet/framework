@@ -1,12 +1,12 @@
 <?php
-    namespace ZubZet\Framework\Migration\Commands;
+    namespace ZubZet\Framework\Database\Migration\Commands;
 
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\InputArgument;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
-    use ZubZet\Framework\Migration\Commands\Traits\DatabaseConnection;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Sync extends Command {
 
@@ -128,7 +128,7 @@
             if(!$excludeExternal) {
                 $fileMigrationsRaw = array_merge(
                     $fileMigrationsRaw,
-                    model("z_migration")->getFiles(zubzet()->z_framework_root . "default/database/Migration")
+                    model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration")
                 );
             }
             $fileMigrations = model("z_migration")->sortMigrations($fileMigrationsRaw);

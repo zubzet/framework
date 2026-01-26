@@ -1,5 +1,5 @@
 <?php
-    use ZubZet\Framework\Migration\Migration;
+    use ZubZet\Framework\Database\Migration\Migration;
 
     class Migration_2025_10_01_MigrationSkip extends Migration {
 

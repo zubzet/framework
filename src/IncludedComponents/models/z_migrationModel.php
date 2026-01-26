@@ -1,9 +1,9 @@
 <?php
 
 use Doctrine\DBAL\Schema\Table;
-use ZubZet\Framework\Migration\Commands\Traits\DbalConnection;
-use ZubZet\Framework\Migration\Commands\Traits\Platform;
-use ZubZet\Framework\Migration\Parser\MigrationFile;
+use ZubZet\Framework\Database\Migration\Commands\Traits\DbalConnection;
+use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
+use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
 
     class z_migrationModel extends z_model {
 

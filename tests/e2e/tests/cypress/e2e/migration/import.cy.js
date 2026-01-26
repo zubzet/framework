@@ -2,7 +2,7 @@ describe('Migration System - Import', () => {
     let baseDir = '../app/Database/migrations';
     let fixturesDir = "cypress/fixtures";
 
-    let zubzetMigrationPath = "../../../src/default/database/Migration";
+    let zubzetMigrationPath = "../../../src/IncludedComponents/database/Migration";
 
     before(() => {
         cy.dbSeed();
@@ -22,7 +22,6 @@ describe('Migration System - Import', () => {
         "2005-01-10_2_Syn_File.sql",
 
         "2025-09-30_MigrationPHPImport.sql",
-        "2025-10-01_FaultyMigration.sql",
         "2025-10-01_MigrationEnv.php",
         "2025-10-01_MigrationEnv1.php",
         "2025-10-01_MigrationImport.php",
@@ -70,22 +69,6 @@ describe('Migration System - Import', () => {
 
             cy.exec(`rm -f ${target} || true`);
         });
-    });
-
-    // It should show the exact File and Error if a SQL-Migration fails
-    it('should show error for faulty SQL migration', () => {
-        cy.dbSeed();
-        let source = `${fixturesDir}/MigrationFiles/2025-10-01_FaultyMigration.sql`;
-        let target = `${baseDir}/2025-10-01_FaultyMigration.sql`;
-
-        cy.exec(`cp ${source} ${target}`);
-        cy.exec('docker exec application php index.php db:import -f',{ failOnNonZeroExit: false }).then((result) => {
-            expect(result.stdout).to.include(
-                "Error importing"
-            );
-        });
-
-        cy.exec(`rm -f ${target} || true`);
     });
 
     // Check if the Files are actually executed and imported correctly

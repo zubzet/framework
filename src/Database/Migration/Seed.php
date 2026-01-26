@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Migration;
+    namespace ZubZet\Framework\Database\Migration;
 
     use Cake\Database\Query;
     use ZubZet\Framework\Querybuilder\HelperTrait;

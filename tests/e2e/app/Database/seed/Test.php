@@ -1,5 +1,5 @@
 <?php
-    use ZubZet\Framework\Migration\Seed;
+    use ZubZet\Framework\Database\Migration\Seed;
 
     class Test extends Seed {
 

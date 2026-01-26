@@ -1,5 +1,5 @@
 <?php
-    use ZubZet\Framework\Migration\Migration;
+    use ZubZet\Framework\Database\Migration\Migration;
 
     class Migration_2005_01_10_3_Syn_File extends Migration {
 

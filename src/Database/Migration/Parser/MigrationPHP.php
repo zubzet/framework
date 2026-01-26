@@ -1,12 +1,12 @@
 <?php
-    namespace ZubZet\Framework\Migration\Parser;
+    namespace ZubZet\Framework\Database\Migration\Parser;
 
     use Doctrine\DBAL\Platforms\AbstractPlatform;
     use Doctrine\DBAL\Schema\Schema;
     use Exception;
-    use ZubZet\Framework\Migration\Commands\Traits\DbalConnection;
-    use ZubZet\Framework\Migration\Commands\Traits\Platform;
-    use ZubZet\Framework\Migration\Migration;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DbalConnection;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
+    use ZubZet\Framework\Database\Migration\Migration;
 
     // Loads a SQL migration file
     class MigrationPHP {

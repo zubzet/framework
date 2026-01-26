@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Migration\Commands\Traits;
+    namespace ZubZet\Framework\Database\Migration\Commands\Traits;
 
     use Doctrine\DBAL\Platforms\AbstractPlatform;
     use Doctrine\DBAL\Platforms\MySQL80Platform;

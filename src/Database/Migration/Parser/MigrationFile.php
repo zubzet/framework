@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Migration\Parser;
+    namespace ZubZet\Framework\Database\Migration\Parser;
 
     use DateTime;
 
@@ -24,7 +24,7 @@
 
         public function extractData() {
             $extension = strtolower(pathinfo($this->filename, PATHINFO_EXTENSION));
-            $classname = "ZubZet\Framework\Migration\Parser\Migration" . strtoupper($extension);
+            $classname = "ZubZet\Framework\Database\Migration\Parser\Migration" . strtoupper($extension);
 
             (new $classname())->extractInformation($this->filename, $this->sqlBuffer, $this->skip, $this->environment, $this->manual);
         }

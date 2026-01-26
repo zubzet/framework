@@ -1,12 +1,12 @@
 <?php
-    namespace ZubZet\Framework\Migration\Commands;
+    namespace ZubZet\Framework\Database\Migration\Commands;
 
     use Exception;
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
-    use ZubZet\Framework\Migration\Commands\Traits\DatabaseConnection;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Import extends Command {
 
@@ -83,7 +83,7 @@
             $dbMigrationsRaw = array_column(model("z_migration")->getExecutedMigrations(), 'migration_name');
             $dbMigrations = model("z_migration")->sortMigrations($dbMigrationsRaw);
 
-            $zubzetMigrations = model("z_migration")->getFiles(zubzet()->z_framework_root . "default/database/Migration");
+            $zubzetMigrations = model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration");
 
             $fileMigrationsRaw = model("z_migration")->getFiles("./app/Database/migrations");
 
