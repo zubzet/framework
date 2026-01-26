@@ -19,7 +19,7 @@
                 $password = config("dbpassword");
             }
 
-            return DriverManager::getConnection([
+            $connection = DriverManager::getConnection([
                 'dbname' => config("dbname"),
                 'user' => $username,
                 'password' => $password,
@@ -27,5 +27,11 @@
                 'port' => config("dbport"),
                 'driver' => "mysqli",
             ]);
+
+            if(version_compare(PHP_VERSION, '8.2.9', '<=')) {
+                $connection->getDatabasePlatform()->registerDoctrineTypeMapping('enum', "string");
+            }
+
+            return $connection;
         }
     }

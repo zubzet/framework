@@ -12,4 +12,8 @@
         if($platform instanceof MySQLPlatform || $platform instanceof PostgreSQLPlatform) return "TIMESTAMP";
         return "DATETIME";
     }
+
+    public function getName(): string {
+        return "timestamp";
+    }
 }

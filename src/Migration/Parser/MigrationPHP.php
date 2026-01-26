@@ -32,12 +32,30 @@
 
             // Extract SQL statements from the migration
             $sqlBuffer = $this->extractSqlFromMigration($migrationInstance, $fromSchema, $schemaManager, $platform);
+            $sqlBuffer = $this->flattenArray($sqlBuffer);
 
             // Get skip and environment settings from the migration
             $skip = $migrationInstance->skip;
             $environment = $migrationInstance->environment;
             $manual = $migrationInstance->manual;
         }
+
+
+        function flattenArray(array $array): array{
+            $result = [];
+
+            foreach ($array as $value) {
+                if (is_array($value)) {
+                    $result = array_merge($result, $this->flattenArray($value));
+                } else {
+                    $result[] = $value;
+                }
+            }
+
+            return $result;
+        }
+
+
 
         private function extractSqlFromMigration(Migration $migration, Schema $fromSchema, $schemaManager, AbstractPlatform $platform): array {
             $sqlBuffer = [];

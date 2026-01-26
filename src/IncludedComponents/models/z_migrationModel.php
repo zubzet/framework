@@ -15,7 +15,7 @@ use ZubZet\Framework\Migration\Parser\MigrationFile;
             $connection = $this->createDbalConnection();
             $schemaManager = $connection->createSchemaManager();
 
-            if(!$schemaManager->tableExists("z_migration_lock")) {
+            if(!$schemaManager->tablesExist(["z_migration_lock"])) {
                 return false;
             }
 
@@ -34,7 +34,7 @@ use ZubZet\Framework\Migration\Parser\MigrationFile;
             $schemaManager = $connection->createSchemaManager();
             $platform = $this->getPlatform();
 
-            if(!$schemaManager->tableExists("z_migration_lock")) {
+            if(!$schemaManager->tablesExist(["z_migration_lock"])) {
                 $table = new Table("z_migration_lock");
                 $table->addColumn("id", "integer", ["autoincrement" => true]);
                 $table->setPrimaryKey(["id"]);
@@ -46,7 +46,7 @@ use ZubZet\Framework\Migration\Parser\MigrationFile;
                 $this->exec($sql[0]);
             }
 
-            if(!$schemaManager->tableExists("z_version")) {
+            if(!$schemaManager->tablesExist(["z_version"])) {
                 $table = new Table("z_version");
                 $table->addColumn("id", "integer", ["autoincrement" => true]);
                 $table->setPrimaryKey(["id"]);
