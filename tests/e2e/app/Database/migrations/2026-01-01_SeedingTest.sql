@@ -1,0 +1,4 @@
+CREATE TABLE `migration_seed` (
+    `id` INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL
+);

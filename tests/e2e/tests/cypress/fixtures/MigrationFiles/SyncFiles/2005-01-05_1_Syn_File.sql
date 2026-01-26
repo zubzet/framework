@@ -1,0 +1,4 @@
+CREATE TABLE `migration_sync_2` (
+    `id` INT AUTO_INCREMENT NOT NULL AUTO_INCREMENT,
+    `data` VARCHAR(255) NOT NULL
+);

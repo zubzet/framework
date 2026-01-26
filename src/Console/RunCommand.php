@@ -8,12 +8,6 @@
     use Symfony\Component\Console\Output\OutputInterface;
 
     final class RunCommand extends Command {
-        public function __construct(
-            private \z_framework $booter
-        ) {
-            parent::__construct();
-        }
-
         protected function configure(): void {
             $this->setName("run");
             $this->setDescription("Execute a controller action from the console");
@@ -44,7 +38,7 @@
             $parameters = $in->getArgument("parameters") ?? [];
 
             // Load the underlying data
-            $actionsByController = ActionDiscovery::find($this->booter->z_controllers);
+            $actionsByController = ActionDiscovery::find(zubzet()->z_controllers);
 
             // Validation: Controller
             $validController = array_key_exists($controller, $actionsByController);
@@ -66,7 +60,7 @@
             }
 
             // Execute the action
-            $this->booter->executePath([
+            zubzet()->executePath([
                 $controller,
                 $action,
                 ...$parameters,

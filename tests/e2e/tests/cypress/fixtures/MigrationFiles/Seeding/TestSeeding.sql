@@ -1,0 +1,1 @@
+INSERT INTO `migration_seed` (`name`) VALUES ('Seed Entry 1');

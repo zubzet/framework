@@ -10,13 +10,13 @@
         public $result;
 
         /**
-         * @var int $insertId Last insert id
+         * @var int|string|null $insertId Last insert id
          */
         public $insertId;
 
         /**
          * Returns the id of the last inserted element
-         * @return int Id of the last inserted element
+         * @return int|string|null Id of the last inserted element
          */
         public function getInsertId() {
             return $this->insertId;

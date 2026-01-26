@@ -15,24 +15,24 @@ These methods internally delegate to the CakePHP Query Builder.
 Example methods inside a model:
 
 ```php
-public function select($fields = [], $table = [], array $types = []) {
+public function dbSelect($fields = [], $table = [], array $types = []) {
     return $this->getQueryBuilder()->selectQuery($fields, $table, $types);
 }
 
-public function update($table = null, array $values = [], array $conditions = [], array $types = []) {
+public function dbUpdate($table = null, array $values = [], array $conditions = [], array $types = []) {
     return $this->getQueryBuilder()->updateQuery($table, $values, $conditions, $types);
 }
 
-public function delete(string $table, array $conditions = [], array $types = []) {
+public function dbDelete(string $table, array $conditions = [], array $types = []) {
     return $this->getQueryBuilder()->deleteQuery($table, $conditions, $types);
 }
 
-public function insert(string $table = null, array $values = [], array $types = []) {
+public function dbInsert(string $table = null, array $values = [], array $types = []) {
     return $this->getQueryBuilder()->insertQuery($table, $values, $types);
 }
 
 public function getQueryBuilder() {
-    return $this->z_db->cakePHPDatabase;
+    return db()->cakePHPDatabase;
 }
 ```
 
@@ -43,7 +43,7 @@ public function getQueryBuilder() {
 Once you have built a query, you can execute it with the `exec` method:
 ```php
 
-$query = $this->select(...);
+$query = $this->dbSelect(...);
 
 $this->exec($query);
 ```
@@ -55,10 +55,10 @@ $this->exec($query);
 ### Select Example
 
 ```php
-$query = $this->select(['id', 'name'], 'users') // Build a SELECT query on table "users", fetching only the columns "id" and "name"
-              ->where(['id' => 42]);            // Add a WHERE condition: only rows where "id" equals 42
+$query = $this->dbSelect(['id', 'name'], 'users') // Build a SELECT query on table "users", fetching only the columns "id" and "name"
+              ->where(['id' => 42]); // Add a WHERE condition: only rows where "id" equals 42
 
-$result = $this->exec($query);                  // Execute the query and return the result
+$result = $this->exec($query); // Execute the query and return the result
 ```
 
 This will execute a query equivalent to:
@@ -72,12 +72,12 @@ SELECT id, name FROM users WHERE id = 42;
 ### Insert Example
 
 ```php
-$query = $this->insert('users', [               // Build an INSERT query for the "users" table
-    'name'  => 'John Doe',                      // Set column "name" to "John Doe"
-    'email' => 'john@example.com'               // Set column "email" to "john@example.com"
+$query = $this->dbInsert('users', [ // Build an INSERT query for the "users" table
+    'name'  => 'John Doe', // Set column "name" to "John Doe"
+    'email' => 'john@example.com' // Set column "email" to "john@example.com"
 ]);
 
-$this->exec($query);                            // Execute the query to insert the new record
+$this->exec($query); // Execute the query to insert the new record
 ```
 
 Equivalent SQL:
@@ -91,11 +91,11 @@ INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com');
 ### Update Example
 
 ```php
-$query = $this->update('users', [               // Build an UPDATE query on the "users" table
-    'email' => 'new@example.com'                // Set column "email" to "new@example.com"
-])->where(['id' => 42]);                        // Add WHERE condition: only update the row where "id" equals 42
+$query = $this->dbUpdate('users', [ // Build an UPDATE query on the "users" table
+    'email' => 'new@example.com' // Set column "email" to "new@example.com"
+])->where(['id' => 42]); // Add WHERE condition: only update the row where "id" equals 42
 
-$this->exec($query);                            // Execute the query to apply the update
+$this->exec($query); // Execute the query to apply the update
 ```
 
 Equivalent SQL:
@@ -109,10 +109,10 @@ UPDATE users SET email = 'new@example.com' WHERE id = 42;
 ### Delete Example
 
 ```php
-$query = $this->delete("users")                 // Build a DELETE query on the "users" table
-            ->where(["id" => 42]);              // Add WHERE condition: only delete the row where "id" equals 42
+$query = $this->dbDelete("users") // Build a DELETE query on the "users" table
+            ->where(["id" => 42]); // Add WHERE condition: only delete the row where "id" equals 42
 
-$this->exec($query);                            // Execute the query to remove the record
+$this->exec($query); // Execute the query to remove the record
 ```
 
 Equivalent SQL:

@@ -4,6 +4,7 @@
 
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
+    use Cake\Database\Query;
 
     class Connection {
 
@@ -18,6 +19,9 @@
         public int $lastHeartbeat;
         public int $connectTimeout;
 
+        private string $user;
+        private string $password;
+
         public function __construct(\z_framework &$booter) {
             $this->booter = $booter;
 
@@ -29,6 +33,9 @@
                 "db_connection_timeout",
                 default: 900,
             );
+
+            $this->user = $booter->dbusername;
+            $this->password = $booter->dbpassword;
         }
 
         private function connect() {
@@ -38,8 +45,8 @@
             // Connect to the database
             $this->conn = new \mysqli(
                 $this->booter->dbhost,
-                $this->booter->dbusername,
-                $this->booter->dbpassword,
+                $this->user,
+                $this->password,
                 $this->booter->dbname,
             );
 
@@ -48,6 +55,12 @@
 
             // Remember the connection time
             $this->lastConnect = time();
+        }
+
+        public function switchUser(string $user, string $password): void {
+            $this->user = $user;
+            $this->password = $password;
+            $this->connect();
         }
 
         public function assertConnection() {
@@ -81,32 +94,69 @@
             $this->assertConnection();
 
             $args = func_get_args();
-            $this->stmt = $this->conn->prepare($query);
+            $preparationResult = $this->conn->prepare($query);
+            if(is_bool($preparationResult)) {
+                throw new \Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
+            }
+
+            $this->stmt = $preparationResult;
 
             if(count($args) > 1) {
                 array_shift($args);
-                if (is_bool($this->stmt)) {
-                    throw new \Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
+                $bindingResult = $this->stmt->bind_param(...$args);
+                if(false === $bindingResult) {
+                    throw new \Exception("SQL Binding Error: " . $this->conn->error . "\nQuery: " . $query);
                 }
-                $this->stmt->bind_param(...$args);
             }
 
-            if(is_bool($this->stmt)) {
-                throw new \Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
+            $executionResult = $this->stmt->execute();
+            if(false === $executionResult) {
+                throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
-            $this->stmt->execute();
+            if($this->stmt->errno) {
+                throw new \Exception("SQL STMT Error: " . $this->stmt->error . "\nQuery: " . $query);
+            }
+
             $this->insertId = $this->conn->insert_id;
 
-            if($this->stmt->errno) {
-                throw new \Exception("SQL Error: " . $this->stmt->error . "\nQuery: " . $query);
-            }
-
             $this->result = $this->stmt->get_result();
+
             $this->stmt->close();
 
             $this->lastHeartbeat = time();
 
             return $this;
+        }
+
+        public function executeMultiQuery(string $query): void {
+            $this->assertConnection();
+
+            $this->conn->multi_query($query);
+            while($this->conn->more_results() && $this->conn->next_result());
+
+            $this->lastHeartbeat = time();
+        }
+
+        public function getDatabaseConnection(): \mysqli {
+            $this->assertConnection();
+            return $this->conn;
+        }
+
+        public function extractQueryBuilderSQL(Query $query): string {
+            $sql = $query->sql();
+            $bindings = $query->getValueBinder()->bindings();
+
+            foreach($bindings as $key => $binding) {
+                $value = $binding['value'];
+
+                if(is_string($value)) {
+                    $value = "'" . addslashes($value) . "'";
+                }
+
+                $sql = str_replace($key, $value, $sql);
+            }
+
+            return $sql;
         }
 
         /**

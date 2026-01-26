@@ -2,13 +2,6 @@
 
     namespace ZubZet\Framework;
 
-    use Slim\App;
-    use Slim\Factory\AppFactory;
-    use Slim\Psr7\Response as HttpResponse;
-    use Slim\Exception\HttpNotFoundException;
-    use Slim\Factory\ServerRequestCreatorFactory;
-
-    use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Routing\Route;
     use ZubZet\Framework\Core\Constants;
     use ZubZet\Framework\Support\Helpers;
@@ -16,14 +9,21 @@
     use ZubZet\Framework\Message\Response;
     use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Database\Connection;
+    use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Support\GlobalReferences;
+
+    use Slim\App;
+    use Slim\Factory\AppFactory;
+    use Slim\Psr7\Response as HttpResponse;
+    use Slim\Exception\HttpNotFoundException;
+    use Slim\Factory\ServerRequestCreatorFactory;
 
     class ZubZet {
         /** @var array $settings Stores the z_framework settings */
         public $settings;
 
         /** @var Connection $z_db Database proxy object  */
-        public Connection $z_db;
+        public $z_db;
 
         /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
         public $maxReroutes = 10;
