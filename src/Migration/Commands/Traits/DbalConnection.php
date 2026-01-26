@@ -28,7 +28,10 @@
                 'driver' => "mysqli",
             ]);
 
-            if(version_compare(PHP_VERSION, '8.2.9', '<=')) {
+            // Used to map enum types to string to avoid issues
+            // Method getDatabasePlatform does not exist below Doctrine DBAL 4.x
+            if(method_exists($connection, 'getDatabasePlatform') &&
+            !$connection->getDatabasePlatform()->hasDoctrineTypeMappingFor('enum')) {
                 $connection->getDatabasePlatform()->registerDoctrineTypeMapping('enum', "string");
             }
 
