@@ -135,11 +135,12 @@
                 $endpoint,
                 function(ServerRequestInterface $request, ResponseInterface $response, $args) use ($action) {
                     if(is_callable($action)) {
-                        return $action($request, $response, $args);
+                        $action($request, $response, $args);
+                    } else {
+                        [$controllerClass, $actionMethod] = $action;
+                        zubzet()->executeControllerAction($controllerClass, $actionMethod, $args);
                     }
 
-                    [$controllerClass, $actionMethod] = $action;
-                    zubzet()->executeControllerAction($controllerClass, $actionMethod, $args);
                     return new Response();
                 },
             );
