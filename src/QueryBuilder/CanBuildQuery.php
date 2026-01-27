@@ -1,5 +1,5 @@
 <?php
-    namespace ZubZet\Framework\Querybuilder;
+    namespace ZubZet\Framework\QueryBuilder;
 
     trait CanBuildQuery {
 
