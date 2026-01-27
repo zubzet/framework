@@ -4,7 +4,7 @@
 
     use ZubZet\Framework\ZubZet;
     use ZubZet\Framework\Database\Connection;
-    use ZubZet\Framework\Querybuilder\HelperTrait;
+    use ZubZet\Framework\Querybuilder\CanBuildQuery;
 
     use Cake\Database\Query;
 
@@ -14,7 +14,7 @@
      */
     class Model {
 
-        use HelperTrait;
+        use CanBuildQuery;
 
         /**
          * @var Connection $z_db Reference to the database proxy

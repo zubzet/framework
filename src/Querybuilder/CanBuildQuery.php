@@ -1,7 +1,7 @@
 <?php
     namespace ZubZet\Framework\Querybuilder;
 
-    trait HelperTrait {
+    trait CanBuildQuery {
 
         /**
          * Create a new SelectQuery instance for the CakePHP\Database Connection.
