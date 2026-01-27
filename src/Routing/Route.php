@@ -88,7 +88,7 @@
             // Execute collected middlewares and exit if any returns any other than true
             foreach($toExecuteMiddleware as $mw) {
                 [$class, $method] = $mw;
-                $result = zubzet()->executeControllerAction($class, $method, []);
+                $result = zubzet()->executeControllerAction($class, $method);
                 if($result !== true) exit;
             }
 
@@ -98,7 +98,7 @@
             // Execute after middlewares
             foreach($toExecuteAfterMiddleware as $amw) {
                 [$class, $method] = $amw;
-                zubzet()->executeControllerAction($class, $method, []);
+                zubzet()->executeControllerAction($class, $method);
             }
         }
 
@@ -133,12 +133,12 @@
 
             $route = $router->$method(
                 $endpoint,
-                function(ServerRequestInterface $request, ResponseInterface $response, $args) use ($action) {
+                function(ServerRequestInterface $request, ResponseInterface $response, array $args) use ($action) {
                     if(is_callable($action)) {
                         $action($request, $response, $args);
                     } else {
                         [$controllerClass, $actionMethod] = $action;
-                        zubzet()->executeControllerAction($controllerClass, $actionMethod, $args);
+                        zubzet()->executeControllerAction($controllerClass, $actionMethod);
                     }
 
                     return new Response();
@@ -160,7 +160,7 @@
                 foreach($middlewares as $middleware) {
                     [$middlewareClass, $middlewareMethod] = $middleware;
 
-                    $result = zubzet()->executeControllerAction($middlewareClass, $middlewareMethod, $args);
+                    $result = zubzet()->executeControllerAction($middlewareClass, $middlewareMethod);
 
                     if($result === true) continue;
 
@@ -181,7 +181,7 @@
                 foreach($afterMiddlewares as $afterMiddleware) {
                     [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
 
-                    zubzet()->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
+                    zubzet()->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod);
                 }
 
                 return new Response();
