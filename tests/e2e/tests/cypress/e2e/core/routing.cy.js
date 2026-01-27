@@ -290,4 +290,41 @@ describe('Routing', () => {
             expect(response.body.trim()).to.contains("Uncaught Slim\\Exception\\HttpMethodNotAllowedException: Method not allowed.");
         });
     });
+
+    let fixturesDir = "cypress/fixtures";
+    let baseDir = '../app/Routes';
+
+    describe("clean up after tests", () => {
+        after(() => {
+            cy.exec(`rm -f ${baseDir}/RoutingTest.php || true`);
+        });
+
+        before(() => {
+            const file = "RoutingTest.php";
+
+            cy.exec(`cp ${fixturesDir}/${file} ${baseDir}/${file}`);
+        });
+
+        it("should be possible to define groups without prefix and callback", () => {
+            cy.request('GET', '/core/action').then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body).to.contains("Group Middleware Accept Executed");
+            });
+        });
+
+        it("should be possible to define a callback in routes", () => {
+            cy.request('GET', '/routing/callback/accept').then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body).to.contains("test");
+            });
+        });
+
+        it("should cancel before the callback because of blocking middleware", () => {
+            cy.request('GET', '/routing/callback/block').then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body).to.not.contains("test");
+            });
+        });
+    });
+
 });
