@@ -88,7 +88,7 @@
             // Execute collected middlewares and exit if any returns any other than true
             foreach($toExecuteMiddleware as $mw) {
                 [$class, $method] = $mw;
-                $result = zubzet()->executeControllerAction($class, $method);
+                $result = zubzet()->executeControllerAction($class, $method, []);
                 if($result !== true) exit;
             }
 
@@ -98,7 +98,7 @@
             // Execute after middlewares
             foreach($toExecuteAfterMiddleware as $amw) {
                 [$class, $method] = $amw;
-                zubzet()->executeControllerAction($class, $method);
+                zubzet()->executeControllerAction($class, $method, []);
             }
         }
 
@@ -138,7 +138,7 @@
                         $action($request, $response, $args);
                     } else {
                         [$controllerClass, $actionMethod] = $action;
-                        zubzet()->executeControllerAction($controllerClass, $actionMethod);
+                        zubzet()->executeControllerAction($controllerClass, $actionMethod, $args);
                     }
 
                     return new Response();
@@ -160,7 +160,7 @@
                 foreach($middlewares as $middleware) {
                     [$middlewareClass, $middlewareMethod] = $middleware;
 
-                    $result = zubzet()->executeControllerAction($middlewareClass, $middlewareMethod);
+                    $result = zubzet()->executeControllerAction($middlewareClass, $middlewareMethod, $args);
 
                     if($result === true) continue;
 
@@ -181,7 +181,7 @@
                 foreach($afterMiddlewares as $afterMiddleware) {
                     [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
 
-                    zubzet()->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod);
+                    zubzet()->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
                 }
 
                 return new Response();
