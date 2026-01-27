@@ -4,7 +4,7 @@
 
     use ZubZet\Framework\ZubZet;
     use ZubZet\Framework\Database\Connection;
-    use ZubZet\Framework\Querybuilder\CanBuildQuery;
+    use ZubZet\Framework\QueryBuilder\CanBuildQuery;
 
     use Cake\Database\Query;
 
