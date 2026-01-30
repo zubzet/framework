@@ -93,12 +93,13 @@ markdown_extensions:
 
 # Navigation
 nav:
-    - Getting Started: index
+    - Getting Started: .
     - Setup:
         - Installation: setup/installation
         - How To Contribute: setup/how-to-contribute
         - How To Update: setup/how-to-update
         - How to Upgrade:
+            - 1.0.0 to 1.1.0: setup/upgrade/1.0.0-to-1.1.0
             - 0.11 to 1.0.0: setup/upgrade/0.11-to-1.0.0
             - 0.10 to 0.11: setup/upgrade/0.10-to-0.11
             - 0.9 to 0.10: setup/upgrade/0.9-to-0.10
@@ -114,9 +115,16 @@ nav:
         - REST API: core-features/rest-api
         - Parameter Abstraction: core-features/parameter-abstraction
         - Routing: core-features/routing
-        - QueryBuilder: core-features/query-builder
-        - Migrations: core-features/migrations
-    - Z-Admin:
+        - QueryBuilder:
+            - Usage: core-features/query-builder
+            - Examples: core-features/query-builder/examples
+        - Migrations:
+            - Usage: core-features/migrations
+            - Examples: core-features/migrations/examples
+        - Global Helper Functions: core-features/global-helper-functions
+        - Console Commands: core-features/console-commands
+        - Access Control: core-features/access-control
+    - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
     - Forms:

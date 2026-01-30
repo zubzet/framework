@@ -1,6 +1,6 @@
 # Migrations in ZubZet
 
-Since version **1.1.0**, the **Migration system** in ZubZet has been **completely refactored**.
+Since version **1.1.0**, ZubZet includes a **Migration system**.
 
 As part of this overhaul, migrations received many new features and improvements, making them more powerful, safer, and easier to manage.
 
@@ -23,46 +23,70 @@ ZubZet provides the following migration-related commands.
 
 The **Import** command is used to **execute migrations**.
 
-It applies all pending migrations to the database in the correct order and ensures that each migration is only executed once.
+It applies all pending migrations to the database in the correct order and ensures that each migration is only executed once.  
+
+By default, **all available migrations** are executed when no specific configuration is provided, **regardless of the current environment.**  
+
+If the import process detects that **a migration has been skipped** and no additional configuration has been provided to handle this case, **the import will be aborted before any migration is executed**.
+This validation is performed **in advance**, ensuring that no partial or inconsistent migration state can occur.
+
 
 #### Available Options
 
 * **environments-included** (Alias: `i`) `{environment_name}`  
   Defines which environments should be included in the sync.  
-  *Default: `default`.*
+  *Default: `default`.*  
+  *Usage: `db:import -i production -i testing`*
 
 * **environments-excluded** (Alias: `e`) `{environment_name}`  
-  Defines which environments should be excluded from the sync.
+  Defines which environments should be excluded from the sync.  
+  *Usage: `db:import -e production`*
 
 * **dry** (Alias: `d`)  
-  Runs the sync in dry-run mode without applying any changes.
+  Runs the sync in dry-run mode without applying any changes.  
+  *Usage: `db:import -d`*
 
 * **exclude-external**  
-  Excludes Framework migrations from the sync.
+  Excludes Framework migrations from the sync.  
+  *Usage: `db:import --exclude-external`*
 
-* **force**  
-  Execute the migrations without checking for skipped migrations
+* **force** (Alias: `f`)  
+  Execute the migrations without checking for skipped migrations  
+  *Usage: `db:import -f`*
 
-* **enforce-external-timeline**
-  Execute the migrations without checking for skipped migrations across ZubZet-Migrations and App-Migrations
+* **enforce-external-timeline**  
+  Execute the migrations without checking for skipped migrations within ZubZet-Migrations  
+  *Usage: `db:import --enforce-external-timeline`*
 
+
+#### File Convention
+
+Every migration file **must** be located in the following directory:
+
+```
+app/Database/migrations
+```
+
+Migration files located outside of this directory are **not considered** by the migration system.
 
 #### Filename Convention
 
-Each filename **must** follow a defined and consistent format.
+Each migration filename **must** follow a defined and consistent format.
 
 **Structure**
 
 ```
-YYYY-MM-DD_{INDEX}_{NAME}
+YYYY-MM-DD_{INDEX}_{NAME}.{php/sql}
 ```
 
 **Component Description**
 
 * **YYYY-MM-DD** – Required
-  A valid date in ISO format (year-month-day)
+  A valid date in ISO format *(year-month-day)*
+
 * **INDEX** – Optional
   A numeric index used to distinguish multiple files created on the same date
+
 * **NAME** – Required
   A descriptive name identifying the file
 
@@ -72,6 +96,9 @@ YYYY-MM-DD_{INDEX}_{NAME}
 2025-10-10_1_Test.php
 2025-10-10_Test.php
 ```
+
+If a migration file **does not follow this filename convention**, the migration system will **throw an error** and abort the import process.
+
 
 
 #### Supported Migration File Types
@@ -83,7 +110,6 @@ The Migration system supports **two different file formats**, which can also be 
     You can use `.sql` files to define **raw SQL statements**.
 
     All SQL statements found in these files are executed directly against the database.
-    This is useful for simple inserts, static datasets, or database-specific SQL features.
 
 - **PHP Migration Files (`.php`)**
 
@@ -130,12 +156,17 @@ The Migration system supports **two different file formats**, which can also be 
     }
     ```
 
-    **Settings**
+    **Settings**  
+    Settings can be applied **within the `execute()` method**.  
+    The following settings exist:
 
     * **Skip**
 
         Marks a migration as *skipped*, so it will not be imported when running the `migrate` command.  
         **Usage:** `$this->skip();`
+
+        A skipped migration will still be **marked as executed** to prevent it from being applied in future runs.
+
 
     * **Environment**
 
@@ -145,9 +176,14 @@ The Migration system supports **two different file formats**, which can also be 
 
     * **Manual**
 
-        Marks a migration as *manual* and stops the import process when this migration is reached.
-        Useful if you want to run specific migrations manually to verify that everything works as expected.  
-        **Usage:** `$this->setManual(true);`
+		Marks a migration as **manual** and stops the import process when this migration is reached.
+		This is useful when a migration must be executed manually to verify correctness or perform controlled changes.  
+		**Usage:** `$this->setManual(true);`
+
+		**Important:**
+		When the import stops due to a manual migration, the database **remains locked**.
+		To continue the import process, you must **[synchronize](#sync) the current database state** (using the date of the manual migration) and then **re-run the import**.
+
 
 
     **Usage**
@@ -160,7 +196,7 @@ The Migration system supports **two different file formats**, which can also be 
 
         This is used to create Tables.
 
-        **Example:**
+        **Example:**  
 
         SQL:
         ```
@@ -185,7 +221,7 @@ The Migration system supports **two different file formats**, which can also be 
     - **tableDrop(`name`)**
         This is used to create Tables.
 
-        **Example:**
+        **Example:**  
         SQL:
         ```
         DROP TABLE `testTable`;
@@ -199,7 +235,7 @@ The Migration system supports **two different file formats**, which can also be 
     - **tableRename(`name`)**
         This is used to rename Tables.
 
-        **Example:**
+        **Example:**  
         SQL:
         ```
         ALTER TABLE testTable RENAME TO newName;
@@ -213,7 +249,7 @@ The Migration system supports **two different file formats**, which can also be 
     - **run(`sql`)**
         This is used to execute custom SQL
 
-        **Example:**
+        **Example:**  
         ```sql
         $this->run('
             CREATE TABLE `testTable` (
@@ -226,7 +262,7 @@ The Migration system supports **two different file formats**, which can also be 
     - **tableAlter(`name`)**
         This is used to edit Tables
 
-        **Example:**
+        **Example:**  
         SQL:
         ```
         ALTER TABLE z_user ADD description LONGTEXT DEFAULT NULL
@@ -239,6 +275,9 @@ The Migration system supports **two different file formats**, which can also be 
         ```
 
 
+    More examples can be found [here](./examples.md)  
+
+
 ### Seed
 
 The **Seed** command is used to **completely recreate the database** and then insert **seed data**, making it ideal for **test and development environments** where a clean, reproducible database state is required.
@@ -248,7 +287,7 @@ When executed, the command performs the following steps:
 
 1. Drops the existing database
 2. Recreates the database
-3. Rebuilds the schema
+3. Rebuilds the schema (using [Import](#import))
 4. Executes all seed files found in `./app/Database/seed`
 
 
@@ -261,7 +300,6 @@ The Seed system supports **two different file formats**, which can also be mixed
     You can use `.sql` files to define **raw SQL statements**.
 
     All SQL statements found in these files are executed directly against the database.
-    This is useful for simple inserts, static datasets, or database-specific SQL features.
 
 - **PHP Seed Files (`.php`)**
 
@@ -352,32 +390,40 @@ This is useful when:
 
 * **start `{start_date}`**  
   Specifies the start date from which migrations should be synced  
-  *(Format: `YYYY-MM-DD`)*
+  *(Format: `YYYY-MM-DD`)*  
+  *Usage: `db:sync --start 2025-12-01`*
 
 * **startVersion `{start_version}`**  
-  Specifies the version from which the sync should start.  
-  *Requires the `start` option.*
+  Specifies the index from which the sync should start.  
+  *Requires the `start` option.*  
+  *Usage: `db:sync --start 2025-12-01 --startVersion 2`*
 
 * **end `{end_date}`**  
   Specifies the end date up to which migrations should be synced  
-  *(Format: `YYYY-MM-DD`)*
+  *(Format: `YYYY-MM-DD`)*  
+  *Usage: `db:sync --end 2025-12-01`*
 
 * **endVersion `{end_version}`**  
-  Specifies the version up to which the sync should run.  
-  *Requires the `end` option.*
+  Specifies the index up to which the sync should run.  
+  *Requires the `end` option.*  
+  *Usage: `db:sync --end 2025-12-01 --endVersion 2`*
 
 * **environments-included** (Alias: `i`) `{environment_name}`  
   Defines which environments should be included in the sync.  
   *Default: `default`.*
+  *Usage: `db:sync -i production -i testing`*
 
 * **environments-excluded** (Alias: `e`) `{environment_name}`  
-  Defines which environments should be excluded from the sync.
+  Defines which environments should be excluded from the sync.  
+  *Usage: `db:sync -e production`*
 
 * **dry** (Alias: `d`)  
-  Runs the sync in dry-run mode without applying any changes.
+  Runs the sync in dry-run mode without applying any changes.  
+  *Usage: `db:sync -d`*
 
-* **exclude-external**  
-  Excludes Framework migrations from the sync.
+* **include-external**  
+  Includes Framework migrations for the sync.  
+  *Usage: `db:sync --include-external`*
 
 
 ### Status
@@ -421,13 +467,3 @@ By keeping a record of executed migrations, ZubZet ensures that **migrations are
 
 Both tables are **created automatically** when the migration system is used and **require no manual setup**.
 They are an essential part of ensuring safe, repeatable, and reliable database migrations in ZubZet.
-
-
-
-## Summary
-
-* Since **1.1.0**, the migration system was **rebuilt**
-* Migrations now provide many new features
-* ZubZet offers multiple commands to manage different migration workflows:
-
-This new migration system ensures reliable, consistent, and safe database evolution within ZubZet.

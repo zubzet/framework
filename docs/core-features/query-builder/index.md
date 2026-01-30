@@ -128,6 +128,8 @@ DELETE FROM users WHERE id = 42;
 * All query methods (`select`, `insert`, `update`, `delete`) return a **CakePHP Query object**.
 * Queries are executed via `$this->exec($query)`.
 
+For more examples, see the [Examples](./examples.md) page.
+
 ---
 
 ## More Information
