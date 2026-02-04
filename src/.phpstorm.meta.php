@@ -7,21 +7,26 @@
 
     namespace PHPSTORM_META {
 
-        override(ZubZet\Framework\Core\Model::getModel(), map([
-            '' => '@Model'
-        ]));
-
-        override(ZubZet\Framework\ZubZet::getModel(), map([
-            '' => '@Model'
-        ]));
-
-        override(ZubZet\Framework\Message\RequestResponseHandler::getModel(), map([
-            '' => '@Model'
-        ]));
+        use ZubZet\Framework\ZubZet;
+        use ZubZet\Framework\Core\Model;
+        use ZubZet\Framework\Message\RequestResponseHandler;
 
         override(model(), map([
             '' => '@Model'
         ]));
+
+        override(ZubZet::getModel(), map([
+            '' => '@Model'
+        ]));
+
+        override(RequestResponseHandler::getModel(), map([
+            '' => '@Model'
+        ]));
+
+        override(Model::getModel(), map([
+            '' => '@Model'
+        ]));
+
     }
 
 ?>
