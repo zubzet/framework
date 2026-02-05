@@ -11,8 +11,9 @@
             "port": 9003,
             "pathMappings": {
                 "/var/www/framework": "${workspaceRoot}",
-                "/var/www/html/": "${workspaceRoot}/tests/e2e",
-                "/var/www/vendor/": "${workspaceRoot}/vendor"
+                "/var/www/html/": "${workspaceRoot}/tests/e2e/",
+                "/var/www/vendor/": "${workspaceRoot}/tests/e2e/vendor/",
+                "/var/www/vendor/zubzet/framework": "${workspaceRoot}"
             }
         }
     ]

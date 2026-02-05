@@ -1,5 +1,6 @@
 x-config-z-settings: &config-z-settings
   COMPOSER_VENDOR_DIR: "/var/www/vendor"
+  XDEBUG_MODE: "debug,coverage"
 
   CONFIG_HOST: http://localhost:8080
   CONFIG_ROOTDIRECTORY: ""
@@ -29,6 +30,7 @@ x-built-application-image: &built-application-image
     - host.docker.internal:host-gateway
   volumes:
     - ../../:/var/www/html
+    - ../../vendor:/var/www/vendor
     - ../../../../:/var/www/framework
     - ./site-000-default.conf:/etc/apache2/sites-enabled/000-default.conf:ro
   depends_on:

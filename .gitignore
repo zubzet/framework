@@ -7,3 +7,5 @@ sql.log
 **/cypress/screenshots/**
 **/cypress/videos/**
 uploads
+.coverage.session
+.coverage

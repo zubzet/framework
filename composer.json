@@ -15,6 +15,9 @@
         "symfony/console": "7.* || 6.*",
         "doctrine/dbal": "^3.10 || ^4.4"
     },
+    "suggest": {
+        "phpunit/php-code-coverage": "Required to offer the testing:coverage wrapper command."
+    },
     "autoload": {
         "files": [
             "src/Aliases.php"
