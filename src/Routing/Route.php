@@ -34,6 +34,12 @@ class Route {
         public static array $storedPrefixedGroups = [];
 
         /**
+         * Stores registered route metadata for OpenAPI spec generation.
+         * @var array[]
+         */
+        private static array $registeredRoutes = [];
+
+        /**
          * Initializes the static Router.
          * This must be called once before loading route files.
          *
@@ -141,7 +147,14 @@ class Route {
             self::performRouteInclusions($middlewares, $afterMiddleware, $group);
         }
 
-        public static function performRoute(string $method, string $endpoint, array $action, array $middlewares, array $afterMiddleware): void {
+        public static function performRoute(string $method, string $endpoint, array $action, array $middlewares, array $afterMiddleware, array $schema = []): void {
+            $fullEndpoint = implode('', self::$prefixStack) . $endpoint;
+            self::$registeredRoutes[] = [
+                'method' => $method,
+                'endpoint' => $fullEndpoint,
+                'schema' => $schema,
+            ];
+
             [$controllerClass, $actionMethod] = $action;
             $router = self::getCurrentRouter();
 
@@ -153,6 +166,29 @@ class Route {
             self::performRouteInclusions($middlewares, $afterMiddleware, $route);
         }
         private static $isCancelled = false;
+
+        /**
+         * Registers a GET route that serves the OpenAPI specification.
+         *
+         * @param string $endpoint The URL path for the spec (e.g. '/openapi')
+         * @param array $info Optional OpenAPI info: title, version, description
+         */
+        public static function spec(string $endpoint, array $info = []): void {
+            $router = self::getCurrentRouter();
+            $router->get($endpoint, function ($request, $response) use ($info) {
+                $spec = OpenApiSpec::generate(self::$registeredRoutes, $info);
+                $response->getBody()->write(json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                return $response->withHeader('Content-Type', 'application/json');
+            });
+        }
+
+        /**
+         * Returns all registered route metadata.
+         * @return array[]
+         */
+        public static function getRegisteredRoutes(): array {
+            return self::$registeredRoutes;
+        }
 
         private static function performRouteInclusions(array $middlewares, array $afterMiddlewares, RouteInterface|RouteGroupInterface $routable): void {
 
