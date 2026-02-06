@@ -1,7 +1,7 @@
 {
     "name": "zubzet/framework",
     "description": " A lightweight PHP framework focused on rapid development, ease of use, and great portability.",
-    "license": "GPL-3.0-or-later",
+    "license": "Apache-2.0",
     "support": {
         "wiki": "https://zubzet.com/docs"
     },
