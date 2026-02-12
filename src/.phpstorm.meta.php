@@ -11,7 +11,7 @@
         use ZubZet\Framework\Core\Model;
         use ZubZet\Framework\Message\RequestResponseHandler;
 
-        override(model(), map([
+        override(\model(0), map([
             '' => '@Model'
         ]));
 
