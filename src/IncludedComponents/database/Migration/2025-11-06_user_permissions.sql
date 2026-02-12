@@ -6,8 +6,9 @@ CREATE TABLE `z_user_permission` (
   `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
 );
 
-ALTER TABLE `z_user`
+ALTER TABLE `z_user` (
   ADD COLUMN `active` TINYINT(1) NOT NULL DEFAULT 1 AFTER `languageId`,
   ADD COLUMN `updated` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `active`,
   MODIFY COLUMN `email` VARCHAR(255) NULL,
-  ADD UNIQUE KEY `uq_user_email` (`email`);
+  ADD UNIQUE KEY `uq_user_email` (`email`)
+);
