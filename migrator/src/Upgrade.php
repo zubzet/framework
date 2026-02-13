@@ -20,6 +20,7 @@
             "0.10.0",
             "0.11.0",
             "1.0.0",
+            "1.1.0",
         ];
 
         protected function configure(): void {

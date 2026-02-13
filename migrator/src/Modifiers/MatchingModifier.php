@@ -60,6 +60,10 @@
             if($this->upgrade->dry) return;
             $this->abortRequiringUserAction();
         }
+
+        public function getIssues(): array {
+            return $this->issues;
+        }
     }
 
 ?>
