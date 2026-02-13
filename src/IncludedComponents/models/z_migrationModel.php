@@ -40,7 +40,7 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
                 $table->setPrimaryKey(["id"]);
 
                 $table->addColumn("is_locked", "boolean", ["default" => 0]);
-                $table->addColumn("locked_at", "timestamp");
+                $table->addColumn("locked_at", "timestamp", ["default" => "CURRENT_TIMESTAMP"]);
 
                 $sql = $platform->getCreateTableSQL($table);
                 $this->exec($sql[0]);
