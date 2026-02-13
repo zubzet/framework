@@ -170,7 +170,7 @@
                         $out->writeln("<info>Skipping migration (marked to skip): {$file->filename}</info>");
 
                         if($dryMode) continue;
-                        model("z_migration")->markAsExecuted(basename($file->filename), $file->date->format("Y-m-d"), $file->version);
+                        model("z_migration")->markAsExecuted($file->filename, $file->date->format("Y-m-d"), $file->version);
 
                         continue;
                     }
@@ -189,7 +189,7 @@
                     // Execute SQL
                     try {
                         $this->executeSqlBuffer($file->sqlBuffer);
-                        model("z_migration")->markAsExecuted(basename($file->filename), $file->date->format("Y-m-d"), $file->version);
+                        model("z_migration")->markAsExecuted($file->filename, $file->date->format("Y-m-d"), $file->version);
                     } catch(Exception $e) {
                         $out->writeln("<error>Error importing {$file->filename}: " . $e->getMessage() . "</error>");
                         return 1;

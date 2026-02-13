@@ -195,7 +195,7 @@
                     // Do not execute in dry mode
                     if($dryMode) continue;
 
-                    model("z_migration")->markAsExecuted(basename($file->filename), $file->date->format("Y-m-d"), $file->version);
+                    model("z_migration")->markAsExecuted($file->filename, $file->date->format("Y-m-d"), $file->version);
                 }
 
             } catch(\Exception $e) {

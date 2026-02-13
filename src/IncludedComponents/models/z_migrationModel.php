@@ -56,6 +56,7 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
                 $table->addColumn("migration_name", "string", ["length" => 255]);
                 $table->addColumn("migration_date", "date");
                 $table->addColumn("migration_version", "integer");
+                $table->addColumn("file_hash", "string", ["length" => 40]);
                 $table->addColumn("active", "boolean", ["default" => true]);
                 $table->addColumn("created", "timestamp", [
                     'columnDefinition' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
@@ -96,11 +97,16 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
             return $migrations;
         }
 
-        public function markAsExecuted(string $migrationName, $date, $version): void {
+        public function markAsExecuted(string $migration, $date, $version): void {
+            $fileHash = hash_file("sha1", $migration);
+
+
+            $basename = basename($migration);
             $insertQuery = $this->dbInsert("z_version", [
-                "migration_name" => $migrationName,
+                "migration_name" => $basename,
                 "migration_date" => $date,
                 "migration_version" => $version,
+                "file_hash" => $fileHash,
             ]);
 
             $this->exec($insertQuery);
