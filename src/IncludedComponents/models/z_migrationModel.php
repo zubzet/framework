@@ -57,7 +57,9 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
                 $table->addColumn("migration_date", "date");
                 $table->addColumn("migration_version", "integer");
                 $table->addColumn("active", "boolean", ["default" => true]);
-                $table->addColumn("created", "timestamp");
+                $table->addColumn("created", "timestamp", [
+                    'columnDefinition' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                ]);
 
                 $sql = $platform->getCreateTableSQL($table);
                 $this->exec($sql[0]);
