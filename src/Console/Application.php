@@ -3,7 +3,7 @@
     namespace ZubZet\Framework\Console;
 
     use Symfony\Component\Console\Application as ConsoleApplication;
-    use ZubZet\Framework\Database\Migration\Commands\Import;
+    use ZubZet\Framework\Database\Migration\Commands\Migrate;
     use ZubZet\Framework\Database\Migration\Commands\Seed;
     use ZubZet\Framework\Database\Migration\Commands\Status;
     use ZubZet\Framework\Database\Migration\Commands\Sync;
@@ -18,7 +18,7 @@
                 $automaticallyLoadedCommands,
                 [
                     new RunCommand(),
-                    new Import(),
+                    new Migrate(),
                     new Status(),
                     new Sync(),
                     new Seed(),

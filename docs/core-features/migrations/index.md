@@ -36,27 +36,27 @@ This validation is performed **in advance**, ensuring that no partial or inconsi
 * **environments-included** (Alias: `i`) `{environment_name}`  
   Defines which environments should be included in the sync.  
   *Default: `default`.*  
-  *Usage: `db:import -i production -i testing`*
+  *Usage: `db:migrate -i production -i testing`*
 
 * **environments-excluded** (Alias: `e`) `{environment_name}`  
   Defines which environments should be excluded from the sync.  
-  *Usage: `db:import -e production`*
+  *Usage: `db:migrate -e production`*
 
 * **dry** (Alias: `d`)  
   Runs the sync in dry-run mode without applying any changes.  
-  *Usage: `db:import -d`*
+  *Usage: `db:migrate -d`*
 
 * **exclude-external**  
   Excludes Framework migrations from the sync.  
-  *Usage: `db:import --exclude-external`*
+  *Usage: `db:migrate --exclude-external`*
 
 * **force** (Alias: `f`)  
   Execute the migrations without checking for skipped migrations  
-  *Usage: `db:import -f`*
+  *Usage: `db:migrate -f`*
 
 * **enforce-external-timeline**  
   Execute the migrations without checking for skipped migrations within ZubZet-Migrations  
-  *Usage: `db:import --enforce-external-timeline`*
+  *Usage: `db:migrate --enforce-external-timeline`*
 
 
 #### File Convention

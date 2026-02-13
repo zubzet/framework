@@ -8,12 +8,12 @@
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
-    final class Import extends Command {
+    final class Migrate extends Command {
 
         use DatabaseConnection;
 
         protected function configure(): void {
-            $this->setName("db:import");
+            $this->setName("db:migrate");
             $this->setDescription("Execute all outstanding database migrations.");
 
             $this->addOption(

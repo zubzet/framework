@@ -50,12 +50,12 @@
             db()->executeMultiQuery( "DROP DATABASE IF EXISTS `" . $dbName . "`; CREATE DATABASE $dbName;");
             $conn->select_db($dbName);
 
-            // Execute the db:import command to recreate the schema
+            // Execute the db:migrate command to recreate the schema
             $application = $this->getApplication();
             $application->setAutoExit(false);
 
             $input = new ArrayInput([
-                'command' => 'db:import'
+                'command' => 'db:migrate'
             ]);
 
             $output = new BufferedOutput();
