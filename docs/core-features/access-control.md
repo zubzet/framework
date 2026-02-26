@@ -110,6 +110,12 @@ User attributes can be updated directly on the instance.
     $user->updatePassword(string $password);
     ```
 
+* Clears all active login sessions for the user.
+
+    ```php
+    $user->clearSessions();
+    ```
+
 ---
 
 ### Removing a User
