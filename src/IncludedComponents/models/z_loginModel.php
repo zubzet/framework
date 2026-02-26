@@ -50,6 +50,11 @@
             $this->exec($sql, "s", $token);
         }
 
+        public function clearSessions(int $userId): void {
+            $sql = "DELETE FROM `z_logintoken` WHERE `userId` = ?";
+            $this->exec($sql, "i", $userId);
+        }
+
         /**
          * Creates a login token for a user
          * @param int $userId Id of the user

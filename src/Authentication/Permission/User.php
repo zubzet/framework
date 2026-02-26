@@ -137,6 +137,15 @@ class User extends AuthenticationObject {
     }
 
     /**
+     * Clear all sessions of the user
+     *
+     * @return void
+     */
+    public function clearSessions(): void {
+        model('z_login')->clearSessions($this->id());
+    }
+
+    /**
      * Deactivate this user
      *
      * @return void
