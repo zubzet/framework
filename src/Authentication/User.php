@@ -32,9 +32,9 @@
         public $fields = []; //Stores custom per project properties
 
         /**
-         * @var string[] $permissions Array of permissions the user has.
+         * @var string[int] $permissionsByUserCache Array of permissions the user has, cached by user ID.
          */
-        private $permissions;
+        private $permissionsByUserCache = [];
 
         /**
          * @var string|null $sessionToken The token used to authenticate the current session
@@ -107,11 +107,11 @@
         }
 
         public function checkPermissionOf($permission, int $userId): bool {
-            if (!isset($this->permissions)) {
-                $this->permissions = model("z_user")->getPermissionsByUserId(
-                    $userId,
-                );
+            $userPermissions = &$this->permissionsByUserCache[$userId] ?? null;
+            if(!isset($userPermissions)) {
+                $userPermissions = model("z_user")->getPermissionsByUserId($userId);
             }
+
             $parts = explode(".", $permission);
 
             $perm = "";
@@ -121,9 +121,9 @@
                 $perm .= $part . ".";
                 $toCheck[] = $perm . "*";
             }
-            
+
             foreach ($toCheck as $check) {
-                if (in_array($check, $this->permissions)) return true;
+                if (in_array($check, $userPermissions)) return true;
             }
             return false;
         }
