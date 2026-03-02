@@ -2,13 +2,14 @@
 
     namespace ZubZet\Tooling\Version;
 
-use DateTime;
-use Symfony\Component\Console\Helper\QuestionHelper;
-    use Symfony\Component\Console\Question\ConfirmationQuestion;
     use Symfony\Component\Finder\Finder;
+    use ZubZet\Tooling\AutomatedChanges\V1_1_0\MigrationDockerServiceChange;
+    use ZubZet\Tooling\AutomatedChanges\V1_1_0\MigrationNamingConventionChange;
     use ZubZet\Tooling\Modifiers\FileContent;
     use ZubZet\Tooling\Modifiers\JsonModifier;
     use ZubZet\Tooling\Modifiers\MatchingModifier;
+    use ZubZet\Tooling\Modifiers\RemoveFile;
+    use ZubZet\Tooling\Modifiers\RenameModifier;
     use ZubZet\Tooling\Modifiers\SettingsIni;
     use ZubZet\Tooling\ReleaseState;
     use ZubZet\Tooling\Version\BaseVersion;
@@ -21,14 +22,12 @@ use Symfony\Component\Console\Helper\QuestionHelper;
 
             // Add new settings for elevated database credentials
             $settings = new SettingsIni($this, "settings");
-            $settings->addProperty("dbusername_elevated", "");
-            $settings->addProperty("dbpassword_elevated", "");
-
+            $settings->addProperty("dbusername_elevated", "", "dbpassword");
+            $settings->addProperty("dbpassword_elevated", "", "dbusername_elevated");
             $settings->save();
 
-
             // Remove ZubZet Migrations from the App folder
-            $migrations = new MatchingModifier($this, "app_zubzet_migrations");
+            $migrations = new MatchingModifier($this, "app-zubzet-migrations");
             $migrations->from(["./app"]);
 
             $statements = [
@@ -46,7 +45,7 @@ use Symfony\Component\Console\Helper\QuestionHelper;
                 "z_uniqueref",
                 "z_user",
                 "z_user_role",
-                "z_user_permission"
+                "z_user_permission",
             ];
 
             foreach($statements as $statement) {
@@ -56,33 +55,15 @@ use Symfony\Component\Console\Helper\QuestionHelper;
                 );
             }
 
-            if(count($migrations->getIssues()) > 0) {
-                $files = array_values(array_unique(array_map(
-                    fn($issue) => $issue->file,
-                    $migrations->getIssues()
-                )));
+            // Find unique files with issues
+            $files = array_values(array_unique(array_map(
+                fn($issue) => $issue->file,
+                $migrations->getIssues(),
+            )));
 
-                $files = array_values(array_unique($files));
-
-                foreach($files as $file) {
-                    $this->upgrade->output->writeln("<error>Found ZubZet Migrations in file: $file</error>");
-                }
-
-                $helper = new QuestionHelper();
-                $question = new ConfirmationQuestion(
-                    'Do you want to delete the matched files? [Y/n]: ',
-                    false
-                );
-
-                if($helper->ask($this->upgrade->input, $this->upgrade->output, $question)) {
-                    foreach($files as $file) {
-                        unlink($file);
-                        $this->upgrade->output->writeln("<info>Deleted file: $file</info>");
-                    }
-                }
+            foreach($files as $file) {
+                (new RemoveFile($this, "remove-old-zubzet-migration"))->from($file);
             }
-
-
 
             // Replace old Seed Command with new one
             $packageJson = new JsonModifier($this, "package-json-seed");
@@ -102,128 +83,68 @@ use Symfony\Component\Console\Helper\QuestionHelper;
                 return $data;
             });
 
+            $packageJsonStart = new JsonModifier($this, "package-json-start");
+            $packageJsonStart->from("package.json");
+            $packageJsonStart->modify(function(array $data): ?array {
+                $start = &$data["scripts"]["start"];
+
+                if(!isset($start)) return null;
+                if(!str_contains($start, "npm run seed")) return null;
+
+                // Remove npm run seed
+                $start = str_replace(" && npm run seed", "", $start);
+
+                return $data;
+            });
 
             // Update the docker-compose.yml - Add migration service
             $dockerCompose = new FileContent($this, "docker-compose-migration");
             $dockerCompose->find("docker-compose-base.yml");
             $dockerCompose->shouldChangeIfNotIncludes("migration:");
-            $dockerCompose->automateChange(function($content) {
-                // 1. Migration-Service robust unter dem 'services:' Key einfügen
-                $migrationService = "\n  migration:\n"
-                    . "    <<: *built-application-image\n"
-                    . "    container_name: migration\n"
-                    . "    command: php zubzet db:migrate --force\n"
-                    . "    restart: \"no\"\n"
-                    . "    healthcheck:\n"
-                    . "      test: [\"CMD\", \"php\", \"zubzet\", \"db:status\"]\n"
-                    . "      interval: 5s\n"
-                    . "      timeout: 10s\n"
-                    . "      retries: 5\n"
-                    . "      start_period: 30s\n"
-                    . "    depends_on:\n"
-                    . "      database:\n"
-                    . "        condition: service_healthy";
-
-                $content = preg_replace('/^services:\s*$/m', "services:" . $migrationService, $content, 1);
-
-                // 2. depends_on robust in der Blaupause 'x-built-application-image' anpassen
-                $content = preg_replace_callback(
-                    '/^x-built-application-image:.*?(?=\n^[a-zA-Z_-]+:|\z)/ms',
-                    function ($matches) {
-                        $block = $matches[0];
-                        $dependency = "\n    migration:\n      condition: service_completed_successfully";
-
-                        // Prüfen, ob 'depends_on:' in der Blaupause bereits existiert
-                        if (preg_match('/^  depends_on:\s*$/m', $block)) {
-                            // Falls ja, füge die Migration-Abhängigkeit als erstes Element unter depends_on ein
-                            $block = preg_replace(
-                                '/^  depends_on:\s*$/m',
-                                "  depends_on:" . $dependency,
-                                $block,
-                                1
-                            );
-                        } else {
-                            // Falls nein, erstelle den depends_on Block am Ende des Blocks neu
-                            $block = rtrim($block) . "\n  depends_on:" . $dependency . "\n";
-                        }
-
-                        return $block;
-                    },
-                    $content,
-                    1
-                );
-
-                return $content;
-            });
+            $dockerCompose->automateChange(
+                fn($content) => (new MigrationDockerServiceChange())->extendWithMigrationService($content)
+            );
             $dockerCompose->demandChange([
                 "Add migration service to docker-compose-base.yml",
                 "This ensures database migrations run before the application starts.",
+                "",
+                "More information about the migration system can be found in the documentation: https://zubzet.com/docs/v1.1.0/core-features/migrations/",
             ]);
 
 
-            // Check if any existing Migration doesnt follow the new naming convention and warn about it
+            // Check if any existing Migration doesn't follow the new naming convention and warn about it
             $sqlFinder = new Finder();
             $sqlFinder->in("./app/Database/migrations")
                 ->files()
                 ->name("*.sql");
 
+            $migrationNamingChange = new MigrationNamingConventionChange();
+
             $errorFiles = [];
             // Expected: YYYY-MM-DD_Name
             foreach($sqlFinder as $file) {
                 $sqlName = $file->getBasename(".sql");
-                $segments = explode("_", $sqlName);
-
-                if(count($segments) < 2) {
-                    $errorFiles[] = [$file->getRelativePathname()];
-                    continue;
-                }
-
-                $dateString = $segments[0];
-                if(!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateString)) {
-                    $errorFiles[] = [$file->getRelativePathname()];
-                    continue;
-                }
-
-                $dateObj = DateTime::createFromFormat('Y-m-d', $dateString);
-                if(!$dateObj) {
-                    $errorFiles[] = [$file->getRelativePathname()];
-                    continue;
-                }
-
-                $now = new DateTime('today');
-                if($dateObj > $now) {
-                    $errorFiles[] = [$file->getRelativePathname()];
-                    continue;
-                }
-
-                $version = 0;
-                $nameStartIndex = 1;
-
-                if((int)$dateObj->format('Y') < 2000) {
-                    $errorFiles[] = [$file->getRelativePathname()];
-                    continue;
-                }
-
-                if(isset($segments[1]) && (filter_var($segments[1], FILTER_VALIDATE_INT))) {
-                    $version = $segments[1];
-                    $nameStartIndex = 2;
-                }
-
-                $nameParts = array_slice($segments, $nameStartIndex);
-                $name = implode('_', $nameParts);
-                if(empty($name)) {
-                    $errorFiles[] = [$file->getRelativePathname()];
-                    continue;
+                if(!$migrationNamingChange->validateMigrationName($sqlName)) {
+                    $errorFiles[] = $file->getPathname();
                 }
             }
 
-            $this->upgrade->output->writeln("<error>Found " . count($errorFiles) . " migration files with invalid names:</error>");
-            foreach($errorFiles as $file) {
-                $this->upgrade->output->writeln("<error>- {$file[0]}</error>");
-            }
+            $renameModifier = new RenameModifier($this, "rename-migrations");
+            $renameModifier->from($errorFiles, [
+                "Found migration files with invalid names.",
+                "Please ensure all migration files follow the naming convention 'YYYY-MM-DD_Name.sql' or 'YYYY-MM-DD_Version_Name.sql' and that the date is valid and not in the future.",
+            ], function($file) use ($migrationNamingChange) {
+                // this is ai slop to at least try to give an automated change suggestion
+                // The error mode is simply not having an automated change as the format
+                // will be evaluated before suggesting it
+                $suggestionName = $migrationNamingChange->renameAutomateChange($file);
+                if(is_null($suggestionName)) return null;
 
-            $this->upgrade->output->writeln("<comment>Please ensure all migration files follow the naming convention 'YYYY-MM-DD_Name.sql' or 'YYYY-MM-DD_Version_Name.sql' and that the date is valid and not in the future.</comment>");
+                $filename = pathinfo($suggestionName, PATHINFO_FILENAME);
+                if(!$migrationNamingChange->validateMigrationName($filename)) return null;
 
+                return $suggestionName;
+            });
             return true;
         }
     }
