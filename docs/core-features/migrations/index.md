@@ -34,20 +34,21 @@ This validation is performed **in advance**, ensuring that no partial or inconsi
 #### Available Options
 
 * **environments-included** (Alias: `i`) `{environment_name}`  
-  Defines which environments should be included in the sync.  
+  Defines which environments should be included in the import.  
   *Default: `default`.*  
-  *Usage: `db:migrate -i production -i testing`*
+  *Usage: `db:migrate -i production -i testing`*  
+  *Note: The `default` environment is added automatically to the included  environments*
 
 * **environments-excluded** (Alias: `e`) `{environment_name}`  
-  Defines which environments should be excluded from the sync.  
+  Defines which environments should be excluded from the import.  
   *Usage: `db:migrate -e production`*
 
 * **dry** (Alias: `d`)  
-  Runs the sync in dry-run mode without applying any changes.  
+  Runs the import in dry-run mode without applying any changes.  
   *Usage: `db:migrate -d`*
 
 * **exclude-external**  
-  Excludes Framework migrations from the sync.  
+  Excludes Framework migrations from the import.  
   *Usage: `db:migrate --exclude-external`*
 
 * **force** (Alias: `f`)  
@@ -412,6 +413,7 @@ This is useful when:
   Defines which environments should be included in the sync.  
   *Default: `default`.*
   *Usage: `db:sync -i production -i testing`*
+  *Note: The `default` environment is added automatically to the included  environments*
 
 * **environments-excluded** (Alias: `e`) `{environment_name}`  
   Defines which environments should be excluded from the sync.  
@@ -437,6 +439,8 @@ The command checks whether this lock is currently active and reports one of the 
 * **LOCKED (0)** – A migration is currently running or the database is protected against concurrent migration execution.
 * **UNLOCKED (1)** – No migration is running and migrations can be executed safely.
 
+
+## Production Deployment
 
 ## Internal Tables
 

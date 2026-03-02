@@ -144,7 +144,7 @@ describe('Migration System - Sync', () => {
             ],
         },
 
-        'docker exec application php index.php db:sync -i default -i production': {
+        'docker exec application php index.php db:sync -i production': {
             "exclude": [],
             "include": [
                 "2005-01-01_1_Syn_File.sql",

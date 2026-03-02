@@ -55,7 +55,7 @@
                 "enforce-external-timeline",
                 null,
                 InputOption::VALUE_NONE,
-                "Enforce that external migrations"
+                "Enforce skipped-check validation for external migrations"
             );
 
             $this->setDatabaseConnection();
@@ -156,7 +156,10 @@
                     $file->extractData();
 
                     // Check specific environment mismatch
-                    if(!empty($includedEnvironments) && !in_array($file->environment, $includedEnvironments)) {
+                    if(!empty($includedEnvironments) && !in_array($file->environment, array_unique([
+                        "default",
+                        ...$includedEnvironments
+                    ]))) {
                         $out->writeln("<info>Skipping migration (not in included environments): {$file->filename}</info>");
                         continue;
                     }

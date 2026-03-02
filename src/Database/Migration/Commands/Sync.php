@@ -151,7 +151,10 @@
                     $file->extractData();
 
                     // Check specific environment mismatch
-                    if(!empty($includedEnvironments) && !in_array($file->environment, $includedEnvironments)) {
+                    if(!empty($includedEnvironments) && !in_array($file->environment, array_unique([
+                        "default",
+                        ...$includedEnvironments
+                    ]))) {
                         $out->writeln("<info>Skipping migration (not in included environments): {$file->filename}</info>");
                         continue;
                     }

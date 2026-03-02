@@ -168,7 +168,7 @@ describe('Migration System - Import', () => {
         const file = "2025-10-01_MigrationEnv.php";
 
         cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${baseDir}/${file}`);
-        cy.exec('docker exec application php index.php db:migrate -i default -i production -f');
+        cy.exec('docker exec application php index.php db:migrate -i production -f');
         cy.visit("/migration/checkEnvMigrations");
 
         cy.contains("Table 'app.migration_env' doesn't exist").should("not.exist");
