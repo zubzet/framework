@@ -77,6 +77,16 @@
             ], "core/layout");
         }
 
+        public function action_e2e_superpermission(Request  $req, Response $res) {
+            $checkSuperPermission = $req->checkSuperPermission("core.superpermission", true);
+            $checkPermission = $req->checkPermission("core.superpermission", true);
+
+            echo json_encode([
+                "checkSuperPerm" => $checkSuperPermission,
+                "checkPerm" => $checkPermission
+             ]);
+        }
+
         public function action_permission(Request $req, Response $res) {
             $req->checkPermission("core.permissions");
             echo("Permissions");
