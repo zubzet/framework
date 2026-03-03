@@ -1,104 +1,138 @@
 ### Global Helper Functions
 
-To improve developer experience and reduce boilerplate code, **global helper functions** have been introduced.
-These helpers provide quick and consistent access to commonly used framework components and services.
+To optimize developer experience and eliminate redundant boilerplate, **global helper functions** have finally been integrated. These helpers offer immediate and consistent access to core framework components and services. All previously available methods remain **fully supported** to ensure seamless backward compatibility.
 
-All previously available alternatives remain **fully supported** to ensure backward compatibility.
+---
 
-
-### zubzet()
+### `zubzet()`
 
 Returns the main instance of the ZubZet framework.
 
+**Syntax:** `zubzet()`
 
-### model(string $modelName)
+---
 
-Provides access to a specific model instance.
+### `model()`
 
-In controller actions, `$reqObj->getModel($modelName)` remains a supported alternative.
+Provides direct access to a specific model instance.
+
+**Syntax:** `model(string $modelName)`
+
+* **$modelName**: The name of the model to be instantiated.
+
+**Note:** In controller actions, `$reqObj->getModel($modelName)` remains a supported alternative.
 
 **Example:**
 
 ```php
 model("Test")->onTest();
+
 ```
 
+---
 
-### request()
+### `request()`
 
-Returns the instance of the **current request**.
+Accesses the instance of the current request.
+
+**Syntax:** `request()`
 
 **Example:**
 
 ```php
 request()->getPost("POST_PARAMETER");
+
 ```
 
+---
 
-### response()
+### `response()`
 
-Returns the instance of the **current response**.
+Accesses the instance of the current response.
+
+**Syntax:** `response()`
 
 **Example:**
 
 ```php
 response()->sendEMail($to, $subject, $document);
+
 ```
 
+---
 
-### config(string $key, bool $useDefault = false, mixed $default = null)
+### `config()`
 
-Returns a configuration value by key.
+Retrieves a configuration value by its key.
 
-Previously, this was accessible via
-`$req->getBooterSettings($key, $useDefault, $default)` inside controller actions.
-This approach is still fully supported.
+**Syntax:** `config(string $key, bool $useDefault = false, mixed $default = null)`
+
+* **$key**: The configuration identifier.
+* **$useDefault**: Whether to return a fallback value if the key is not found.
+* **$default**: The value to return if `$useDefault` is true and the key is missing.
+
+**Note:** Previously accessible via `$req->getBooterSettings(...)` inside controller actions; this approach remains fully supported.
 
 **Example:**
 
 ```php
 config("db_username");
+
 ```
 
+---
 
-### user()
+### `user()`
 
-Returns the instance of the **currently authenticated user**.
+Returns the instance of the currently authenticated user.
 
-Previously accessible via
-`$req->getRequestingUser()` inside controller actions.
-This approach remains supported.
+**Syntax:** `user()`
+
+**Note:** This streamlines the previous method of calling `$req->getRequestingUser()` within controller actions.
 
 **Example:**
 
 ```php
 user()->userId;
+
 ```
 
+---
 
-### db(string $connection = "default")
+### `db()`
 
-Returns the database instance for the specified connection.
+Provides the database instance for a specified connection.
 
-Previously, database access was only available within models via `$this->z_db`.
-This method remains supported.
+**Syntax:** `db(string $connection = "default")`
+
+* **$connection**: The name of the database connection (defaults to "default").
+
+**Note:** Database access is no longer restricted to using `$this->z_db` within models.
 
 **Example:**
 
 ```php
 db()->exec("SELECT * FROM z_user");
+
 ```
 
+---
 
-### view(string $document, array $opt = [], array $options = [])
+### `view()`
 
-Renders a view template.
+Renders a view template directly.
 
-Previously rendered via the response object using `$resObj->render(...)`.
-This approach remains supported.
+**Syntax:** `view(string $document, array $opt = [], array $options = [])`
+
+* **$document**: The path to the view file.
+* **$opt**: Data array passed to the view.
+* **$options**: Additional rendering options.
+
+**Note:** This serves as a streamlined alternative to rendering via the response object using `$resObj->render(...)`.
 
 **Example:**
 
 ```php
 view("adminpanel/dashboard");
+
 ```
