@@ -64,7 +64,6 @@ CREATE TABLE IF NOT EXISTS `z_language` (
 INSERT IGNORE INTO `z_language` (`id`, `name`, `nativeName`, `value`) VALUES
 (1, 'English', 'English', 'EN'),
 (2, 'German', 'Deutsch', 'DE');
-UPDATE `z_language` SET `id`=0 WHERE `name`='German';
 
 -- Table: z_logintoken
 CREATE TABLE IF NOT EXISTS `z_logintoken` (
