@@ -77,6 +77,31 @@
             return $this->exec($query)->resultToLine();
         }
 
+        public function selectInsert() {
+            $query = $this->dbSelect(["id", "name", "value"], "query_builder_insert");
+
+            return $this->exec($query)->resultToArray();
+        }
+
+        public function insert() {
+            $query = $this->dbInsert("query_builder_insert", [
+                "name" => "TestName1",
+                "value" => 123
+            ]);
+
+            $this->exec($query);
+
+            $query = $this->dbInsert("query_builder_insert", [
+                "name" => "TestName2",
+                "value" => 456
+            ])->values([
+                "name" => "TestName3",
+                "value" => 789
+            ]);
+
+            $this->exec($query);
+        }
+
         public function insertLanguage() {
             $query = $this->dbInsert("z_language", [
                 "name" => "TestLanguage1",

@@ -52,7 +52,11 @@ describe('Query Builder', () => {
         },
         {
             route: '/Core/queryBuilderInsert',
-            expected: {"1":null,"2":{"id":3,"name":"TestLanguage1","nativeName":"TestLanguageNative1","value":"tl1"},"3":{"id":4,"name":"TestLanguage2","nativeName":"TestLanguageNative2","value":"tl2"}}
+            expected: [
+                {"id":1,"name":"TestName1","value":123},
+                {"id":2,"name":"TestName2","value":456},
+                {"id":3,"name":"TestName3","value":789}
+            ]
         },
         {
             route: '/Core/queryBuilderUpdate',

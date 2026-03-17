@@ -218,14 +218,12 @@
         }
 
         public function action_queryBuilderInsert(Request $req, Response $res) {
-            $req->getModel("QueryBuilder")->insertLanguage();
+            $req->getModel("QueryBuilder")->insert();
 
-            echo json_encode([
-                "1" => $req->getModel("QueryBuilder")->selectLanguageById(2),
-                "2" => $req->getModel("QueryBuilder")->selectLanguageById(3),
-                "3" => $req->getModel("QueryBuilder")->selectLanguageById(4)
-            ]);
 
+            echo json_encode(
+                model("QueryBuilder")->selectInsert()
+            );
         }
 
         public function action_queryBuilderUpdate(Request $req, Response $res) {
