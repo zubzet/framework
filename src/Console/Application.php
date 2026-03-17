@@ -7,6 +7,7 @@
     use ZubZet\Framework\Database\Migration\Commands\Seed;
     use ZubZet\Framework\Database\Migration\Commands\Status;
     use ZubZet\Framework\Database\Migration\Commands\Sync;
+    use ZubZet\Framework\Database\Migration\Commands\UnlockMigration;
 
     class Application {
         public static function bootstrap(\z_framework $booter): ConsoleApplication {
@@ -22,6 +23,7 @@
                     new Status(),
                     new Sync(),
                     new Seed(),
+                    new UnlockMigration(),
                 ],
             ));
             return $console;

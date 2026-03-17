@@ -258,11 +258,35 @@ The Migration system supports **two different file formats**, which can be mixed
     More examples can be found [here](./examples.md)  
 
 
+### Unlock Migration
+
+The **Unlock Migration** command is used to **manually clear the database lock** that is left behind when a migration process crashes or is interrupted.
+
+> **Warning:** Only use this command if you are certain that no migration process is currently running. Using this while a migration is active can lead to database inconsistency.
+
+**Syntax:** `php zubzet db:unlock-migrations`
+
+This command removes the lock state from the `z_migration_lock` table, allowing new migrations to be executed again.
+
+#### When to Use
+
+* A migration crashed and the database remains locked
+* A manual migration was interrupted and you've resolved the issue
+* You need to resume the migration process after fixing an error
+
 ### Seed
 
 The **Seed** command is used to **completely recreate the database** and then insert **seed data**, making it ideal for **test and development environments** where a clean, reproducible database state is required.
 
 > Running this command will **permanently delete** all existing data in your database. It is not reversible. Do **not** use this on production unless you explicitly intend to wipe the entire system.
+
+#### Available Options
+
+* **`skip-migrations`** | **`-s`**  
+Skips the migration process and executes only the seeding step.
+> **Details:** Use this flag when you want to populate the database with seed data without re-running migrations. This is useful when your database schema is already up-to-date and you only need to insert or update seed data without resetting the database.  
+> **Usage:** `db:seed -s`
+
 
 **Execution Workflow**
 When executed, the command performs the following sequence:
@@ -408,10 +432,17 @@ The command reports one of the following states:
 !!! warning
     If the status remains **LOCKED** even though no migration is running, it usually means a **Manual Migration** was reached or a process **crashed**.
 
-    To resolve this, you must either:
+    To resolve this, you must:
 
-    1. Complete the manual task and [Synchronize](#sync) the state.
-    2. Manually clear the lock (if you are certain no process is active).
+    1. Fix the underlying issue (manually adjust the database schema if needed).
+    2. Clear the migration lock using the unlock command:
+    ```bash
+    db:unlock-migrations
+    ```
+    3. Resume the migration process:
+    ```bash
+    db:migrate
+    ```
 
 
 **Usage**

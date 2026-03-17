@@ -24,6 +24,12 @@ describe('Migration System - Import', () => {
         cy.contains("Seed Entry 2");
     });
 
+    it("should be possible to run the seeding without running the migrations first", () => {
+        cy.exec('docker exec application php index.php db:seed --skip-migrations', { failOnNonZeroExit: false }).then((result) => {
+            expect(result.stdout).to.not.include('Running migrations before seeding...');
+        });
+    });
+
     after(() => {
         allFiles.forEach((file) => {
             const target = `${baseDir}/${file}`
