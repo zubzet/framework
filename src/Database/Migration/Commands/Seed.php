@@ -24,7 +24,7 @@
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
-            $this->resetDatabase();
+            $this->resetDatabase($out);
 
             $seedFiles = model("z_migration")->getFiles("./app/Database/seed");
 
@@ -41,7 +41,7 @@
             return 0;
         }
 
-        private function resetDatabase() {
+        private function resetDatabase(OutputInterface $out) {
             // Drop and recreate the database
             $dbName = db()->booter->dbname;
             $conn = db()->getDatabaseConnection();
@@ -58,8 +58,7 @@
                 'command' => 'db:migrate'
             ]);
 
-            $output = new BufferedOutput();
-            $application->run($input, $output);
+            $application->run($input, $out);
         }
 
         // Retrieve and execute SQL statements from a seed file
