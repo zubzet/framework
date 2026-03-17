@@ -2,25 +2,43 @@
 
     namespace ZubZet\Framework\Rendering;
 
+    use ZubZet\Framework\Rendering\ViewNotFoundException;
+
     trait View {
 
         /**
          * @internal
          * Returns the path of a view. If the view does not exist, this function will fall back to the framework defaults.
          * @param string $document Filename of the views
+         * @param bool $throwOnError Wether a ViewNotFoundException should be thrown when there is no fitting view or an error view is returned
          * @return string Relative path to the view file
+         * @throws ViewNotFoundException when $throwOnError is set to true
          */
-        public static function resolvePath(string $document): string {
-            if(substr($document, -4, 4) != ".php") {
+        public static function resolvePath(string $document, bool $throwOnError = false): string {
+            $document = rtrim($document);
+
+            // Ensure an extension is present. This might possibly be changed in the future due to different
+            // template types that will be offered, including a plan to offer a rendered template
+            if(!str_ends_with($document, ".php")) {
                 $document .= ".php";
             }
-            if (file_exists(zubzet()->z_views.$document)) {
+
+            // Look for the view in the user space
+            if(file_exists(zubzet()->z_views.$document)) {
                 return zubzet()->z_views.$document;
             }
-            if (file_exists(zubzet()->z_framework_root."IncludedComponents/views/$document")) {
+
+            // Look for the view in the framework space
+            if(file_exists(zubzet()->z_framework_root."IncludedComponents/views/$document")) {
                 return zubzet()->z_framework_root."IncludedComponents/views/$document";
             }
-            return zubzet()->z_framework_root."IncludedComponents/views/500.php";
+
+            // Handle when no view was found
+            if(!$throwOnError) {
+                return zubzet()->z_framework_root."IncludedComponents/views/500.php";
+            }
+
+            throw new ViewNotFoundException("View file for '$document' not found. Is the path correct?");
         }
 
         /**

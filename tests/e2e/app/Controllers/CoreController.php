@@ -239,6 +239,37 @@
                 "null" => $req->getModel("QueryBuilder")->selectLanguageById(1) == null ? "null" : "not null"
             ]);
         }
+
+        public function action_sendemail_static(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Static", "email/Static", "en", [], "layout/email_layout");
+        }
+
+        public function action_sendemail_static_mail_layout(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Static", "email/Static", "en", [], "mail");
+        }
+
+        public function action_sendemail_static_mail_layout_path(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Static", "email/Static", "en", [], "layout/mail_layout.php");
+        }
+
+        public function action_sendemail_dynamic(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Dynamic", "email/Dynamic", "en", [
+                "test_data" => "Test Data 1", 
+                "test_data2" => "Test Data 2"
+            ], "email");
+        }
+
+        public function action_sendemailtouser_static(Request $req, Response $res) {
+            $res->sendEmailToUser(1, "This is a Test Email Static", "email/Static", [], "email");
+        }
+
+        public function action_sendemailtouser_dynamic(Request $req, Response $res) {
+            $res->sendEmailToUser(1, "This is a Test Email Dynamic", "email/Dynamic", [
+                "test_data" => "Test Data 1", 
+                "test_data2" => "Test Data 2"
+            ], "email");
+        }
+
     }
 
 ?>

@@ -124,32 +124,22 @@
          */
         public function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email", array $attachments = []) {
             //Import the email template
-            if(!isset($options["skip_render"])) {
-                $layout = str_replace(".php", "", $layout);
-                $layout = str_replace("_layout", "", $layout);
-                $layout = "$layout"."_layout";
+            $layout = str_replace(".php", "", $layout);
+            $layout = str_replace("_layout", "", $layout);
+            $layout = "$layout"."_layout";
 
-                if(!file_exists($this->getZViews()."$layout.php")) {
-                    if(substr($layout, 0, 7) !== "layout/") {
-                        $layout = "layout/$layout";
-                    }
+            if(!file_exists($this->getZViews()."$layout.php")) {
+                if(substr($layout, 0, 7) !== "layout/") {
+                    $layout = "layout/$layout";
                 }
-
-                if(!file_exists($this->getZViews()."$layout.php")) {
-                    throw new \Exception("'$layout.php' does not exist.");
-                }
-                
-                $template = View::resolvePath(
-                    $layout,
-                    (strpos($layout, "/mail") !== FALSE ? str_replace("/mail", "/email", $layout) : null)
-                );
-                if (!file_exists($template)) return false;
             }
-                
+
+            //$layout = self::resolvePath($layout, true);
+
             //Overwrite the language
             $lang = strtolower($lang);
             $options["overwrite_lang"] = $lang;
-            
+
             if(is_array($subject)) {
                 foreach ($subject as $key => $val) {
                     $subject[strtolower($key)] = $val;
@@ -165,14 +155,10 @@
             $options["application_root"] = $this->getBooterSettings("host") . $this->booter->rootFolder;
 
             //Render the email template
-            if(isset($options["skip_render"])) {
-                $content = $document;
-            } else {
-                ob_start();
-                $this->render($document, $options, $layout);
-                $content = ob_get_clean();
-                if (ob_get_contents()) ob_end_clean();
-            }
+            ob_start();
+            $this->render($document, $options, $layout);
+            $content = ob_get_clean();
+            if (ob_get_contents()) ob_end_clean();
 
             $from = $this->getBooterSettings("mail_from") ?? $this->getBooterSettings("mail_user");
             if(!filter_var($from, FILTER_VALIDATE_EMAIL)) {
