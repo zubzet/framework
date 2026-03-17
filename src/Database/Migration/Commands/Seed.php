@@ -6,6 +6,7 @@
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\ArrayInput;
     use Symfony\Component\Console\Input\InputInterface;
+    use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\BufferedOutput;
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
@@ -20,11 +21,23 @@
             $this->setName("db:seed");
             $this->setDescription("Execute a database seeding task.");
 
+            $this->addOption(
+                "skip-migrations",
+                "s",
+                InputOption::VALUE_NONE,
+                "Runs the seeding process without running the migrations first.",
+            );
+
             $this->setDatabaseConnection();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
-            $this->resetDatabase($out);
+            $skipMigrations = $in->getOption("skip-migrations");
+
+            if(!$skipMigrations) {
+                $out->writeln("<comment>Running migrations before seeding...</comment>");
+                $this->resetDatabase($out);
+            }
 
             $seedFiles = model("z_migration")->getFiles("./app/Database/seed");
 
