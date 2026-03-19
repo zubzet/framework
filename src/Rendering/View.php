@@ -23,14 +23,24 @@
                 $document .= ".php";
             }
 
-            // Look for the view in the user space
-            if(file_exists(zubzet()->z_views.$document)) {
-                return zubzet()->z_views.$document;
+            // Look for the view in the user space, don't readd the location if it is already present
+            $userSpaceLocationDocument = $document;
+            if(!str_starts_with($document, zubzet()->z_views)) {
+                $userSpaceLocationDocument = zubzet()->z_views . $document;
             }
 
-            // Look for the view in the framework space
-            if(file_exists(zubzet()->z_framework_root."IncludedComponents/views/$document")) {
-                return zubzet()->z_framework_root."IncludedComponents/views/$document";
+            if(file_exists($userSpaceLocationDocument)) {
+                return $userSpaceLocationDocument;
+            }
+
+            // Look for the view in the framework space, also don't readd the location if it is already present
+            $frameworkLocationDocument = $document;
+            if(!str_starts_with($document, zubzet()->z_framework_root."IncludedComponents/views/")) {
+                $frameworkLocationDocument = zubzet()->z_framework_root."IncludedComponents/views/$document";
+            }
+
+            if(file_exists($frameworkLocationDocument)) {
+                return $frameworkLocationDocument;
             }
 
             // Handle when no view was found

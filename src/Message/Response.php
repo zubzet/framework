@@ -134,7 +134,7 @@
                 }
             }
 
-            //$layout = self::resolvePath($layout, true);
+            $layout = self::resolvePath($layout, true);
 
             //Overwrite the language
             $lang = strtolower($lang ?? "en");
