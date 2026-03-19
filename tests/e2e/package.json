@@ -12,7 +12,7 @@
         "shell": "docker exec -it application bash",
         "seed": "docker exec application php index.php db:seed",
         "cypress": "cypress open --project tests",
-        "tests": "cypress run --project tests"
+        "tests": "env -u ELECTRON_RUN_AS_NODE cypress run --project tests"
     },
     "devDependencies": {
         "chai": "^6.0.1",
