@@ -62,6 +62,9 @@
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
+            $startTime = microtime(true);
+            $out->writeln("<comment>Migration started at: " . date("Y-m-d H:i:s") . "</comment>");
+
             model("z_migration")->ensureMigrationTablesExist();
 
             $dryMode = $in->getOption("dry");
@@ -144,6 +147,8 @@
             // No pending migrations
             if(empty($pendingMigrations)) {
                 $out->writeln("<info>No pending migrations found.</info>");
+                $elapsed = round(microtime(true) - $startTime, 2);
+                $out->writeln("<comment>Migration finished at: " . date("Y-m-d H:i:s") . " (took {$elapsed}s)</comment>");
                 return 0;
             }
 
@@ -205,6 +210,9 @@
 
             if(!$dryMode) model("z_migration")->unlockMigrations();
             $out->writeln("<info>Table was unlocked.</info>");
+
+            $elapsed = round(microtime(true) - $startTime, 2);
+            $out->writeln("<comment>Migration finished at: " . date("Y-m-d H:i:s") . " (took {$elapsed}s)</comment>");
 
             return 0;
         }

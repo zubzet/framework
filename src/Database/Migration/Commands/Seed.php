@@ -32,6 +32,9 @@
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
+            $startTime = microtime(true);
+            $out->writeln("<comment>Seeding started at: " . date("Y-m-d H:i:s") . "</comment>");
+
             $skipMigrations = $in->getOption("skip-migrations");
 
             if(!$skipMigrations) {
@@ -50,6 +53,9 @@
                     return 1;
                 }
             }
+
+            $elapsed = round(microtime(true) - $startTime, 2);
+            $out->writeln("<comment>Seeding finished at: " . date("Y-m-d H:i:s") . " (took {$elapsed}s)</comment>");
 
             return 0;
         }
