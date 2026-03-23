@@ -64,9 +64,11 @@
         }
 
         public function selectUserLimit() {
-            $query = $this->dbSelect("u.id, u.email", "z_user u")
+            $query = $this->dbSelect("u.id, u.email", ["u" => "z_user"])
                             ->limit(2)
-                            ->page(2);
+                            ->page(2)
+                            ->orderAsc("u.id");
+
             return $this->exec($query)->resultToArray();
         }
 

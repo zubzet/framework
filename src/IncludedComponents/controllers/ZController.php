@@ -151,6 +151,15 @@
             }
         }
 
+
+        function action_groups(Request $req, Response $res) {
+            $req->checkPermission("admin.groups.list");
+
+            $res->render("z_groups.php", [
+                "groups" => model("z_general")->getGroups()
+            ], "layout/z_admin_layout.php");
+        }
+
         /**
          * Action for the role configuration page
          * 
@@ -170,7 +179,9 @@
 
             if (!empty($roleId) || $roleId === "0") {
                 $req->checkPermission("admin.roles.edit");
-                $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ?", "i", [$roleId])[0];
+                $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0];
+
+                if(!$role) return $res->error("Role not found");
 
                 if ($req->isAction("delete")) {
                     $req->checkPermission("admin.roles.delete");
@@ -201,7 +212,7 @@
                 ], "layout/z_admin_layout.php");
             } else {
                 $res->render("z_role_select.php", [
-                    "roles" => $req->getModel("z_general")->getTableWhere("z_role", "*", "active = ?", "i", [1])
+                    "roles" => $req->getModel("z_general")->getTableWhere("z_role", "*", "active = ? AND is_group = 0", "i", [1])
                 ], "layout/z_admin_layout.php");
             }
 
