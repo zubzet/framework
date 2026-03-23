@@ -13,6 +13,9 @@ class Role extends AuthenticationObject {
     public static string $dbTable = "z_role";
     public static string $dbPermissionsTable = "z_role_permission";
     public static string $dbPermissionsObjectColumn = "role";
+    private static array $dbExpression = [
+        "zr.is_group" => 0
+    ];
 
     // Constructor which requires the Role data (in the format of a database row)
     public function __construct(array $data) {
@@ -27,7 +30,14 @@ class Role extends AuthenticationObject {
      * @return Role[] An array of Role objects associated with the specified user
      */
     public static function byUser(User $user): array {
-        return model("z_permission")->getRolesByUsers($user);
+        $roleArray = [];
+        $roles = model("z_permission")->getRolesGroupByUsers($user, static::$dbExpression);
+
+        foreach($roles as $role) {
+            $roleArray[] = new static($role);
+        }
+
+        return $roleArray;
     }
 
     /**
@@ -37,7 +47,9 @@ class Role extends AuthenticationObject {
      * @return Role|null The Role object if found, null otherwise
      */
     public static function byName(string $name): ?Role {
-        return model("z_permission")->getRoleByName($name);
+        $result = model("z_permission")->getRoleGroupByName($name, static::$dbExpression);
+        if(is_null($result)) return null;
+        return new static($result);
     }
 
     public static function byAccessToAll(string ...$permissionNames): array {
@@ -47,7 +59,14 @@ class Role extends AuthenticationObject {
             $extractedPermissionsGroup[] = static::buildPermissionVariants($permissionName);
         }
 
-        return model("z_permission")->getRolesByAccessToAll($extractedPermissionsGroup);
+        $roleData = model("z_permission")->getRolesByAccessToAll($extractedPermissionsGroup, static::$dbExpression);
+        $roleObjects = [];
+
+        foreach($roleData as $roleData) {
+            $roleObjects[] = new static($roleData);
+        }
+
+        return $roleObjects;
     }
 
     public static function byAccessToAnyOf(string ...$permissionNames): array {
@@ -57,7 +76,14 @@ class Role extends AuthenticationObject {
             $extractedPermissions = array_merge($extractedPermissions, static::buildPermissionVariants($permissionName));
         }
 
-        return model("z_permission")->getRolesByAccessToAnyOf($extractedPermissions);
+        $roleData = model("z_permission")->getRolesByAccessToAnyOf($extractedPermissions, static::$dbExpression);
+        $roleObjects = [];
+
+        foreach($roleData as $roleData) {
+            $roleObjects[] = new static($roleData);
+        }
+
+        return $roleObjects;
     }
 
     /**
@@ -80,8 +106,13 @@ class Role extends AuthenticationObject {
      * @param string $rolename The name of the new role
      * @return Role The created Role object
      */
-    public static function add(string $rolename): Role {
-        $roleData = model("z_permission")->addRole($rolename);
+    public static function add(string $rolename): self {
+        $isGroup = static::$dbExpression["zr.is_group"] ?? 0;
+
+        $roleData = model("z_permission")->addRoleGroup(
+            $rolename,
+            $isGroup
+        );
 
         return new static($roleData);
     }
@@ -93,7 +124,7 @@ class Role extends AuthenticationObject {
      * @return void
      */
     public function update(string $newName): void {
-        model("z_permission")->updateRole($this, $newName);
+        model("z_permission")->updateRoleGroup($this, $newName);
         $this->clearFields();
     }
 
@@ -106,7 +137,7 @@ class Role extends AuthenticationObject {
     public function remove(): void {
         global $permissionChanged;
         $permissionChanged = true;
-        model("z_permission")->removeRole($this);
+        model("z_permission")->removeRoleGroup($this);
 
         $this->clearFields();
         $this->nullId();
@@ -163,7 +194,7 @@ class Role extends AuthenticationObject {
      * @return void
      */
     public function refreshPermissions() {
-        $this->setField("permissions", model("z_permission")->getPermissionsByRole($this));
+        $this->setField("permissions", model("z_permission")->getPermissionsByRoleGroup($this));
     }
 
 

@@ -10,7 +10,7 @@ trait RetrievalTrait {
      * @return object[]
      */
     public static function all(): array {
-        $result = model("z_permission")->getAll(self::$dbTable);
+        $result = model("z_permission")->getAll(self::$dbTable, static::$dbExpression);
 
         if(empty($result)) return [];
 
@@ -29,7 +29,7 @@ trait RetrievalTrait {
      * @return object|null the permission object if found, null otherwise
      */
     public static function byId(int|string $id): ?static {
-        $result = model("z_permission")->getById($id, self::$dbTable);
+        $result = model("z_permission")->getById($id, self::$dbTable, static::$dbExpression);
 
         if(is_null($result)) return null;
 
@@ -43,7 +43,7 @@ trait RetrievalTrait {
      * @return object[] The list of permission objects
      */
     public static function byIds(int ...$ids): array {
-        $results = model("z_permission")->getByIds(self::$dbTable, ...$ids);
+        $results = model("z_permission")->getByIds(self::$dbTable, $ids, static::$dbExpression);
 
         $objects = [];
         foreach($results as $data) {

@@ -301,3 +301,101 @@ INSERT INTO `z_user_role`(`id`, `role`, `user`, `active`, `created`) VALUES
 (205, 214, 202, 1, '2000-01-01 12:00:00'),
 (206, 214, 203, 1, '2000-01-01 12:00:00'),
 (207, 214, 204, 0, '2000-01-01 12:00:00');
+
+
+/*
+    Group Data for Permission Tests (is_group = 1)
+*/
+INSERT INTO `z_role`(`id`, `name`, `active`, `created`, `is_group`) VALUES
+(300, 'group_byId', 1, '2000-01-01 12:00:00', 1),
+(301, 'group_byIdInactive', 0, '2000-01-01 12:00:00', 1),
+
+(302, 'group_byIds_1_Active', 1, '2000-01-01 12:00:00', 1),
+(303, 'group_byIds_2_Active', 1, '2000-01-01 12:00:00', 1),
+(304, 'group_byIds_1_Inactive', 0, '2000-01-01 12:00:00', 1),
+
+(305, 'group_byUser_1_Active', 1, '2000-01-01 12:00:00', 1),
+(306, 'group_byUser_2_Active', 1, '2000-01-01 12:00:00', 1),
+(307, 'group_byUser_Inactive', 0, '2000-01-01 12:00:00', 1),
+(308, 'group_byUser_Inactive-z_user_role', 1, '2000-01-01 12:00:00', 1),
+
+(309, 'group_remove', 1, '2000-01-01 12:00:00', 1),
+(310, 'group_removeInteraction', 1, '2000-01-01 12:00:00', 1),
+
+(311, 'group_update', 1, '2000-01-01 12:00:00', 1),
+
+(312, 'group_refresh', 1, '2000-01-01 12:00:00', 1),
+
+(313, 'group_getPermissions', 1, '2000-01-01 12:00:00', 1),
+
+(314, 'group_getUsers', 1, '2000-01-01 12:00:00', 1),
+
+(315, 'group_hasAccessToAll_1', 1, '2000-01-01 12:00:00', 1),
+(316, 'group_hasAccessToAll_2', 1, '2000-01-01 12:00:00', 1),
+
+(317, 'group_hasAccessToAnyOf_1', 1, '2000-01-01 12:00:00', 1),
+(318, 'group_hasAccessToAnyOf_2', 1, '2000-01-01 12:00:00', 1),
+
+(319, 'group_byAccessToAll_1', 1, '2000-01-01 12:00:00', 1),
+(320, 'group_byAccessToAll_2', 1, '2000-01-01 12:00:00', 1),
+(321, 'group_byAccessToAll_3', 1, '2000-01-01 12:00:00', 1),
+(322, 'group_byAccessToAll_1_Inactive', 0, '2000-01-01 12:00:00', 1),
+(323, 'group_byAccessToAll_1_Inactive-z_role_permission', 1, '2000-01-01 12:00:00', 1),
+
+(324, 'group_byAccessToAnyOf_1', 1, '2000-01-01 12:00:00', 1),
+(325, 'group_byAccessToAnyOf_2', 1, '2000-01-01 12:00:00', 1),
+(326, 'group_byAccessToAnyOf_1_Inactive', 0, '2000-01-01 12:00:00', 1),
+(327, 'group_byAccessToAnyOf_1_Inactive-z_role_permission', 1, '2000-01-01 12:00:00', 1),
+
+(328, 'group_byName_Active', 1, '2000-01-01 12:00:00', 1),
+(329, 'group_byName_Inactive', 0, '2000-01-01 12:00:00', 1);
+
+
+INSERT INTO `z_role_permission`(`id`, `role`, `name`, `active`, `created`) VALUES
+(300, 313, 'group_getPermissions.should.have.1', 1, '2000-01-01 12:00:00'),
+(301, 313, 'group_getPermissions.should.have.2', 1, '2000-01-01 12:00:00'),
+(302, 313, 'group_getPermissions.should.not.have.1', 0, '2000-01-01 12:00:00'),
+
+(303, 315, 'group_hasAccessToAll.1', 1, '2000-01-01 12:00:00'),
+(304, 315, 'group_hasAccessToAll.2', 1, '2000-01-01 12:00:00'),
+(305, 316, 'group_hasAccessToAll.1', 1, '2000-01-01 12:00:00'),
+
+(306, 317, 'group_hasAccessToAnyOf.1', 1, '2000-01-01 12:00:00'),
+
+(307, 319, 'group_byAccessToAll.1', 1, '2000-01-01 12:00:00'),
+(308, 319, 'group_byAccessToAll.2', 1, '2000-01-01 12:00:00'),
+(309, 320, 'group_byAccessToAll.1', 1, '2000-01-01 12:00:00'),
+(310, 320, 'group_byAccessToAll.2', 1, '2000-01-01 12:00:00'),
+(311, 321, 'group_byAccessToAll.1', 1, '2000-01-01 12:00:00'),
+(312, 322, 'group_byAccessToAll.1', 1, '2000-01-01 12:00:00'),
+(313, 322, 'group_byAccessToAll.2', 1, '2000-01-01 12:00:00'),
+(314, 323, 'group_byAccessToAll.1', 0, '2000-01-01 12:00:00'),
+(315, 323, 'group_byAccessToAll.2', 1, '2000-01-01 12:00:00'),
+
+(316, 324, 'group_byAccessToAnyOf.1', 1, '2000-01-01 12:00:00'),
+(317, 324, 'group_byAccessToAnyOf.2', 1, '2000-01-01 12:00:00'),
+(318, 325, 'group_byAccessToAnyOf.1', 1, '2000-01-01 12:00:00'),
+(319, 326, 'group_byAccessToAnyOf.1', 1, '2000-01-01 12:00:00'),
+(320, 326, 'group_byAccessToAnyOf.2', 1, '2000-01-01 12:00:00'),
+(321, 327, 'group_byAccessToAnyOf.1', 0, '2000-01-01 12:00:00');
+
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+(300, 'group_byUser@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+
+(301, 'group_getUsers_1_Active@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+(302, 'group_getUsers_2_Active@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+(303, 'group_getUsers_1_Inactive@cypress.test', NULL, NULL, 0, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+(304, 'group_getUsers_1_Inactive-z_user_role@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+
+INSERT INTO `z_user_role`(`id`, `role`, `user`, `active`, `created`) VALUES
+(300, 305, 300, 1, '2000-01-01 12:00:00'),
+(301, 306, 300, 1, '2000-01-01 12:00:00'),
+(302, 307, 300, 1, '2000-01-01 12:00:00'),
+(303, 308, 300, 0, '2000-01-01 12:00:00'),
+
+(304, 314, 301, 1, '2000-01-01 12:00:00'),
+(305, 314, 302, 1, '2000-01-01 12:00:00'),
+(306, 314, 303, 1, '2000-01-01 12:00:00'),
+(307, 314, 304, 0, '2000-01-01 12:00:00');

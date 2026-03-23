@@ -78,7 +78,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="sidebar col-md-2 col-12 visible-sm-block hidden-sm">
-                    <h1 class="text-center mb-5 mt-4">Z-Admin</h1>
+                    <h1 id="logo" class="text-center mb-5 mt-4 d-none">Z-Admin</h1>
                     <button class="btn btn-primary d-md-none btn-block mb-2" data-toggle="collapse" data-target="#navbar"><i class="fa fa-bars"></i></button>
                     <div id="navbar" class="collapse show">
                         <div class="list-group mb-1">
@@ -101,6 +101,9 @@
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.roles.list")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-roles" href="<?= $opt["root"]; ?>z/roles"><i class="fa fa-user-tag"></i>Roles</a>
+                            <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.groups.list")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-groups" href="<?= $opt["root"]; ?>z/groups"><i class="fa fa-user-friends"></i>Groups</a>
                             <?php } ?>
                         </div>
                         <div class="list-group mb-1">
@@ -126,6 +129,13 @@
                     $("#navbar").removeClass("show");
                 }
             })
+        </script>
+        <script>
+            $(document).on("keydown", function(e) {
+                if(!e.ctrlKey || e.key != "j") return;
+                e.preventDefault();
+                $("#logo").toggleClass("d-none");
+            });
         </script>
     </body>
 </html>

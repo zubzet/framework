@@ -3,8 +3,13 @@
 use Cake\Database\Expression\IdentifierExpression;
 use Cake\Database\Expression\QueryExpression;
 use Cake\Database\Query\InsertQuery;
+use ZubZet\Framework\Authentication\Permission\Group;
 use ZubZet\Framework\Authentication\Permission\Role;
 use ZubZet\Framework\Authentication\Permission\User;
+
+    /**
+     * @internal
+     */
 
     class z_permissionModel extends z_model {
 
@@ -16,12 +21,14 @@ use ZubZet\Framework\Authentication\Permission\User;
          * @return array|null The data array of the object if found, null otherwise
          * @internal
          */
-        public function getById(int|string $id, string $table): ?array {
-            $query = $this->dbSelect("*", $table)->where([
-                "id" => $id
+        public function getById(int|string $id, string $table, ?array $expression = null): ?array {
+            $query = $this->dbSelect("*", ["zr" => $table])->where([
+                "zr.id" => $id
             ])->where([
-                "active" => 1
+                "zr.active" => 1
             ]);
+
+            if(!is_null($expression) && !empty($expression)) $query->where($expression);
 
             return $this->exec($query)->resultToLine();
         }
@@ -34,10 +41,12 @@ use ZubZet\Framework\Authentication\Permission\User;
          * @return array[] An array of permission objects
          * @internal
          */
-        public function getByIds(string $table, int ...$ids): array {
-            $query = $this->dbSelect("*", $table)->whereInList("id", $ids)->where([
+        public function getByIds(string $table, array $ids, ?array $expression = null): array {
+            $query = $this->dbSelect("*", ["zr" => $table])->whereInList("id", $ids)->where([
                 "active" => 1
             ]);
+
+            if(!is_null($expression) && !empty($expression)) $query->where($expression);
 
             return $this->exec($query)->resultToArray();
         }
@@ -49,13 +58,15 @@ use ZubZet\Framework\Authentication\Permission\User;
          * @return array An array of permission objects
          * @internal
          */
-        public function getAll(string $table): array {
+        public function getAll(string $table, ?array $expression = null): array {
             $objects = [];
 
-            $query = $this->dbSelect("*", $table);
+            $query = $this->dbSelect("*", ["zr" => $table]);
             $query->where([
                 "active" => 1
             ]);
+
+            if(!is_null($expression) && !empty($expression)) $query->where($expression);
 
             $results = $this->exec($query)->resultToArray();
 
@@ -116,7 +127,7 @@ use ZubZet\Framework\Authentication\Permission\User;
         /**
          * @internal
          */
-        public function getRolesByUsers(User $user): array {
+        public function getRolesGroupByUsers(User $user, array $dbExpression): array {
             $roles = [];
 
             $query = $this->dbSelect("zr.*", [
@@ -129,19 +140,18 @@ use ZubZet\Framework\Authentication\Permission\User;
                 "zr" => "z_role"
             ], "zur.role = zr.id");
 
-            $results = $this->exec($query)->resultToArray();
 
-            foreach($results as $role) {
-                $roles[] = new Role($role);
+            if(!empty($dbExpression)) {
+                $query->where($dbExpression);
             }
 
-            return $roles;
+            return $this->exec($query)->resultToArray();
         }
 
         /**
          * @internal
          */
-        public function getPermissionsByRole(Role $role): array {
+        public function getPermissionsByRoleGroup(Role|Group $role): array {
             $perms = [];
 
             $query = $this->dbSelect("zrp.*", [
@@ -163,7 +173,7 @@ use ZubZet\Framework\Authentication\Permission\User;
         /**
          * @internal
          */
-        public function getUsersByRole(Role $role): array {
+        public function getUsersByRoleGroup(Role|Group $role): array {
             $users = [];
 
             $query = $this->dbSelect("zu.*", [
@@ -171,7 +181,7 @@ use ZubZet\Framework\Authentication\Permission\User;
             ])->where([
                 "role" => $role->id(),
                 "zur.active" => 1,
-                "zu.active" => 1
+                "zu.active" => 1,
             ])->leftJoin([
                 "zu" => "z_user"
             ], "zur.user = zu.id");
@@ -299,27 +309,26 @@ use ZubZet\Framework\Authentication\Permission\User;
         /**
          * @internal
          */
-        public function getRoleByName(string $name): ?Role {
+        public function getRoleGroupByName(string $name, array $dbExpression): ?array {
             $query = $this->dbSelect("zr.*", [
                 "zr" => "z_role"
             ])->where([
                 "zr.name" => $name,
-                "zr.active" => 1
+                "zr.active" => 1,
             ]);
 
-            $result = $this->exec($query)->resultToLine();
+            if(!empty($dbExpression)) $query->where($dbExpression);
 
-            if(is_null($result)) return null;
-
-            return new Role($result);
+            return $this->exec($query)->resultToLine();
         }
 
         /**
          * @internal
          */
-        public function addRole(string $rolename): array {
+        public function addRoleGroup(string $rolename, bool $isGroup = false): array {
             $query = $this->dbInsert("z_role", [
                 "name" => $rolename,
+                "is_group" => $isGroup ? 1 : 0
             ]);
 
             $insertedId = $this->exec($query)->getInsertId();
@@ -330,12 +339,12 @@ use ZubZet\Framework\Authentication\Permission\User;
         /**
          * @internal
          */
-        public function updateRole(Role $role, string $newName): void {
+        public function updateRoleGroup(Role|Group $role, string $newName): void {
             $query = $this->dbUpdate("z_role", [
                 "name" => $newName
             ])->where([
                 "id" => $role->id(),
-                "active" => 1
+                "active" => 1,
             ]);
 
             $this->exec($query);
@@ -344,7 +353,7 @@ use ZubZet\Framework\Authentication\Permission\User;
         /**
          * @internal
          */
-        public function removeRole(Role $role): void {
+        public function removeRoleGroup(Role|Group $role): void {
             $query = $this->dbUpdate("z_role", [
                 "active" => 0
             ])->where([
@@ -420,12 +429,12 @@ use ZubZet\Framework\Authentication\Permission\User;
             $this->exec($updateQuery);
         }
 
-        public function getRolesByAccessToAnyOf(array $extractedPermissions): array {
-            $query = $this->dbSelect("t.*", ["t" => "z_role"])->distinct(true);
+        public function getRolesByAccessToAnyOf(array $extractedPermissions, array $dbExpression): array {
+            $query = $this->dbSelect("zr.*", ["zr" => "z_role"])->distinct(true);
 
             $query->leftJoin(
                 ["p" => "z_role_permission"],
-                ["p.role = t.id"]
+                ["p.role = zr.id"]
             );
 
             $query->where(function($exp) use ($extractedPermissions) {
@@ -434,33 +443,29 @@ use ZubZet\Framework\Authentication\Permission\User;
 
             $query->where([
                 "p.active" => 1,
-                "t.active" => 1
+                "zr.active" => 1,
             ]);
 
-            $query->group(["t.id"]);
+            if(!empty($dbExpression)) $query->where($dbExpression);
 
-            $roleData = $this->exec($query)->resultToArray();
-            $roleObjects = [];
-            foreach($roleData as $roleRow) {
-                $roleObjects[] = new Role($roleRow);
-            }
+            $query->group(["zr.id"]);
 
-            return $roleObjects;
+            return $this->exec($query)->resultToArray();
         }
 
-        public function getRolesByAccessToAll(array $extractedPermissionsGroup): array {
-            $query = $this->dbSelect("t.*", ["t" => "z_role"]);
+        public function getRolesByAccessToAll(array $extractedPermissionsGroup, array $dbExpression): array {
+            $query = $this->dbSelect("zr.*", ["zr" => "z_role"]);
 
             foreach($extractedPermissionsGroup as $i => $variants) {
                 $alias = "p{$i}";
 
                 $query->leftJoin(
                     [$alias => "z_role_permission"],
-                    ["$alias.role = t.id"]
+                    ["$alias.role = zr.id"]
                 );
 
                 $query->where([
-                    "$alias.active" => 1
+                    "$alias.active" => 1,
                 ]);
 
                 $query->where(function($exp) use ($alias, $variants) {
@@ -468,19 +473,14 @@ use ZubZet\Framework\Authentication\Permission\User;
                 });
             }
 
-            $query->group(["t.id"]);
+            $query->group(["zr.id"]);
             $query->where([
-                "t.active" => 1
+                "zr.active" => 1,
             ]);
 
-            $roles = $this->exec($query)->resultToArray();
-            $roleObjects = [];
+            if(!empty($dbExpression)) $query->where($dbExpression);
 
-            foreach($roles as $roleData) {
-                $roleObjects[] = new Role($roleData);
-            }
-
-            return $roleObjects;
+            return $this->exec($query)->resultToArray();
         }
 
         public function getUsersByAccessToAll(array $extractedPermissionsGroup): array {

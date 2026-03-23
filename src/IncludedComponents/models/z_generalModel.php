@@ -62,6 +62,14 @@
             return $this->getResult()->num_rows == 0;
         }
 
+        function getGroups() {
+            $sql = "SELECT *
+                    FROM `z_role`
+                    WHERE `is_group`=1";
+
+            return $this->exec($sql)->resultToArray();
+        }
+
     }
 
 ?>

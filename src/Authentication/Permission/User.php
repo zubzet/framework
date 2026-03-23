@@ -17,6 +17,8 @@ class User extends AuthenticationObject {
     public static string $dbPermissionsTable = "z_user_permission";
     public static string $dbPermissionsObjectColumn = "user";
 
+    public static array $dbExpression = [];
+
 
     // Constructor which requires the Users data (in the format of a database row)
     public function __construct(array $data) {
@@ -32,7 +34,11 @@ class User extends AuthenticationObject {
      * @return User[] An array of User objects associated with the specified role
      */
     public static function byRole(Role $role): array {
-        return model("z_permission")->getUsersByRole($role);
+        return model("z_permission")->getUsersByRoleGroup($role);
+    }
+
+    public static function byGroup(Group $group): array {
+        return model("z_permission")->getUsersByRoleGroup($group);
     }
 
     /**
