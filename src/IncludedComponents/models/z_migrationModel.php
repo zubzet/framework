@@ -170,12 +170,6 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
                 throw new InvalidArgumentException("Syntax error: '$filename'. Invalid date format. Expected format: YYYY-MM-DD.");
             }
 
-            $now = new DateTime('today');
-
-            if($dateObj > $now) {
-                throw new InvalidArgumentException("Future error: The date '$dateString' is in the future. Migrations can have at most today's date.");
-            }
-
             if((int)$dateObj->format('Y') < 2000) {
                 throw new InvalidArgumentException("History error: The year " . $dateObj->format('Y') . " is too far in the past.");
             }

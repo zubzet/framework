@@ -55,7 +55,6 @@ describe('Migration System - Import', () => {
             { file: "2025-10-10.sql", expectedError: "Formatting error: '2025-10-10.sql'. Expected: YYYY-MM-DD_Name" },
             { file: "12-10-2004_Wrong_Date.sql", expectedError: "Syntax error: '12-10-2004_Wrong_Date.sql'. Date must be exactly YYYY-MM-DD." },
             { file: "1990-10-10_Test_Name.sql", expectedError: "History error: The year 1990 is too far in the past. " },
-            { file: "5000-10-10_Test_Name.sql", expectedError: "Future error: The date '5000-10-10' is in the future." }
          ];
 
         migrationFiles.forEach(({ file, expectedError }) => {
