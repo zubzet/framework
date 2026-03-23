@@ -128,13 +128,27 @@
             return $this;
         }
 
-        public function executeMultiQuery(string $query): void {
+        public function executeMultiQuery(string $query, bool $throwOnFailure = true): bool {
             $this->assertConnection();
 
-            $this->conn->multi_query($query);
-            while($this->conn->more_results() && $this->conn->next_result());
+            if($this->conn->multi_query($query) === false) {
+                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
+                return false;
+            }
+
+            do {
+                if($this->conn->errno) {
+                    if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
+
+                    while($this->conn->more_results()) $this->conn->next_result();
+                    return false;
+                }
+
+                if($result = $this->conn->store_result()) $result->free();
+            } while($this->conn->more_results() && $this->conn->next_result());
 
             $this->lastHeartbeat = time();
+            return true;
         }
 
         public function getDatabaseConnection(): \mysqli {
