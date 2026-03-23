@@ -97,6 +97,11 @@
                 return $data;
             });
 
+            // Removing Import.php script
+            $importFile = new RemoveFile($this, "remove-import-script");
+            $importFile->from("./app/Database/import.php");
+
+
             // Update the docker-compose.yml - Add migration service
             $dockerCompose = new FileContent($this, "docker-compose-migration");
             $dockerCompose->find("docker-compose-base.yml");
