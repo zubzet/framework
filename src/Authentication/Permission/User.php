@@ -97,6 +97,7 @@ class User extends AuthenticationObject {
         $this->setField("permissions", null);
         $this->setField("user-permissions", null);
         $this->setField("roles", null);
+        $this->setField("groups", null);
     }
 
 
