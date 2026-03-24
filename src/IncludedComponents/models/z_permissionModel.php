@@ -381,7 +381,7 @@ use ZubZet\Framework\Authentication\Permission\User;
         /**
          * @internal
          */
-        public function addRolesToUser(User $user, Role ...$roles): void {
+        public function addRolesGroupsToUser(User $user, Role|Group ...$roles): void {
             $insertQuery = new InsertQuery($this->getQueryBuilder());
             $insertQuery->into("z_user_role");
             $insertQuery->insert(["user", "role"]);
@@ -399,7 +399,7 @@ use ZubZet\Framework\Authentication\Permission\User;
         /**
          * @internal
          */
-        public function removeRolesFromUser(User $user, Role ...$roles): void {
+        public function removeRolesGroupsFromUser(User $user, Role|Group ...$roles): void {
             $roleIds = array_map(fn($role) => $role->id(), $roles);
 
             $deleteQuery = $this->dbUpdate("z_user_role", [
