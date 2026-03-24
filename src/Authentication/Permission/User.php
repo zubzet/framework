@@ -199,6 +199,25 @@ class User extends AuthenticationObject {
     }
 
     /**
+     * Add Groups to the user
+     * This will add the groups automatically into the database
+     *
+     * @param Group[] $groups The groups to add to the user
+     * @return void
+     */
+    public function groupsAdd(Group ...$groups): void {
+        // Setting permission changed to true to indicate permissions need to be reloaded
+        global $permissionChanged;
+        $permissionChanged = true;
+
+        // Add groups to user in the database
+        model("z_permission")->addRolesGroupsToUser($this, ...$groups);
+
+        // Clear the roles cache for this user
+        $this->clearFields();
+    }
+
+    /**
      * Remove roles from the user
      * This will remove the roles automatically from the database
      *
@@ -212,6 +231,25 @@ class User extends AuthenticationObject {
 
         // Remove roles from user in the database
         model("z_permission")->removeRolesFromUser($this, ...$roles);
+
+        // Clear the roles cache for this user
+        $this->clearFields();
+    }
+
+    /**
+     * Remove groups from the user
+     * This will remove the groups automatically from the database
+     *
+     * @param Group[] $groups The groups to remove from the user
+     * @return void
+     */
+    public function groupsRemove(Group ...$groups): void {
+        // Setting permission changed to true to indicate permissions need to be reloaded
+        global $permissionChanged;
+        $permissionChanged = true;
+
+        // Remove groups from user in the database
+        model("z_permission")->removeRolesGroupsFromUser($this, ...$groups);
 
         // Clear the roles cache for this user
         $this->clearFields();
