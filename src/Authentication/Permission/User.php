@@ -306,6 +306,18 @@ class User extends AuthenticationObject {
     }
 
     /**
+     * Get the user's groups
+     *
+     * @return Group[] Array of group objects
+     */
+    public function getGroups(): array {
+        // Load roles if not already loaded
+        if(is_null($this->getField("groups"))) $this->setField("groups", Group::byUser($this));
+
+        return $this->getField("groups");
+    }
+
+    /**
      * Get the user's permissions
      *
      * @return string[] Array of permissions
