@@ -11,6 +11,34 @@
     class z_loginModel extends z_model {
 
         /**
+         * Set the extension time for a specific logintoken
+         * @param string $token The logintoken to set the extension time for
+         * @param int $seconds The seconds to extend the lifetime of the token
+         * @internal
+         */
+        public function setExtensionTime(string $token, int $seconds): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `extended_seconds` = ?
+                    WHERE `token` = ?
+                    AND `active` = 1";
+            $this->exec($sql, "is", $seconds, $token);
+        }
+
+        /**
+         * Increase the extension time for a specific logintoken
+         * @param string $token The logintoken to increase the extension time for
+         * @param int $seconds The seconds to increase the lifetime of the token
+         * @internal
+         */
+        public function extendLoginToken(string $token, int $seconds): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `extended_seconds` = COALESCE(`extended_seconds`, 0) + ?
+                    WHERE `token` = ?
+                    AND `active` = 1";
+            $this->exec($sql, "is", $seconds, $token);
+        }
+
+        /**
          * Validate a login token retrieved from the users Cookie
          * @param string $token The login token that is saved in the clients cookie
          * @return array|false The user data from the database or false if the token is wrong
@@ -19,6 +47,7 @@
             $sql = "SELECT *
                     FROM `z_logintoken`
                     WHERE `token` = ?
+                    AND `active` = 1
                     LIMIT 1";
             $session = $this->exec($sql, "s", $token)->resultToLine();
             if(is_null($session)) return false;
@@ -29,12 +58,15 @@
                 TIMESPAN_DAY_7,
             );
 
+            // If the session has an extended lifetime, add it to the default lifetime
+            if(!is_null($session["extended_seconds"])) $lifetime += $session["extended_seconds"];
+
             // Only return the session if it is not yet expired
             if((strtotime($session["created"]) + $lifetime) > time()) {
                 return $session;
             }
 
-            // Delete expired sessions that were tried anyways
+            // Invalidate expired sessions that were tried anyways
             model("z_login")->invalidateSession(
                 $session["token"],
             );
@@ -42,16 +74,26 @@
         }
 
         /**
-         * Invalidates and removes a login token (session) for a user
+         * Invalidates a login token (session) for a user by setting it to inactive in the database
          * @param string $token The session identifier
          */
         public function invalidateSession(string $token): void {
-            $sql = "DELETE FROM `z_logintoken` WHERE `token` = ?";
+            $sql = "UPDATE `z_logintoken`
+                    SET `active`= 0
+                    WHERE `token` = ?
+                    AND `active` = 1";
             $this->exec($sql, "s", $token);
         }
 
+        /**
+         * Clears all sessions of a user by setting them to inactive in the database
+         * @param int $userId Id of the user
+         */
         public function clearSessions(int $userId): void {
-            $sql = "DELETE FROM `z_logintoken` WHERE `userId` = ?";
+            $sql = "UPDATE `z_logintoken`
+                    SET `active`= 0
+                    WHERE `userId` = ?
+                    AND `active` = 1";
             $this->exec($sql, "i", $userId);
         }
 
@@ -86,6 +128,8 @@
          * @param string $password The raw user password
          */
         public function updatePassword(int $id, string $password): void {
+            $this->clearSessions($id);
+
             $password = PasswordHash::create(
                 $password,
                 "sha512",
