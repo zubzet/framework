@@ -1,6 +1,6 @@
 <?php
 
-namespace ZubZet\Framework\Authentication\Permission;
+namespace ZubZet\Framework\Authentication;
 
 trait RetrievalTrait {
 

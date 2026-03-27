@@ -3,12 +3,42 @@
      * This file holds the login model
      */
 
+    use ZubZet\Framework\Authentication\Session;
     use ZubZet\Utilities\PasswordHash\PasswordHash;
 
     /**
      * The login model holds logging in and out of users
      */
     class z_loginModel extends z_model {
+
+        /**
+         * Retrieve a session by its token
+         * @param string $token The token of the session to retrieve
+         * @return array|null The dataset of the session or null if no session was found
+         * @internal
+         */
+        public function getSessionByToken(string $token): ?array {
+            $sql = "SELECT *
+                    FROM `z_logintoken`
+                    WHERE `token` = ?
+                    AND `active` = 1
+                    LIMIT 1";
+            return $this->exec($sql, "s", $token)->resultToLine();
+        }
+
+        /**
+         * Retrieve all active sessions of a user by its id
+         * @param int $userId Id of the user
+         * @return array of session objects
+         * @internal
+         */
+        public function getSessionsByUserId(int $userId): array {
+            $sql = "SELECT *
+                    FROM `z_logintoken`
+                    WHERE `userId` = ?
+                    AND `active` = 1";
+            return $this->exec($sql, "i", $userId)->resultToArray();
+        }
 
         /**
          * Set the extension time for a specific logintoken
@@ -52,17 +82,10 @@
             $session = $this->exec($sql, "s", $token)->resultToLine();
             if(is_null($session)) return false;
 
-            // Get the session lifetime from the configuration
-            $lifetime = (int) $this->z_db->booter->req->getBooterSettings(
-                "loginTimeoutSeconds",
-                TIMESPAN_DAY_7,
-            );
+            $sessionObject = Session::byToken($token);
+            if(is_null($sessionObject)) return false;
 
-            // If the session has an extended lifetime, add it to the default lifetime
-            if(!is_null($session["extended_seconds"])) $lifetime += $session["extended_seconds"];
-
-            // Only return the session if it is not yet expired
-            if((strtotime($session["created"]) + $lifetime) > time()) {
+            if(!$sessionObject->isExpired()) {
                 return $session;
             }
 
