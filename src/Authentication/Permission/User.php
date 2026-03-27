@@ -143,7 +143,7 @@ class User extends AuthenticationObject {
      * @return void
      */
     public function updatePassword(string $password): void {
-        model('z_login')->updatePassword($this->id(), $password);
+        model('z_login')->updatePassword($this, $password);
         $this->clearFields();
     }
 

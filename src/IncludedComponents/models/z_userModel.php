@@ -3,6 +3,8 @@
      * File that defines the user model
      */
 
+use ZubZet\Framework\Authentication\Permission\User;
+
     /**
      * User Model
      * 
@@ -73,7 +75,7 @@
 
             if ($passwordString !== null) {
                 $this->getModel("z_login")->updatePassword(
-                    $insertId,
+                    User::byId($insertId),
                     $passwordString,
                 );
             }

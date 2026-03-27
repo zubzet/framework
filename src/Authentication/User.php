@@ -55,12 +55,15 @@
             }
 
             $tokenResult = model("z_login")->validateCookie($_COOKIE["z_login_token"]);
-            if(!isset($tokenResult["userId"]) || !isset($tokenResult["userId_exec"])) {
+            if($tokenResult === false) {
                 return $this->anonymousRequest();
             }
-            $this->userId = $tokenResult["userId"];
-            $this->execUserId = $tokenResult["userId_exec"];
-            $this->sessionToken = $tokenResult["token"];
+            if(is_null($tokenResult->userId()) || is_null($tokenResult->userIdExec())) {
+                return $this->anonymousRequest();
+            }
+            $this->userId = $tokenResult->userId();
+            $this->execUserId = $tokenResult->userIdExec();
+            $this->sessionToken = $tokenResult->token();
 
             if ($this->userId !== false) {
                 $user = model("z_user")->getUserById($this->userId);

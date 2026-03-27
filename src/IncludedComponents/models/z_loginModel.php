@@ -3,7 +3,8 @@
      * This file holds the login model
      */
 
-    use ZubZet\Framework\Authentication\Session;
+use ZubZet\Framework\Authentication\Permission\User;
+use ZubZet\Framework\Authentication\Session;
     use ZubZet\Utilities\PasswordHash\PasswordHash;
 
     /**
@@ -71,28 +72,16 @@
         /**
          * Validate a login token retrieved from the users Cookie
          * @param string $token The login token that is saved in the clients cookie
-         * @return array|false The user data from the database or false if the token is wrong
+         * @return Session|false The user data from the database or false if the token is wrong
          */
-        public function validateCookie(string $token): bool|array {
-            $sql = "SELECT *
-                    FROM `z_logintoken`
-                    WHERE `token` = ?
-                    AND `active` = 1
-                    LIMIT 1";
-            $session = $this->exec($sql, "s", $token)->resultToLine();
-            if(is_null($session)) return false;
-
+        public function validateCookie(string $token): bool|Session {
             $sessionObject = Session::byToken($token);
             if(is_null($sessionObject)) return false;
 
-            if(!$sessionObject->isExpired()) {
-                return $session;
-            }
+            if(!$sessionObject->isExpired()) return $sessionObject;
 
-            // Invalidate expired sessions that were tried anyways
-            model("z_login")->invalidateSession(
-                $session["token"],
-            );
+            $sessionObject->invalidate();
+
             return false;
         }
 
@@ -103,8 +92,7 @@
         public function invalidateSession(string $token): void {
             $sql = "UPDATE `z_logintoken`
                     SET `active`= 0
-                    WHERE `token` = ?
-                    AND `active` = 1";
+                    WHERE `token` = ?";
             $this->exec($sql, "s", $token);
         }
 
@@ -115,8 +103,7 @@
         public function clearSessions(int $userId): void {
             $sql = "UPDATE `z_logintoken`
                     SET `active`= 0
-                    WHERE `userId` = ?
-                    AND `active` = 1";
+                    WHERE `userId` = ?";
             $this->exec($sql, "i", $userId);
         }
 
@@ -147,11 +134,12 @@
 
         /**
          * Updates the password of an user
-         * @param int $id The id of the user
+         * @param User $user The object of the user
          * @param string $password The raw user password
+         * @deprecated
          */
-        public function updatePassword(int $id, string $password): void {
-            $this->clearSessions($id);
+        public function updatePassword(User $user, string $password): void {
+            $user->clearSessions();
 
             $password = PasswordHash::create(
                 $password,
@@ -167,7 +155,7 @@
                 $sql, "ssi",
                 $password->hash,
                 $password->salt,
-                $id,
+                $user->id(),
             );
         }
 

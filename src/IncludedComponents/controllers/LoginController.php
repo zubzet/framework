@@ -3,6 +3,8 @@
      * This file holds the login controller
      */
 
+use ZubZet\Framework\Authentication\Permission\User;
+
     /**
      * The Login controller handles all login/logout stuff
      */
@@ -229,7 +231,7 @@
                 
                 //Generating a new password
                 $req->getModel("z_login", $req->getZRoot())->updatePassword(
-                    $DBResetCode["userId"],
+                    User::byId($DBResetCode["userId"]),
                     $req->getPost("password"),
                 );
 
