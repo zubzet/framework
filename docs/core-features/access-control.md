@@ -426,3 +426,131 @@ The `Role` object represents a named collection of permissions that can be assig
     ```php
     $role->refresh();
     ```
+
+---
+
+## Session Object
+
+The `Session` object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation.
+
+### Session Retrieval
+
+* Returns a session by its token string, or `null` if not found.
+
+    ```php
+    Session::byToken(string $token): ?Session
+    ```
+
+* Returns all active sessions for a given user.
+
+    ```php
+    Session::byUser(User $user): array
+    ```
+
+* Returns a session by its ID.
+
+    ```php
+    Session::byId(int|string $id): ?Session
+    ```
+
+* Returns all sessions matching the given IDs.
+
+    ```php
+    Session::byIds(int ...$ids): array
+    ```
+
+* Returns all sessions.
+
+    ```php
+    Session::all(): array
+    ```
+
+---
+
+### Creating a Session
+
+* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`.
+
+    ```php
+    Session::add(User $user, ?User $userExec = null): Session
+    ```
+
+---
+
+### Lifetime Management
+
+* Extends the session's lifetime by the given number of seconds on top of the base timeout and any existing extension.
+
+    ```php
+    $session->extend(int $seconds): void
+    ```
+
+* Sets the total extension time in seconds, replacing any previously set extension.
+
+    ```php
+    $session->setExtensionTime(int $seconds): void
+    ```
+
+---
+
+### Invalidation
+
+* Immediately invalidates the session, preventing further use.
+
+    ```php
+    $session->invalidate(): void
+    ```
+
+---
+
+### Expiry Check
+
+* Returns `true` if the session has expired. The expiry is calculated from `created` plus the configured `loginTimeoutSeconds` (defaults to 7 days) plus any `extended_seconds`.
+
+    ```php
+    $session->isExpired(): bool
+    ```
+
+---
+
+### Session Data
+
+* Returns the session token string.
+
+    ```php
+    $session->token(): string
+    ```
+
+* Returns the ID of the user who owns the session.
+
+    ```php
+    $session->userId(): int|string
+    ```
+
+* Returns the ID of the user being executed as (relevant for impersonation sessions).
+
+    ```php
+    $session->userIdExec(): int|string
+    ```
+
+* Returns the number of seconds the session has been extended by, or `null` if not extended.
+
+    ```php
+    $session->extendedSeconds(): ?int
+    ```
+
+* Returns the creation timestamp of the session.
+
+    ```php
+    $session->created(): string
+    ```
+
+---
+
+### Refreshing Session Data
+
+* Reloads the session data from the database.
+
+    ```php
+    $session->refresh(): void
+    ```
