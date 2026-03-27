@@ -20,6 +20,32 @@
 
         public function upgrade(): bool {
 
+            // changePassword deprecation warning
+            $changePassword = new MatchingModifier($this, "change-password-deprecation");
+            $changePassword->from(["./app"]);
+            $changePassword->matchLineByLine(
+                '/z_login.*->updatePassword/',
+                "Deprecation Warning: The changePassword function is deprecated and is replaced with the Authentication System. Please update your code accordingly."
+            );
+            $changePassword->warn();
+
+            // language system deprecation warning
+            $languageSystem = new MatchingModifier($this, "language-system-deprecation");
+            $languageSystem->from(["./app"]);
+            $languageSystem->matchLineByLine(
+                '/\<\?php \}, "lang" => \[/',
+                "Deprecation Warning: The language system is being deprecated. Please update your code accordingly."
+            );
+            $languageSystem->warn();
+
+            $languageSystem->from(["./app"]);
+            $languageSystem->matchLineByLine(
+                '/z_language/',
+                "Deprecation Warning: The language system is being deprecated. Please update your code accordingly."
+            );
+            $languageSystem->warn();
+
+
             // Add new settings for elevated database credentials
             $settings = new SettingsIni($this, "settings");
             $settings->addProperty("dbusername_elevated", "", "dbpassword");
@@ -83,38 +109,9 @@
                 return $data;
             });
 
-            $packageJsonStart = new JsonModifier($this, "package-json-start");
-            $packageJsonStart->from("package.json");
-            $packageJsonStart->modify(function(array $data): ?array {
-                $start = &$data["scripts"]["start"];
-
-                if(!isset($start)) return null;
-                if(!str_contains($start, "npm run seed")) return null;
-
-                // Remove npm run seed
-                $start = str_replace(" && npm run seed", "", $start);
-
-                return $data;
-            });
-
             // Removing Import.php script
             $importFile = new RemoveFile($this, "remove-import-script");
             $importFile->from("./app/Database/import.php");
-
-
-            // Update the docker-compose.yml - Add migration service
-            $dockerCompose = new FileContent($this, "docker-compose-migration");
-            $dockerCompose->find("docker-compose-base.yml");
-            $dockerCompose->shouldChangeIfNotIncludes("migration:");
-            $dockerCompose->automateChange(
-                fn($content) => (new MigrationDockerServiceChange())->extendWithMigrationService($content)
-            );
-            $dockerCompose->demandChange([
-                "Add migration service to docker-compose-base.yml",
-                "This ensures database migrations run before the application starts.",
-                "",
-                "More information about the migration system can be found in the documentation: https://zubzet.com/docs/v1.1.0/core-features/migrations/",
-            ]);
 
 
             // Check if any existing Migration doesn't follow the new naming convention and warn about it
