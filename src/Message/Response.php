@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Message;
 
     use PHPMailer\PHPMailer\PHPMailer;
+    use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Form\Upload;
     use ZubZet\Framework\Support\Rest;
     use ZubZet\Framework\Rendering\View;
@@ -234,11 +235,11 @@
          */
         public function loginAs($userId, $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
-            $token = model("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
+            $session = model("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
 
             $this->setCookie(
                 "z_login_token",
-                $token,
+                $session->token(),
                 time() + intval($this->booter->settings["loginTimeoutSeconds"]),
                 "/",
                 $this->getCookieDomainScope(),
@@ -299,7 +300,7 @@
             // Deactivate the session in the db
             if(!is_null($user->getSessionToken())) {
                 model("z_login")->invalidateSession(
-                    $user->getSessionToken(),
+                    Session::byToken($user->getSessionToken()),
                 );
             }
 

@@ -3,6 +3,8 @@
      * This file holds the login model
      */
 
+    use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Authentication\Session;
     use ZubZet\Utilities\PasswordHash\PasswordHash;
 
     /**
@@ -11,61 +13,113 @@
     class z_loginModel extends z_model {
 
         /**
-         * Validate a login token retrieved from the users Cookie
-         * @param string $token The login token that is saved in the clients cookie
-         * @return array|false The user data from the database or false if the token is wrong
+         * Retrieve a session by its token
+         * @param string $token The token of the session to retrieve
+         * @return array|null The dataset of the session or null if no session was found
+         * @internal
          */
-        public function validateCookie(string $token): bool|array {
+        public function getSessionByToken(string $token): ?array {
             $sql = "SELECT *
                     FROM `z_logintoken`
                     WHERE `token` = ?
+                    AND `active` = 1
                     LIMIT 1";
-            $session = $this->exec($sql, "s", $token)->resultToLine();
-            if(is_null($session)) return false;
-
-            // Get the session lifetime from the configuration
-            $lifetime = (int) $this->z_db->booter->req->getBooterSettings(
-                "loginTimeoutSeconds",
-                TIMESPAN_DAY_7,
-            );
-
-            // Only return the session if it is not yet expired
-            if((strtotime($session["created"]) + $lifetime) > time()) {
-                return $session;
-            }
-
-            // Delete expired sessions that were tried anyways
-            model("z_login")->invalidateSession(
-                $session["token"],
-            );
-            return false;
+            return $this->exec($sql, "s", $token)->resultToLine();
         }
 
         /**
-         * Invalidates and removes a login token (session) for a user
-         * @param string $token The session identifier
+         * Retrieve all active sessions of a user by its id
+         * @param User $user The user object
+         * @return array of session objects
+         * @internal
          */
-        public function invalidateSession(string $token): void {
-            $sql = "DELETE FROM `z_logintoken` WHERE `token` = ?";
-            $this->exec($sql, "s", $token);
+        public function getSessionsByUserId(User $user): array {
+            $sql = "SELECT *
+                    FROM `z_logintoken`
+                    WHERE `userId` = ?
+                    AND `active` = 1";
+            return $this->exec($sql, "i", $user->id())->resultToArray();
         }
 
-        public function clearSessions(int $userId): void {
-            $sql = "DELETE FROM `z_logintoken` WHERE `userId` = ?";
-            $this->exec($sql, "i", $userId);
+        /**
+         * Set the extension time for a specific logintoken
+         * @param Session $session The session to set the extension time for
+         * @param int $seconds The seconds to extend the lifetime of the token
+         * @internal
+         */
+        public function setExtensionTime(Session $session, int $seconds): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `extended_seconds` = ?
+                    WHERE `token` = ?
+                    AND `active` = 1";
+            $this->exec($sql, "is", $seconds, $session->token());
+        }
+
+        /**
+         * Increase the extension time for a specific logintoken
+         * @param Session $session The session to increase the extension time for
+         * @param int $seconds The seconds to increase the lifetime of the token
+         * @internal
+         */
+        public function extendLoginToken(Session $session, int $seconds): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `extended_seconds` = COALESCE(`extended_seconds`, 0) + ?
+                    WHERE `token` = ?
+                    AND `active` = 1";
+            $this->exec($sql, "is", $seconds, $session->token());
+        }
+
+        /**
+         * Validate a Session object by checking if the token is not expired
+         *
+         * @param Session $session The session to validate
+         * @return bool True if the session is valid, false otherwise
+         * @internal
+         */
+        public function validateSession(Session $session) {
+            if($session->isExpired()) {
+                $session->invalidate();
+                return false;
+            }
+
+            return true;
+        }
+
+        /**
+         * Invalidates a login token (session) for a user by setting it to inactive in the database
+         * @param Session $session The session to invalidate
+         * @internal
+         */
+        public function invalidateSession(Session $session): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `active`= 0
+                    WHERE `id` = ?";
+            $this->exec($sql, "i", $session->id());
+        }
+
+        /**
+         * Clears all sessions of a user by setting them to inactive in the database
+         * @param User $user The user object
+         * @internal
+         */
+        public function clearSessions(User $user): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `active`= 0
+                    WHERE `userId` = ?";
+            $this->exec($sql, "i", $user->id());
         }
 
         /**
          * Creates a login token for a user
          * @param int $userId Id of the user
          * @param int $exec_userId Id of the executing user
-         * @return string The login token
+         * @return Session The resulting session
          */
-        function createLoginToken(int $userId, int $exec_userId) {
+        function createLoginToken(int $userId, int $exec_userId): Session {
             $token = bin2hex(random_bytes(20));
             $sql = "INSERT INTO `z_logintoken`(`userId`, `userId_exec`, `token`) VALUES (?, ?, ?)";
             $this->exec($sql, "iis", $userId, $exec_userId, $token);
-            return $token;
+            return Session::byToken($token);
         }
 
         /**
@@ -82,10 +136,13 @@
 
         /**
          * Updates the password of an user
-         * @param int $id The id of the user
+         * @param User $user The object of the user
          * @param string $password The raw user password
+         * @deprecated
          */
-        public function updatePassword(int $id, string $password): void {
+        public function updatePassword(User $user, string $password): void {
+            $user->clearSessions();
+
             $password = PasswordHash::create(
                 $password,
                 "sha512",
@@ -100,7 +157,7 @@
                 $sql, "ssi",
                 $password->hash,
                 $password->salt,
-                $id,
+                $user->id(),
             );
         }
 

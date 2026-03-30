@@ -244,7 +244,7 @@ describe('Permission System - User', () => {
     it('should check if a user can be added', () => {
         requestJson('/user/add').then((output) => {
             expect(output).to.deep.equal(
-                {"createdUserDirect":{"id":305,"email":"user_add@cypress.test","isVerified":true,"verified":"2005-01-01 00:00:00"},"createdUserGet":{"id":305,"email":"user_add@cypress.test","isVerified":true,"verified":"2005-01-01 00:00:00"},"passwordWorking":true}
+                {"createdUserDirect": {"id": 424,"email": "user_add@cypress.test","isVerified": true,"verified": "2005-01-01 00:00:00"},"createdUserGet": {"id": 424,"email": "user_add@cypress.test","isVerified": true,"verified": "2005-01-01 00:00:00"},"passwordWorking": true}
             );
         });
     });

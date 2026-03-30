@@ -54,15 +54,19 @@
                 return $this->anonymousRequest();
             }
 
-            $tokenResult = model("z_login")->validateCookie($_COOKIE["z_login_token"]);
-            if(!isset($tokenResult["userId"]) || !isset($tokenResult["userId_exec"])) {
+            $session = Session::byToken($_COOKIE["z_login_token"]);
+            if(is_null($session) ||
+                !model("z_login")->validateSession($session) ||
+                is_null($session->userId()) ||
+                is_null($session->userIdExec()))
+            {
                 return $this->anonymousRequest();
             }
-            $this->userId = $tokenResult["userId"];
-            $this->execUserId = $tokenResult["userId_exec"];
-            $this->sessionToken = $tokenResult["token"];
+            $this->userId = $session->userId();
+            $this->execUserId = $session->userIdExec();
+            $this->sessionToken = $session->token();
 
-            if ($this->userId !== false) {
+            if (!is_null($this->userId)) {
                 $user = model("z_user")->getUserById($this->userId);
                 if ($user !== false) {
                     $this->isLoggedIn = true;

@@ -2,6 +2,10 @@
 
 namespace ZubZet\Framework\Authentication\Permission;
 
+use ZubZet\Framework\Authentication\AuthenticationObject;
+use ZubZet\Framework\Authentication\HandleTrait;
+use ZubZet\Framework\Authentication\RetrievalTrait;
+
 class Role extends AuthenticationObject {
 
     // Traits

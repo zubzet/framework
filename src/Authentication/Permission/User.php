@@ -2,7 +2,11 @@
 
 namespace ZubZet\Framework\Authentication\Permission;
 
+use ZubZet\Framework\Authentication\AuthenticationObject;
+
 use DateTime;
+use ZubZet\Framework\Authentication\HandleTrait;
+use ZubZet\Framework\Authentication\RetrievalTrait;
 
 class User extends AuthenticationObject {
 
@@ -139,7 +143,7 @@ class User extends AuthenticationObject {
      * @return void
      */
     public function updatePassword(string $password): void {
-        model('z_login')->updatePassword($this->id(), $password);
+        model('z_login')->updatePassword($this, $password);
         $this->clearFields();
     }
 
@@ -149,7 +153,7 @@ class User extends AuthenticationObject {
      * @return void
      */
     public function clearSessions(): void {
-        model('z_login')->clearSessions($this->id());
+        model('z_login')->clearSessions($this);
     }
 
     /**
