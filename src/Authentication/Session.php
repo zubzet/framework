@@ -76,14 +76,22 @@ class Session extends AuthenticationObject {
         $this->nullId();
     }
 
-    public function isExpired(): bool {
-        if($this->shouldRefresh) $this->refresh();
+    public function expiresAt(bool $refresh = true): ?string {
+        if($refresh && $this->shouldRefresh) $this->refresh();
 
         $lifetime = (int) config("loginTimeoutSeconds", TIMESPAN_DAY_7);
 
         if(!is_null($this->extendedSeconds())) $lifetime += $this->extendedSeconds();
 
-        return !((strtotime($this->created()) + $lifetime) > time());
+        return date("Y-m-d H:i:s", strtotime($this->created()) + $lifetime);
+    }
+
+    public function isExpired(): bool {
+        if($this->shouldRefresh) $this->refresh();
+
+        $expiresAt = $this->expiresAt(false);
+
+        return !($expiresAt > time());
     }
 
     public function token(): ?string {
