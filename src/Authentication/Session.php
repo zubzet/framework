@@ -91,7 +91,7 @@ class Session extends AuthenticationObject {
 
         $expiresAt = $this->expiresAt(false);
 
-        return !($expiresAt > time());
+        return !(strtotime($expiresAt) > time());
     }
 
     public function token(): ?string {
