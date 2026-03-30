@@ -181,7 +181,7 @@ class SessionController extends z_controller {
      * request with that cookie is rejected.
      */
     public function action_invalidateForAuth(Request $req, Response $res): void {
-        model("z_login")->invalidateSession('0410a00000000000000000000000000000000000');
+        model("z_login")->invalidateSession(Session::byToken('0410a00000000000000000000000000000000000'));
         echo(json_encode(['done' => true]));
     }
 

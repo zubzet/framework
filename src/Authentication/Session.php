@@ -31,21 +31,19 @@ class Session extends AuthenticationObject {
     public static function add(User $user, ?User $userExec = null): Session {
         if(is_null($userExec)) $userExec = $user;
 
-        $token = model("z_login")->createLoginToken($user->id(), $userExec->id());
-
-        return Session::byToken($token);
+        return model("z_login")->createLoginToken($user->id(), $userExec->id());
     }
 
     public static function byToken(string $token): ?Session {
         $result = model("z_login")->getSessionByToken($token);
 
-        if(empty($result)) return null;
+        if(is_null($result)) return null;
 
         return new Session($result);
     }
 
     public static function byUser(User $user): array {
-        $result = model("z_login")->getSessionsByUserId($user->id());
+        $result = model("z_login")->getSessionsByUserId($user);
 
         if(empty($result)) return [];
 
@@ -60,7 +58,7 @@ class Session extends AuthenticationObject {
     public function setExtensionTime(int $seconds): void {
         if($this->shouldRefresh) $this->refresh();
 
-        model("z_login")->setExtensionTime($this->token(), $seconds);
+        model("z_login")->setExtensionTime($this, $seconds);
 
         $this->refreshOnNextUse();
     }
@@ -68,13 +66,13 @@ class Session extends AuthenticationObject {
     public function extend(int $seconds): void {
         if($this->shouldRefresh) $this->refresh();
 
-        model("z_login")->extendLoginToken($this->token(), $seconds);
+        model("z_login")->extendLoginToken($this, $seconds);
 
         $this->refreshOnNextUse();
     }
 
     public function invalidate(): void {
-        model("z_login")->invalidateSession($this->token());
+        model("z_login")->invalidateSession($this);
         $this->nullId();
     }
 
@@ -88,23 +86,23 @@ class Session extends AuthenticationObject {
         return !((strtotime($this->created()) + $lifetime) > time());
     }
 
-    public function token() {
+    public function token(): ?string {
         return $this->getField("token");
     }
 
-    public function userId() {
+    public function userId(): ?int {
         return $this->getField("userId");
     }
 
-    public function userIdExec() {
+    public function userIdExec(): ?int {
         return $this->getField("userId_exec");
     }
 
-    public function extendedSeconds() {
+    public function extendedSeconds(): ?int {
         return $this->getField("extended_seconds");
     }
 
-    public function created() {
+    public function created(): ?string {
         return $this->getField("created");
     }
 

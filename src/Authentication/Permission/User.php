@@ -153,7 +153,7 @@ class User extends AuthenticationObject {
      * @return void
      */
     public function clearSessions(): void {
-        model('z_login')->clearSessions($this->id());
+        model('z_login')->clearSessions($this);
     }
 
     /**
