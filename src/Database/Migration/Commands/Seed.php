@@ -1,13 +1,11 @@
 <?php
     namespace ZubZet\Framework\Database\Migration\Commands;
 
-    use Cake\Database\Query;
     use Exception;
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\ArrayInput;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
-    use Symfony\Component\Console\Output\BufferedOutput;
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
     use ZubZet\Framework\Database\Migration\Parser\SeedPHP;
@@ -46,7 +44,7 @@
 
             foreach($seedFiles as $seedFile) {
                 try {
-                    $this->importFile($seedFile);
+                    $this->importFile($seedFile, $out);
                     $out->writeln("<info>Successfully executed seed file: $seedFile</info>");
                 } catch(Exception $e) {
                     $out->writeln("<error>Error executing seed file $seedFile: {$e->getMessage()}</error>");
@@ -80,15 +78,34 @@
             $application->run($input, $out);
         }
 
+        private string $bufferedStatements = "";
+
+        private function executeBufferedStatements(OutputInterface $out) {
+            if(empty($this->bufferedStatements)) return;
+
+            $out->writeln("<comment>Executing buffered SQL statements...</comment>");
+            db()->executeMultiQuery($this->bufferedStatements);
+            $this->bufferedStatements = "";
+        }
+
         // Retrieve and execute SQL statements from a seed file
-        private function importFile($filePath) {
+        private function importFile($filePath, OutputInterface $out) {
             $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-            // Load SQL statements based on file type
-            match($extension) {
-                'sql' => $this->executeSQLStatements($filePath),
-                'php' => $this->executePHPStatements($filePath),
-            };
+            if(!in_array($extension, ["sql", "php"])) {
+                throw new Exception("Unsupported seed file type: $extension. Only .sql and .php files are allowed.");
+            }
+
+            if($extension == "php") {
+                // Buffered PHP seed files to avoid multiple database calls
+                $this->executeBufferedStatements($out);
+
+                // Execute the PHP seed file
+                $this->executePHPStatements($filePath);
+                return;
+            }
+
+            $this->executeSQLStatements($filePath);
         }
 
         private function executePHPStatements($filePath) {
@@ -97,25 +114,16 @@
             if(empty($sqlStatements)) return;
 
             foreach($sqlStatements as $query) {
-                if(!($query instanceof Query)) continue;
                 db()->execQuery($query);
             }
         }
 
         private function executeSQLStatements($filepath) {
-            $sqlStatements = (new SeedSQL())->loadSqlFile($filepath);
+            $sqlStatement = (new SeedSQL())->loadSqlFile($filepath);
+            if(trim($sqlStatement) === "") return;
 
-            if(empty($sqlStatements)) return;
-            $fullQuery = "";
-
-            foreach($sqlStatements as $sql) {
-                if(!is_string($sql)) continue;
-                $fullQuery .= $sql . ";";
-            }
-
-            if(empty($fullQuery)) return;
-
-            db()->executeMultiQuery($fullQuery);
+            // Buffer the SQL statements and execute them in batches to optimize performance
+            $this->bufferedStatements .= "\n-- SEED FILE: $filepath\n$sqlStatement";
         }
     }
 

@@ -196,6 +196,11 @@
                 if($result = $this->conn->store_result()) $result->free();
             } while($this->conn->more_results() && $this->conn->next_result());
 
+            if($this->conn->errno) {
+                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
+                return false;
+            }
+
             $this->lastHeartbeat = time();
             return true;
         }
