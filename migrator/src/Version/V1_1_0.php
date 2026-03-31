@@ -29,22 +29,6 @@
             );
             $changePassword->warn();
 
-            // language system deprecation warning
-            $languageSystem = new MatchingModifier($this, "language-system-deprecation");
-            $languageSystem->from(["./app"]);
-            $languageSystem->matchLineByLine(
-                '/\<\?php \}, "lang" => \[/',
-                "Deprecation Warning: The language system is being deprecated. Please update your code accordingly."
-            );
-            $languageSystem->warn();
-
-            $languageSystem->from(["./app"]);
-            $languageSystem->matchLineByLine(
-                '/z_language/',
-                "Deprecation Warning: The language system is being deprecated. Please update your code accordingly."
-            );
-            $languageSystem->warn();
-
 
             // Add new settings for elevated database credentials
             $settings = new SettingsIni($this, "settings");
@@ -90,6 +74,23 @@
             foreach($files as $file) {
                 (new RemoveFile($this, "remove-old-zubzet-migration"))->from($file);
             }
+
+
+            // language system deprecation warning
+            $languageSystem = new MatchingModifier($this, "language-system-deprecation");
+            $languageSystem->from(["./app"]);
+            $languageSystem->matchLineByLine(
+                '/\<\?php \}, "lang" => \[/',
+                "Deprecation Warning: The language system is being deprecated. Please update your code accordingly."
+            );
+            $languageSystem->warn();
+
+            $languageSystem->from(["./app"]);
+            $languageSystem->matchLineByLine(
+                '/z_language/',
+                "Deprecation Warning: The language system is being deprecated. Please update your code accordingly."
+            );
+            $languageSystem->warn();
 
             // Replace old Seed Command with new one
             $packageJson = new JsonModifier($this, "package-json-seed");
