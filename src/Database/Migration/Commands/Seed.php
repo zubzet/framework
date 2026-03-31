@@ -52,6 +52,8 @@
                 }
             }
 
+            $this->executeBufferedStatements($out);
+
             $elapsed = round(microtime(true) - $startTime, 2);
             $out->writeln("<comment>Seeding finished at: " . date("Y-m-d H:i:s") . " (took {$elapsed}s)</comment>");
 
