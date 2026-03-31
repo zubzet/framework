@@ -240,6 +240,70 @@
             ]);
         }
 
+        public function action_queryBuilderCakePHPCompat(Request $req, Response $res) {
+            $checks = [];
+
+            $checks['class_exists'] = class_exists(\Cake\Database\ValueBinder::class);
+
+            if($checks['class_exists']) {
+                $reflection = new \ReflectionClass(\Cake\Database\ValueBinder::class);
+
+                $checks['method_placeholder'] = $reflection->hasMethod('placeholder');
+                $checks['method_bind'] = $reflection->hasMethod('bind');
+                $checks['method_generateManyNamed'] = $reflection->hasMethod('generateManyNamed');
+                $checks['method_bindings'] = $reflection->hasMethod('bindings');
+
+                $checks['property__bindings'] = $reflection->hasProperty('_bindings');
+
+                if($checks['method_placeholder']) {
+                    $m = $reflection->getMethod('placeholder');
+                    $params = $m->getParameters();
+                    $checks['placeholder_param_count_1'] = count($params) === 1;
+                    $checks['placeholder_param_is_token'] = isset($params[0]) && $params[0]->getName() === 'token';
+                    $returnType = $m->getReturnType();
+                    $checks['placeholder_returns_string'] = $returnType !== null && (string)$returnType === 'string';
+                }
+
+                // bind($param, $value, $type = null): void — at least 2 params
+                if($checks['method_bind']) {
+                    $m = $reflection->getMethod('bind');
+                    $params = $m->getParameters();
+                    $checks['bind_has_at_least_2_params'] = count($params) >= 2;
+                }
+
+                // generateManyNamed(iterable $values, $type = null): array
+                if($checks['method_generateManyNamed']) {
+                    $m = $reflection->getMethod('generateManyNamed');
+                    $params = $m->getParameters();
+                    $checks['generateManyNamed_has_values_param'] = isset($params[0]) && $params[0]->getName() === 'values';
+                    $returnType = $m->getReturnType();
+                    $checks['generateManyNamed_returns_array'] = $returnType !== null && (string)$returnType === 'array';
+                }
+
+                // bindings(): array
+                if($checks['method_bindings']) {
+                    $m = $reflection->getMethod('bindings');
+                    $returnType = $m->getReturnType();
+                    $checks['bindings_returns_array'] = $returnType !== null && (string)$returnType === 'array';
+                }
+            }
+
+            $compatible = !in_array(false, $checks, true);
+
+            echo json_encode([
+                'compatible' => $compatible,
+                'checks' => $checks,
+            ]);
+        }
+
+        public function action_queryBuilderInjectionTest(Request $req, Response $res) {
+            $result = $req->getModel("QueryBuilder")->injectionTest();
+            echo json_encode([
+                'count' => count($result ?? []),
+                'result' => $result ?? [],
+            ]);
+        }
+
         public function action_sendemail_static(Request $req, Response $res) {
             $res->sendEmail("test@zierhut-it.de", "This is a Test Email Static", "email/Static", "en", [], "layout/email_layout");
         }

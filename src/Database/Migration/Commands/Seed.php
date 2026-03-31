@@ -85,31 +85,32 @@
             $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
             // Load SQL statements based on file type
-            $sqlStatements = match($extension) {
-                'sql' => (new SeedSQL())->loadSqlFile($filePath),
-                'php' => (new SeedPHP())->loadPhpSeed($filePath),
+            match($extension) {
+                'sql' => $this->executeSQLStatements($filePath),
+                'php' => $this->executePHPStatements($filePath),
             };
+        }
+
+        private function executePHPStatements($filePath) {
+            $sqlStatements = (new SeedPHP())->loadPhpSeed($filePath);
 
             if(empty($sqlStatements)) return;
 
-            // Execute the SQL statements
-            $this->executeSqlBuffer($sqlStatements);
+            foreach($sqlStatements as $query) {
+                if(!($query instanceof Query)) continue;
+                db()->execQuery($query);
+            }
         }
 
-        // Execute a buffer of SQL statements
-        private function executeSqlBuffer(array $statements): void {
+        private function executeSQLStatements($filepath) {
+            $sqlStatements = (new SeedSQL())->loadSqlFile($filepath);
+
+            if(empty($sqlStatements)) return;
             $fullQuery = "";
 
-            foreach($statements as $sql) {
-                if(is_string($sql)) {
-                    $fullQuery .= $sql . ";";
-                    continue;
-                }
-
-                if($sql instanceof Query) {
-                    $fullQuery .= db()->extractQueryBuilderSQL($sql) . ";";
-                    continue;
-                }
+            foreach($sqlStatements as $sql) {
+                if(!is_string($sql)) continue;
+                $fullQuery .= $sql . ";";
             }
 
             if(empty($fullQuery)) return;

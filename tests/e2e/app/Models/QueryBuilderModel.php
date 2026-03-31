@@ -143,6 +143,19 @@
 
             $this->exec($query);
         }
+
+
+        // Before ZubZetValueBinder, values containing :word patterns could confuse the preg_replace('/:\w+/', '?', $sql) step and shift parameter bindings.
+        // This was fixed but need to be tested to ensure no regression happens.
+        public function injectionTest() {
+            $query = $this->dbSelect("*", "injection_test")
+                            ->where([
+                                "value_1" => ":c1",
+                                "value_2" => "normal_value"
+                            ]);
+
+            return $this->exec($query)->resultToArray();
+        }
     }
 
 ?>

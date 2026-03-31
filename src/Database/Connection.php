@@ -5,6 +5,7 @@
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
     use Cake\Database\Query;
+    use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
 
     class Connection {
 
@@ -85,6 +86,54 @@
         }
 
         /**
+         * Executes a CakePHP Query object using ZubZet`s own value binder to extract the SQL and bindings, then executing it as a prepared statement
+         *
+         * @param Query $query The CakePHP Query object to execute
+         * @return Connection Returning this for chaining
+         */
+        public function execQuery(Query $query) {
+            // Use ZubZet`s own value binder to get the bindings in the format we need
+            $zubzetValueBinder = new ZubZetValueBinder();
+
+            // Get the SQL with placeholders and the bindings
+            $sql = $query->sql($zubzetValueBinder);
+            $bindings = $zubzetValueBinder->bindings();
+
+            // If there are no bindings, we can execute the query directly
+            if(empty($bindings)) return $this->exec($sql);
+
+            // We need to convert the bindings to the format required by exec()
+            $types = "";
+            $values = [];
+            foreach($bindings as $binding) {
+                $value = $binding['value'];
+                $values[] = $value;
+
+                // Determine the type for the binding
+                switch($binding['type']) {
+                    case 'integer':
+                    case 'biginteger':
+                    case 'smallinteger':
+                        $types .= 'i';
+                        break;
+                    case 'float':
+                    case 'decimal':
+                        $types .= 'd';
+                        break;
+                    case 'string':
+                    case 'text':
+                    default:
+                        $types .= 's';
+                        break;
+                }
+            }
+
+            // Execute the query with the bindings
+            return $this->exec($sql, $types, ...$values);
+        }
+
+
+        /**
          * Executes a query as prepared statement
          * @param string $query Query written as prepared statement (that thing with the question marks as placeholders)
          * @return Connection Returning this for chaining 
@@ -154,23 +203,6 @@
         public function getDatabaseConnection(): \mysqli {
             $this->assertConnection();
             return $this->conn;
-        }
-
-        public function extractQueryBuilderSQL(Query $query): string {
-            $sql = $query->sql();
-            $bindings = $query->getValueBinder()->bindings();
-
-            foreach($bindings as $key => $binding) {
-                $value = $binding['value'];
-
-                if(is_string($value)) {
-                    $value = "'" . addslashes($value) . "'";
-                }
-
-                $sql = str_replace($key, $value, $sql);
-            }
-
-            return $sql;
         }
 
         /**

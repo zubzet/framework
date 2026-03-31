@@ -63,43 +63,7 @@
          * @return Connection Returning this for chaining 
          */
         public function exec(string|Query $query, $types = "", $params = null): Connection {
-            if ($query instanceof Query) {
-                $sql = $query->sql();
-
-                $bindings = $query->getValueBinder()->bindings();
-
-                $sql = preg_replace('/:\w+/', '?', $sql);
-
-                $types = '';
-                $values = [];
-
-                foreach ($bindings as $binding) {
-                    $values[] = $binding['value'];
-
-                    switch ($binding['type']) {
-                        case 'integer':
-                        case 'biginteger':
-                        case 'smallinteger':
-                            $types .= 'i';
-                            break;
-                        case 'float':
-                        case 'decimal':
-                            $types .= 'd';
-                            break;
-                        case 'string':
-                        case 'text':
-                        default:
-                            $types .= 's';
-                            break;
-                    }
-                }
-
-                if($types === '') {
-                    return $this->z_db->exec($sql);
-                }
-
-                return $this->z_db->exec($sql, $types, ...$values);
-            }
+            if($query instanceof Query) return $this->z_db->execQuery($query);
 
             return $this->z_db->exec(...func_get_args());
         }
