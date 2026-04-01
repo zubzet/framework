@@ -1,13 +1,11 @@
 <?php
     namespace ZubZet\Framework\Database\Migration\Commands;
 
-    use Cake\Database\Query;
     use Exception;
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\ArrayInput;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
-    use Symfony\Component\Console\Output\BufferedOutput;
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
     use ZubZet\Framework\Database\Migration\Parser\SeedPHP;
@@ -46,13 +44,15 @@
 
             foreach($seedFiles as $seedFile) {
                 try {
-                    $this->importFile($seedFile);
+                    $this->importFile($seedFile, $out);
                     $out->writeln("<info>Successfully executed seed file: $seedFile</info>");
                 } catch(Exception $e) {
                     $out->writeln("<error>Error executing seed file $seedFile: {$e->getMessage()}</error>");
                     return 1;
                 }
             }
+
+            $this->executeBufferedStatements($out);
 
             $elapsed = round(microtime(true) - $startTime, 2);
             $out->writeln("<comment>Seeding finished at: " . date("Y-m-d H:i:s") . " (took {$elapsed}s)</comment>");
@@ -80,41 +80,52 @@
             $application->run($input, $out);
         }
 
+        private string $bufferedStatements = "";
+
+        private function executeBufferedStatements(OutputInterface $out) {
+            if(empty($this->bufferedStatements)) return;
+
+            $out->writeln("<comment>Executing buffered SQL statements...</comment>");
+            db()->executeMultiQuery($this->bufferedStatements);
+            $this->bufferedStatements = "";
+        }
+
         // Retrieve and execute SQL statements from a seed file
-        private function importFile($filePath) {
+        private function importFile($filePath, OutputInterface $out) {
             $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-            // Load SQL statements based on file type
-            $sqlStatements = match($extension) {
-                'sql' => (new SeedSQL())->loadSqlFile($filePath),
-                'php' => (new SeedPHP())->loadPhpSeed($filePath),
-            };
+            if(!in_array($extension, ["sql", "php"])) {
+                throw new Exception("Unsupported seed file type: $extension. Only .sql and .php files are allowed.");
+            }
+
+            if($extension == "php") {
+                // Buffered PHP seed files to avoid multiple database calls
+                $this->executeBufferedStatements($out);
+
+                // Execute the PHP seed file
+                $this->executePHPStatements($filePath);
+                return;
+            }
+
+            $this->executeSQLStatements($filePath);
+        }
+
+        private function executePHPStatements($filePath) {
+            $sqlStatements = (new SeedPHP())->loadPhpSeed($filePath);
 
             if(empty($sqlStatements)) return;
 
-            // Execute the SQL statements
-            $this->executeSqlBuffer($sqlStatements);
+            foreach($sqlStatements as $query) {
+                db()->execQuery($query);
+            }
         }
 
-        // Execute a buffer of SQL statements
-        private function executeSqlBuffer(array $statements): void {
-            $fullQuery = "";
+        private function executeSQLStatements($filepath) {
+            $sqlStatement = (new SeedSQL())->loadSqlFile($filepath);
+            if(trim($sqlStatement) === "") return;
 
-            foreach($statements as $sql) {
-                if(is_string($sql)) {
-                    $fullQuery .= $sql . ";";
-                    continue;
-                }
-
-                if($sql instanceof Query) {
-                    $fullQuery .= db()->extractQueryBuilderSQL($sql) . ";";
-                    continue;
-                }
-            }
-
-            if(empty($fullQuery)) return;
-
-            db()->executeMultiQuery($fullQuery);
+            // Buffer the SQL statements and execute them in batches to optimize performance
+            $this->bufferedStatements .= "\n-- SEED FILE: $filepath\n$sqlStatement";
         }
     }
 
