@@ -1,7 +1,7 @@
 {
     "name": "zubzet/framework",
     "description": " A lightweight PHP framework focused on rapid development, ease of use, and great portability.",
-    "license": "GPL-3.0-or-later",
+    "license": "Apache-2.0",
     "support": {
         "wiki": "https://zubzet.com/docs"
     },
@@ -12,14 +12,12 @@
         "slim/slim": "^4.14",
         "slim/psr7": "^1.7",
         "phpmailer/phpmailer": "^6.7",
-        "symfony/console": "6.* || 7.*"
+        "symfony/console": "7.* || 6.*",
+        "doctrine/dbal": "^3.10 || ^4.4"
     },
     "autoload": {
-        "classmap": [
-            "src/main.php"
-        ],
         "files": [
-            "src/Support/GlobalReferences.php"
+            "src/Aliases.php"
         ],
         "psr-4": {
             "ZubZet\\Framework\\": "src/"

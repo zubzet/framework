@@ -64,9 +64,11 @@
         }
 
         public function selectUserLimit() {
-            $query = $this->dbSelect("u.id, u.email", "z_user u")
+            $query = $this->dbSelect("u.id, u.email", ["u" => "z_user"])
                             ->limit(2)
-                            ->page(2);
+                            ->page(2)
+                            ->orderAsc("u.id");
+
             return $this->exec($query)->resultToArray();
         }
 
@@ -75,6 +77,31 @@
                             ->where(["id" => $id]);
 
             return $this->exec($query)->resultToLine();
+        }
+
+        public function selectInsert() {
+            $query = $this->dbSelect(["id", "name", "value"], "query_builder_insert");
+
+            return $this->exec($query)->resultToArray();
+        }
+
+        public function insert() {
+            $query = $this->dbInsert("query_builder_insert", [
+                "name" => "TestName1",
+                "value" => 123
+            ]);
+
+            $this->exec($query);
+
+            $query = $this->dbInsert("query_builder_insert", [
+                "name" => "TestName2",
+                "value" => 456
+            ])->values([
+                "name" => "TestName3",
+                "value" => 789
+            ]);
+
+            $this->exec($query);
         }
 
         public function insertLanguage() {
@@ -115,6 +142,19 @@
                 ->where(["id" => 1]);
 
             $this->exec($query);
+        }
+
+
+        // Before ZubZetValueBinder, values containing :word patterns could confuse the preg_replace('/:\w+/', '?', $sql) step and shift parameter bindings.
+        // This was fixed but need to be tested to ensure no regression happens.
+        public function injectionTest() {
+            $query = $this->dbSelect("*", "injection_test")
+                            ->where([
+                                "value_1" => ":c1",
+                                "value_2" => "normal_value"
+                            ]);
+
+            return $this->exec($query)->resultToArray();
         }
     }
 

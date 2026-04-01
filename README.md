@@ -12,7 +12,7 @@
   <a href="https://zubzet.com/docs"><img alt="Documentation" src="https://img.shields.io/badge/Read-the%20Docs-brightgreen?style=for-the-badge&logo=readthedocs"></a>
   <a href="https://packagist.org/packages/zubzet/framework"><img alt="Latest Release" src="https://img.shields.io/badge/Latest%20Release-Packagist-orange?style=for-the-badge&logo=packagist"></a>
   <a href="https://github.com/zubzet/framework/issues"><img alt="GitHub Issues" src="https://img.shields.io/badge/Report-Issues-yellow?style=for-the-badge&logo=bug"></a>
-  <a href="https://github.com/zubzet/framework/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&logo=open-source-initiative"></a>
+  <a href="https://github.com/zubzet/framework/blob/main/LICENSE"><img alt="Apache-2.0 License" src="https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge&logo=apache"></a>
 </p>
 
 <br>

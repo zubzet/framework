@@ -16,6 +16,7 @@ x-config-z-settings: &config-z-settings
   CONFIG_MAIL_SMTP: mailer
   CONFIG_MAIL_USER: user
   CONFIG_MAIL_PASSWORD: password
+  CONFIG_MAIL_SECURITY: false
 
 x-built-application-image: &built-application-image
   image: docker-application:latest

@@ -1,0 +1,2 @@
+ALTER TABLE `z_file`
+    MODIFY COLUMN `size` BIGINT NOT NULL;

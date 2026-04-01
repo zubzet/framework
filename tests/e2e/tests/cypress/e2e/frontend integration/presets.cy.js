@@ -42,10 +42,14 @@ describe('Core Features', () => {
             expect(exists).to.be.false;
         });
 
+        cy.intercept('POST', '**/login/signup**').as('signup');
+
         cy.query("email").click().type("creation@zierhut-it.de");
         cy.query("password").click().type("password");
         cy.query("password-confirm").click().type("password");
         cy.query("submit").click();
+
+        cy.wait('@signup');
 
         cy.visit("/Frontend/register");
 

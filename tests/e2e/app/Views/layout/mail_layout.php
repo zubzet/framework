@@ -40,6 +40,7 @@
             <?= $head($opt); ?>
         </head>
         <body>
+            <h2>mail_layout.php</h2>
             <div class="container">
                 <div class="card">
                     <?= $body($opt); ?>

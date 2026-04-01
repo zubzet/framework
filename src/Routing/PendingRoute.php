@@ -4,11 +4,16 @@ namespace ZubZet\Framework\Routing;
 
 class PendingRoute extends PendingRoutingState {
 
+    /** @var callable|array */
+    private $action;
+
     public function __construct(
         private string $method,
         private string $endpoint,
-        private array $action,
-    ) {}
+        callable|array $action,
+    ) {
+        $this->action = $action;
+    }
 
     public function __destruct() {
         Route::performRoute(

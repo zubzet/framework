@@ -1,5 +1,7 @@
 <?php
 
+    use ZubZet\Framework\ZubZet;
+
     chdir(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR);
 
     $source = getenv('COMPOSER_VENDOR_DIR') ?: "./";
@@ -7,5 +9,5 @@
 
     function model() {}
 
-    new z_framework();
+    new ZubZet();
 ?>

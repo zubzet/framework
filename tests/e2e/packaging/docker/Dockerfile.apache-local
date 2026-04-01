@@ -1,5 +1,5 @@
 # Use the official PHP Apache image (matrix-friendly: set in CI as 8.0-apache .. 8.4-apache)
-ARG PHP_TAG=8.4-apache
+ARG PHP_TAG=8.0-apache
 FROM php:${PHP_TAG}
 
 ARG DISABLE_XDEBUG=0

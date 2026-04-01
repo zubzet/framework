@@ -1,7 +1,7 @@
 <?php
 
-    use ZubZet\Framework\Permission\Role;
-    use ZubZet\Framework\Permission\User;
+    use ZubZet\Framework\Authentication\Permission\Role;
+    use ZubZet\Framework\Authentication\Permission\User;
 
     class RoleController extends z_controller {
 

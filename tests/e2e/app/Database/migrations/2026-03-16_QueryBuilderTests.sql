@@ -1,0 +1,7 @@
+CREATE TABLE `query_builder_insert` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    `value` INT NOT NULL,
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

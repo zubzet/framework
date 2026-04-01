@@ -171,8 +171,14 @@ describe('Permission System - User', () => {
     it('should be possible to create a new role', () => {
         requestJson('/role/add').then((output) => {
             expect(output).to.deep.equal({
-                "createdRoleDirect": {"id": 230,"name": "role_add_NewRole"},
-                "createdRoleGet": {"id": 230, "name": "role_add_NewRole"}
+                "createdRoleDirect":{
+                    "id": 330,
+                    "name": "role_add_NewRole"
+                },
+                "createdRoleGet":{
+                    "id": 330,
+                    "name": "role_add_NewRole"
+                }
             });
         });
     });
