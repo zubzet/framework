@@ -3,9 +3,13 @@
     namespace ZubZet\Framework\Logger;
 
     use Monolog\Handler\AbstractProcessingHandler;
-    use ZubZet\Framework\QueryBuilder\CanBuildQuery;
 
     class DatabaseLogger extends AbstractProcessingHandler {
+
+        public function __construct($level) {
+            return parent::__construct($level);
+        }
+
         protected function write(array $record): void {
             if(is_null(zubzet()->z_db)) return;
 

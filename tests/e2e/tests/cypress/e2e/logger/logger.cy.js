@@ -121,4 +121,25 @@ describe('Controllers', () => {
             });
         });
     });
+
+    describe("Logger Level", () => {
+
+        it("should only log messages that are above the configured logger level", () => {
+            setConfigSetting('logger_type', 'database');
+            setConfigSetting('logger_level', 300); // Set to DEBUG level
+            cy.visit("/logger/clearDatabaseLogs")
+
+            cy.visit("/logger/log?method=info&name=test");
+            cy.visit("/logger/log?method=warning&name=test");
+            cy.visit("/logger/log?method=error&name=test");
+
+            getDatabaseLogs().then((logs) => {
+                console.log(logs);
+                expect(logs).to.have.length(2);
+                expect(logs[0].text).to.include('[app.WARNING]');
+                expect(logs[1].text).to.include('[app.ERROR]');
+            });
+        });
+
+    });
 });

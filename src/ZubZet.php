@@ -170,9 +170,11 @@
             $logger = new Logger($name);
             $type = $this->settings["logger_type"] ?? "database";
 
+            $level = $this->settings["logger_level"] ?? 100;
+
             $handler = match($type) {
-                "database" => new DatabaseLogger(),
-                "stream" => new StreamHandler($this->settings["logger_stream_url"] ?? "php://stderr"),
+                "database" => new DatabaseLogger($level),
+                "stream" => new StreamHandler($this->settings["logger_stream_url"] ?? "php://stderr", $level),
                 default => throw new \InvalidArgumentException("Unknown logger type: $type"),
             };
 
