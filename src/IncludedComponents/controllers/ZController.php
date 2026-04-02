@@ -113,7 +113,10 @@
                         $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
                         $res->doCED("z_user_permission", $subPermissionForm, ["user" => $userId]);
                         $res->updateDatabase("z_user", "id", "i", $userId, $formResult);
-                        $res->log("user", "User $email changed", 0);
+                        logger("zubzet")->info("User account updated", [
+                            "userId" => $userId,
+                            "email" => $email
+                        ]);
                         $res->success();
                     }
                 }
@@ -216,74 +219,6 @@
                 ], "layout/z_admin_layout.php");
             }
 
-        }
-
-        /**
-         * Action for seeing the logs
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        function action_log($req, $res) {
-            $req->checkPermission("admin.log");
-
-            if ($req->getParameters(0, 1, "ajax")) {
-                $format = $req->getParameters(4, 1);
-                $data = $req->getModel("z_statistics", $res->getZRoot())->getLogTableByCategories(
-                    urldecode($req->getParameters(2, 1)),
-                    urldecode($req->getParameters(3, 1)),
-                    explode(",", $req->getParameters(1, 1))
-                );
-
-                if ($format == "json") {
-
-                    $res->generateRest([
-                        "data" => $data
-                    ]);
-
-                } elseif ($format == "csv") { //csv
-
-                    header("Content-type: text/csv");
-                    header("Content-Disposition: attachment; filename=ZIT_Log_".date("D_M_d_Y_G:i").".csv");
-                    header("Pragma: no-cache");
-                    header("Expires: 0");
-
-                    foreach ($data as $i => $row) {
-                        foreach ($row as $j => $column) {
-                            str_replace(";", "%3B",$data[$i][$j]);
-                        }
-                    }
-                    foreach ($data[0] as $key => $row) {
-                        echo $key.";";
-                    }
-                    echo "\n";
-                    foreach ($data as $row) {
-                        foreach ($row as $column) {
-                            echo $column.";";
-                        }
-                        echo "\n";
-                    }
-                    exit;
-
-                } else { //txt - might need a name
-
-                    header('Content-Type:text/plain');
-                    header("Content-Disposition: inline; filename=ZIT_Log_".date("D_M_d_Y_G:i").".txt");
-
-                    foreach ($data as $i => $row) {
-                        echo $row["created"] . ": ";
-                        echo $row["text"]. ": ";
-                        echo $row["text"];
-                        echo "\n\r";
-                    }
-                    exit;
-
-                }
-            }
-
-            $res->render("z_log.php", [
-                "log_categories" => $req->getModel("z_statistics", $res->getZRoot())->getLogCategories()
-            ], "layout/z_admin_layout.php");
         }
 
         public function action_database(Request $req, Response $res) {

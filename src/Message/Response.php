@@ -108,8 +108,11 @@
          * @param string $message Error message
          */
         public function generateRestError($code, $message) {
-            $model = model("z_general");
-            $model->logAction($model->getLogCategoryIdByName("resterror"), "Rest error (Code: $code): $message", $code);
+            logger("zubzet")->warning("Rest error", [
+                "code" => $code,
+                "message" => $message
+            ]);
+
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
 
@@ -247,9 +250,12 @@
             $this->deleteOldLoginCookieDomainScope();
 
             if ($userId == $user_exec) {
-                model("z_general")->logAction(model("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
+                logger("zubzet")->info("User logged in", ["userId" => $userId]);
             } else {
-                model("z_general")->logAction(model("z_general")->getLogCategoryIdByName("loginas"), "User $user_exec logged in.", $user_exec);
+                logger("zubzet")->info("User logged in as another user", [
+                    "userId" => $userId,
+                    "userId_exec" => $user_exec
+                ]);
             }
         }
 
@@ -311,11 +317,7 @@
             );
             $this->deleteOldLoginCookieDomainScope();
 
-            model("z_general")->logActionByCategory(
-                "logout",
-                "User logged out (" . ($user->fields["email"] ?? "~No Email~") . ")",
-                $user->fields["email"],
-            );
+            logger("zubzet")->info("User logged out", ["userId" => $user->userId]);
 
             // Return to Login as if the user was logged in as someone else
             if($user->userId != $user->execUserId) {
@@ -338,16 +340,6 @@
                     domainScope: $deleteOldCookieDomainScope,
                 );
             }
-        }
-
-        /**
-         * Logs something
-         * @param string $categoryName Name of the log category in the database
-         * @param string $text Log text
-         * @param int $value Log value
-         */
-        public function log($categoryName, $text, $value) {
-            model("z_general")->logActionByCategory($categoryName, $text, $value);
         }
 
         /**

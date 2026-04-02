@@ -67,7 +67,9 @@ use ZubZet\Framework\Authentication\Permission\User;
                     $req->getModel("z_login", $req->getZRoot())->addTooManyLoginsEmailByUserId($user["id"]);
 
                     //Log
-                    $req->getModel("z_general")->logActionByCategory("SecurityAlert", "Too many login tries. Account temporarily locked. (user ID: $user[id])", $user["id"]);
+                    logger("zubzet")->warning("Account temporarily locked due to too many login tries", [
+                        "userId" => $user["id"]
+                    ]);
 
                     $res->error("Too many login tries. Try again later.");
                 }
@@ -198,7 +200,9 @@ use ZubZet\Framework\Authentication\Permission\User;
                     );
 
                     //Log
-                    $req->getModel("z_general")->logActionByCategory("PasswordResetRequest", "Password reset requested for " . $user["email"], $user["id"]);
+                    logger("zubzet")->info("Password reset requested", [
+                        "userId" => $user["id"]
+                    ]);
                 }
 
                 $res->generateRest([
@@ -239,14 +243,10 @@ use ZubZet\Framework\Authentication\Permission\User;
                 $req->getModel("z_login", $req->getZRoot())->disableResetCode($DBResetCode["id"]);
 
                 //Log of password reset
-                $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordReset");
-                switch ($DBResetCode["reason"]) {
-                    case "forgot": $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordReset"); break;
-                    case "create": $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordCreated"); break;
-                    case "change": $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordChanged"); break;
-                }
-
-                $req->getModel("z_general")->logAction($catId, "Password reseted (UserId: $DBResetCode[userId])", $DBResetCode["userId"]);
+                logger("zubzet")->info("Password reset", [
+                    "userId" => $DBResetCode["userId"],
+                    "reason" => $DBResetCode["reason"]
+                ]);
 
                 //Rerouting back to root
                 $res->rerouteUrl();

@@ -146,60 +146,6 @@
         public function countResults() {
             return $this->z_db->countResults();
         }
-
-        /**
-         * Gets the ID of a log category. If a category does not exist, this function will create it.
-         * 
-         * @param string $name Name of the category
-         * @return int ID of the log category
-         */
-        public function getLogCategoryIdByName($name) {
-            $sql = "SELECT `id` FROM `z_interaction_log_category` WHERE LOWER(`name`) = LOWER(?)";
-            $this->exec($sql, "s", $name);
-            if ($this->countResults() > 0) {
-                return $this->resultToLine()["id"];
-            }
-
-            $sql = "INSERT INTO `z_interaction_log_category`(`name`) VALUES (?)";
-            $this->exec($sql, "s", $name);
-            return $this->getInsertId();
-
-        }
-
-        /**
-         * Logs an action.
-         * 
-         * Does not increase the insertId.
-         * 
-         * @param int $categoryId ID of the category in the database
-         * @param string $text Text
-         * @param int $value Optional value
-         */
-        public function logAction($categoryId, $text, $value = null) {
-            $user = $this->booter->user;
-            $insertId = $this->getInsertId(); //Store to restore later
-
-            $userId = $user->userId;
-            $userId_exec = $user->execUserId;
-
-            $sql = "INSERT INTO `z_interaction_log`(`categoryId`, `userId`, `userId_exec`, `text`, `value`) VALUES (?, ?, ?, ?, ?)";
-            $this->exec($sql, "iiiss", $categoryId, $userId, $userId_exec, $text, $value);
-            $this->lastInsertId = $insertId; //Ignore this insert because we won't need this id anyways
-        }
-
-        /**
-         * Logs an action.
-         *
-         * Does not increase the insertId. If the category does not exist, it will be created.
-         *
-         * @param string $categoryName Name of the category in the database.
-         * @param string $text Text
-         * @param int $value Optional value
-         */
-        public function logActionByCategory($categoryName, $text, $value = null) {
-            $catId = $this->getLogCategoryIdByName($categoryName);
-            $this->logAction($catId, $text, $value);
-        }
     }
 
 ?>

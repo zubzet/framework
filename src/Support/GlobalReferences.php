@@ -108,6 +108,16 @@
                 return response()->render($document, $opt, $options);
             }
         });
+
+        FunctionConflictResolution::requireAndThen("logger", function() {
+            function logger($name = null) {
+                if("zubzet" === $name) {
+                    return zubzet()->zubzetLogger;
+                }
+
+                return zubzet()->appLogger;
+            }
+        });
     }
 
 ?>

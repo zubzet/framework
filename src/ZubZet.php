@@ -2,6 +2,8 @@
 
     namespace ZubZet\Framework;
 
+    use Monolog\Handler\StreamHandler;
+    use Monolog\Logger;
     use ZubZet\Framework\Routing\Route;
     use ZubZet\Framework\Core\Constants;
     use ZubZet\Framework\Support\Helpers;
@@ -17,6 +19,7 @@
     use Slim\Psr7\Response as HttpResponse;
     use Slim\Exception\HttpNotFoundException;
     use Slim\Factory\ServerRequestCreatorFactory;
+    use ZubZet\Framework\Logger\DatabaseLogger;
 
     class ZubZet {
         /** @var array $settings Stores the z_framework settings */
@@ -78,6 +81,8 @@
          * @var ZubZet The instance of the framework
          */
         public static ?ZubZet $instance = null;
+        public ?Logger $zubzetLogger = null;
+        public ?Logger $appLogger = null;
 
         /**
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
@@ -110,6 +115,12 @@
                 $this->config[$key] = $value;
             }
             $this->settings = $this->config;
+
+            // Initialize the logger if enabled
+            if($this->settings["logger_enabled"] ?? false) {
+                $this->zubzetLogger = $this->createLogger("zubzet");
+                $this->appLogger = $this->createLogger("app");
+            }
 
             //Replace config file with code settings
             foreach($params as $key => $param) {
@@ -153,6 +164,20 @@
 
             // User
             $this->user = new User();
+        }
+
+        private function createLogger(string $name): Logger {
+            $logger = new Logger($name);
+            $type = $this->settings["logger_type"] ?? "database";
+
+            $handler = match($type) {
+                "database" => new DatabaseLogger(),
+                "stream" => new StreamHandler($this->settings["logger_stream_url"] ?? "php://stderr"),
+                default => throw new \InvalidArgumentException("Unknown logger type: $type"),
+            };
+
+            $logger->pushHandler($handler);
+            return $logger;
         }
 
         public function __set(string $name, mixed $value): void {
