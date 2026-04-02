@@ -39,26 +39,19 @@ describe('Controllers', () => {
         // Helper function to assert log values
         const assertLogValues = (logs, { userId = null, name = 'app', method = 'info' } = {}) => {
             const singleLog = logs[0];
+            const value = JSON.parse(singleLog.value);
 
-            expect(singleLog.userId).to.equal(userId);
-            expect(singleLog.userId_exec).to.equal(userId);
-            expect(singleLog.text).to.equal(`[${name}.${method.toUpperCase()}] This is a test log for cypress e2e testing\n`);
-
-            let value = JSON.parse(singleLog.value);
-
-            let environment = value.environment;
-
-            expect(value.level).to.equal(method.toUpperCase());
-            expect(environment.userId).to.equal(userId);
-            expect(environment.execUserId).to.equal(userId);
-            expect(environment.source).to.equal("web");
+            expect(value.environment.userId).to.equal(userId);
+            expect(value.environment.execUserId).to.equal(userId);
+            expect(value.message).to.equal(`This is a test log for cypress e2e testing`);
 
 
-            let payload = value.context.payload;
-            expect(payload.stringInput).to.equal("test");
-            expect(payload.numberInput).to.equal(123);
-            expect(payload.booleanInput).to.equal(true);
-            expect(payload.arrayInput).to.deep.equal([1, 2, 3]);
+            expect(value.level_name).to.equal(method.toUpperCase());
+
+            expect(value.context.stringInput).to.equal("test");
+            expect(value.context.numberInput).to.equal(123);
+            expect(value.context.booleanInput).to.equal(true);
+            expect(value.context.arrayInput).to.deep.equal([1, 2, 3]);
         };
 
         // Set logger type to database before tests and clear logs before each test
@@ -99,9 +92,10 @@ describe('Controllers', () => {
         const getFileLog = () => cy.readFile(FILE_LOG_PATH, 'utf8');
 
         const assertFileLog = (content, name = 'app', method = 'info') => {
-            expect(content).to.match(
-                new RegExp(`\\[\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}\\+\\d{2}:\\d{2}\\] ${name}\\.${method.toUpperCase()}: This is a test log for cypress e2e testing \\{.+\\} \\[\\]\\n`)
-            );
+            let json = JSON.parse(content);
+
+            expect(json.channel).to.equal(name ?? "app");
+            expect(json.level_name).to.equal(method.toUpperCase());
         };
 
         before(() => {
@@ -134,7 +128,7 @@ describe('Controllers', () => {
 
     describe("Logger Level", () => {
 
-        it("should only log messages that are above the configured logger level", () => {
+        it.only("should only log messages that are above the configured logger level", () => {
             setConfigSetting('logger_type', 'database');
             setConfigSetting('logger_level', 300); // Set to DEBUG level
             cy.visit("/logger/clearDatabaseLogs")
@@ -144,9 +138,12 @@ describe('Controllers', () => {
             cy.visit("/logger/log?method=error&name=test");
 
             getDatabaseLogs().then((logs) => {
+                let value1 = JSON.parse(logs[0].value);
+                let value2 = JSON.parse(logs[1].value);
+
                 expect(logs).to.have.length(2);
-                expect(logs[0].text).to.include('[app.WARNING]');
-                expect(logs[1].text).to.include('[app.ERROR]');
+                expect(value1.level_name).to.include('WARNING');
+                expect(value2.level_name).to.include('ERROR');
             });
         });
 

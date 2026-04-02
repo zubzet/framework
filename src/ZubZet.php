@@ -20,6 +20,7 @@
     use Slim\Exception\HttpNotFoundException;
     use Slim\Factory\ServerRequestCreatorFactory;
     use ZubZet\Framework\Logger\DatabaseLogger;
+    use ZubZet\Framework\Logger\StreamLogger;
 
     class ZubZet {
         /** @var array $settings Stores the z_framework settings */
@@ -174,28 +175,9 @@
 
             $handler = match($type) {
                 "database" => new DatabaseLogger($level),
-                "stream" => new StreamHandler($this->settings["logger_stream_url"] ?? "php://stderr", $level),
+                "stream" => new StreamLogger($this->settings["logger_stream_url"] ?? "php://stderr", $level),
                 default => throw new \InvalidArgumentException("Unknown logger type: $type"),
             };
-
-            $logger->pushProcessor(function($record) {
-                $value = [
-                    "level" => $record['level_name'],
-                    "message" => $record['message'],
-                    "environment" => [
-                        "userId" => user()->userId,
-                        "execUserId" => user()->execUserId,
-                        "source" => request()->isCli() ? "cli" : "web",
-                    ],
-                    "context" => [
-                        "payload" => $record['context'],
-                    ]
-                ];
-
-                $record["context"] = $value;
-
-                return $record;
-            });
 
             $logger->pushHandler($handler);
             return $logger;
