@@ -178,6 +178,25 @@
                 default => throw new \InvalidArgumentException("Unknown logger type: $type"),
             };
 
+            $logger->pushProcessor(function($record) {
+                $value = [
+                    "level" => $record['level_name'],
+                    "message" => $record['message'],
+                    "environment" => [
+                        "userId" => user()->userId,
+                        "execUserId" => user()->execUserId,
+                        "source" => request()->isCli() ? "cli" : "web",
+                    ],
+                    "context" => [
+                        "payload" => $record['context'],
+                    ]
+                ];
+
+                $record["context"] = $value;
+
+                return $record;
+            });
+
             $logger->pushHandler($handler);
             return $logger;
         }

@@ -44,11 +44,21 @@ describe('Controllers', () => {
             expect(singleLog.userId_exec).to.equal(userId);
             expect(singleLog.text).to.equal(`[${name}.${method.toUpperCase()}] This is a test log for cypress e2e testing\n`);
 
-            const value = JSON.parse(singleLog.value);
-            expect(value.stringInput).to.equal("test");
-            expect(value.numberInput).to.equal(123);
-            expect(value.booleanInput).to.equal(true);
-            expect(value.arrayInput).to.deep.equal([1, 2, 3]);
+            let value = JSON.parse(singleLog.value);
+
+            let environment = value.environment;
+
+            expect(value.level).to.equal(method.toUpperCase());
+            expect(environment.userId).to.equal(userId);
+            expect(environment.execUserId).to.equal(userId);
+            expect(environment.source).to.equal("web");
+
+
+            let payload = value.context.payload;
+            expect(payload.stringInput).to.equal("test");
+            expect(payload.numberInput).to.equal(123);
+            expect(payload.booleanInput).to.equal(true);
+            expect(payload.arrayInput).to.deep.equal([1, 2, 3]);
         };
 
         // Set logger type to database before tests and clear logs before each test
@@ -134,7 +144,6 @@ describe('Controllers', () => {
             cy.visit("/logger/log?method=error&name=test");
 
             getDatabaseLogs().then((logs) => {
-                console.log(logs);
                 expect(logs).to.have.length(2);
                 expect(logs[0].text).to.include('[app.WARNING]');
                 expect(logs[1].text).to.include('[app.ERROR]');
