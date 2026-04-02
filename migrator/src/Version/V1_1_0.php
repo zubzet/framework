@@ -75,6 +75,19 @@
                 (new RemoveFile($this, "remove-old-zubzet-migration"))->from($file);
             }
 
+            // Find usages of the ZubZets database
+            $dbUsages = new MatchingModifier($this, "zubzet-db-usages");
+            $dbUsages->from(["./app/Models"]);
+
+            foreach($statements as $statement) {
+                $dbUsages->matchLineByLine(
+                    '/`' . preg_quote($statement, '/') . '`/i',
+                    "Please do not use the ZubZet database directly."
+                );
+            }
+
+            $dbUsages->warn();
+
 
             // language system deprecation warning
             $languageSystem = new MatchingModifier($this, "language-system-deprecation");
