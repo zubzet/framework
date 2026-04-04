@@ -10,6 +10,7 @@
     use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Database\Connection;
     use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Bootstrap\Configuration;
     use ZubZet\Framework\Support\GlobalReferences;
 
     use Slim\App;
@@ -19,38 +20,10 @@
     use Slim\Factory\ServerRequestCreatorFactory;
 
     class ZubZet {
-        /** @var array $settings Stores the z_framework settings */
-        public $settings;
-
         /** @var Connection $z_db Database proxy object  */
         public $z_db;
 
-        /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
-        public $maxReroutes = 10;
-
-        /** @var int $reroutes Number of times this request was rerouted */
-        public $reroutes = 0;
-
-        /** @var string $z_framework_root Directory where the framework files live */
-        public $z_framework_root = __DIR__ . DIRECTORY_SEPARATOR;
-
-        /** @var string $z_controllers Directory in which the controllers live */
-        public $z_controllers = "app/Controllers/";
-
-        /** @var string $z_models Directory in which the models live */
-        public $z_models = "app/Models/";
-
-        /** @var string $z_views Directory of the views */
-        public $z_views = "app/Views/";
-
-        /** @var string $routes Directory of the routes */
-        public $routes = "app/Routes/";
-
-        /** @var string $config_file Path to the config file */
-        public $config_file = "z_config/z_settings.ini";
-
-        /** @var array $config An associative array of key-value config parameters  */
-        public $config = [];
+        public Configuration $configuration;
 
         /** @var \User $user The requesting user */
         public $user;
@@ -64,15 +37,6 @@
         /** @var App $slimApplication The instance of the Slim application */
         public $slimApplication;
 
-        /** @var array[] $action_pattern_replacement Replacement patterns for action names */
-        public $action_pattern_replacement = [
-            ["-", "_"],
-            [".", "§2E"],
-            ["ä", "ae"],
-            ["ö", "oe"],
-            ["ü", "ue"]
-        ];
-
         /**
          * @internal
          * @var ZubZet The instance of the framework
@@ -82,51 +46,14 @@
         /**
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
-        function __construct($params = []) {
+        function __construct(array $params = []) {
             self::$instance = $this;
             new GlobalReferences;
 
-            $param_keys = [
-                "root" => &$this->z_framework_root, 
-                "controllers" => &$this->z_controllers, 
-                "models" => &$this->z_models, 
-                "views" => &$this->z_views, 
-                "routes" => &$this->routes,
-                "config" => &$this->config_file
-            ];
-
-            foreach ($param_keys as $key => $param) {
-                if (isset($params[$key])) $param = $params[$key];
-            }
-
-            //Parse ini file with inline comments ignored
-            $ini_data = file_get_contents($this->config_file);
-            $ini_data = str_replace(";", "-----semicolon-----", $ini_data);
-            $ini_data = str_replace("#", "-----hashtag-----", $ini_data);
-            $this->config = parse_ini_string($ini_data);
-            foreach($this->config as $key => $value) {
-                $value = str_replace("-----semicolon-----", ";", $value);
-                $value = str_replace("-----hashtag-----", "#", $value);
-                $this->config[$key] = $value;
-            }
-            $this->settings = $this->config;
-
-            //Replace config file with code settings
-            foreach($params as $key => $param) {
-                if(isset($this->settings[$key])) {
-                    $this->settings[$key] = $param;
-                }
-            }
-
-            //Overwrite using environment vars
-            if($this->settings["allow_env_config"] ?? false == true) {
-                foreach($this->settings as $key => $setting) {
-                    $envName = "CONFIG_".strtoupper($key);
-                    if(false !== getenv($envName)) {
-                        $this->settings[$key] = getenv($envName);
-                    }
-                }
-            }
+            $this->configuration = new Configuration(
+                __DIR__ . DIRECTORY_SEPARATOR,
+                $params,
+            );
 
             //Error handling
             $this->updateErrorHandling();
@@ -156,17 +83,11 @@
         }
 
         public function __set(string $name, mixed $value): void {
-            if(isset($this->{$name})) {
-                $this->{$name} = $value;
-                return;
-            }
-            $this->settings[$name] = $value;
+            $this->configuration->{$name} = $value;
         }
 
         public function __get(string $name): mixed {
-            if(isset($this->{$name})) return $this->{$name};
-            if(!isset($this->settings[$name])) return null;
-            return $this->settings[$name];
+            return $this->configuration->{$name};
         }
 
         /**
@@ -277,7 +198,15 @@
             $controller = urldecode($controller);
             $method = urldecode($action);
 
-            foreach ($this->action_pattern_replacement as $apr) {
+            $actionPatternReplacement = [
+                ["-", "_"],
+                [".", "§2E"],
+                ["ä", "ae"],
+                ["ö", "oe"],
+                ["ü", "ue"]
+            ];
+
+            foreach($actionPatternReplacement as $apr) {
                 $method = str_replace($apr[0], $apr[1], $method);
                 $controller = str_replace($apr[0], $apr[1], $controller);
             }
@@ -345,6 +274,12 @@
                 $this->executePath($parts);
             }
         }
+
+        /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
+        public $maxReroutes = 10;
+
+        /** @var int $reroutes Number of times this request was rerouted */
+        public $reroutes = 0;
 
         /**
         * Executes an action for a specified path

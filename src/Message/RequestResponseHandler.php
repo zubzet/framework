@@ -61,17 +61,22 @@
          * @return mixed Value of the key
          */
         public function getBooterSettings($key = null, $useDefault = true, $default = null) {
-            if(!empty($key)) {
-                if(!isset($this->booter->settings[$key])) {
-                    if($useDefault) {
-                        return $default;
-                    }
-                    throw new \Exception("The setting '$key' does not exist!");
-                }
-                return $this->booter->settings[$key];
+            // Return all settings if no key is provided
+            if(empty($key)) {
+                return $this->booter->configuration->settings;
             }
-            return $this->booter->settings;
-        }
 
+            // Return specific setting if it exists
+            if(isset($this->booter->configuration->{$key})) {
+                return $this->booter->configuration->{$key};
+            }
+
+            // Return default if enabled
+            if($useDefault) {
+                return $default;
+            }
+
+            throw new \Exception("The setting '$key' does not exist!");
+        }
     }
 ?>

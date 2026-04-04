@@ -3,7 +3,7 @@
     class HelperController extends z_controller {
 
         public function action_zubzet(Request $req, Response $res) {
-            print_r(zubzet()->config["custom_value"]);
+            print_r(zubzet()->custom_value);
         }
 
         public function action_model(Request $req, Response $res) {

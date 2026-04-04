@@ -240,7 +240,7 @@
             $this->setCookie(
                 "z_login_token",
                 $session->token(),
-                time() + intval($this->booter->settings["loginTimeoutSeconds"]),
+                time() + intval($this->getBooterSettings("loginTimeoutSeconds")),
                 "/",
                 $this->getCookieDomainScope(),
             );
@@ -255,7 +255,7 @@
 
         public function getCookieDomainScope(): string {
             $cookieScope = "";
-            if("true" == ($this->booter->settings["login_scope_allow_subdomains"] ?? "false")) {
+            if("true" == ($this->getBooterSettings("login_scope_allow_subdomains") ?: "false")) {
                 $cookieScope = "." . $this->booter->req->getDomain();
             }
             return $cookieScope;
@@ -331,7 +331,7 @@
          * Helpful when `login_scope_allow_subdomains` is altered after users already logged in.
          */
         private function deleteOldLoginCookieDomainScope(): void {
-            $deleteOldCookieDomainScope = $this->booter->settings["login_scope_allow_subdomains_delete_domainscope_name"] ?? null;
+            $deleteOldCookieDomainScope = $this->getBooterSettings("login_scope_allow_subdomains_delete_domainscope_name");
             if (!is_null($deleteOldCookieDomainScope)) {
                 $this->unsetCookie(
                     "z_login_token",
