@@ -18,7 +18,11 @@
          * Handles the incoming request
          * Firstly, it tries to load routes from Slim, then it falls back to the ZubZet framework.
          */
-        public function execute($customUrlParts = null) {
+        public function execute(?array $customUrlParts = null) {
+            if(!is_null($customUrlParts)) {
+                request()->urlParts = $customUrlParts;
+            }
+
             // Create a new Slim App instance
             $this->slimRouter = AppFactory::create();
 
@@ -44,14 +48,9 @@
                     return;
                 }
 
-                //Be able to force custom 
-                if(isset($customUrlParts)) {
-                    $this->urlParts = $customUrlParts;
-                }
-
                 // it should perform the middleware groups matching the prefix
-                Route::performStoredGroupsMatchingPrefix($this->urlParts, function() {
-                    return $this->executePath($this->urlParts);
+                Route::performStoredGroupsMatchingPrefix(request()->getUrlParts(), function() {
+                    return $this->executePath(request()->getUrlParts());
                 });
 
                 // Return a PSR response to stop further processing
@@ -153,18 +152,20 @@
         * @param array $parts Example: ["auth", "login"]
         */
         public function executePath($parts) {
-            $this->urlParts = $parts;
+            request()->urlParts = $parts;
 
             $this->reroutes++;
-            if ($this->reroutes > $this->maxReroutes) die("Error: Too many reroutes. Please contact the webmaster.");
-
-            if (isset($parts[0])) {
-                $controller = ucfirst($parts[0]) . 'Controller';
-            } else {
-                $controller = $this->defaultIndex;
+            if($this->reroutes > $this->maxReroutes) {
+                die("Error: Too many reroutes. Please contact the webmaster.");
             }
 
-            if (isset($parts[1])) {
+            if(isset($parts[0])) {
+                $controller = ucfirst($parts[0]) . 'Controller';
+            } else {
+                $controller = config("defaultIndex", default: "DashboardController");
+            }
+
+            if(isset($parts[1])) {
                 $method = "action_" . strtolower($parts[1]);
             } else {
                 $method = "action_index";

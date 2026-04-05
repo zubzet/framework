@@ -17,12 +17,8 @@
          */
         public $booter;
 
-        /**
-         * Constructor that every request and response object should have
-         * @param ZubZet $booter The framework object
-         */
-        public function __construct($booter) {
-            $this->booter = $booter;
+        public function __construct() {
+            $this->booter = zubzet();
         }
 
         /**

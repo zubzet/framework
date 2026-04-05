@@ -8,6 +8,8 @@
     use ZubZet\Framework\Support\Rest;
     use ZubZet\Framework\Rendering\View;
     use ZubZet\Framework\Form\Validation\Result;
+    use ZubZet\Framework\Message\StateManagement\Output;
+
 
     /**
      * @var object $opt Holds options needed for rendering
@@ -29,13 +31,13 @@
          */
         public function reroute($path = [], $alias = false, $final = false) {
             if(!$alias) {
-                $this->booter->reroute($path);
+                zubzet()->reroute($path);
             } else {
-                $parts = array_values($this->booter->urlParts);
-                foreach ($path as $i => $path_part) {
-                    $parts[$i] = $path_part;
+                $parts = array_values(request()->getUrlParts());
+                foreach($path as $i => $pathPart) {
+                    $parts[$i] = $pathPart;
                 }
-                $this->booter->reroute($parts);
+                zubzet()->reroute($parts);
             }
             if($final) exit;
         }
@@ -81,7 +83,7 @@
          * Creates an upload object that handles the rest of the upload.
          * @return Upload A new instance of the Upload class
          */
-        public function upload() {
+        public function upload(): Upload {
             return new Upload;
         }
 
@@ -89,8 +91,11 @@
          * Gets a new Rest object
          * @param array $payload Data payload
          */
-        private function getNewRest($payload) {
-            return new Rest($payload, $this->booter->urlParts);
+        private function getNewRest(array $payload): Rest {
+            return new Rest(
+                $payload,
+                request()->getUrlParts(),
+            );
         }
 
         /**
@@ -98,7 +103,7 @@
          * @param array $payload Data payload
          * @param bool $die Whether to exit after generating the Rest object
          */
-        public function generateRest($payload, $die = true) {
+        public function generateRest(array $payload, bool $die = true): void {
             $this->getNewRest($payload)->execute($die);
         }
 
@@ -107,7 +112,7 @@
          * @param string $code Code
          * @param string $message Error message
          */
-        public function generateRestError($code, $message) {
+        public function generateRestError(string $code, string $message): void {
             $model = model("z_general");
             $model->logAction($model->getLogCategoryIdByName("resterror"), "Rest error (Code: $code): $message", $code);
             $this->getNewRest([$code => $message])->ShowError($code, $message);

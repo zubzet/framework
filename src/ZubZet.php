@@ -2,8 +2,8 @@
 
     namespace ZubZet\Framework;
 
-    use ZubZet\Framework\Routing\Router;
     use ZubZet\Framework\Core\Constants;
+    use ZubZet\Framework\Routing\Router;
     use ZubZet\Framework\Support\Helpers;
     use ZubZet\Framework\Message\Request;
     use ZubZet\Framework\Message\Response;
@@ -12,6 +12,7 @@
     use ZubZet\Framework\Core\CanRetrieveModel;
     use ZubZet\Framework\Bootstrap\Configuration;
     use ZubZet\Framework\Support\GlobalReferences;
+    use ZubZet\Framework\Message\StateManagement\Input;
     use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
 
     class ZubZet {
@@ -26,11 +27,13 @@
         /** @var \User $user The requesting user */
         public $user;
 
-        /** @var \Response $res A reference to an instance of the Response class */
-        public $res;
-
-        /** @var \Request $req A reference to an instance of the Request class */
+        /** @var \Request $req A reference to an instance of the current Request class */
         public $req;
+        public array $requestStack = [];
+
+        /** @var \Response $res A reference to an instance of the current Response class */
+        public $res;
+        public array $responseStack = [];
 
         /**
          * @internal
@@ -53,47 +56,29 @@
             // Error handling
             $this->setExceptionBehavior();
 
-            // Static Imports
+            // Static imports
             new Constants;
             new Helpers;
 
-            //Parse Post request
-            array_walk_recursive($_POST, function(&$item) {
-                if(substr($item, 0, 10) == "<#decb64#>") {
-                    $item = substr($item, 10);
-                    $item = base64_decode($item);
-                }
-                if(substr($item, 0, 10) == "<#decURI#>") {
-                    $item = substr($item, 10);
-                    $item = rawurldecode($item);
-                }
-            });
-
-            //processing the url
-            $this->url = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "cli");
-
-            $path = parse_url($this->url, PHP_URL_PATH) ?: "";
-            $path = trim($path, '/');
-            $this->rootDirectory = trim($this->rootDirectory, '/');
-
-            $urlParts = $path !== "" ? explode("/", $path) : [];
-
-            $this->rootDirectory = $this->rootDirectory !== "" ? explode("/", $this->rootDirectory) : [];
-            for ($i = 0; $i < count($this->rootDirectory); $i++) array_shift($urlParts);
-
-            $this->urlParts = $urlParts;
-
-            // Message System
-            $this->req = new Request($this);
-            $this->res = new Response($this);
+            // Starting the initial state of the message system
+            $this->setRequestResponse(
+                new Request(Input::fromRequest()),
+                new Response(),
+            );
 
             // Import of the database connection
-            $this->z_db = new Connection($this);
+            $this->z_db = new Connection;
 
             // User
             $this->user = new User;
         }
 
+        public function setRequestResponse(Request $request, Response $response) {
+            $this->req = $request;
+            $this->requestStack[] = $this->req;
+            $this->res = $response;
+            $this->responseStack[] = $this->res;
+        }
     }
 
 ?>
