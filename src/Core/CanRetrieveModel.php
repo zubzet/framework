@@ -3,11 +3,9 @@
     namespace ZubZet\Framework\Core;
 
     use ZubZet\Framework\Core\Model;
+    use ZubZet\Framework\Support\StaticCache;
 
     trait CanRetrieveModel {
-
-        /** @var \z_model[] Stores all already used models for this request */
-        private $modelCache = [];
 
         /**
          * Returns a model
@@ -28,8 +26,8 @@
             $path = !is_null($dir) ? $dir : config("z_models");
             $path .= "$model.php";
 
-            if(isset($this->modelCache[$model])) {
-                return $this->modelCache[$model];
+            if(StaticCache::has("model", $model)) {
+                return StaticCache::get("model", $model);
             }
 
             if(file_exists($path)) {
@@ -46,8 +44,8 @@
             $model = explode(DIRECTORY_SEPARATOR, $model);
             $model = array_pop($model);
 
-            $this->modelCache[$model] = new $model(db(), zubzet());
-            return $this->modelCache[$model];
+            $modelInstance = new $model(db(), zubzet());
+            return StaticCache::set("model", $model, $modelInstance);
         }
 
     }
