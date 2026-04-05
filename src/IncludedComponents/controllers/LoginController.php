@@ -32,7 +32,7 @@ use ZubZet\Framework\Authentication\Permission\User;
                 }
                 
                 if ($user["verified"] == NULL) {
-                    $link = $req->booter->rootFolder . "login/verify";
+                    $link = $req->getRootFolder() . "login/verify";
                     $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
                 }
                 

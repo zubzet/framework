@@ -32,9 +32,6 @@
 
             $this->overwriteAttributes($config);
 
-            $this->rootFolder = "/".$this->rootDirectory;
-            $this->root = $this->host . "/" . $this->rootDirectory;
-
             //Replace config file with code settings
             foreach($params as $key => $param) {
                 if(isset($this->{$key})) {
@@ -52,6 +49,10 @@
                 }
             }
 
+            // Format some default values to ensure they are in the expected format
+            $rootDirectory = trim((string) $this->rootDirectory, '\/');
+            $this->rootFolder = "/{$rootDirectory}";
+            $this->root = "{$this->host}/{$rootDirectory}";
         }
 
     }

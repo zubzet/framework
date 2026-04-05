@@ -11,7 +11,7 @@
 
         use Interaction;
 
-        public QueryBuilderConnection $cakePHPDatabase;
+        public QueryBuilderConnection $queryBuilderConnection;
         private \mysqli $conn;
         private \mysqli_stmt $stmt;
         public \z_framework $booter;
@@ -20,23 +20,24 @@
         public int $lastHeartbeat;
         public int $connectTimeout;
 
-        private string $user;
+        private string $host;
         private string $password;
+        private string $user;
+        private string $database;
 
-        public function __construct(\z_framework &$booter) {
-            $this->booter = $booter;
+        public function __construct() {
+            $this->booter = zubzet();
 
-            $this->cakePHPDatabase = new QueryBuilderConnection([
+            $this->queryBuilderConnection = new QueryBuilderConnection([
                 'driver' => Mysql::class,
             ]);
 
-            $this->connectTimeout = $booter->req->getBooterSettings(
-                "db_connection_timeout",
-                default: 900,
-            );
+            $this->connectTimeout = config("db_connection_timeout", default: 900);
 
-            $this->user = $booter->dbusername;
-            $this->password = $booter->dbpassword;
+            $this->host = config("dbhost");
+            $this->user = config("dbusername");
+            $this->password = config("dbpassword");
+            $this->database = config("dbname");
         }
 
         private function connect() {
@@ -45,10 +46,10 @@
 
             // Connect to the database
             $this->conn = new \mysqli(
-                $this->booter->dbhost,
+                $this->host,
                 $this->user,
                 $this->password,
-                $this->booter->dbname,
+                $this->database,
             );
 
             // Set the connection charset
