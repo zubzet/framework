@@ -4,7 +4,9 @@
 
     use ZubZet\Framework\ZubZet;
     use ZubZet\Framework\Database\Connection;
+    use ZubZet\Framework\Core\CanRetrieveModel;
     use ZubZet\Framework\QueryBuilder\CanBuildQuery;
+
 
     use Cake\Database\Query;
 
@@ -15,6 +17,7 @@
     class Model {
 
         use CanBuildQuery;
+        use CanRetrieveModel;
 
         /**
          * @var Connection $z_db Reference to the database proxy
@@ -39,20 +42,9 @@
          * @param Connection $z_db The database proxy class (Usually one lives in the booter)
          * @param ZubZet $booter Booter object
          */
-        public function __construct(&$z_db, $booter) {
-            $this->z_db =& $z_db;
+        public function __construct(Connection $z_db, ZubZet $booter) {
+            $this->z_db = $z_db;
             $this->booter = $booter;
-            $this->lastInsertId;
-        }
-
-        /**
-         * Returns a model
-         * @param string $model Name of the model
-         * @param string $dir Set this when the model is stored in a specific directory
-         * @return Model The model
-         */
-        public function getModel() { 
-            return model(...func_get_args());
         }
 
         /**

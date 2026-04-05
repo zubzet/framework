@@ -12,6 +12,8 @@
     use Psr\Http\Message\ResponseInterface;
     use Psr\Http\Message\ServerRequestInterface;
 
+    use ZubZet\Framework\ZubZet;
+
     class Route {
 
         use HttpMethod;
@@ -36,8 +38,8 @@
          *
          * @param mixed $booter The main framework class for callbacks.
          */
-        public static function init($booter): void {
-            self::$routerStack = [$booter->slimApplication];
+        public static function init(ZubZet $booter, App $slimApplication): void {
+            self::$routerStack = [$slimApplication];
         }
 
         /**
