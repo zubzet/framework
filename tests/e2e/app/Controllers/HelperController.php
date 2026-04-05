@@ -29,7 +29,7 @@
         }
 
         public function action_db(Request $req, Response $res) {
-            is_null(db()->cakePHPDatabase) ? print_r("no database") : print_r("database connected");
+            is_null(db()->queryBuilderConnection) ? print_r("no database") : print_r("database connected");
         }
 
         public function action_view(Request $req, Response $res) {

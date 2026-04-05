@@ -67,6 +67,6 @@
         * @return \Cake\Database\Connection The Query Builder instance
         */
         public function getQueryBuilder() {
-            return db()->cakePHPDatabase;
+            return db()->queryBuilderConnection;
         }
     }
