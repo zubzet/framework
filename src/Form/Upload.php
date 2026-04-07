@@ -88,7 +88,7 @@
         *
         * An implementation of the upload method with an image filter. This function will handle file uploads for you and make sure the type and the size are as defined. It also handles the movement to an upload folder. Be sure to change upload_max_filesize and post_max_size in you php.ini
         *
-        * @param string $file The file attribute from POST. Example getPost()"profile_picture")
+        * @param string $file The file attribute from POST. Example getPost("profile_picture")
         * @param string $uploadDir The path to which the file will be uploaded
         * @param string $maxSize The maximum size of the file. Use the defined constants like FILE_SIZE_2MB
         * @return int The result of the upload. This could be something like UPLOAD_SUCCESS or UPLOAD_ERROR_TOO_BIG
