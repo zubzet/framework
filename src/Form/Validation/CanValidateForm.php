@@ -10,14 +10,17 @@
         /**
          * Validates form data from the client
          * @param Field[] $fields Array of fields with the validation rules
-         * @param array $data Input for the validation. $_GET or $_POST can be used here as parameters
+         * @param array $data Input for the validation. getGet() or getPost() can be used here as parameters
          * @return Result A result to work with
          */
         public function validateForm($fields, $data = null) {
             $errors = [];
 
             if ($data == null) {
-                $data = array_merge($_POST, $_FILES);
+                $data = array_merge(
+                    request()->getPost(),
+                    request()->getFiles(),
+                );
             }
 
             $formResult = new Result();
@@ -33,7 +36,7 @@
 
                     if ($type == "required") {
 
-                        if (!((isset($data[$name]) && $data[$name] != "" ) || isset($_FILES[$name]))) {
+                        if (!((isset($data[$name]) && $data[$name] != "" ) || isset(request()->getFiles()[$name]))) {
                             $errors[] = ["name" => $name, "type" => "required"];
                         } else {
                             $value = $data[$name];
@@ -87,8 +90,8 @@
                                 $errors[] = ["name" => $name, "type" => "date"];
                             }
                         } else if ($type == "file") {
-                            if (isset($_FILES[$name])) {
-                                $file = $_FILES[$name];
+                            if (isset(request()->getFiles()[$name])) {
+                                $file = request()->getFiles()[$name];
                                 if ($file["size"] > $rule["maxSize"]) {
                                     $errors[] = ["name" => $name, "type" => "file_to_big"];
                                 }

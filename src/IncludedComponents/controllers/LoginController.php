@@ -272,8 +272,8 @@ use ZubZet\Framework\Authentication\Permission\User;
             $model = $req->getModel("z_user");
             $success = $model->verifyUser($code);
 
-            if (isset($_POST["email"])) {
-                $user = $model->getUserByEmail($_POST["email"]);
+            if (!empty($req->getPost("email"))) {
+                $user = $model->getUserByEmail($req->getPost("email"));
 
                 if (!empty($user)) {
                     $this->send_verify_mail($req, $res, $user["id"]);
