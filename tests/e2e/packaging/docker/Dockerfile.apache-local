@@ -1,26 +1,25 @@
-# Use the official PHP Apache image (matrix-friendly: set in CI as 8.0-apache .. 8.4-apache)
 ARG PHP_TAG=8.0-apache
 FROM php:${PHP_TAG}
 
 ARG DISABLE_XDEBUG=0
 ARG USER_UID=1000
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    COMPOSER_ALLOW_SUPERUSER=1
 
 # Make bash the default shell for nicer heredocs
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 USER root
 
-# Buckets to keep things readable
-ARG APT_PACKAGES="git nano curl unzip \
-  libcurl4-openssl-dev libbz2-dev libonig-dev libicu-dev libxml2-dev \
-  libjpeg62-turbo-dev libpng-dev libwebp-dev libfreetype6-dev \
-  libzip-dev zlib1g-dev \
-  libmariadb-dev-compat libmariadb-dev \
-  ${PHPIZE_DEPS}"
+# Provide install-php-extensions from a dedicated image
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-ARG PHP_EXT_CORE="bcmath bz2 calendar curl exif gd intl mbstring mysqli pdo_mysql sockets iconv session zip"
-ARG PHP_EXT_XML="xmlreader xmlwriter simplexml" # dom is built first, see below
+# Buckets to keep things readable
+ARG APT_PACKAGES="ca-certificates git nano curl unzip"
+
+# Keep the extension bucket structure similar to the original,
+# but only list extensions we actually need to install here.
+ARG PHP_EXTENSIONS="bcmath bz2 calendar curl exif gd intl mbstring mysqli pdo_mysql sockets iconv session zip xmlreader xmlwriter simplexml"
 
 RUN <<BASH
     set -euo pipefail
@@ -30,29 +29,28 @@ RUN <<BASH
     apt-get install -y --no-install-recommends ${APT_PACKAGES}
 
     # Setup PHP extensions
-    docker-php-source extract
-
-    # Install GD
-    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
-
-    # Core extensions (no DOM dependency)
-    docker-php-ext-install -j"$(nproc)" ${PHP_EXT_CORE}
-
-    # DOM must be built before XML* that include its headers
-    docker-php-ext-install -j"$(nproc)" dom
-
-    # XML* that depend on DOM
-    CFLAGS="${CFLAGS-} -I/usr/src/php" \
-    CPPFLAGS="${CPPFLAGS-} -I/usr/src/php" \
-    docker-php-ext-install -j"$(nproc)" ${PHP_EXT_XML}
+    install-php-extensions ${PHP_EXTENSIONS}
 
     # XDEBUG (conditional)
     if [[ "${DISABLE_XDEBUG}" == "1" ]]; then
         echo "Skipping Xdebug install (DISABLE_XDEBUG=1)"
     else
-        # Install Xdebug
-        pecl install xdebug
-        docker-php-ext-enable xdebug
+        php_mm="$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;')"
+
+        case "${php_mm}" in
+            8.5)
+                xdebug_pkg='xdebug-^3.5@stable'
+                ;;
+            8.0|8.1|8.2|8.3|8.4)
+                xdebug_pkg='xdebug-^3.4@stable'
+                ;;
+            *)
+                echo "Unsupported PHP version for Xdebug selection: ${php_mm}" >&2
+                exit 1
+                ;;
+        esac
+
+        install-php-extensions "${xdebug_pkg}"
 
         # Configure debugging
         {
@@ -67,21 +65,21 @@ RUN <<BASH
     a2enmod rewrite
 
     # Cleanup
-    docker-php-source delete
-    apt-get purge -y --auto-remove
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-BASH
 
-# Setup Composer
-RUN <<BASH
+    # Setup Composer
     set -euo pipefail
     php -r "copy('https://getcomposer.org/installer','/tmp/composer-setup.php');"
     php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
     rm /tmp/composer-setup.php
+
+    # Align www-data UID/GID and ownership
+    set -euo pipefail
+    mkdir -p /var/www /var/log/apache2 /run/apache2
+    groupmod -g "${USER_UID}" www-data
+    usermod -u "${USER_UID}" -g www-data www-data
+    chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
 BASH
 
-# Align www-data UID/GID and ownership
-RUN usermod -u "${USER_UID}" www-data && groupmod -g "${USER_UID}" www-data && \
-    chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
-
+WORKDIR /var/www/html
 USER www-data

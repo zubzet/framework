@@ -44,7 +44,8 @@ jobs:
           "8.1-apache",
           "8.2-apache",
           "8.3-apache",
-          "8.4-apache"
+          "8.4-apache",
+          "8.5-apache"
         ]
 
     env:
