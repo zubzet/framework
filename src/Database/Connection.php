@@ -2,10 +2,12 @@
 
     namespace ZubZet\Framework\Database;
 
+    use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
+
+    use Cake\Database\Query;
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
-    use Cake\Database\Query;
-    use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
 
     class Connection {
 
@@ -14,7 +16,7 @@
         public QueryBuilderConnection $queryBuilderConnection;
         private \mysqli $conn;
         private \mysqli_stmt $stmt;
-        public \z_framework $booter;
+        public ZubZet $booter;
 
         public int $lastConnect;
         public int $lastHeartbeat;
@@ -73,15 +75,23 @@
             }
 
             // Check if we need to reconnect due to timeout
-            if(!isset($this->lastConnect) || time() - $this->lastConnect >= $this->connectTimeout) {
-                if(!isset($this->lastHeartbeat) || time() - $this->lastHeartbeat >= $this->connectTimeout) {
-                    // Try a heartbeat to see if the connection is still alive
-                    $connectionAlive = false;
-                    try {
-                        $connectionAlive = $this->heartbeat(waitForTimeout: false);
-                    } catch(\Exception) {} finally {
-                        if(!$connectionAlive) $this->connect();
-                    }
+            if(isset($this->lastConnect) && time() - $this->lastConnect < $this->connectTimeout) {
+                return;
+            }
+
+            // Check if we recently did a heartbeat, if so we can skip the check
+            if(isset($this->lastHeartbeat) && time() - $this->lastHeartbeat < $this->connectTimeout) {
+                return;
+            }
+
+            // Try a heartbeat to see if the connection is still alive
+            $connectionAlive = false;
+
+            try {
+                $connectionAlive = $this->heartbeat(waitForTimeout: false);
+            } catch(\Exception) {} finally {
+                if(!$connectionAlive) {
+                    $this->connect();
                 }
             }
         }
