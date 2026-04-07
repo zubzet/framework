@@ -1,10 +1,10 @@
 <?php
 
-    namespace ZubZet\Framework\Message\StateManagement;
+    namespace ZubZet\Framework\Message\Input;
 
-    class Input {
+    class State {
 
-        public ?Input $previous = null;
+        public ?State $previous = null;
 
         public ?string $body;
         public array $SERVER;
@@ -15,7 +15,7 @@
         public array $SESSION;
         public array $COOKIE;
 
-        public static function fromRequest(): Input {
+        public static function fromRequest(): State {
             $input = new self();
 
             // Handle standard globals
@@ -46,7 +46,7 @@
             return $input;
         }
 
-        public static function fromOverwrite(Input $input, array $overwriteData = []): Input {
+        public static function fromOverwrite(State $input, array $overwriteData = []): State {
             $newInput = clone $input;
             $newInput->previous = &$input;
 
@@ -62,7 +62,7 @@
             return $newInput;
         }
 
-        public function withUrl(string $url): Input {
+        public function withUrl(string $url): State {
             $url = parse_url($url);
 
             if(isset($url["scheme"])) {
@@ -87,7 +87,7 @@
             return $this;
         }
 
-        public function withPath(string $path): Input {
+        public function withPath(string $path): State {
             $path = ltrim($path, "/");
             $hasQuery = !empty($this->SERVER["QUERY_STRING"]);
             $query = $hasQuery ? "?" . $this->SERVER["QUERY_STRING"] : "";
@@ -96,7 +96,7 @@
             return $this;
         }
 
-        public function withGet(array $get = []): Input {
+        public function withGet(array $get = []): State {
             $query = http_build_query($get);
             $this->SERVER["QUERY_STRING"] = $query;
 
@@ -104,40 +104,43 @@
             $this->SERVER["REQUEST_URI"] = $currentUri . (!empty($get) ? "?$query" : "");
 
             $this->GET = $get;
+            $this->updateRequest();
             return $this;
         }
 
-        public function withBody(string $body): Input {
+        public function withBody(string $body): State {
             $this->body = $body;
             return $this;
         }
 
-        public function withPost(array $post = []): Input {
+        public function withPost(array $post = []): State {
             $this->POST = $post;
+            $this->updateRequest();
             return $this;
         }
 
-        public function withFiles(array $files = []): Input {
+        public function withFiles(array $files = []): State {
             $this->FILES = $files;
             return $this;
         }
 
-        public function withSession(array $session = []): Input {
+        public function withSession(array $session = []): State {
             $this->SESSION = $session;
             return $this;
         }
 
-        public function withCookies(array $cookie = []): Input {
+        public function withCookies(array $cookie = []): State {
             $this->COOKIE = $cookie;
+            $this->updateRequest();
             return $this;
         }
 
-        public function withMethod(string $method): Input {
+        public function withMethod(string $method): State {
             $this->SERVER["REQUEST_METHOD"] = $method;
             return $this;
         }
 
-        public function withPreviousAsReferer(): Input {
+        public function withPreviousAsReferer(): State {
             if(!$this->previous) {
                 throw new \LogicException("Cannot set previous input as referer when there is no previous input.");
             }
@@ -162,9 +165,17 @@
             return $this;
         }
 
-        public function withReferer(string $referer): Input {
+        public function withReferer(string $referer): State {
             $this->SERVER["HTTP_REFERER"] = $referer;
             return $this;
+        }
+
+        private function updateRequest() {
+            $this->REQUEST = array_merge(
+                $this->GET,
+                $this->POST,
+                $this->COOKIE,
+            );
         }
     }
 

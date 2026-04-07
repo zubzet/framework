@@ -6,9 +6,9 @@
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Form\Upload;
     use ZubZet\Framework\Support\Rest;
-    use ZubZet\Framework\Rendering\View;
+    use ZubZet\Framework\Rendering\CanRenderView;
     use ZubZet\Framework\Form\Validation\Result;
-    use ZubZet\Framework\Message\StateManagement\Output;
+    use ZubZet\Framework\Message\Output\State;
 
 
     /**
@@ -21,7 +21,14 @@
      */
     class Response extends RequestResponseHandler {
 
-        use View;
+        use CanRenderView;
+
+        public State $output;
+
+        public function __construct() {
+            $this->output = new State;
+            parent::__construct();
+        }
 
         /**
          * Reroutes to another action
@@ -69,7 +76,7 @@
          * @param string $domainScope The domain scope of the cookie
          */
         public function unsetCookie(string $name, string $path = "/", string $domainScope = "") {
-            unset($_COOKIE[$name]);
+            unset(request()->input->COOKIE[$name]);
             setcookie(
                 $name,
                 '',
@@ -236,9 +243,9 @@
         /**
          * Logs the current user in as someone else
          * @param int $userId ID of the user to sudo into
-         * @param int $user_exec ID of the executing user
+         * @param ?int $user_exec ID of the executing user
          */
-        public function loginAs($userId, $user_exec = null) {
+        public function loginAs(int $userId, ?int $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
             $session = model("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
 
@@ -467,15 +474,18 @@
             foreach ($validationResult->fields as $field) {
                 if ($field->isFile) {
                     $upload = $this->upload();
-                    if(!isset($_FILES[$field->name])) {
+
+                    if(empty(request()->getFile($field->name))) {
                         $field->noSave = true;
                         continue;
-                    } //TODO: Might take required into account
+                    }
+
+                    //TODO: Might take required into account
                     $uploadCode = $upload->upload(
-                        $_FILES[$field->name], 
-                        $this->booter->req->getBooterSettings("uploadFolder", default: "uploads/"), 
-                        $field->rules["fileMaxSize"] ?? 0, 
-                        $field->rules["types"] ?? []
+                        request()->getFile($field->name),
+                        $this->booter->req->getBooterSettings("uploadFolder", default: "uploads/"),
+                        $field->rules["fileMaxSize"] ?? 0,
+                        $field->rules["types"] ?? [],
                     );
                     if ($uploadCode) $this->error("Upload error: " . $uploadCode);
                     $field->value = $upload->fileId;
@@ -495,7 +505,7 @@
             $db = $this->booter->z_db;
             $name = $validationResult->name;
 
-            foreach ($_POST[$name] as $item) {
+            foreach (request()->getPost($name) as $item) {
                 $z = $item["Z"];
 
                 if ($z == "create") {

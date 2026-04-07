@@ -2,20 +2,22 @@
 
     namespace ZubZet\Framework\Message;
 
+    use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Message\Input\State;
+    use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
     use ZubZet\Framework\Form\Validation\CanValidateMultiForm;
-    use ZubZet\Framework\Message\StateManagement\Input;
-    use ZubZet\Framework\Authentication\User;
 
     /**
      * Base class for Response and Request
      */
     class Request extends RequestResponseHandler {
 
-        use CanValidateMultiForm;
         use CanValidateForm;
+        use CanValidateMultiForm;
+        use CanRetrieveFromInput;
 
-        public function __construct(public Input $input) {
+        public function __construct(public State $input) {
             parent::__construct();
         }
 
@@ -36,7 +38,7 @@
 
         public array $urlParts;
 
-        public function getUrlParts() {
+        public function getUrlParts(): array {
             if(isset($this->urlParts)) {
                 return $this->urlParts;
             }
@@ -56,32 +58,6 @@
 
             $this->urlParts = $urlParts;
             return $this->urlParts;
-        }
-
-        /**
-         * Gets a GET parameter
-         * @param string $key The key of the parameter
-         * @param mixed $default Default value
-         * @return string|mixed The content of the GET value
-         */
-        public function getGet($key, $default = null) {
-            if(isset($this->input->GET[$key])) {
-                return $this->input->GET[$key];
-            }
-            return $default;
-        }
-
-        /**
-         * Gets a POST parameter
-         * @param string $key The key of the parameter
-         * @param mixed $default Default value
-         * @return string|mixed The content of the POST value
-         */
-        public function getPost($key, $default = null) {
-            if (isset($this->input->POST[$key])) {
-                return $this->input->POST[$key];
-            }
-            return $default;
         }
 
         /**
@@ -130,32 +106,6 @@
         public function getExecutionTime(): ?float {
             if(!isset($this->input->SERVER["REQUEST_TIME_FLOAT"])) return null;
             return microtime(true) - $this->input->SERVER["REQUEST_TIME_FLOAT"];
-        }
-
-        /**
-         * Gets a posted file
-         * @param string $key The name of the file
-         * @param mixed $default Default value if the file is not posted
-         * @return string|mixed The posted file
-         */
-        public function getFile($key, $default = null) {
-            if(isset($this->input->FILES[$key])) {
-                return $this->input->FILES[$key];
-            }
-            return $default;
-        }
-
-        /**
-         * Gets a cookie
-         * @param string $key The key of the parameter
-         * @param mixed $default Default value
-         * @return mixed Content of the cookie
-         */
-        public function getCookie($key, $default = null): ?string {
-            if(isset($this->input->COOKIE[$key])) {
-                return $this->input->COOKIE[$key];
-            }
-            return $default;
         }
 
         /**
