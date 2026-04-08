@@ -90,13 +90,11 @@
 
             // Optional log view
             try {
-                $catId = model("z_general")->getLogCategoryIdByName("view");
                 $location = implode("/", request()->getUrlParts());
-                model("z_general")->logAction(
-                    $catId,
-                    "URL viewed (User ID: " . user()->userId . " , URL: $location)",
-                    $document,
-                );
+                logger("zubzet")->info("URL viewed", [
+                    "location" => $location,
+                    "document" => $document
+                ]);
             } catch (\Exception $e) {
                 // Do not log this render to avoid having to require a database
             }

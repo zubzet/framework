@@ -71,7 +71,7 @@ use ZubZet\Framework\Authentication\Permission\User;
             $insertId = $this->getInsertId();
 
             //Log
-            $this->logActionByCategory("user", "User $email created");
+            logger("zubzet")->info("User created", ["userId" => $insertId, "email" => $email]);
 
             if ($passwordString !== null) {
                 $this->getModel("z_login")->updatePassword(
@@ -102,7 +102,7 @@ use ZubZet\Framework\Authentication\Permission\User;
             $this->exec($query, "siii", $email, $language, $id);
 
             //Log
-            $this->logAction($this->getLogCategoryIdByName("user"), "User account updated (User ID: $id)", $id);
+            logger("zubzet")->info("User account updated", ["userId" => $id]);
         }
 
         /**
