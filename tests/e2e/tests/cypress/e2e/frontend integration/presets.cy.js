@@ -10,7 +10,6 @@ describe('Core Features', () => {
         cy.query("email").click().type("admin@zierhut-it.de");
         cy.query("password").click().type("password");
         cy.query("submit").click();
-        cy.visit("/Frontend/login");
         cy.query("userid").contains("1");
     });
 

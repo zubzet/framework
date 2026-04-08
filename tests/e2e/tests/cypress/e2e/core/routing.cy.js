@@ -226,16 +226,6 @@ describe('Routing', () => {
         });
     });
 
-    it("should throw an error cause of false method", () => {
-        cy.request({
-            method: 'POST',
-            url: '/test',
-            failOnStatusCode: false
-        }).then((response) => {
-            expect(response.body.trim()).to.contains("Uncaught Slim\\Exception\\HttpMethodNotAllowedException: Method not allowed.");
-        });
-    });
-
 
     it("should check if POST method is working", () => {
         cy.request({
@@ -287,7 +277,7 @@ describe('Routing', () => {
             url: '/define-get',
             failOnStatusCode: false
         }).then((response) => {
-            expect(response.body.trim()).to.contains("Uncaught Slim\\Exception\\HttpMethodNotAllowedException: Method not allowed.");
+            expect(response.body.trim()).to.contains(".notfound");
         });
     });
 
