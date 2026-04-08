@@ -116,13 +116,13 @@
              * @param array|string $options Rendering options or layout identifier
              * @return void
              */
-            function view($document, $opt = [], $options = []) {
+            function view(string $document, array $opt = [], array|string $options = []) {
                 return response()->render($document, $opt, $options);
             }
         });
 
         FunctionConflictResolution::requireAndThen("logger", function() {
-            function logger(string $name = null): Logger {
+            function logger(?string $name = null): Logger {
                 return LoggerFactory::getOrCreateLogger($name ?? "app");
             }
         });
