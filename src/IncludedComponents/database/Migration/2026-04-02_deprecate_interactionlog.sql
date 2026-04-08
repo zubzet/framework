@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS `z_interaction_log_category`;
+ALTER TABLE `z_interaction_log` DROP COLUMN IF EXISTS `categoryId`;

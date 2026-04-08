@@ -6,6 +6,7 @@
 
     namespace {
         use ZubZet\Framework\Core\FunctionConflictResolution;
+        use ZubZet\Framework\Logger\LoggerFactory;
         use ZubZet\Framework\ZubZet;
 
         FunctionConflictResolution::requireAndThen("zubzet", function() {
@@ -75,7 +76,7 @@
              *
              * @return User The currently logged-in user
              */
-            function user(): User {
+            function user(): ?User {
                 return zubzet()->user;
             }
         });
@@ -106,6 +107,12 @@
              */
             function view($document, $opt = [], $options = []) {
                 return response()->render($document, $opt, $options);
+            }
+        });
+
+        FunctionConflictResolution::requireAndThen("logger", function() {
+            function logger($name = null) {
+                return LoggerFactory::getOrCreateLogger($name ?? "app");
             }
         });
     }
