@@ -2,6 +2,7 @@
 
     namespace ZubZet\Framework\Logger;
 
+    use Monolog\Handler\NullHandler;
     use Monolog\Logger;
     use ZubZet\Framework\Support\StaticCache;
 
@@ -35,6 +36,14 @@
             if(StaticCache::has(self::CACHE_TYPE, $name)) return StaticCache::get(self::CACHE_TYPE, $name);
 
             $logger = new Logger($name);
+
+            $enabled = config("logger_enabled", default: true);
+            if(!$enabled) {
+                // If logging is disabled, use a NullHandler to discard all log messages
+                $logger->pushHandler(new NullHandler());
+                StaticCache::set(self::CACHE_TYPE, $name, $logger);
+                return $logger;
+            }
 
             // Resolve logger type
             $type = config("logger_type", default: "database");
