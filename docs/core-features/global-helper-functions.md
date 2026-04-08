@@ -118,6 +118,26 @@ db()->exec("SELECT * FROM z_user");
 
 ---
 
+### `logger()`
+
+Returns a Monolog logger instance for the given channel.
+
+**Syntax:** `logger(string $name = null)`
+
+* **$name**: The channel name. Defaults to `"app"` if omitted.
+
+Loggers are created on first use and cached for subsequent calls with the same name. See [Logging](core-features/logging.md) for full configuration details.
+
+**Example:**
+
+```php
+logger()->info("Something happened");
+logger("payments")->warning("Timeout", ["orderId" => $id]);
+
+```
+
+---
+
 ### `view()`
 
 Renders a view template directly.
