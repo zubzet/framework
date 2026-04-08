@@ -41,11 +41,14 @@ describe('Controllers', () => {
             const singleLog = logs[0];
             const value = JSON.parse(singleLog.value);
 
-            expect(value.environment.userId).to.equal(userId);
-            expect(value.environment.execUserId).to.equal(userId);
+            console.log(value);
+
+            expect(value.extra.userId).to.equal(userId);
+            expect(value.extra.execUserId).to.equal(userId);
+            expect(value.extra.source).to.equal("web");
+
             expect(value.message).to.equal(`This is a test log for cypress e2e testing`);
-
-
+            expect(value.channel).to.equal(name);
             expect(value.level_name).to.equal(method.toUpperCase());
 
             expect(value.context.stringInput).to.equal("test");
@@ -66,7 +69,7 @@ describe('Controllers', () => {
         ];
 
         cases.forEach(({ label, name, loggedIn, method }) => {
-            it(`should be possible to log something into the Database ${label}`, () => {
+            it(`should be possible to log something into the Database ${label} with logger name ${name}`, () => {
                 if(loggedIn) cy.loginAs("admin");
 
                 let baseUrl = "/logger/log?method=" + method;
@@ -114,7 +117,7 @@ describe('Controllers', () => {
         ];
 
         cases.forEach(({ label, name, loggedIn, method }) => {
-            it(`should be possible to log something into a file stream ${label}`, () => {
+            it(`should be possible to log something into a file stream ${label} with logger name ${name}`, () => {
                 if(loggedIn) cy.loginAs("admin");
 
                 let baseUrl = "/logger/log?method=" + method;

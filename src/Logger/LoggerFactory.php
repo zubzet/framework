@@ -11,8 +11,7 @@
 
         private const CACHE_KEY = 'logger';
 
-        public static const ZUBZET = "zubzet";
-
+        public const ZUBZET = "zubzet";
 
         /**
          * Register a fully configured Logger in the cache with the given name. 
