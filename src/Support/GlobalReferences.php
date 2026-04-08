@@ -75,7 +75,7 @@
              *
              * @return User The currently logged-in user
              */
-            function user(): User {
+            function user(): ?User {
                 return zubzet()->user;
             }
         });

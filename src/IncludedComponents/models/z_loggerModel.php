@@ -4,8 +4,8 @@
 
         public function appendEnvironment(&$logRecord) {
             $logRecord["environment"] = [
-                "userId" => user()->userId,
-                "execUserId" => user()->execUserId,
+                "userId" => user()?->userId,
+                "execUserId" => user()?->execUserId,
                 "source" => request()->isCli() ? "cli" : "web",
             ];
         }
@@ -26,8 +26,8 @@
             $query = $this->dbInsert("z_interaction_log", [
                 "text" => $logRecord['message'],
                 "value" => json_encode($dataValue),
-                "userId" => user()->userId,
-                "userId_exec" => user()->execUserId,
+                "userId" => user()?->userId,
+                "userId_exec" => user()?->execUserId,
             ]);
 
             $this->exec($query);
