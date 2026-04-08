@@ -4,15 +4,15 @@
 
     class LogEventType {
 
-        public static const render = "render";
-        public static const accountLoginRateLimited = "accountLoginRateLimited";
-        public static const passwordResetRequested = "passwordResetRequested";
-        public static const passwordReset = "passwordReset";
-        public static const accountUpdated = "accountUpdated";
-        public static const userCreated = "userCreated";
-        public static const userLoggedIn = "userLoggedIn";
-        public static const userLoggedInAnother = "userLoggedInAnother";
-        public static const userLoggedOut = "userLoggedOut";
-        public static const restError = "restError";
+        public const render = "render";
+        public const accountLoginRateLimited = "accountLoginRateLimited";
+        public const passwordResetRequested = "passwordResetRequested";
+        public const passwordReset = "passwordReset";
+        public const accountUpdated = "accountUpdated";
+        public const userCreated = "userCreated";
+        public const userLoggedIn = "userLoggedIn";
+        public const userLoggedInAnother = "userLoggedInAnother";
+        public const userLoggedOut = "userLoggedOut";
+        public const restError = "restError";
 
     }
