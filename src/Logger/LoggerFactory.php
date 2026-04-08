@@ -10,6 +10,9 @@
 
         private const CACHE_TYPE = 'loggers';
 
+        public static const ZUBZET = "zubzet";
+
+
         /**
          * Register a fully configured Logger in the cache with the given name. 
          * This allows you to create and configure a Logger instance manually and 

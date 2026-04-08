@@ -4,6 +4,8 @@
      */
 
 use ZubZet\Framework\Authentication\Permission\User;
+use ZubZet\Framework\Logger\LogEventType;
+use ZubZet\Framework\Logger\LoggerFactory;
 
     /**
      * User Model
@@ -71,7 +73,7 @@ use ZubZet\Framework\Authentication\Permission\User;
             $insertId = $this->getInsertId();
 
             //Log
-            logger("zubzet")->info("User created", ["userId" => $insertId, "email" => $email]);
+            logger(LoggerFactory::ZUBZET)->info(LogEventType::userCreated, ["userId" => $insertId, "email" => $email]);
 
             if ($passwordString !== null) {
                 $this->getModel("z_login")->updatePassword(
@@ -102,7 +104,7 @@ use ZubZet\Framework\Authentication\Permission\User;
             $this->exec($query, "siii", $email, $language, $id);
 
             //Log
-            logger("zubzet")->info("User account updated", ["userId" => $id]);
+            logger(LoggerFactory::ZUBZET)->info(LogEventType::accountUpdated, ["userId" => $id]);
         }
 
         /**

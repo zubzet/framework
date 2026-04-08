@@ -4,6 +4,8 @@
      */
 
 use ZubZet\Framework\Authentication\Permission\User;
+use ZubZet\Framework\Logger\LogEventType;
+use ZubZet\Framework\Logger\LoggerFactory;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -67,7 +69,7 @@ use ZubZet\Framework\Authentication\Permission\User;
                     $req->getModel("z_login", $req->getZRoot())->addTooManyLoginsEmailByUserId($user["id"]);
 
                     //Log
-                    logger("zubzet")->warning("Account temporarily locked due to too many login tries", [
+                    logger(LoggerFactory::ZUBZET)->warning(LogEventType::accountLoginRateLimited, [
                         "userId" => $user["id"]
                     ]);
 
@@ -200,7 +202,7 @@ use ZubZet\Framework\Authentication\Permission\User;
                     );
 
                     //Log
-                    logger("zubzet")->info("Password reset requested", [
+                    logger(LoggerFactory::ZUBZET)->info(LogEventType::passwordResetRequested, [
                         "userId" => $user["id"]
                     ]);
                 }
@@ -243,7 +245,7 @@ use ZubZet\Framework\Authentication\Permission\User;
                 $req->getModel("z_login", $req->getZRoot())->disableResetCode($DBResetCode["id"]);
 
                 //Log of password reset
-                logger("zubzet")->info("Password reset", [
+                logger(LoggerFactory::ZUBZET)->info(LogEventType::passwordReset, [
                     "userId" => $DBResetCode["userId"],
                     "reason" => $DBResetCode["reason"]
                 ]);

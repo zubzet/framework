@@ -8,6 +8,8 @@
     use ZubZet\Framework\Support\Rest;
     use ZubZet\Framework\Rendering\CanRenderView;
     use ZubZet\Framework\Form\Validation\Result;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Message\Output\State;
 
 
@@ -120,7 +122,7 @@
          * @param string $message Error message
          */
         public function generateRestError($code, $message) {
-            logger("zubzet")->warning("Rest error", [
+            logger(LoggerFactory::ZUBZET)->warning(LogEventType::restError, [
                 "code" => $code,
                 "message" => $message
             ]);
@@ -262,9 +264,9 @@
             $this->deleteOldLoginCookieDomainScope();
 
             if ($userId == $user_exec) {
-                logger("zubzet")->info("User logged in", ["userId" => $userId]);
+                logger(LoggerFactory::ZUBZET)->info(LogEventType::userLoggedIn, ["userId" => $userId]);
             } else {
-                logger("zubzet")->info("User logged in as another user", [
+                logger(LoggerFactory::ZUBZET)->info(LogEventType::userLoggedInAnother, [
                     "userId" => $userId,
                     "userId_exec" => $user_exec
                 ]);
@@ -329,7 +331,7 @@
             );
             $this->deleteOldLoginCookieDomainScope();
 
-            logger("zubzet")->info("User logged out", ["userId" => $user->userId]);
+            logger(LoggerFactory::ZUBZET)->info(LogEventType::userLoggedOut, ["userId" => $user->userId]);
 
             // Return to Login as if the user was logged in as someone else
             if($user->userId != $user->execUserId) {

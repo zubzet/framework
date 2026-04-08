@@ -2,6 +2,8 @@
 
     namespace ZubZet\Framework\Rendering;
 
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Rendering\ViewNotFoundException;
 
     trait CanRenderView {
@@ -91,7 +93,7 @@
             // Optional log view
             try {
                 $location = implode("/", request()->getUrlParts());
-                logger("zubzet")->info("URL viewed", [
+                logger(LoggerFactory::ZUBZET)->info(LogEventType::render, [
                     "location" => $location,
                     "document" => $document
                 ]);
