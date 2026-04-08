@@ -7,9 +7,13 @@
     class DatabaseLogger extends AbstractProcessingHandler {
 
         protected function write(array $record): void {
-            if(is_null(zubzet()->z_db)) return;
+            // There might be logs before a database connection or in case of a connection failure
+            // Which could still be caught using a different logger
+            if(is_null(db(allowUnsetConnection: true))) return;
 
             // Log the record using the z_logger model, which handles normalization and encoding
             model("z_logger")->log($record);
         }
     }
+
+?>

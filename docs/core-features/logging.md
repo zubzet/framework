@@ -20,12 +20,12 @@ When disabled, all `logger()` calls still work but write to a `NullHandler` — 
 
 All logger settings are configured in `z_config/z_settings.ini`.
 
-| Key                 | Type    | Default        | Description                                                  |
-| ------------------- | ------- | -------------- | ------------------------------------------------------------ |
-| `logger_enabled`    | boolean | `true`         | Enables or disables the logging system entirely              |
-| `logger_type`       | string  | `database`     | The logger backend to use: `database` or `stream`            |
-| `logger_level`      | string  | `debug`        | Minimum log level to record (see levels below)               |
-| `logger_stream_url` | string  | `php://stderr` | Stream target — only used when `logger_type = stream`        |
+| Key                 | Type    | Default        | Description                                                    |
+| ------------------- | ------- | -------------- | -------------------------------------------------------------- |
+| `logger_enabled`    | boolean | `true`         | Enables or disables the logging system entirely                |
+| `logger_type`       | string  | `database`     | The logger backend to use: `database` or `stream`              |
+| `logger_level`      | string  | `debug`        | Minimum log level to record (see levels below) Default: notice |
+| `logger_stream_url` | string  | `php://stderr` | Stream target — only used when `logger_type = stream`          |
 
 ### Log Levels
 

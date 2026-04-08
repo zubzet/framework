@@ -5,9 +5,14 @@
     }
 
     namespace {
-        use ZubZet\Framework\Core\FunctionConflictResolution;
-        use ZubZet\Framework\Logger\LoggerFactory;
+        use Monolog\Logger;
         use ZubZet\Framework\ZubZet;
+        use ZubZet\Framework\Message\Request;
+        use ZubZet\Framework\Message\Response;
+        use ZubZet\Framework\Authentication\User;
+        use ZubZet\Framework\Logger\LoggerFactory;
+        use ZubZet\Framework\Core\FunctionConflictResolution;
+        use ZubZet\Framework\Database\Connection;
 
         FunctionConflictResolution::requireAndThen("zubzet", function() {
             /**
@@ -86,11 +91,17 @@
              * Proxy to the loaded database connection
              *
              * @throws InvalidArgumentException If a non-default connection is requested.
-             * @return z_db Loaded database connection
+             * @return ?Connection Loaded database connection
              */
-            function db($connection = "default"): z_db {
+            function db(string $connection = "default", bool $allowUnsetConnection = false): ?Connection {
                 if("default" !== $connection) {
                     throw new \InvalidArgumentException("Only the default connection is supported so far.");
+                }
+                if($allowUnsetConnection && !isset(zubzet()->z_db)) {
+                    return null;
+                }
+                if(!(zubzet()->z_db instanceof Connection)) {
+                    throw new RuntimeException("The database connection is not yet available.");
                 }
                 return zubzet()->z_db;
             }
@@ -111,7 +122,7 @@
         });
 
         FunctionConflictResolution::requireAndThen("logger", function() {
-            function logger($name = null) {
+            function logger(string $name = null): Logger {
                 return LoggerFactory::getOrCreateLogger($name ?? "app");
             }
         });

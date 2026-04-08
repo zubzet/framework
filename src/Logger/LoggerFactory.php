@@ -2,13 +2,14 @@
 
     namespace ZubZet\Framework\Logger;
 
-    use Monolog\Handler\NullHandler;
+    use Psr\Log\LoggerInterface;
     use Monolog\Logger;
+    use Monolog\Handler\NullHandler;
     use ZubZet\Framework\Support\StaticCache;
 
     class LoggerFactory {
 
-        private const CACHE_TYPE = 'loggers';
+        private const CACHE_KEY = 'logger';
 
         public static const ZUBZET = "zubzet";
 
@@ -19,11 +20,11 @@
          * then register it for future use.
          *
          * @param string $name The name of the logger to register
-         * @param Logger $logger The fully configured Logger instance to register
+         * @param Logger|LoggerInterface $logger The fully configured Logger instance to register
          * @return Logger The registered Logger instance
          */
-        public static function register(string $name, Logger $logger): Logger {
-            return StaticCache::set(self::CACHE_TYPE, $name, $logger);
+        public static function register(string $name, Logger|LoggerInterface $logger): Logger {
+            return StaticCache::set(self::CACHE_KEY, $name, $logger);
         }
 
         /**
@@ -36,7 +37,9 @@
          */
         public static function getOrCreateLogger(string $name): Logger {
             // Check if the logger already exists in the cache
-            if(StaticCache::has(self::CACHE_TYPE, $name)) return StaticCache::get(self::CACHE_TYPE, $name);
+            if(StaticCache::has(self::CACHE_KEY, $name)) {
+                return StaticCache::get(self::CACHE_KEY, $name);
+            }
 
             $logger = new Logger($name);
 
@@ -44,15 +47,14 @@
             if(!$enabled) {
                 // If logging is disabled, use a NullHandler to discard all log messages
                 $logger->pushHandler(new NullHandler());
-                StaticCache::set(self::CACHE_TYPE, $name, $logger);
-                return $logger;
+                return StaticCache::set(self::CACHE_KEY, $name, $logger);
             }
 
             // Resolve logger type
             $type = config("logger_type", default: "database");
 
             // Resolve logger level
-            $loggerLevel = config("logger_level", default: "debug");
+            $loggerLevel = config("logger_level", default: "notice");
             $loggerLevel = Logger::toMonologLevel($loggerLevel);
 
             $loggerStreamUrl = config("logger_stream_url", default: "php://stderr");
@@ -61,16 +63,14 @@
             $handler = match($type) {
                 "database" => new DatabaseLogger(),
                 "stream" => new StreamLogger($loggerStreamUrl),
-                default => throw new \Exception("Invalid logger type: $type")
+                default => throw new \InvalidArgumentException("Invalid logger type: $type, Use database or stream in your config")
             };
 
             $handler->setLevel($loggerLevel);
             $logger->pushHandler($handler);
 
             // Cache the logger instance for future use
-            StaticCache::set(self::CACHE_TYPE, $name, $logger);
-
-            return $logger;
+            return StaticCache::set(self::CACHE_KEY, $name, $logger);
         }
 
     }
