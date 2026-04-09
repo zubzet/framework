@@ -19,8 +19,8 @@
 
             $result = new Result();
 
-            if(isset(request()->getPost()[$name])) {
-                $array = request()->getPost()[$name];
+            $array = $this->getPost($name);
+            if(isset($array)) {
                 foreach ($array as $i => $subform) {
                     $subResult = $this->validateForm($rules, $subform);
                     $subErrors = $subResult->errors;
