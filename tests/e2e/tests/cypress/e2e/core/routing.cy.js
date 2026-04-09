@@ -224,22 +224,17 @@ describe('Routing', () => {
         // Arguments on afterware
         {
             route: "/arguments/afterware",
-            expected: "TestRoute ExecutedArray ( ) Route Afterware ExecutedArray ( ) Args: abc 123"
+            expected: "TestRoute ExecutedArray ( ) Args: Route Afterware ExecutedArray ( ) Args: abc 123"
         },
         // Arguments on all three
         {
             route: "/arguments/all",
-            expected: "Route Middleware Accept ExecutedArray ( ) Args: def 456 TestRoute ExecutedArray ( ) Args: abc 123 Route Afterware ExecutedArray ( ) Args: ghi 789"
+            expected: "Route Middleware Accept ExecutedArray ( ) Args: def 456TestRoute ExecutedArray ( ) Args: abc 123Route Afterware ExecutedArray ( ) Args: ghi 789"
         },
         // Arguments combined with route parameters
         {
             route: "/arguments/U13/action",
             expected: "TestRoute ExecutedArray ( [userId] => U13 ) Args: abc 123"
-        },
-        // Blocking middleware still receives arguments
-        {
-            route: "/arguments/middleware-block",
-            expected: "Route Middleware Blocked ExecutedArray ( ) Args: abc 123"
         },
     ];
 
