@@ -117,7 +117,7 @@ jobs:
           docker exec application composer install --no-interaction --prefer-dist --no-progress
 
       - name: Seed database
-        run: docker exec application php app/Database/import.php
+        run: docker exec application php index.php db:seed
 
       - name: Run E2E tests (Cypress)
         env:
