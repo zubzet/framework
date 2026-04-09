@@ -113,7 +113,7 @@
          * @return string Returns the current URL, consisting of the configured host and the actual current path
          */
         public function getCurrentURL(): string {
-            return config("host") . $this->input->SERVER['REQUEST_URI'];
+            return config("host") . ($this->input->SERVER['REQUEST_URI'] ?? "");
         }
 
         /**
