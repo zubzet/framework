@@ -22,10 +22,10 @@
         public int $lastHeartbeat;
         public int $connectTimeout;
 
-        private string $host;
-        private string $password;
-        private string $user;
-        private string $database;
+        private ?string $host;
+        private ?string $password;
+        private ?string $user;
+        private ?string $database;
 
         public function __construct() {
             $this->booter = zubzet();
@@ -45,6 +45,20 @@
         private function connect() {
             // Make sure no previous connection exists
             $this->disconnect();
+
+            // Validate that all required config keys are present if using the database connection
+            $missing = array_keys(array_filter([
+                'dbhost' => $this->host,
+                'dbusername' => $this->user,
+                'dbpassword' => $this->password,
+                'dbname' => $this->database,
+            ], fn($v) => empty($v)));
+
+            if(!empty($missing)) {
+                throw new \RuntimeException(
+                    "Database connection requires valid configuration. Missing or empty config key(s): " . implode(', ', $missing)
+                );
+            }
 
             // Connect to the database
             $this->conn = new \mysqli(
