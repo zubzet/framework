@@ -86,7 +86,8 @@
             // Execute collected middlewares and exit if any returns any other than true
             foreach($toExecuteMiddlewares as $toExecuteMiddleware) {
                 [$class, $method] = $toExecuteMiddleware;
-                $result = self::callControllerAction($class, $method);
+                $arguments = array_slice($toExecuteMiddleware, 2); // Extract additional arguments if provided
+                $result = self::callControllerAction($class, $method, arguments: $arguments);
                 if($result !== true) exit;
             }
 
@@ -96,7 +97,8 @@
             // Execute after middlewares
             foreach($toExecuteAfterMiddlewares as $toExecuteAfterMiddleware) {
                 [$class, $method] = $toExecuteAfterMiddleware;
-                self::callControllerAction($class, $method);
+                $arguments = array_slice($toExecuteAfterMiddleware, 2); // Extract additional arguments if provided
+                self::callControllerAction($class, $method, arguments: $arguments);
             }
         }
 
@@ -141,9 +143,10 @@
             $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares) {
                 foreach($effectiveMiddlewares as $middleware) {
                     [$middlewareClass, $middlewareMethod] = $middleware;
+                    $arguments = array_slice($middleware, 2); // Extract additional arguments if provided
 
                     // Execute the middleware and check its result.
-                    $result = self::callControllerAction($middlewareClass, $middlewareMethod, $args);
+                    $result = self::callControllerAction($middlewareClass, $middlewareMethod, $args, $arguments);
 
                     // Stop processing if middleware returns any other than true.
                     if($result !== true) {
@@ -156,13 +159,15 @@
                     self::performCallableAction($action, $args);
                 } else {
                     [$controllerClass, $actionMethod] = $action;
-                    self::callControllerAction($controllerClass, $actionMethod, $args);
+                    $arguments = array_slice($action, 2); // Extract additional arguments if provided
+                    self::callControllerAction($controllerClass, $actionMethod, $args, $arguments);
                 }
 
                 // After the main action, execute after middlewares.
                 foreach($effectiveAfterMiddlewares as $afterMiddlewareState) {
                     [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState;
-                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
+                    $arguments = array_slice($afterMiddlewareState, 2); // Extract additional arguments if provided
+                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args, $arguments);
                 }
             };
 
@@ -250,8 +255,8 @@
             return $afterMiddlewares;
         }
 
-        private static function callControllerAction(string $class, string $method, array $args = []): mixed {
-            return zubzet()->executeControllerAction($class, $method, $args);
+        private static function callControllerAction(string $class, string $method, array $args = [], array $arguments = []): mixed {
+            return zubzet()->executeControllerAction($class, $method, $args, $arguments);
         }
     }
 

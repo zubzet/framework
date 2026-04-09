@@ -92,7 +92,7 @@
             return $this->routeDispatcher;
         }
 
-        public function executeControllerAction($controller, $action, array $params = []) {
+        public function executeControllerAction($controller, $action, array $params = [], array $arguments = []) {
             $this->req->urlParameters = $params;
 
             $controller = urldecode($controller);
@@ -131,12 +131,12 @@
             try {
                 $CTRL_obj = new $controller($this->req, $this->res);
                 if (method_exists($controller, $method)) {
-                    return $CTRL_obj->{$method}($this->req, $this->res);
+                    return $CTRL_obj->{$method}($this->req, $this->res, ...$arguments);
                 } else {
                     //Checks if the fallback method exists before rerouting to the 404 page
                     $method = "action_fallback";
                     if (method_exists($controller, $method)) {
-                        return $CTRL_obj->{$method}($this->req, $this->res);
+                        return $CTRL_obj->{$method}($this->req, $this->res, ...$arguments);
                     } else {
                         return $this->executePath(["error", "404"]);
                     }

@@ -184,6 +184,29 @@
             print_r($req->getRouteParameter());
         }
 
+        // Action which prints arguments
+        public function TestRoute_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
+            print_r("TestRoute Executed");
+            print_r($req->getRouteParameter());
+            echo " Args: $arg1 $arg2";
+        }
+
+        // Middleware which prints and accepts
+        public function Route_Middleware_Accept_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
+            print_r("Route Middleware Accept Executed");
+            print_r($req->getRouteParameter());
+            echo " Args: $arg1 $arg2";
+            return true;
+        }
+
+        // Afterware which prints arguments
+        public function Route_Afterware_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
+            print_r("Route Afterware Executed");
+            print_r($req->getRouteParameter());
+            echo " Args: $arg1 $arg2";
+        }
+        
+
 
         /**
          * Testing the Query Builder

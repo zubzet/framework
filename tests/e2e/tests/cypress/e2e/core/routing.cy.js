@@ -211,6 +211,36 @@ describe('Routing', () => {
             route: "/accept-afterware-parameters/U13/P12/middleware-block-afterware",
             expected: "Group Middleware Accept ExecutedArray ( [userId] => U13 [postId] => P12 ) Route Middleware Blocked ExecutedArray ( [userId] => U13 [postId] => P12 ) "
         },
+        // Arguments on action
+        {
+            route: "/arguments/action",
+            expected: "TestRoute ExecutedArray ( ) Args: abc 123"
+        },
+        // Arguments on middleware (accept)
+        {
+            route: "/arguments/middleware-accept",
+            expected: "Route Middleware Accept ExecutedArray ( ) Args: abc 123 TestRoute ExecutedArray ( )"
+        },
+        // Arguments on afterware
+        {
+            route: "/arguments/afterware",
+            expected: "TestRoute ExecutedArray ( ) Route Afterware ExecutedArray ( ) Args: abc 123"
+        },
+        // Arguments on all three
+        {
+            route: "/arguments/all",
+            expected: "Route Middleware Accept ExecutedArray ( ) Args: def 456 TestRoute ExecutedArray ( ) Args: abc 123 Route Afterware ExecutedArray ( ) Args: ghi 789"
+        },
+        // Arguments combined with route parameters
+        {
+            route: "/arguments/U13/action",
+            expected: "TestRoute ExecutedArray ( [userId] => U13 ) Args: abc 123"
+        },
+        // Blocking middleware still receives arguments
+        {
+            route: "/arguments/middleware-block",
+            expected: "Route Middleware Blocked ExecutedArray ( ) Args: abc 123"
+        },
     ];
 
     it('should check the Routing-System with all routes', () => {
