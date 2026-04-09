@@ -34,6 +34,12 @@
             }
 
             $uri = rawurldecode($uri);
+
+            // Strip trailing slashes internally so /test/abc/ matches the same route as /test/abc
+            if($uri !== '/') {
+                $uri = rtrim($uri, '/');
+            }
+
             $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
             switch($routeInfo[0]) {
