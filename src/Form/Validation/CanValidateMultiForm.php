@@ -20,7 +20,7 @@
             $result = new Result();
 
             $array = $this->getPost($name);
-            if(isset($array)) {
+            if(is_array($array)) {
                 foreach ($array as $i => $subform) {
                     $subResult = $this->validateForm($rules, $subform);
                     $subErrors = $subResult->errors;
