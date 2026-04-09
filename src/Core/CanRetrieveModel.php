@@ -23,11 +23,16 @@
             }
 
             $model .= "Model";
+
+            // Cache key is the model name with "Model" suffix. Its for caching the model instance
+            // If the model is in a subdirectory, the cache key will be the model name with the subdirectory path.
+            // This is to avoid cache conflicts between models with the same name in different directories.
+            $cacheKey = $model;
             $path = !is_null($dir) ? $dir : config("z_models");
             $path .= "$model.php";
 
-            if(StaticCache::has("model", $model)) {
-                return StaticCache::get("model", $model);
+            if(StaticCache::has("model", $cacheKey)) {
+                return StaticCache::get("model", $cacheKey);
             }
 
             if(file_exists($path)) {
@@ -45,7 +50,7 @@
             $model = array_pop($model);
 
             $modelInstance = new $model(db(), zubzet());
-            return StaticCache::set("model", $model, $modelInstance);
+            return StaticCache::set("model", $cacheKey, $modelInstance);
         }
 
     }
