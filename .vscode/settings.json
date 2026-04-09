@@ -1,0 +1,16 @@
+{
+    "path-mapper": [
+        {
+            "match": "/var/www/framework/",
+            "replace": "${workspaceFolder}/"
+        },
+        {
+            "match": "/var/www/html/",
+            "replace": "${workspaceFolder}/tests/e2e/"
+        },
+        {
+            "match": "/var/www/vendor/",
+            "replace": "${workspaceFolder}/vendor/"
+        }
+    ]
+}

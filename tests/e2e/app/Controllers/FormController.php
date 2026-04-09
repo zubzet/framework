@@ -143,7 +143,7 @@
                     }
 
                     if(!$req->getModel("Form")->uploadFile(
-                        $_FILES["file"],
+                        $req->getFile("file"),
                         "uploads/",
                         $res->getZRoot()
                     )) {
@@ -173,7 +173,7 @@
                 // Upload Validation
                 $upload = $res->upload();
                 if ($upload->upload(
-                    $_FILES["file"],
+                    $req->getFile("file"),
                     "uploads/",
                     262144, //250 KB
                     ["pdf"]

@@ -2,9 +2,11 @@
 
     namespace ZubZet\Framework\Rendering;
 
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Rendering\ViewNotFoundException;
 
-    trait View {
+    trait CanRenderView {
 
         /**
          * @internal
@@ -90,13 +92,11 @@
 
             // Optional log view
             try {
-                $catId = model("z_general")->getLogCategoryIdByName("view");
-                $location = $_SERVER['REQUEST_URI'] ?? "console";
-                model("z_general")->logAction(
-                    $catId,
-                    "URL viewed (User ID: " . user()->userId . " , URL: $location)",
-                    $document,
-                );
+                $location = implode("/", request()->getUrlParts());
+                logger(LoggerFactory::ZUBZET)->info(LogEventType::render, [
+                    "location" => $location,
+                    "document" => $document
+                ]);
             } catch (\Exception $e) {
                 // Do not log this render to avoid having to require a database
             }

@@ -2,13 +2,29 @@
 
     namespace ZubZet\Framework\Message;
 
-    use ZubZet\Framework\Form\Validation\Field;
-    use ZubZet\Framework\Form\Validation\Result;
+    use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Message\Input\State;
+    use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
+    use ZubZet\Framework\Form\Validation\CanValidateForm;
+    use ZubZet\Framework\Form\Validation\CanValidateMultiForm;
 
     /**
      * Base class for Response and Request
      */
     class Request extends RequestResponseHandler {
+
+        use CanValidateForm;
+        use CanValidateMultiForm;
+        use CanRetrieveFromInput;
+
+        public function __construct(public State $input) {
+            parent::__construct();
+        }
+
+        /**
+         * @var array Store values within the Request to pass through data within internal redirects
+         */
+        public array $store = [];
 
         public array $urlParameters = [];
 
@@ -20,62 +36,45 @@
             return $this->urlParameters;
         }
 
-        /**
-         * @var array Store values within the Request to pass through data within internal redirects
-         */
-        public array $store = [];
+        public array $urlParts;
 
-        /**
-         * Gets a GET parameter
-         * @param string $key The key of the parameter
-         * @param mixed $default Default value
-         * @return string|mixed The content of the GET value
-         */
-        public function getGet($key, $default = null) {
-            if (isset($_GET[$key])) {
-                return $_GET[$key];
+        public function getUrlParts(): array {
+            if(isset($this->urlParts)) {
+                return $this->urlParts;
             }
-            return $default;
-        }
 
-        /**
-         * Gets a POST parameter
-         * @param string $key The key of the parameter
-         * @param mixed $default Default value
-         * @return string|mixed The content of the POST value
-         */
-        public function getPost($key, $default = null) {
-            if (isset($_POST[$key])) {
-                return $_POST[$key];
+            // Parse the path
+            $path = $this->input->SERVER['REQUEST_URI'] ?? "";
+            $path = parse_url($path, PHP_URL_PATH) ?: "";
+            $path = trim($path, '/');
+
+            $urlParts = empty($path) ? [] : explode("/", $path);
+            if(!empty(config("rootDirectory"))) {
+                $rootDirectoryLength = count(explode("/", config("rootDirectory")));
+                for($i = 0; $i < $rootDirectoryLength; $i++) {
+                    array_shift($urlParts);
+                }
             }
-            return $default;
+
+            $this->urlParts = $urlParts;
+            return $this->urlParts;
         }
 
         /**
          * Gets the IP of a request
-         * @return bool|string The IP of the client. False if no IP is detected
+         * @return ?string The IP of the client. False if no IP is detected
          */
-        public function ip() {
-            $ip = null;
-            if(!empty($_SERVER['HTTP_CLIENT_IP'])) {
-                $ip = $_SERVER['HTTP_CLIENT_IP'];
-            } else if(!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            } else if(!empty($_SERVER['REMOTE_ADDR'])) {
-                $ip = $_SERVER['REMOTE_ADDR'];
-            } else if (getenv('HTTP_CLIENT_IP')) {
-                $ip = getenv('HTTP_CLIENT_IP');
-            } else if(getenv('HTTP_X_FORWARDED_FOR')) {
-                $ip = getenv('HTTP_X_FORWARDED_FOR');
-            } else if(getenv('HTTP_X_FORWARDED')) {
-                $ip = getenv('HTTP_X_FORWARDED');
-            } else if(getenv('HTTP_FORWARDED_FOR')) {
-                $ip = getenv('HTTP_FORWARDED_FOR');
-            } else if(getenv('HTTP_FORWARDED')) {
-                $ip = getenv('HTTP_FORWARDED');
-            } else if(getenv('REMOTE_ADDR')) {
-                $ip = getenv('REMOTE_ADDR');
-            }
+        public function ip(): ?string {
+            $ip = $this->input->SERVER['HTTP_CLIENT_IP']
+                ?? $this->input->SERVER['HTTP_X_FORWARDED_FOR']
+                ?? $this->input->SERVER['REMOTE_ADDR']
+                ?? getenv('HTTP_CLIENT_IP')
+                ?? getenv('HTTP_X_FORWARDED_FOR')
+                ?? getenv('HTTP_X_FORWARDED')
+                ?? getenv('HTTP_FORWARDED_FOR')
+                ?? getenv('HTTP_FORWARDED')
+                ?? getenv('REMOTE_ADDR')
+                ?? null;
             return $ip;
         }
 
@@ -84,71 +83,45 @@
          *
          * @return bool True if the request was made from a console
          */
-        public function isCli() {
+        public function isCli(): bool {
             if(defined('STDIN')) {
                 return true;
             }
 
-            $remoteAddr = empty($_SERVER['REMOTE_ADDR']);
-            $userAgent = isset($_SERVER['HTTP_USER_AGENT']);
-            $args = count($_SERVER['argv'] ?? []);
+            $remoteAddr = empty($this->input->SERVER['REMOTE_ADDR']);
+            $userAgent = isset($this->input->SERVER['HTTP_USER_AGENT']);
+            $args = count($this->input->SERVER['argv'] ?? []);
 
             return $remoteAddr && !$userAgent && $args > 0;
         }
 
-        public function referer() {
-            return $_SERVER['HTTP_REFERER'] ?? null;
+        public function referer(): ?string {
+            return $this->input->SERVER['HTTP_REFERER'] ?? null;
         }
 
-        public function userAgent() {
-            return $_SERVER['HTTP_USER_AGENT'] ?? null;
+        public function userAgent(): ?string {
+            return $this->input->SERVER['HTTP_USER_AGENT'] ?? null;
         }
 
-        public function getExecutionTime() {
-            if(!isset($_SERVER["REQUEST_TIME_FLOAT"])) return false;
-            return microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];
-        }
-
-        /**
-         * Gets a posted file
-         * @param string $key The name of the file
-         * @param mixed $default Default value if the file is not posted
-         * @return string|mixed The posted file
-         */
-        public function getFile($key, $default = null) {
-            if (isset($_FILES[$key])) {
-                return $_FILES[$key];
-            }
-            return $default;
-        }
-
-        /**
-         * Gets a cookie
-         * @param string $key The key of the parameter
-         * @param mixed $default Default value
-         * @return mixed Content of the cookie
-         */
-        public function getCookie($key, $default = null) {
-            if (isset($_COOKIE[$key])) {
-                return $_COOKIE[$key];
-            }
-            return $default;
+        public function getExecutionTime(): ?float {
+            if(!isset($this->input->SERVER["REQUEST_TIME_FLOAT"])) return null;
+            return microtime(true) - $this->input->SERVER["REQUEST_TIME_FLOAT"];
         }
 
         /**
          * Returns the current URL
-         * @return string The actual URL that was requested including parameters and host
+         * @return string Returns the current URL, consisting of the configured host and the actual current path
          */
-        public function getCurrentURL() {
-            return $this->booter->host.$this->booter->url;
+        public function getCurrentURL(): string {
+            return config("host") . ($this->input->SERVER['REQUEST_URI'] ?? "");
         }
 
         /**
          * Returns the current root URL including protocol and root directory
          * @return string a URL like $opt["root"] but including the host before
          */
-        public function getRoot() {
-            return $this->booter->root;
+        public function getRoot(): string {
+            return config("root");
         }
 
         /**
@@ -161,7 +134,7 @@
                 str_replace(
                     ["http://", "https://", "/"],
                     "",
-                    (string) $this->getBooterSettings("host"),
+                    (string) config("host"),
                 ),
             )[0];
         }
@@ -173,14 +146,13 @@
          * @param string $val If the length is 1, a Boolean will be returned. $val will be compared to the parameter
          * @return mixed[]|string
          */
-        public function getParameters($offset = 0, $length = null, $val = null) {
-            
+        public function getParameters($offset = 0, $length = null, $val = null): mixed {
             //Get the current url parts from the booter
-            $params = $this->booter->urlParts;
-            
+            $params = $this->getUrlParts();
+
             //At least shift two params, because of Controller/Action
             for ($i = 0; $i < 2 + $offset; $i++) array_shift($params);
-            
+
             //New keys as array_shift does not change them
             $params = array_values($params);
 
@@ -188,7 +160,7 @@
             if ($length == 1 && !isset($params[0])) return false;
             if ($length == 1) return isset($val) ? $params[0] == $val : $params[0];
 
-            //Slice the resulting array according to 
+            //Slice the resulting array according to the length parameter
             return array_slice($params, 0, $length);
         }
 
@@ -197,28 +169,31 @@
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @return string[] [id, text] of the URL
          */
-        public function getReadableParameter($offset = 0) {
+        public function getReadableParameter($offset = 0): array {
             $param = $this->getParameters($offset, 1);
             $param = explode("-", $param);
             $id = $param[count($param) - 1];
             array_pop($param);
-            return ["id" => $id, "text" => implode("-", $param)];
+            return [
+                "id" => $id,
+                "text" => implode("-", $param),
+            ];
         }
 
         /**
          * Gets the user who made the request.
          * @return \User Object of the requesting user
          */
-        public function getRequestingUser() {
-            return $this->booter->user;
+        public function getRequestingUser(): User {
+            return user();
         }
 
         /**
          * Gets the path to the root folder of the project.
          * @return string Path to the root folder
          */
-        public function getRootFolder() {
-            return $this->booter->rootFolder;
+        public function getRootFolder(): string {
+            return config("rootFolder");
         }
 
         public function checkSuperPermission(string $permission, bool $boolResult = false): bool {
@@ -232,28 +207,26 @@
          * @param bool $boolResult If true, the function will return a boolean result instead of redirecting
          */
         public function checkPermission(string $permission, bool $boolResult = false, bool $includeSuperUser = false): bool {
-            $user = $this->getRequestingUser();
-
             if($permission == "console") {
                 if($this->isCli()) return true;
                 if($boolResult) return false;
-                $this->booter->executePath(["error", "403"]);
+                zubzet()->executePath(["error", "403"]);
                 exit;
             }
 
-            if(!$user->isLoggedIn) {
+            if(!user()->isLoggedIn) {
                 if($boolResult) return false;
-                $this->booter->executePath(["login", "index"]);
+                zubzet()->executePath(["login", "index"]);
                 exit;
             }
 
             $hasPermission = $includeSuperUser
-                ? $user->checkSuperPermission($permission)
-                : $user->checkPermission($permission);
+                ? user()->checkSuperPermission($permission)
+                : user()->checkPermission($permission);
 
             if(!$hasPermission) {
                 if($boolResult) return false;
-                $this->booter->executePath(["error", "403"]);
+                zubzet()->executePath(["error", "403"]);
                 exit;
             }
 
@@ -261,122 +234,11 @@
         }
 
         /**
-         * Validates form data from the client
-         * @param Field[] $fields Array of fields with the validation rules
-         * @param array $data Input for the validation. $_GET or $_POST can be used here as parameters
-         * @return Result A result to work with
-         */
-        public function validateForm($fields, $data = null) {
-            $errors = [];
-
-            if ($data == null) {
-                $data = array_merge($_POST, $_FILES);
-            }
-
-            $formResult = new Result();
-            $formResult->fields = $fields;
-   
-            foreach ($fields as $field) {
-                $name = $field->name;
-
-                $field->value = $data[$name]??null;
-                
-                foreach ($field->rules as $rule) {
-                    $type = $rule["type"];
-                    
-                    if ($type == "required") {
-                        
-                        if (!((isset($data[$name]) && $data[$name] != "" ) || isset($_FILES[$name]))) {
-                            $errors[] = ["name" => $name, "type" => "required"];
-                        } else {
-                            $value = $data[$name];
-                            $field->value = $value; //Require needs to be the first rule or this line could break something!
-                        }
-                    } else if (isset($data[$name]) && (!empty($data[$name]) || $data[$name] == "0")) {
-                        $value = $data[$name];
-
-                        if ($type == "length") {
-                            $len = strlen($value);
-                            if ($len < $rule["min"] || $len > $rule["max"]) {
-                                $errors[] = ["name" => $name, "type" => "length", "info" => [$rule["min"], $rule["max"]]];
-                            }
-                        } else if ($type == "filter") {
-                            if (!filter_var($value, $rule["filter"])) {
-                                $errors[] = ["name" => $name, "type" => "filter"];
-                            }
-                        } else if ($type == "unique") {
-                            if (isset($rule["ignoreField"])) {
-                                if (!$this->booter->z_db->checkIfUnique($rule["table"], $rule["field"], $value, $rule["ignoreField"], $rule["ignoreValue"])) {
-                                    $errors[] = ["name" => $name, "type" => "unique"];
-                                }
-                            } else {
-                                if (!$this->booter->z_db->checkIfUnique($rule["table"], $rule["field"], $value)) {
-                                    $errors[] = ["name" => $name, "type" => "unique"];
-                                }
-                            }
-                        } else if ($type == "exist") {
-                            if (!$this->booter->z_db->checkIfExists($rule["table"], $rule["field"], $value)) {
-                                $errors[] = ["name" => $name, "type" => "exist"];
-                            }
-                        } else if ($type == "regex") {
-                            $tmp_value = $value;
-                            foreach ($rule["exceptions"] as $exception) {
-                                $tmp_value = str_replace($exception, "", $tmp_value);
-                            }
-                            if (!preg_replace($rule["expression"], "", $tmp_value) != $tmp_value) {
-                                $errors[] = ["name" => $name, "type" => "regex"];
-                            }
-                        } else if ($type == "integer") {
-                            if (!filter_var($value, FILTER_VALIDATE_INT)) {
-                                $errors[] = ["name" => $name, "type" => "integer"];
-                            }
-                            $value = intval($value);
-                        } else if ($type == "range") {
-                            if ($value < $rule["min"] || $value > $rule["max"]) {
-                                $errors[] = ["name" => $name, "type" => "range", "info" => [$rule["min"], $rule["max"]]];
-                            }
-                        } else if ($type == "date") { 
-                            if (strtotime($value) == false) {
-                                $errors[] = ["name" => $name, "type" => "date"];
-                            }
-                        } else if ($type == "file") {
-                            if (isset($_FILES[$name])) {
-                                $file = $_FILES[$name];
-                                if ($file["size"] > $rule["maxSize"]) {
-                                    $errors[] = ["name" => $name, "type" => "file_to_big"];
-                                }
-
-                                $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
-
-                                if(isset($rule["types"]) && !empty($rule["types"]) && !in_array($extension, $rule["types"])) {
-                                    $errors[] = ["name" => $name, "type" => "file_type"];
-                                }
-                            } else {
-                                $errors[] = ["name" => $name, "type" => "file"];
-                            }
-                        } else {
-                            $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unknown type
-                        }
-
-                        $field->value = $value;
-                    } else {
-                        $field->value = null;
-                    }
-                }
-
-            }
-
-            $formResult->errors = $errors;
-            $formResult->hasErrors = count($errors) > 0;
-            return $formResult;
-        }
-
-        /**
          * Checks if the request contains form data. When it contains form data, methods like validateForm() can be used.
          * @return bool
          */
-        public function hasFormData() {
-            return isset($_POST["isFormData"]);
+        public function hasFormData(): bool {
+            return isset($this->input->POST["isFormData"]);
         }
 
         /**
@@ -384,42 +246,8 @@
          * @param string $type Type of the request. Request is sent via Z.js => Z.Request.action()
          * @return bool True if the request is of the specified type
          */
-        public function isAction($type) {
-            return ($this->getPost("action") == $type);
-        }
-
-        /**
-         * Validates a "Create Edit Delete" input
-         * @param string $name Name of the input field
-         * @param array $rules Array of rules for validating
-         * @return Result Result of the validation. Needed to perform response actions
-         */
-        public function validateCED($name, $rules) {
-            $errors = [];
-
-            $result = new Result();
-
-            if (isset($_POST[$name])) {
-                $array = $_POST[$name];
-                foreach ($array as $i => $subform) {
-                    $subresult = $this->validateForm($rules, $subform);
-                    $suberrors = $subresult->errors;
-                    foreach ($suberrors as $suberror) {
-                        $suberror["subname"] = $suberror["name"];
-                        $suberror["name"] = $name;
-                        $suberror["index"] = $i;
-                        $errors[] = $suberror;
-                    }
-                }
-            } else {
-                $result->doNothing = true;
-            }
-            
-            $result->fields = $rules;
-            $result->hasErrors = count($errors) > 0;
-            $result->errors = $errors;
-            $result->name = $name;
-            return $result;
+        public function isAction(string $type): bool {
+            return $this->getPost("action") == $type;
         }
 
         /**
@@ -427,11 +255,10 @@
          *
          * Reads the raw input from the request body.
          *
-         * @return string The raw body content of the request (Returns an empty string if empty or unavailable).
+         * @return ?string The raw body content of the request (Returns an empty string if empty or unavailable).
          */
-        public function getBody(): string {
-            $body = file_get_contents('php://input'); // string|false
-            return false === $body ? "" : $body;
+        public function getBody(): ?string {
+            return $this->input->body;
         }
 
         /**
@@ -445,8 +272,7 @@
          */
         public function getJson(): mixed {
             $data = $this->getBody();
-            if('' === $data) return null;
-
+            if(is_null($data)) return null;
             return json_decode($data, true, flags: JSON_THROW_ON_ERROR);
         }
     }

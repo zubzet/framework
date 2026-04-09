@@ -12,6 +12,8 @@
     use Psr\Http\Message\ResponseInterface;
     use Psr\Http\Message\ServerRequestInterface;
 
+    use ZubZet\Framework\ZubZet;
+
     class Route {
 
         use HttpMethod;
@@ -36,8 +38,8 @@
          *
          * @param mixed $booter The main framework class for callbacks.
          */
-        public static function init($booter): void {
-            self::$routerStack = [$booter->slimApplication];
+        public static function init(ZubZet $booter, App $slimApplication): void {
+            self::$routerStack = [$slimApplication];
         }
 
         /**
@@ -59,36 +61,34 @@
         /**
          * Performs middleware matching for stored groups based on the current URL parts.
          */
-        public static function performStoredGroupsMatchingPrefix(array $urlParts, $callback): void {
+        public static function performStoredGroupsMatchingPrefix(array $urlParts, \Closure|callable $callback): void {
             // Construct the current path from URL parts
             $currentPath = '/' . implode('/', $urlParts);
 
             // Collect middlewares to execute
-            $toExecuteMiddleware = [];
-            $toExecuteAfterMiddleware = [];
+            $toExecuteMiddlewares = [];
+            $toExecuteAfterMiddlewares = [];
 
-            foreach(self::$storedPrefixedGroups as $groupPath => $data) {
+            foreach(self::$storedPrefixedGroups as $groupPath => $prefixGroup) {
                 // Check if the current path matches the group prefix
-                $isMatch = ($currentPath === $groupPath) ||
-                        (str_starts_with($currentPath, $groupPath . '/'));
-
-
+                $isExactMatch = $currentPath === $groupPath;
+                $isMatch = $isExactMatch || str_starts_with($currentPath, $groupPath . '/');
                 if(!$isMatch) continue;
 
                 // Collect middlewares and afterwares to execute
-                foreach($data['middleware'] as $mw) {
-                    $toExecuteMiddleware[] = $mw;
+                foreach($prefixGroup["middleware"] as $middleware) {
+                    $toExecuteMiddlewares[] = $middleware;
                 }
 
-                foreach($data['afterMiddleware'] as $amw) {
-                    $toExecuteAfterMiddleware[] = $amw;
+                foreach($prefixGroup["afterMiddleware"] as $afterMiddleware) {
+                    $toExecuteAfterMiddlewares[] = $afterMiddleware;
                 }
             }
 
             // Execute collected middlewares and exit if any returns any other than true
-            foreach($toExecuteMiddleware as $mw) {
-                [$class, $method] = $mw;
-                $result = zubzet()->executeControllerAction($class, $method, []);
+            foreach($toExecuteMiddlewares as $toExecuteMiddleware) {
+                [$class, $method] = $toExecuteMiddleware;
+                $result = zubzet()->executeControllerAction($class, $method);
                 if($result !== true) exit;
             }
 
@@ -96,9 +96,9 @@
             $callback();
 
             // Execute after middlewares
-            foreach($toExecuteAfterMiddleware as $amw) {
-                [$class, $method] = $amw;
-                zubzet()->executeControllerAction($class, $method, []);
+            foreach($toExecuteAfterMiddlewares as $toExecuteAfterMiddleware) {
+                [$class, $method] = $toExecuteAfterMiddleware;
+                zubzet()->executeControllerAction($class, $method);
             }
         }
 

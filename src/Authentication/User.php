@@ -50,11 +50,11 @@
          * The properties $isLoggedIn, $userId, and $execUserId will be set after calling this function.
          */
         public function identify() {
-            if (!isset($_COOKIE["z_login_token"]) || empty($_COOKIE["z_login_token"])) {
+            if(empty(request()->getCookie("z_login_token"))) {
                 return $this->anonymousRequest();
             }
 
-            $session = Session::byToken($_COOKIE["z_login_token"]);
+            $session = Session::byToken(request()->getCookie("z_login_token"));
             if(is_null($session) ||
                 !model("z_login")->validateSession($session) ||
                 is_null($session->userId()) ||

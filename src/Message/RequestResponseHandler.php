@@ -2,25 +2,23 @@
 
     namespace ZubZet\Framework\Message;
 
-    use ZubZet\Framework\Core\Model;
     use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\Core\CanRetrieveModel;
 
     /**
      * Base class for the response and request objects
      */
     class RequestResponseHandler {
 
+        use CanRetrieveModel;
+
         /**
          * @var ZubZet $booter The framework object
          */
         public $booter;
 
-        /**
-         * Constructor that every request and response object should have
-         * @param ZubZet $booter The framework object
-         */
-        public function __construct($booter) {
-            $this->booter = $booter;
+        public function __construct() {
+            $this->booter = zubzet();
         }
 
         /**
@@ -48,30 +46,21 @@
         }
 
         /**
-         * Gets the database communication interface
-         * @return Model
-         */
-        public function getModel() {
-            return model(...func_get_args());
-        }
-
-        /**
          * Gets a booter setting
          * @param string $key Key of the setting
          * @return mixed Value of the key
          */
         public function getBooterSettings($key = null, $useDefault = true, $default = null) {
-            if(!empty($key)) {
-                if(!isset($this->booter->settings[$key])) {
-                    if($useDefault) {
-                        return $default;
-                    }
-                    throw new \Exception("The setting '$key' does not exist!");
-                }
-                return $this->booter->settings[$key];
-            }
-            return $this->booter->settings;
-        }
+            // Return all settings if no key is provided
+            if(empty($key)) return zubzet()->getAllAttributes();
 
+            // Return specific setting if it exists
+            if(isset(zubzet()->{$key})) return zubzet()->{$key};
+
+            // Return default if enabled
+            if($useDefault) return $default;
+
+            throw new \InvalidArgumentException("The setting '$key' does not exist!");
+        }
     }
 ?>

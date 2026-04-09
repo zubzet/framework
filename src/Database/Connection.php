@@ -2,53 +2,75 @@
 
     namespace ZubZet\Framework\Database;
 
+    use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
+
+    use Cake\Database\Query;
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
-    use Cake\Database\Query;
-    use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
 
     class Connection {
 
         use Interaction;
 
-        public QueryBuilderConnection $cakePHPDatabase;
+        public QueryBuilderConnection $queryBuilderConnection;
         private \mysqli $conn;
         private \mysqli_stmt $stmt;
-        public \z_framework $booter;
+        public ZubZet $booter;
 
         public int $lastConnect;
         public int $lastHeartbeat;
         public int $connectTimeout;
 
-        private string $user;
-        private string $password;
+        private ?string $host;
+        private ?string $password;
+        private ?string $user;
+        private ?string $database;
 
-        public function __construct(\z_framework &$booter) {
-            $this->booter = $booter;
+        public function __construct() {
+            $this->booter = zubzet();
 
-            $this->cakePHPDatabase = new QueryBuilderConnection([
+            $this->queryBuilderConnection = new QueryBuilderConnection([
                 'driver' => Mysql::class,
             ]);
 
-            $this->connectTimeout = $booter->req->getBooterSettings(
-                "db_connection_timeout",
-                default: 900,
-            );
+            // Check if timeout config is a valid number
+            $timeout = config("db_connection_timeout", default: 900);
+            if(!is_numeric($timeout)) {
+                throw new \InvalidArgumentException("Config key 'db_connection_timeout' must be numeric, got: '$timeout'");
+            }
+            $this->connectTimeout = (int) $timeout;
 
-            $this->user = $booter->dbusername;
-            $this->password = $booter->dbpassword;
+            $this->host = config("dbhost");
+            $this->user = config("dbusername");
+            $this->password = config("dbpassword");
+            $this->database = config("dbname");
         }
 
         private function connect() {
             // Make sure no previous connection exists
             $this->disconnect();
 
+            // Validate that all required config keys are present if using the database connection
+            $missing = array_keys(array_filter([
+                'dbhost' => $this->host,
+                'dbusername' => $this->user,
+                'dbpassword' => $this->password,
+                'dbname' => $this->database,
+            ], fn($v) => empty($v)));
+
+            if(!empty($missing)) {
+                throw new \RuntimeException(
+                    "Database connection requires valid configuration. Missing or empty config key(s): " . implode(', ', $missing)
+                );
+            }
+
             // Connect to the database
             $this->conn = new \mysqli(
-                $this->booter->dbhost,
+                $this->host,
                 $this->user,
                 $this->password,
-                $this->booter->dbname,
+                $this->database,
             );
 
             // Set the connection charset
@@ -72,15 +94,23 @@
             }
 
             // Check if we need to reconnect due to timeout
-            if(!isset($this->lastConnect) || time() - $this->lastConnect >= $this->connectTimeout) {
-                if(!isset($this->lastHeartbeat) || time() - $this->lastHeartbeat >= $this->connectTimeout) {
-                    // Try a heartbeat to see if the connection is still alive
-                    $connectionAlive = false;
-                    try {
-                        $connectionAlive = $this->heartbeat(waitForTimeout: false);
-                    } catch(\Exception) {} finally {
-                        if(!$connectionAlive) $this->connect();
-                    }
+            if(isset($this->lastConnect) && time() - $this->lastConnect < $this->connectTimeout) {
+                return;
+            }
+
+            // Check if we recently did a heartbeat, if so we can skip the check
+            if(isset($this->lastHeartbeat) && time() - $this->lastHeartbeat < $this->connectTimeout) {
+                return;
+            }
+
+            // Try a heartbeat to see if the connection is still alive
+            $connectionAlive = false;
+
+            try {
+                $connectionAlive = $this->heartbeat(waitForTimeout: false);
+            } catch(\Exception) {} finally {
+                if(!$connectionAlive) {
+                    $this->connect();
                 }
             }
         }
