@@ -219,7 +219,7 @@ describe('Routing', () => {
         // Arguments on middleware (accept)
         {
             route: "/arguments/middleware-accept",
-            expected: "Route Middleware Accept ExecutedArray ( ) Args: abc 123 TestRoute ExecutedArray ( )"
+            expected: "Route Middleware Accept ExecutedArray ( ) Args: abc 123TestRoute ExecutedArray ( ) Args:"
         },
         // Arguments on afterware
         {
