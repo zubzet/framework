@@ -34,7 +34,12 @@
                 'driver' => Mysql::class,
             ]);
 
-            $this->connectTimeout = config("db_connection_timeout", default: 900);
+            // Check if timeout config is a valid number
+            $timeout = config("db_connection_timeout", default: 900);
+            if(!is_numeric($timeout)) {
+                throw new \InvalidArgumentException("Config key 'db_connection_timeout' must be numeric, got: '$timeout'");
+            }
+            $this->connectTimeout = (int) $timeout;
 
             $this->host = config("dbhost");
             $this->user = config("dbusername");
