@@ -3,12 +3,15 @@
     namespace ZubZet\Framework\Routing;
 
     use FastRoute;
+    use FastRoute\Dispatcher;
     use FastRoute\RouteCollector;
+    use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Console\Application;
+    use Symfony\Component\Console\Input\ArgvInput;
 
     trait Router {
 
-        private ?FastRoute\Dispatcher $routeDispatcher = null;
+        private ?Dispatcher $routeDispatcher = null;
 
         /*
          * Handles the incoming request.
@@ -21,8 +24,8 @@
 
             $dispatcher = $this->getRouteDispatcher();
 
-            $httpMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-            $uri = $_SERVER['REQUEST_URI'] ?? '/';
+            $httpMethod = request()->input->SERVER['REQUEST_METHOD'] ?? 'GET';
+            $uri = request()->input->SERVER['REQUEST_URI'] ?? '/';
 
             // Strip query string (?foo=bar) and decode URI
             $queryPosition = strpos($uri, '?');
@@ -35,7 +38,7 @@
 
             switch($routeInfo[0]) {
                 // Route found, execute the handler with the extracted variables.
-                case FastRoute\Dispatcher::FOUND:
+                case Dispatcher::FOUND:
                     $handler = $routeInfo[1];
                     $vars = $routeInfo[2];
                     return $handler($vars);
@@ -45,7 +48,9 @@
                     // Fallback to ZubZet
                     if($this->req->isCli()) {
                         $console = Application::bootstrap($this);
-                        $console->run();
+                        $console->run(new ArgvInput(
+                            request()->input->SERVER['argv'] ?? [],
+                        ));
                         return;
                     }
 
@@ -58,7 +63,7 @@
             }
         }
 
-        private function getRouteDispatcher(): FastRoute\Dispatcher {
+        private function getRouteDispatcher(): Dispatcher {
             // Return the cached dispatcher if it exists.
             if(!is_null($this->routeDispatcher)) {
                 return $this->routeDispatcher;
@@ -143,33 +148,14 @@
          * Tries to reroute the request using FastRoute first, if the route does not exist,
          * it falls back to the ZubZet framework.
          *
-         * @param mixed $parts The parts of the new route. Example: ["auth", "login"]
+         * @param array $parts The parts of the new route. Example: ["auth", "login"]
          */
-        public function reroute($parts) {
-            if(!is_array($parts)) {
-                $parts = explode("/", trim((string) $parts, "/"));
-            }
-
-            $parts = array_values(array_filter($parts, fn($part) => $part !== ""));
-
-            $joinedParts = implode("/", $parts);
-            $httpMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-            $uri = '/' . ltrim($joinedParts, '/');
-
-            $routeInfo = $this->getRouteDispatcher()->dispatch($httpMethod, $uri);
-
-            switch($routeInfo[0]) {
-                case FastRoute\Dispatcher::FOUND:
-                    $handler = $routeInfo[1];
-                    $vars = $routeInfo[2];
-                    $handler($vars);
-                    return;
-
-                default:
-                    // Fallback to ZubZet
-                    $this->executePath($parts);
-                    return;
-            }
+        public function reroute(array $parts): void {
+            $newState = State::fromOverwrite(request()->input)
+                ->withPath(is_array($parts) ? implode("/", $parts) : $parts)
+                ->withArgs($parts);
+            zubzet()->replaceRequest($newState);
+            $this->execute();
         }
 
         /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */

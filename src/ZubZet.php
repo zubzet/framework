@@ -79,6 +79,11 @@
             $this->res = $response;
             $this->responseStack[] = $this->res;
         }
+
+        public function replaceRequest(Input $newState) {
+            $this->req = new Request($newState);
+            $this->requestStack[] = $this->req;
+        }
     }
 
 ?>

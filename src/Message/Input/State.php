@@ -170,6 +170,14 @@
             return $this;
         }
 
+        public function withArgs(array $args): State {
+            $this->SERVER["argv"] = array_merge(
+                array_slice($this->SERVER["argv"] ?? [], 0, 2),
+                $args,
+            );
+            return $this;
+        }
+
         private function updateRequest() {
             $this->REQUEST = array_merge(
                 $this->GET,
