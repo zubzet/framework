@@ -73,15 +73,6 @@
             return $seeds;
         }
 
-        public function checkExternalMigrations() {
-            $sql = "SELECT *
-                    FROM `z_user`";
-
-            $externals = $this->exec($sql)->resultToArray();
-
-            return $externals;
-        }
-
     }
 
 ?>

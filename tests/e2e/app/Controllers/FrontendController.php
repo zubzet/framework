@@ -1,5 +1,7 @@
 <?php
 
+    use ZubZet\Framework\Authentication\Permission\User;
+
     class FrontendController extends z_controller {
 
         public function action_backendrequest(Request $req, Response $res) {
@@ -29,8 +31,17 @@
         }
 
         public function action_register(Request $req, Response $res) {
+            $userData = [];
+            foreach(User::all() as $userObj) {
+                $userData[] = [
+                    "id" => $userObj->id(),
+                    "email" => $userObj->email(),
+                    "verified" => $userObj->verified(),
+                ];
+            }
+
             return $res->render("frontend/register", [
-                "users" =>  $req->getModel("Request")->getUsers()
+                "users" => $userData
             ]);
         }
 
