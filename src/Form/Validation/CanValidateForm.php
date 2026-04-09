@@ -18,8 +18,8 @@
 
             if ($data == null) {
                 $data = array_merge(
-                    request()->getPost(),
-                    request()->getFiles(),
+                    $this->getPost(),
+                    $this->getFiles(),
                 );
             }
 
@@ -36,7 +36,7 @@
 
                     if ($type == "required") {
 
-                        if (!((isset($data[$name]) && $data[$name] != "" ) || isset(request()->getFiles()[$name]))) {
+                        if (!((isset($data[$name]) && $data[$name] != "" ) || isset($this->getFiles()[$name]))) {
                             $errors[] = ["name" => $name, "type" => "required"];
                         } else {
                             $value = $data[$name];
@@ -90,8 +90,8 @@
                                 $errors[] = ["name" => $name, "type" => "date"];
                             }
                         } else if ($type == "file") {
-                            if (isset(request()->getFiles()[$name])) {
-                                $file = request()->getFiles()[$name];
+                            if (isset($this->getFiles()[$name])) {
+                                $file = $this->getFiles()[$name];
                                 if ($file["size"] > $rule["maxSize"]) {
                                     $errors[] = ["name" => $name, "type" => "file_to_big"];
                                 }
