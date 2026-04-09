@@ -15,7 +15,7 @@
                 throw new \InvalidArgumentException("The attribute store cannot be accessed directly.");
             }
 
-            if(!isset($this->dynamicAttributesStore[$name])) {
+            if(!array_key_exists($name, $this->dynamicAttributesStore)) {
                 throw new \InvalidArgumentException("The attribute '$name' does not exist in the attribute store (yet).");
             }
             return $this->dynamicAttributesStore[$name];
@@ -26,7 +26,7 @@
                 throw new \InvalidArgumentException("The attribute store cannot be accessed directly.");
             }
 
-            return isset($this->dynamicAttributesStore[$name]);
+            return array_key_exists($name, $this->dynamicAttributesStore);
         }
 
         public function getAllAttributes(): array {
