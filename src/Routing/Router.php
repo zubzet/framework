@@ -2,60 +2,88 @@
 
     namespace ZubZet\Framework\Routing;
 
+    use FastRoute;
+    use FastRoute\Dispatcher;
+    use FastRoute\RouteCollector;
+    use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Console\Application;
-
-    use Slim\App as SlimRouter;
-    use Slim\Factory\AppFactory;
-    use Slim\Exception\HttpNotFoundException;
-    use Slim\Psr7\Response as HttpResponse;
-    use Slim\Factory\ServerRequestCreatorFactory;
+    use Symfony\Component\Console\Input\ArgvInput;
 
     trait Router {
 
-        private SlimRouter $slimRouter;
+        private ?Dispatcher $routeDispatcher = null;
 
         /*
-         * Handles the incoming request
-         * Firstly, it tries to load routes from Slim, then it falls back to the ZubZet framework.
+         * Handles the incoming request.
+         * First, it tries defined FastRoute routes. If none match, it falls back to ZubZet.
          */
         public function execute(?array $customUrlParts = null) {
             if(!is_null($customUrlParts)) {
                 request()->urlParts = $customUrlParts;
             }
 
-            // Create a new Slim App instance
-            $this->slimRouter = AppFactory::create();
+            $dispatcher = $this->getRouteDispatcher();
 
-            // Initialize the Route class with the Slim app and this framework instance
-            Route::init($this, $this->slimRouter);
+            $httpMethod = request()->input->SERVER['REQUEST_METHOD'] ?? 'GET';
+            $uri = request()->input->SERVER['REQUEST_URI'] ?? '/';
 
-            // Get all php files in the z_routes directory
-            $routeFiles = glob($this->routes . "/*.php");
-
-            // require them to register the routes
-            foreach ($routeFiles as $file) {
-                require_once $file;
+            // Strip query string (?foo=bar) and decode URI
+            $queryPosition = strpos($uri, '?');
+            if($queryPosition !== false) {
+                $uri = substr($uri, 0, $queryPosition);
             }
 
-            // Execute the Slim Route
-            try  {
-                $this->slimRouter->run();
-            } catch (HttpNotFoundException $e) {
-                // Fallback to ZubZet
-                if($this->req->isCli()) {
-                    $console = Application::bootstrap($this);
-                    $console->run();
+            $uri = rawurldecode($uri);
+            $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+
+            switch($routeInfo[0]) {
+                // Route found, execute the handler with the extracted variables.
+                case Dispatcher::FOUND:
+                    $handler = $routeInfo[1];
+                    $vars = $routeInfo[2];
+                    return $handler($vars);
+
+                // If no route matched, use the ZubZet Controller/Action system as a fallback.
+                default:
+                    // Fallback to ZubZet
+                    if($this->req->isCli()) {
+                        $console = Application::bootstrap($this);
+                        $console->run(new ArgvInput(
+                            request()->input->SERVER['argv'] ?? [],
+                        ));
+                        return;
+                    }
+
+                    // Perform middleware groups matching the prefix.
+                    Route::performStoredGroupsMatchingPrefix(request()->getUrlParts(), function() {
+                        return $this->executePath(request()->getUrlParts());
+                    });
+
                     return;
-                }
-
-                // it should perform the middleware groups matching the prefix
-                Route::performStoredGroupsMatchingPrefix(request()->getUrlParts(), function() {
-                    return $this->executePath(request()->getUrlParts());
-                });
-
-                // Return a PSR response to stop further processing
-                return new HttpResponse();
             }
+        }
+
+        private function getRouteDispatcher(): Dispatcher {
+            // Return the cached dispatcher if it exists.
+            if(!is_null($this->routeDispatcher)) {
+                return $this->routeDispatcher;
+            }
+
+            // Register routes and create the dispatcher on first access.
+            $this->routeDispatcher = FastRoute\simpleDispatcher(function(RouteCollector $collector) {
+                // Initialize the Route class with the current collector.
+                Route::init($this, $collector);
+
+                // Retrieve all php files in the routes directory
+                $routeFiles = glob($this->routes . "/*.php");
+
+                // Include each route file to register its routes
+                foreach($routeFiles as $file) {
+                    require_once $file;
+                }
+            });
+
+            return $this->routeDispatcher;
         }
 
         public function executeControllerAction($controller, $action, array $params = []) {
@@ -117,28 +145,17 @@
         }
 
         /**
-         * Tries to reroute the request using Slim first, if the route does not exist, it falls back to the ZubZet framework.
+         * Tries to reroute the request using FastRoute first, if the route does not exist,
+         * it falls back to the ZubZet framework.
          *
-         * @param mixed $parts The parts of the new route. Example: ["auth", "login"]
-         * @return void
+         * @param array $parts The parts of the new route. Example: ["auth", "login"]
          */
-        public function reroute($parts) {
-            try {
-                $joinedParts = implode("/", $parts);
-
-                $request = ServerRequestCreatorFactory::create()->createServerRequestFromGlobals();
-
-                $request = $request->withUri(
-                    $request->getUri()->withPath(
-                        "/$joinedParts"
-                    )
-                );
-
-                $this->slimRouter->run($request);
-            } catch(HttpNotFoundException $e) {
-                // Fallback to ZubZet
-                $this->executePath($parts);
-            }
+        public function reroute(array $parts): void {
+            $newState = State::fromOverwrite(request()->input)
+                ->withPath(is_array($parts) ? implode("/", $parts) : $parts)
+                ->withArgs($parts);
+            zubzet()->replaceRequest($newState);
+            $this->execute();
         }
 
         /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
