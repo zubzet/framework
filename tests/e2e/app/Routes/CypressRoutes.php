@@ -7,9 +7,6 @@
         Route::get('/middleware-accept', [CoreController::class, 'TestRoute_WithArguments'])
             ->middleware([CoreController::class, 'Route_Middleware_Accept_WithArguments', 'abc', 123]);
 
-        Route::get('/middleware-block', [CoreController::class, 'TestRoute_WithArguments'])
-            ->middleware([CoreController::class, 'Route_Middleware_Block', 'abc', 123]);
-
         Route::get('/afterware', [CoreController::class, 'TestRoute_WithArguments'])
             ->afterMiddleware([CoreController::class, 'Route_Afterware_WithArguments', 'abc', 123]);
 
