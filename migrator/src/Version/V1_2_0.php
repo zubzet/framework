@@ -4,7 +4,8 @@
 
     use ZubZet\Tooling\Modifiers\FileContent;
     use ZubZet\Tooling\Modifiers\MatchingModifier;
-    use ZubZet\Tooling\ReleaseState;
+use ZubZet\Tooling\Modifiers\SettingsIni;
+use ZubZet\Tooling\ReleaseState;
     use ZubZet\Tooling\Version\BaseVersion;
 
     class V1_2_0 extends BaseVersion implements VersionInterface {
@@ -39,6 +40,15 @@
 
                 $loggingDeprecation->warn();
             }
+
+
+            // Add new settings for logging system
+            $settings = new SettingsIni($this, "logger-settings");
+            $settings->addProperty("logger_enabled", "true", "");
+            $settings->addProperty("logger_type", "stream", "logger_enabled");
+            $settings->addProperty("logger_stream_url", "logs/app.log", "logger_type");
+            $settings->addProperty("logger_level", "info", "logger_stream_url");
+            $settings->save();
 
             //
             // PHP Superglobals → request()->input replacement
