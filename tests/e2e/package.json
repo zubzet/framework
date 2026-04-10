@@ -7,10 +7,11 @@
     "private": true,
     "scripts": {
         "docker-compose": "docker compose -f packaging/docker/docker-compose-base.yml",
-        "start": "npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed",
+        "start": "npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed && npm run info",
         "stop": "npm run docker-compose -- down -v",
         "shell": "docker exec -it application bash",
         "seed": "docker exec application php index.php db:seed",
+        "info": "docker exec application php index.php info:startup",
         "cypress": "cypress open --project tests",
         "tests": "env -u ELECTRON_RUN_AS_NODE cypress run --project tests"
     },
