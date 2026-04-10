@@ -2,7 +2,8 @@
 
     namespace ZubZet\Tooling\Version;
 
-    use ZubZet\Tooling\Modifiers\FileContent;
+use ZubZet\Tooling\Modifiers\ComposerModifier;
+use ZubZet\Tooling\Modifiers\FileContent;
     use ZubZet\Tooling\Modifiers\MatchingModifier;
 use ZubZet\Tooling\Modifiers\SettingsIni;
 use ZubZet\Tooling\ReleaseState;
@@ -122,6 +123,9 @@ use ZubZet\Tooling\ReleaseState;
                     "Documentation: https://zubzet.com/docs/v1.2.0/core-features/request/",
                 ]);
             }
+
+            $composer = new ComposerModifier($this, "composer");
+            $composer->upgradeToCurrentVersion();
 
             return true;
         }
