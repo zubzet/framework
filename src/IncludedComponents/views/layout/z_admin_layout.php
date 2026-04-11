@@ -90,6 +90,9 @@
                             <?php } ?>
                         </div>
                         <div class="list-group mb-1">
+                            <?php if($opt["user"]->checkPermission("admin.maintenance")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-maintenance" href="<?= $opt["root"]; ?>z/maintenance"><i class="fa fa-wrench"></i>Maintenance</a>
+                            <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-edit-user" href="<?= $opt["root"]; ?>z/edit_user"><i class="fa fa-user-edit"></i>Edit User</a>
                             <?php } ?>

@@ -17,6 +17,7 @@
 
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Maintenance\MaintenanceHandler;
 
     /**
      * The ZController contains actions for the admin dashboard / panel
@@ -31,8 +32,20 @@
          */
         public function action_index($req, $res) {
             $req->checkPermission("admin.panel");
-            $res->render("z_empty.php", [
-                
+            $res->render("z_empty.php", [], "layout/z_admin_layout.php");
+        }
+
+        public function action_maintenance(Request $req, Response $res) {
+            $req->checkPermission("admin.maintenance");
+
+            if($req->isAction("bypass-maintenance")) {
+                setcookie(MaintenanceHandler::$COOKIE_KEY, "true", time() + 3600, "/");
+                return $res->success();
+            }
+
+            return $res->render("z_maintenance.php", [
+                "isActive" => MaintenanceHandler::isActive(),
+                "mode" => MaintenanceHandler::getMode()
             ], "layout/z_admin_layout.php");
         }
 

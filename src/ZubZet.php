@@ -17,6 +17,7 @@
     use ZubZet\Framework\Message\Input\State as Input;
     use ZubZet\Framework\Core\CanRetrieveBooterSettings;
     use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
+    use ZubZet\Framework\Maintenance\MaintenanceHandler;
 
     class ZubZet {
         use Router;
@@ -64,6 +65,9 @@
                 __DIR__ . DIRECTORY_SEPARATOR,
                 $params,
             );
+
+            // Maintenance mode check
+            new MaintenanceHandler();
 
             // Error handling
             $this->setExceptionBehavior();
