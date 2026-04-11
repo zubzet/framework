@@ -85,9 +85,8 @@
 
             // Execute collected middlewares and exit if any returns any other than true
             foreach($toExecuteMiddlewares as $toExecuteMiddleware) {
-                [$class, $method] = $toExecuteMiddleware;
-                $arguments = array_slice($toExecuteMiddleware, 2); // Extract additional arguments if provided
-                $result = self::callControllerAction($class, $method, arguments: $arguments);
+                [$class, $method] = $toExecuteMiddleware->getAction();
+                $result = self::callControllerAction($class, $method, arguments: $toExecuteMiddleware->arguments);
                 if($result !== true) exit;
             }
 
@@ -96,9 +95,8 @@
 
             // Execute after middlewares
             foreach($toExecuteAfterMiddlewares as $toExecuteAfterMiddleware) {
-                [$class, $method] = $toExecuteAfterMiddleware;
-                $arguments = array_slice($toExecuteAfterMiddleware, 2); // Extract additional arguments if provided
-                self::callControllerAction($class, $method, arguments: $arguments);
+                [$class, $method] = $toExecuteAfterMiddleware->getAction();
+                self::callControllerAction($class, $method, arguments: $toExecuteAfterMiddleware->arguments);
             }
         }
 
@@ -127,7 +125,7 @@
             array_pop(self::$prefixStack);
         }
 
-        public static function performRoute(string $method, string $endpoint, array|callable $action, array $middlewares, array $afterMiddleware): void {
+        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware): void {
             $router = self::getCurrentRouter();
 
             $effectiveMiddlewares = [
@@ -142,11 +140,10 @@
 
             $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares) {
                 foreach($effectiveMiddlewares as $middleware) {
-                    [$middlewareClass, $middlewareMethod] = $middleware;
-                    $arguments = array_slice($middleware, 2); // Extract additional arguments if provided
+                    [$middlewareClass, $middlewareMethod] = $middleware->getAction();
 
                     // Execute the middleware and check its result.
-                    $result = self::callControllerAction($middlewareClass, $middlewareMethod, $args, $arguments);
+                    $result = self::callControllerAction($middlewareClass, $middlewareMethod, $args, $middleware->arguments);
 
                     // Stop processing if middleware returns any other than true.
                     if($result !== true) {
@@ -155,19 +152,17 @@
                 }
 
                 // Execute the main action, which can be either a callable or a controller action.
-                if(is_callable($action)) {
-                    self::performCallableAction($action, $args);
+                if(is_callable($action->getAction())) {
+                    self::performCallableAction($action->getAction(), $args);
                 } else {
-                    [$controllerClass, $actionMethod] = $action;
-                    $arguments = array_slice($action, 2); // Extract additional arguments if provided
-                    self::callControllerAction($controllerClass, $actionMethod, $args, $arguments);
+                    [$controllerClass, $actionMethod] = $action->getAction();
+                    self::callControllerAction($controllerClass, $actionMethod, $args, $action->arguments);
                 }
 
                 // After the main action, execute after middlewares.
                 foreach($effectiveAfterMiddlewares as $afterMiddlewareState) {
-                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState;
-                    $arguments = array_slice($afterMiddlewareState, 2); // Extract additional arguments if provided
-                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args, $arguments);
+                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState->getAction();
+                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args, $afterMiddlewareState->arguments);
                 }
             };
 
