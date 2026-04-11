@@ -81,3 +81,30 @@ Cypress.Commands.add('sendRequest', (url, code = 403) => {
         expect(response.status).to.eq(code);
     });
 });
+
+Cypress.Commands.add('setConfigSetting', (key, value) => {
+    const CONFIG_PATH = '../z_config/z_settings.ini';
+    cy.readFile(CONFIG_PATH, 'utf8').then((content) => {
+        const updated = content.replace(
+            new RegExp(`^${key}\\s*=.*`, 'm'),
+            `${key} = ${value}`
+        );
+        cy.writeFile(CONFIG_PATH, updated);
+    });
+});
+
+let configBackup = null;
+
+Cypress.Commands.add('saveConfigBackup', () => {
+    const CONFIG_PATH = '../z_config/z_settings.ini';
+    cy.readFile(CONFIG_PATH, 'utf8').then((content) => {
+        configBackup = content;
+    });
+});
+
+Cypress.Commands.add('restoreConfigBackup', () => {
+    const CONFIG_PATH = '../z_config/z_settings.ini';
+    if (configBackup !== null) {
+        cy.writeFile(CONFIG_PATH, configBackup);
+    }
+});

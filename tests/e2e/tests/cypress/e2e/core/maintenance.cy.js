@@ -1,0 +1,361 @@
+describe('Maintenance System', () => {
+
+    before(() => {
+        cy.dbSeed();
+        cy.saveConfigBackup();
+    });
+
+    after(() => cy.restoreConfigBackup());
+
+    describe("Mode: Disabled", () => {
+
+        before(() => cy.setConfigSetting('maintenance_mode', 'disabled'));
+
+        it("should allow access to the application when maintenance mode is disabled", () => {
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(200);
+            });
+        });
+
+        it("should display the dashboard without maintenance page", () => {
+            cy.visit("/");
+            cy.contains("Dashboard").should("exist");
+        });
+
+        it("should show 'Inactive' status in the admin panel", () => {
+            cy.loginAs("admin");
+            cy.visit("/z/maintenance");
+
+            cy.contains("Inactive").should("exist");
+            cy.contains("disabled").should("exist");
+        });
+
+    });
+
+    describe("Mode: Soft", () => {
+
+        before(() => cy.setConfigSetting('maintenance_mode', 'soft'));
+
+        it("should block access without bypass cookie", () => {
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+        });
+
+        it("should allow access with bypass cookie", () => {
+            cy.setCookie('maintenance', 'true');
+
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(200);
+            });
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should show 'Active' status in the admin panel when using bypass cookie", () => {
+            cy.loginAs("admin");
+            cy.setCookie('maintenance', 'true');
+            
+            cy.visit("/z/maintenance");
+
+            cy.contains("Active").should("exist");
+            cy.contains("soft").should("exist");
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should allow setting bypass cookie via the admin panel", () => {
+            cy.loginAs("admin");
+            cy.setCookie('maintenance', 'true');
+            
+            cy.visit("/z/maintenance");
+
+            cy.get('#bypass-maintenance').click();
+
+            cy.on('window:alert', (str) => {
+                expect(str).to.include('Bypass cookie set successfully');
+            });
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should display maintenance page with retry-after header in soft mode without cookie", () => {
+            cy.request({
+                url: '/',
+                failOnStatusCode: false,
+                headers: {
+                    'Accept': 'text/html'
+                }
+            }).then((response) => {
+                expect(response.status).to.equal(503);
+                expect(response.headers['retry-after']).to.equal('300');
+                expect(response.body).to.include('currently undergoing maintenance');
+            });
+        });
+
+    });
+
+    describe("Mode: Enabled", () => {
+
+        before(() => cy.setConfigSetting('maintenance_mode', 'enabled'));
+
+        it("should block all access including with bypass cookie", () => {
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+        });
+
+        it("should still block access even when bypass cookie is set", () => {
+            cy.setCookie('maintenance', 'true');
+            
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should return 503 status code and proper headers for maintenance page", () => {
+            cy.request({
+                url: '/',
+                failOnStatusCode: false,
+                headers: {
+                    'Accept': 'text/html'
+                }
+            }).then((response) => {
+                expect(response.status).to.equal(503);
+                expect(response.headers['content-type']).to.include('text/html');
+                expect(response.headers['retry-after']).to.equal('300');
+            });
+        });
+
+    });
+
+    describe("Admin Panel Integration", () => {
+
+        it("should be accessible via the admin panel menu", () => {
+            cy.setConfigSetting('maintenance_mode', 'disabled');
+            
+            cy.loginAs("admin");
+            cy.visit("/z");
+
+            cy.query("btn-maintenance").should("exist");
+        });
+
+        it("should display maintenance button in admin layout", () => {
+            cy.setConfigSetting('maintenance_mode', 'disabled');
+            
+            cy.loginAs("admin");
+            cy.visit("/z");
+
+            cy.query("btn-maintenance").click();
+
+            cy.contains("Maintance Mode").should("exist");
+        });
+
+        it("should show correct status for each mode", () => {
+            const modes = [
+                { mode: 'disabled', display: 'Inactive' },
+                { mode: 'soft', display: 'Active' },
+            ];
+
+            modes.forEach(({ mode, display }) => {
+                cy.setConfigSetting('maintenance_mode', mode);
+                cy.loginAs("admin");
+                cy.setCookie('maintenance', 'true');
+
+                cy.visit("/z/maintenance");
+
+                cy.contains(display).should("exist");
+                cy.contains(mode).should("exist");
+
+                cy.clearCookie('maintenance');
+            });
+        });
+
+    });
+
+    describe("Maintenance Page", () => {
+
+        before(() => cy.setConfigSetting('maintenance_mode', 'enabled'));
+
+        it("should display the maintenance page with proper content", () => {
+            cy.visit("/", { failOnStatusCode: false });
+
+            cy.contains("currently undergoing maintenance").should("exist");
+        });
+
+        it("should return proper HTTP headers", () => {
+            cy.request({
+                url: "/",
+                failOnStatusCode: false,
+                headers: {
+                    'Accept': 'text/html'
+                }
+            }).then((response) => {
+                expect(response.status).to.equal(503);
+
+                expect(response.headers['content-type']).to.include('text/html');
+                expect(response.headers['content-type']).to.include('charset=UTF-8');
+                expect(response.headers['retry-after']).to.equal('300');
+            });
+        });
+
+    });
+
+    describe("Mode Transitions", () => {
+
+        it("should transition from disabled to soft mode correctly", () => {
+            cy.setConfigSetting('maintenance_mode', 'disabled');
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(200);
+            });
+
+            cy.setConfigSetting('maintenance_mode', 'soft');
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should transition from soft to enabled mode correctly", () => {
+            cy.setConfigSetting('maintenance_mode', 'soft');
+            cy.setCookie('maintenance', 'true');
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(200);
+            });
+
+            cy.setConfigSetting('maintenance_mode', 'enabled');
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should transition from enabled to disabled mode correctly", () => {
+            cy.setConfigSetting('maintenance_mode', 'enabled');
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+
+            cy.setConfigSetting('maintenance_mode', 'disabled');
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(200);
+            });
+        });
+
+    });
+
+    describe("Cookie Bypass Mechanism", () => {
+
+        before(() => cy.setConfigSetting('maintenance_mode', 'soft'));
+
+        it("should not bypass maintenance with wrong cookie name", () => {
+            cy.setCookie('wrong_key', 'true');
+
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+
+            cy.clearCookie('wrong_key');
+        });
+
+        it("should bypass maintenance with correct cookie name regardless of value", () => {
+            cy.setCookie('maintenance', 'any_value');
+
+            cy.request({
+                method: 'GET',
+                url: '/',
+                failOnStatusCode: false
+            }).then((res) => {
+                expect(res.status).to.equal(200);
+            });
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should bypass maintenance for all routes when cookie is present", () => {
+            const routes = ['/', '/admin/loginas', '/z'];
+
+            cy.setCookie('maintenance', 'true');
+
+            routes.forEach((route) => {
+                cy.request({
+                    method: 'GET',
+                    url: route,
+                    failOnStatusCode: false
+                }).then((res) => {
+                    expect(res.status).to.equal(200);
+                });
+            });
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should block maintenance for all routes when cookie is not present", () => {
+            const routes = ['/', '/admin/loginas', '/z'];
+
+            routes.forEach((route) => {
+                cy.request({
+                    method: 'GET',
+                    url: route,
+                    failOnStatusCode: false
+                }).then((res) => {
+                    expect(res.status).to.equal(503);
+                });
+            });
+        });
+
+    });
+
+});
