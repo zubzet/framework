@@ -58,7 +58,7 @@ describe('Controllers', () => {
 
             // Backtrace assertions
             expect(value.extra).to.have.property('file').that.includes('LoggerController.php');
-            expect(value.extra).to.have.property('line').that.equals(18);
+            expect(value.extra).to.have.property('line').that.equals(17);
             expect(value.extra).to.have.property('class').that.equals('LoggerController');
             expect(value.extra).to.have.property('function').that.equals('action_log');
             expect(value.extra).to.not.have.property('callType');
@@ -109,7 +109,7 @@ describe('Controllers', () => {
 
             // Backtrace assertions
             expect(json.extra).to.have.property('file').that.includes('LoggerController.php');
-            expect(json.extra).to.have.property('line').that.equals(18);
+            expect(json.extra).to.have.property('line').that.equals(17);
             expect(json.extra).to.have.property('class').that.equals('LoggerController');
             expect(json.extra).to.have.property('function').that.equals('action_log');
             expect(json.extra).to.not.have.property('callType');

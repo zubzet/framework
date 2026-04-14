@@ -14,12 +14,7 @@
             $name = $req->getGet("name", null);
             $method = $req->getGet("method", "info");
 
-            logger($name)->$method("This is a test log for cypress e2e testing", [
-                "stringInput" => "test",
-                "numberInput" => 123,
-                "booleanInput" => true,
-                "arrayInput" => [1, 2, 3],
-            ]);
+            logger($name)->$method("This is a test log for cypress e2e testing", ["stringInput" => "test","numberInput" => 123,"booleanInput" => true,"arrayInput" => [1, 2, 3],]);
         }
     }
 ?>
