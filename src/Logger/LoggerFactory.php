@@ -5,6 +5,7 @@
     use Psr\Log\LoggerInterface;
     use Monolog\Logger;
     use Monolog\Handler\NullHandler;
+    use ZubZet\Framework\Logger\BacktraceProcessor as LoggerBacktraceProcessor;
     use ZubZet\Framework\Support\StaticCache;
 
     class LoggerFactory {
@@ -67,6 +68,7 @@
 
             $handler->setLevel($loggerLevel);
             $logger->pushHandler($handler);
+            $logger->pushProcessor(new LoggerBacktraceProcessor($loggerLevel));
 
             // Cache the logger instance for future use
             return StaticCache::set(self::CACHE_KEY, $name, $logger);
