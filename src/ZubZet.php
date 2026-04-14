@@ -3,6 +3,7 @@
     namespace ZubZet\Framework;
 
     use ZubZet\Framework\Core\Constants;
+    use ZubZet\Framework\ErrorHandling\DebugHelper;
     use ZubZet\Framework\Routing\Router;
     use ZubZet\Framework\Support\Helpers;
     use ZubZet\Framework\Message\Request;
@@ -65,6 +66,10 @@
                 new Request(Input::fromRequest()),
                 new Response(),
             );
+
+            // Enable Whoops in test execution mode
+            // TODO: Enable PHP Debug Bar in dev execution mode
+            new DebugHelper();
 
             // Import of the database connection
             $this->z_db = new Connection;
