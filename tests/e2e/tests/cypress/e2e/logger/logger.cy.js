@@ -55,6 +55,13 @@ describe('Controllers', () => {
             expect(value.context.numberInput).to.equal(123);
             expect(value.context.booleanInput).to.equal(true);
             expect(value.context.arrayInput).to.deep.equal([1, 2, 3]);
+
+            // Backtrace assertions
+            expect(value.extra).to.have.property('file').that.includes('LoggerController.php');
+            expect(value.extra).to.have.property('line').that.equals(18);
+            expect(value.extra).to.have.property('class').that.equals('LoggerController');
+            expect(value.extra).to.have.property('function').that.equals('action_log');
+            expect(value.extra).to.not.have.property('callType');
         };
 
         // Set logger type to database before tests and clear logs before each test
@@ -99,6 +106,13 @@ describe('Controllers', () => {
 
             expect(json.channel).to.equal(name ?? "app");
             expect(json.level_name).to.equal(method.toUpperCase());
+
+            // Backtrace assertions
+            expect(json.extra).to.have.property('file').that.includes('LoggerController.php');
+            expect(json.extra).to.have.property('line').that.equals(18);
+            expect(json.extra).to.have.property('class').that.equals('LoggerController');
+            expect(json.extra).to.have.property('function').that.equals('action_log');
+            expect(json.extra).to.not.have.property('callType');
         };
 
         before(() => {
