@@ -14,7 +14,8 @@
         "symfony/console": "7.* || 6.*",
         "doctrine/dbal": "^3.10 || ^4.4",
         "monolog/monolog": "^2.11",
-        "filp/whoops": "^2.18"
+        "filp/whoops": "^2.18",
+        "php-debugbar/php-debugbar": "^1.23.6"
     },
     "autoload": {
         "files": [
