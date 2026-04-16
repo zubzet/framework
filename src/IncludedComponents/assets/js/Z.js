@@ -936,6 +936,16 @@ class ZForm {
     return button;
   }
 
+  /**
+   * Clears all field values.
+   * Does not remove all fields!
+   */
+  clearAllFieldValues() {
+    for (const field of fields) {
+      field.clearValue()
+    }
+  }
+
 }
 
 /**
@@ -1337,5 +1347,12 @@ class ZFormField {
     } else {
       data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
     }
+  }
+
+  /**
+   * Clears the input value of this form field. Options for selects and auto completes will persist.
+   */
+  clearValue() {
+    this.input.value = ""
   }
 }
