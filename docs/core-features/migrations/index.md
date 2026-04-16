@@ -282,10 +282,22 @@ The **Seed** command is used to **completely recreate the database** and then in
 
 #### Available Options
 
+By default, `db:seed` executes **all** seed files found in `app/Database/seed`.
+
 * **`skip-migrations`** | **`-s`**  
 Skips the migration process and executes only the seeding step.
 > **Details:** Use this flag when you want to populate the database with seed data without re-running migrations. This is useful when your database schema is already up-to-date and you only need to insert or update seed data without resetting the database.  
 > **Usage:** `db:seed -s`
+
+* **`environments-excluded`** | **`-e`**  
+Excludes matching seed folders or files from execution.
+> **Details:** Matches are path-based (relative to `app/Database/seed`). You can exclude a complete folder (for example `Environments`) or a single file (for example `Environments/Testing/Chat.sql`).  
+> **Usage:** `db:seed -e Environments`
+
+* **`environments-included`** | **`-i`**  
+Re-includes matching seed folders or files **after** exclusions are applied.
+> **Details:** This allows a two-step flow: first exclude a broad path, then include a specific subset again (folder or single file).  
+> **Usage:** `db:seed -e Environments -i Environments/Testing`
 
 
 **Execution Workflow**
