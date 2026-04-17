@@ -5,10 +5,10 @@ describe('info:startup Command', () => {
             const output = result.stdout;
 
             expect(output).to.include('ZubZet');
-            expect(output).to.include('Local');
-            expect(output).to.include('env');
-            expect(output).to.include('php');
-            expect(output).to.include('assets');
+            expect(output).to.include('Open');
+            expect(output).to.include('Environment');
+            expect(output).to.include('PHP Runtime');
+            expect(output).to.include('Assets');
             expect(output).to.include('npm run stop');
         });
     });
