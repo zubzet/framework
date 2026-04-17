@@ -9,3 +9,5 @@ These todos should be as temporary as possible:
 1. Added DEV Changelog
 1. Add logging folder to .gitignore
 1. Replace Slim with FastRoute
+1. Added info:startup command
+1. Added static arguments in routes, middlewares and afterwares
