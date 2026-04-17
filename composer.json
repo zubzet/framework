@@ -13,7 +13,8 @@
         "phpmailer/phpmailer": "^6.7",
         "symfony/console": "7.* || 6.*",
         "doctrine/dbal": "^3.10 || ^4.4",
-        "monolog/monolog": "^2.11"
+        "monolog/monolog": "^2.11",
+        "league/mime-type-detection": "^1.16"
     },
     "autoload": {
         "files": [
