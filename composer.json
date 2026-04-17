@@ -15,7 +15,8 @@
         "doctrine/dbal": "^3.10 || ^4.4",
         "monolog/monolog": "^2.11",
         "phpunit/php-code-coverage": "9.*",
-        "symfony/filesystem": "v6.0.19"
+        "symfony/filesystem": "v6.0.19",
+        "league/mime-type-detection": "^1.16"
     },
     "autoload": {
         "files": [
