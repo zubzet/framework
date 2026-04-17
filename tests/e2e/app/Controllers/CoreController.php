@@ -334,6 +334,44 @@
             ], "email");
         }
 
+        public function action_debug_bar(Request $req, Response $res) {
+            $allowedContentTypes = [
+                "js" => "text/javascript",
+                "css" => "text/css",
+            ];
+
+            $baseFolder = realpath(
+                \Composer\InstalledVersions::getInstallPath('php-debugbar/php-debugbar')
+                . "/src/DebugBar/Resources"
+            );
+
+            if ($baseFolder === false) {
+                http_response_code(404);
+                return;
+            }
+
+            $requestedResource = realpath($baseFolder . "/" . implode("/", $req->getParameters()));
+
+            if (
+                $requestedResource === false
+                || !is_file($requestedResource)
+                || !str_starts_with($requestedResource, $baseFolder . DIRECTORY_SEPARATOR)
+            ) {
+                http_response_code(404);
+                return;
+            }
+
+            $extension = pathinfo($requestedResource, PATHINFO_EXTENSION);
+
+            if (!isset($allowedContentTypes[$extension])) {
+                http_response_code(404);
+                return;
+            }
+
+            header("Content-Type: " . $allowedContentTypes[$extension]);
+            echo file_get_contents($requestedResource);
+        }
+
     }
 
 ?>

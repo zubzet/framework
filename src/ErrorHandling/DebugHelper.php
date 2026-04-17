@@ -52,7 +52,7 @@ use Whoops\Run;
             $this->debugBar = new StandardDebugBar;
             $this->debugBarRenderer = $this->debugBar->getJavascriptRenderer();
 
-            $this->debugBarRenderer->setBaseUrl("/assets/debugbar");
+            $this->debugBarRenderer->setBaseUrl("/core/debug-bar");
         }
 
     }
