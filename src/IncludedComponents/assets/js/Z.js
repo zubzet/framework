@@ -214,7 +214,7 @@ Z = {
      * @param {string} errorLabelId ID if the DOM elemnt to show errors in
      * @param {string} redirect URL to redirect to after a successfull signup
      */
-    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "", alertErrors = false, additionalData = {}) {
+    Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "", alertErrors = false) {
       var eName = document.getElementById(nameElementId);
       var ePassword = document.getElementById(passwordElementId);
       var ePasswordConfirm = document.getElementById(passwordConfirmElementId);
@@ -941,7 +941,7 @@ class ZForm {
    * Does not remove all fields!
    */
   clearAllFieldValues() {
-    for (const field of fields) {
+    for (const field of Object.values(this.fields)) {
       field.clearValue()
     }
   }
