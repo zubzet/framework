@@ -15,6 +15,10 @@
                 throw new \InvalidArgumentException("The attribute store cannot be accessed directly.");
             }
 
+            if($name == "settings") {
+                return $this->dynamicAttributesStore;
+            }
+
             if(!array_key_exists($name, $this->dynamicAttributesStore)) {
                 throw new \InvalidArgumentException("The attribute '$name' does not exist in the attribute store (yet).");
             }
