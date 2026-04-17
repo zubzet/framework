@@ -28,20 +28,19 @@
             $out->getFormatter()->setStyle("bar", new OutputFormatterStyle("magenta"));
 
             $version = $this->getInstalledVersion();
-            $pageName = config('pageName', default: '');
-            $executionType = config('execution_type', default: 'unknown');
-            $assetVersion = config('assetVersion', default: 'unknown');
-            $phpVersion = PHP_VERSION;
+            $pageName = config('pageName', default: 'Unknown. Set pageName in settings!');
+            $executionType = config('execution_type', default: 'Unknown. Set execution_type in settings!');
+            $assetVersion = config('assetVersion', default: 'Unknown. Set assetVersion in settings!');
 
             $this->line();
             $this->line("<brand>▲ ZubZet</brand>  <version>{$version}</version>  {$pageName}");
             $this->line();
-            $this->importantRow("Local", $this->getConfiguredHost());
+            $this->line("<bar>┃</bar>  <label>Open:</label>  <url>{$this->getConfiguredHost()}</url>");
             $this->line();
             $this->line("<muted>─────────────────────────────────────────────</muted>");
-            $this->infoRow("env", $executionType);
-            $this->infoRow("php", "v{$phpVersion}");
-            $this->infoRow("assets", "v{$assetVersion}");
+            $this->infoRow("Environment", $executionType);
+            $this->infoRow("PHP Runtime", "v" . PHP_VERSION . "");
+            $this->infoRow("Assets", "v{$assetVersion}");
             $this->line("<muted>─────────────────────────────────────────────</muted>");
             $this->line();
             $this->line("<muted>run</muted> <label>'npm run stop'</label> <muted>to stop the server</muted>");
@@ -50,22 +49,12 @@
             return Command::SUCCESS;
         }
 
-        private function line(?string $content = null): void {
-            // Append two spaced at the beginning of the line for better readability
-            $output = "  {$content}";
-
-            // If there is no content, just print an empty line without spaces
-            if(is_null($content)) $output = "";
-
-            $this->out->writeln($output);
-        }
-
-        private function importantRow(string $label, string $url): void {
-            $this->line("<bar>┃</bar>  <label>{$label}</label>  <url>{$url}</url>");
+        private function line(string $content = ""): void {
+            $this->out->writeln("  {$content}");
         }
 
         private function infoRow(string $label, string $value): void {
-            $this->line("<muted>{$label}</muted>  <label>{$value}</label>");
+            $this->line("<muted>{$label}</muted>\t<label>{$value}</label>");
         }
 
         private function getInstalledVersion(): string {
@@ -73,15 +62,7 @@
         }
 
         private function getConfiguredHost(): string {
-            return rtrim($this->config('host', 'http://localhost'), '/');
-        }
-
-        private function config(string $key, string $default = 'unknown'): string {
-            try {
-                return (string) zubzet()->{$key};
-            } catch (\Throwable) {
-                return $default;
-            }
+            return config('host', default: 'Unknown / Check docker-compose-base.yml');
         }
 
     }
