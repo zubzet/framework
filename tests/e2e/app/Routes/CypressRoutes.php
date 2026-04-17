@@ -1,6 +1,22 @@
 <?php
     use ZubZet\Framework\Routing\Route;
 
+    Route::group('/arguments', function() {
+        Route::get('/action', [CoreController::class, 'TestRoute_WithArguments'], ['abc', 123]);
+
+        Route::get('/middleware-accept', [CoreController::class, 'TestRoute_WithArguments'])
+            ->middleware([CoreController::class, 'Route_Middleware_Accept_WithArguments'], ['abc', 123]);
+
+        Route::get('/afterware', [CoreController::class, 'TestRoute_WithArguments'])
+            ->afterMiddleware([CoreController::class, 'Route_Afterware_WithArguments'], ['abc', 123]);
+
+        Route::get('/all', [CoreController::class, 'TestRoute_WithArguments'], ['abc', 123])
+            ->middleware([CoreController::class, 'Route_Middleware_Accept_WithArguments'], ['def', 456])
+            ->afterMiddleware([CoreController::class, 'Route_Afterware_WithArguments'], ['ghi', 789]);
+
+        Route::get('/{userId}/action', [CoreController::class, 'TestRoute_WithArguments'], ['abc', 123]);
+    });
+
     // it should execute "Route_Middleware_Accept" and then block by "Route_Middleware_Block" (no afterware or route action should be executed)
     Route::group('/RouteDeny', function() {})
         ->middleware([CoreController::class, 'Route_Middleware_Accept'])

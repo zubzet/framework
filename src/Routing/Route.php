@@ -85,8 +85,8 @@
 
             // Execute collected middlewares and exit if any returns any other than true
             foreach($toExecuteMiddlewares as $toExecuteMiddleware) {
-                [$class, $method] = $toExecuteMiddleware;
-                $result = self::callControllerAction($class, $method);
+                [$class, $method] = $toExecuteMiddleware->getAction();
+                $result = self::callControllerAction($class, $method, arguments: $toExecuteMiddleware->arguments);
                 if($result !== true) exit;
             }
 
@@ -95,8 +95,8 @@
 
             // Execute after middlewares
             foreach($toExecuteAfterMiddlewares as $toExecuteAfterMiddleware) {
-                [$class, $method] = $toExecuteAfterMiddleware;
-                self::callControllerAction($class, $method);
+                [$class, $method] = $toExecuteAfterMiddleware->getAction();
+                self::callControllerAction($class, $method, arguments: $toExecuteAfterMiddleware->arguments);
             }
         }
 
@@ -125,7 +125,7 @@
             array_pop(self::$prefixStack);
         }
 
-        public static function performRoute(string $method, string $endpoint, array|callable $action, array $middlewares, array $afterMiddleware): void {
+        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware): void {
             $router = self::getCurrentRouter();
 
             $effectiveMiddlewares = [
@@ -140,10 +140,10 @@
 
             $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares) {
                 foreach($effectiveMiddlewares as $middleware) {
-                    [$middlewareClass, $middlewareMethod] = $middleware;
+                    [$middlewareClass, $middlewareMethod] = $middleware->getAction();
 
                     // Execute the middleware and check its result.
-                    $result = self::callControllerAction($middlewareClass, $middlewareMethod, $args);
+                    $result = self::callControllerAction($middlewareClass, $middlewareMethod, $args, $middleware->arguments);
 
                     // Stop processing if middleware returns any other than true.
                     if($result !== true) {
@@ -152,17 +152,17 @@
                 }
 
                 // Execute the main action, which can be either a callable or a controller action.
-                if(is_callable($action)) {
-                    self::performCallableAction($action, $args);
+                if(is_callable($action->getAction())) {
+                    self::performCallableAction($action->getAction(), $args);
                 } else {
-                    [$controllerClass, $actionMethod] = $action;
-                    self::callControllerAction($controllerClass, $actionMethod, $args);
+                    [$controllerClass, $actionMethod] = $action->getAction();
+                    self::callControllerAction($controllerClass, $actionMethod, $args, $action->arguments);
                 }
 
                 // After the main action, execute after middlewares.
                 foreach($effectiveAfterMiddlewares as $afterMiddlewareState) {
-                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState;
-                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
+                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState->getAction();
+                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args, $afterMiddlewareState->arguments);
                 }
             };
 
@@ -250,8 +250,8 @@
             return $afterMiddlewares;
         }
 
-        private static function callControllerAction(string $class, string $method, array $args = []): mixed {
-            return zubzet()->executeControllerAction($class, $method, $args);
+        private static function callControllerAction(string $class, string $method, array $args = [], array $arguments = []): mixed {
+            return zubzet()->executeControllerAction($class, $method, $args, $arguments);
         }
     }
 
