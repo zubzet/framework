@@ -15,7 +15,7 @@
                 throw new \InvalidArgumentException("The attribute store cannot be accessed directly.");
             }
 
-            if($name === "settings") {
+            if($name == "settings") {
                 return $this->dynamicAttributesStore;
             }
 
