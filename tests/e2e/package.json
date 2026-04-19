@@ -16,10 +16,8 @@
         "tests": "env -u ELECTRON_RUN_AS_NODE cypress run --project tests"
     },
     "devDependencies": {
-        "chai": "^6.0.1",
-        "cypress": "^15.2.0",
-        "mocha": "^11.7.2",
-        "puppeteer": "^24.19.0",
+        "chai": "^6.2.2",
+        "cypress": "^15.14.0",
         "unicode-substring": "^1.0.0"
     }
 }
