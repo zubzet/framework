@@ -5,6 +5,7 @@
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Rendering\ViewNotFoundException;
+    use ZubZet\Framework\Resources\AssetCollector;
 
     trait CanRenderView {
 
@@ -82,6 +83,9 @@
             //logged in user information
             $opt["user"] = $this->booter->user;
 
+            // Per-page asset collector
+            $opt["assets"] = new AssetCollector($this->booter->assetMapper);
+
             include_once zubzet()->z_framework_root."IncludedComponents/views/layout/layout_essentials.php";
             $opt["layout_essentials_body"] = function($opt) {
                 essentialsBody($opt);
@@ -125,6 +129,8 @@
             $layout["layout"]($opt, $view["body"], $view["head"]);
             $rendered = ob_get_contents();
             ob_end_clean();
+
+            $rendered = $opt["assets"]->finalize($rendered);
 
             echo $rendered;
         }

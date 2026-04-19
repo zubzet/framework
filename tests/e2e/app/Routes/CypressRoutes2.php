@@ -4,4 +4,8 @@
 
     // Test if all files are loaded instead of only one
     Route::get('/test2', [CoreController::class, 'TestRoute']);
+
+    Route::get('/vue-demo', function() {
+        view('vue_demo');
+    });
 ?>

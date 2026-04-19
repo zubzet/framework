@@ -1,30 +1,30 @@
-<?php 
+<?php
 /**
- * This file holds essential parts fot the framework that will be pasted into the layout.
+ * This file holds essential parts for the framework that will be pasted into the layout.
  */
 
 /**
  * Call this to paste the essential head part of a page into the layout
  * @param array $opt Object holding options for rendering
  */
-function essentialsHead($opt, $customBootstrap) { ?>
+function essentialsHead($opt, $customBootstrap = false) {
+    $opt["assets"]->js("jquery/jquery.min.js");
+    if (!$customBootstrap) {
+        $opt["assets"]->js("bootstrap/js/bootstrap.bundle.min.js");
+        $opt["assets"]->css("bootstrap/css/bootstrap.min.css");
+    }
+    $opt["assets"]->js("js/bs-custom-file-input.js");
+    $opt["assets"]->js("js/Z.js");
 
-    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/jquery.min.js"); ?>"></script>
-    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/popper.min.js"); ?>"></script>
+    $opt["assets"]->css("fontawesome/css/all.min.css");
+    $opt["assets"]->css("fontawesome/css/v4-shims.min.css");
+    ?>
 
-    <?php if(!$customBootstrap) { ?>
-        <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/bootstrap.min.js"); ?>"></script>
-    <?php } ?>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/bs-custom-file-input.js"); ?>"></script>
-    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/Z.js") ?>"></script>
-
-    <link href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/bootstrap.min.css"); ?>" rel="stylesheet">
-
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/all.min.css") ?>">
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/brands.min.css") ?>">
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/v4-shims.min.css") ?>">
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/fontawesome.min.css") ?>">
+    <?= $opt["assets"]->renderCss(); ?>
+    <?= $opt["assets"]->renderJs(); ?>
 
     <script>
         Z.Request.rootPath = "<?= $opt["root"]; ?>";
@@ -32,17 +32,15 @@ function essentialsHead($opt, $customBootstrap) { ?>
         Z.Request.absRoot = "<?= $opt["absRoot"]; ?>";
     </script>
 
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<?php }
 
-<?php } ?>
-
-<?php 
 /**
  * Call this to paste the essential body part of a page into the layout
  * @param array $opt Object holding options for rendering
  */
 function essentialsBody($opt) { ?>
+    <?= $opt["assets"]->renderModules(); ?>
+
     <!-- TOKEN EXPIRED -->
     <?php if($opt["user"]->isLoggedIn) { ?>
         <script>

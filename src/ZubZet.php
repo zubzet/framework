@@ -9,7 +9,7 @@
     use ZubZet\Framework\Message\Response;
     use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Database\Connection;
-    use ZubZet\Framework\Resources\AssetProxy;
+    use ZubZet\Framework\Resources\AssetMapper;
     use ZubZet\Framework\Core\CanRetrieveModel;
     use ZubZet\Framework\Bootstrap\Configuration;
     use ZubZet\Framework\Support\GlobalReferences;
@@ -46,9 +46,9 @@
 
         /**
          * @internal
-         * @var AssetProxy The instance of the asset proxy
+         * @var AssetMapper The instance of the asset mapper
          */
-        public static AssetProxy $assetProxy;
+        public static AssetMapper $assetMapper;
 
         /**
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
@@ -65,7 +65,9 @@
             // Error handling
             $this->setExceptionBehavior();
 
-            $this->assetProxy = new AssetProxy;
+            $this->assetMapper = new AssetMapper;
+            $this->assetMapper->registerComposerPackages();
+            $this->assetProxy = $this->assetMapper;
 
             // Static imports
             new Constants;

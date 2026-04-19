@@ -126,6 +126,28 @@
                 return LoggerFactory::getOrCreateLogger($name ?? "app");
             }
         });
+
+        FunctionConflictResolution::requireAndThen("asset", function() {
+            /**
+             * Resolve a logical asset path to a versioned public URL.
+             *
+             * @param string $logicalPath Path relative to a registered asset source
+             * @return string Versioned URL to the asset
+             */
+            function asset(string $logicalPath): string {
+                return zubzet()->assetMapper->url($logicalPath);
+            }
+        });
+
+        FunctionConflictResolution::requireAndThen("importmap", function() {
+            /**
+             * Render the import map HTML (<script type="importmap">),
+             * module preloads, and auto-import scripts for entrypoints.
+             */
+            function importmap(): string {
+                return zubzet()->assetMapper->importMap()->render();
+            }
+        });
     }
 
 ?>
