@@ -16,7 +16,8 @@
 
     $coverageActive = Collector::isActive();
     if($coverageActive) {
-        Collector::start();
+        $coverageFramework = filter_var(getenv('coverage_framework') ?: 'false', FILTER_VALIDATE_BOOLEAN);
+        Collector::start($coverageFramework);
 
         register_shutdown_function(function() {
             Collector::stop();

@@ -31,9 +31,14 @@
         }
 
         /** Initializes a new CodeCoverage instance and starts collecting for the current request. */
-        public static function start(): void {
+        public static function start(bool $testFramework = false): void {
             $filter = new Filter();
             $filter->includeDirectory("./app");
+            $filter->excludeDirectory("./app/Database");
+            if($testFramework) {
+                $filter->includeDirectory("../vendor/zubzet/framework");
+                $filter->excludeDirectory("../vendor/zubzet/framework/tests");
+            }
 
             self::$coverage = new CodeCoverage(
                 (new Selector)->forLineCoverage($filter),
@@ -79,7 +84,7 @@
         /** Removes all .cov files and the session directory from disk. */
         public static function cleanup(): void {
             $dir = self::$dataDirectory . self::getSessionId() . '/';
-            foreach(glob("{$dir}*.cov") as $file) unlink($file);
+            foreach(glob("{$dir}*.cov") ?: [] as $file) unlink($file);
             if(is_dir($dir)) rmdir($dir);
         }
     }

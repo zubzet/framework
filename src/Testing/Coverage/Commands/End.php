@@ -3,7 +3,7 @@
     namespace ZubZet\Framework\Testing\Coverage\Commands;
 
     use SebastianBergmann\CodeCoverage\Report\Html\Facade as HtmlReport;
-    use SebastianBergmann\CodeCoverage\Report\Text as TextReport;
+    use ZubZet\Framework\Testing\Coverage\TextReport;
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
@@ -39,7 +39,7 @@
             }
 
             if($isCli) {
-                $out->write((new TextReport)->process($coverage, true));
+                $out->write((new TextReport())->process($coverage));
             } else {
                 $reportDir = Collector::$dataDirectory . 'report/';
                 (new HtmlReport)->process($coverage, $reportDir);

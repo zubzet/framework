@@ -56,7 +56,7 @@ RUN <<BASH
 
         # Configure debugging
         {
-            echo "xdebug.mode=debug,coverage"
+            echo "xdebug.mode=debug"
             echo "xdebug.start_with_request=yes"
             echo "xdebug.client_host=host.docker.internal"
             echo "xdebug.client_port=9003"
