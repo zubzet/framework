@@ -219,7 +219,7 @@
                 $savedInsertId = $this->insertId;
 
                 LoggerFactory::$isLogging = true;
-                logger(LoggerFactory::ZUBZET)->warning("Slow query", [
+                logger(LoggerFactory::ZUBZET)->warning("slowQuery", [
                     'duration_ms' => round($queryDuration, 2),
                     'query' => $query,
                 ]);

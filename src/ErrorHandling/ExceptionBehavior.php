@@ -14,7 +14,7 @@
          */
         public function setExceptionBehavior(?int $state = null): void {
             set_exception_handler(function(\Throwable $e) {
-                logger(LoggerFactory::ZUBZET)->error($e->getMessage(), ['exception' => $e]);
+                logger(LoggerFactory::ZUBZET)->error("exception", ['exception' => $e]);
             });
 
             // State or attribute check
@@ -29,7 +29,7 @@
             // Custom error handler that converts all errors to exceptions (including warnings)
             if(BehaviorOption::ALL == $this->showErrors) {
                 set_error_handler(function($severity, $message, $file, $line) {
-                    logger(LoggerFactory::ZUBZET)->warning($message, ['file' => $file, 'line' => $line]);
+                    logger(LoggerFactory::ZUBZET)->warning("error", ['message' => $message, 'file' => $file, 'line' => $line]);
                     if(error_reporting() & $severity) {
                         throw new \ErrorException($message, 0, $severity, $file, $line);
                     }
@@ -39,7 +39,7 @@
 
             // NONE / EXCEPTIONS mode
             set_error_handler(function($severity, $message, $file, $line) {
-                logger(LoggerFactory::ZUBZET)->warning($message, ['file' => $file, 'line' => $line]);
+                logger(LoggerFactory::ZUBZET)->warning("error", ['message' => $message, 'file' => $file, 'line' => $line]);
                 return false; // PHP default behavior
             });
 

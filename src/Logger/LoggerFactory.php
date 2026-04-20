@@ -102,7 +102,7 @@
                 $threshold = config("logger_slow_request_ms", default: null);
                 if(is_null($threshold)) return;
                 if($duration >= $threshold) {
-                    logger()->warning("Slow request", [
+                    logger()->warning("slowRequest", [
                         'duration_ms' => round($duration, 2),
                         'uri' => request()->input->SERVER['REQUEST_URI'] ?? '/',
                     ]);
