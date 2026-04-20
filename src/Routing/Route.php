@@ -2,8 +2,10 @@
 
     namespace ZubZet\Framework\Routing;
 
+    use Exception;
     use Slim\App;
     use Slim\Psr7\Response;
+    use ZubZet\Framework\Testing\Coverage\Collector;
     use Slim\Routing\RouteContext;
     use Slim\Interfaces\RouteInterface;
     use Slim\Routing\RouteCollectorProxy;
