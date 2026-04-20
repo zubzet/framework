@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Database;
 
     use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
 
     use Cake\Database\Query;
@@ -188,7 +189,10 @@
                 }
             }
 
+            $queryStart = microtime(true);
             $executionResult = $this->stmt->execute();
+            $queryDuration = (microtime(true) - $queryStart) * 1000;
+
             if(false === $executionResult) {
                 throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
@@ -203,6 +207,27 @@
             $this->stmt->close();
 
             $this->lastHeartbeat = time();
+
+            $slowQueryThreshold = config("logger_slow_query_ms", default: null);
+            if(!is_null($slowQueryThreshold) && $queryDuration >= $slowQueryThreshold) {
+                if(LoggerFactory::$isLogging) {
+                    trigger_error("Slow query logging skipped: recursion detected (query: $query)", E_USER_WARNING);
+                    return $this;
+                }
+
+                $savedResult = $this->result;
+                $savedInsertId = $this->insertId;
+
+                LoggerFactory::$isLogging = true;
+                logger(LoggerFactory::ZUBZET)->warning("Slow query", [
+                    'duration_ms' => round($queryDuration, 2),
+                    'query' => $query,
+                ]);
+                LoggerFactory::$isLogging = false;
+
+                $this->result = $savedResult;
+                $this->insertId = $savedInsertId;
+            }
 
             return $this;
         }

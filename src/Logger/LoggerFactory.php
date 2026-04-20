@@ -12,6 +12,8 @@
         // Will be created in getTraceId()
         public static ?string $traceId = null;
 
+        public static bool $isLogging = false;
+
         private const CACHE_KEY = 'logger';
 
         public const ZUBZET = "zubzet";

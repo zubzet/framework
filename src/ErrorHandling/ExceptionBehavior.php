@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\ErrorHandling;
 
     use ZubZet\Framework\ErrorHandling\BehaviorOption;
+    use ZubZet\Framework\Logger\LoggerFactory;
 
     trait ExceptionBehavior {
 
@@ -12,6 +13,10 @@
          * @param int|null $state
          */
         public function setExceptionBehavior(?int $state = null): void {
+            set_exception_handler(function(\Throwable $e) {
+                logger(LoggerFactory::ZUBZET)->error($e->getMessage(), ['exception' => $e]);
+            });
+
             // State or attribute check
             if(!is_null($state)) {
                 $this->showErrors = $state;
@@ -24,12 +29,20 @@
             // Custom error handler that converts all errors to exceptions (including warnings)
             if(BehaviorOption::ALL == $this->showErrors) {
                 set_error_handler(function($severity, $message, $file, $line) {
+                    logger(LoggerFactory::ZUBZET)->warning($message, ['file' => $file, 'line' => $line]);
                     if(error_reporting() & $severity) {
                         throw new \ErrorException($message, 0, $severity, $file, $line);
                     }
                 });
                 return;
             }
+
+            // NONE / EXCEPTIONS mode
+            set_error_handler(function($severity, $message, $file, $line) {
+                logger(LoggerFactory::ZUBZET)->warning($message, ['file' => $file, 'line' => $line]);
+                return false; // PHP default behavior
+            });
+
 
             // Standard Exception Handling on / off
             ini_set('display_errors', $this->showErrors);
