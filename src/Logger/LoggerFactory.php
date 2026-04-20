@@ -10,6 +10,9 @@
 
     class LoggerFactory {
 
+        // Will be created in getTraceId()
+        public static ?string $traceId = null;
+
         private const CACHE_KEY = 'logger';
 
         public const ZUBZET = "zubzet";
@@ -74,6 +77,14 @@
             return StaticCache::set(self::CACHE_KEY, $name, $logger);
         }
 
+        public static function getTraceId(): string {
+            if(is_null(self::$traceId)) {
+                // Generate a random 32-character hexadecimal string
+                self::$traceId = bin2hex(random_bytes(16));
+            }
+
+            return self::$traceId;
+        }
     }
 
 ?>
