@@ -3,7 +3,6 @@
     namespace ZubZet\Framework\Logger;
 
     use Psr\Log\LoggerInterface;
-    use Monolog\Logger;
     use Monolog\Handler\NullHandler;
     use ZubZet\Framework\Logger\BacktraceProcessor as LoggerBacktraceProcessor;
     use ZubZet\Framework\Support\StaticCache;
@@ -71,7 +70,7 @@
 
             $handler->setLevel($loggerLevel);
             $logger->pushHandler($handler);
-            $logger->pushProcessor(new LoggerBacktraceProcessor($loggerLevel));
+            $logger->pushProcessor(new LoggerBacktraceProcessor($logger, $loggerLevel));
 
             // Cache the logger instance for future use
             return StaticCache::set(self::CACHE_KEY, $name, $logger);
@@ -84,6 +83,14 @@
             }
 
             return self::$traceId;
+        }
+
+        public static function setTraceId(string $traceId): void {
+            self::$traceId = $traceId;
+        }
+
+        public static function getLogger(?string $name): ?Logger {
+            return StaticCache::get(self::CACHE_KEY, $name ?? "app");
         }
     }
 

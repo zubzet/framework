@@ -5,7 +5,6 @@
     }
 
     namespace {
-        use Monolog\Logger;
         use ZubZet\Framework\ZubZet;
         use ZubZet\Framework\Message\Request;
         use ZubZet\Framework\Message\Response;
@@ -13,6 +12,7 @@
         use ZubZet\Framework\Logger\LoggerFactory;
         use ZubZet\Framework\Core\FunctionConflictResolution;
         use ZubZet\Framework\Database\Connection;
+        use ZubZet\Framework\Logger\Logger;
 
         FunctionConflictResolution::requireAndThen("zubzet", function() {
             /**
