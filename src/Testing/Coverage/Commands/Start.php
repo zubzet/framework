@@ -15,9 +15,9 @@
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
-            if(file_exists(Collector::$sessionLocation)) {
+            if(Collector::isActive()) {
                 $out->writeln("<error>Coverage collection is already active.</error>");
-                $out->writeln("End the current session with <info>testing:coverage:end</info> before starting a new one.");
+                $out->writeln("End the current session with <info>testing:coverage:stop</info> before starting a new one.");
                 return Command::FAILURE;
             }
 

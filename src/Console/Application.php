@@ -9,7 +9,7 @@
     use ZubZet\Framework\Database\Migration\Commands\Sync;
     use ZubZet\Framework\Database\Migration\Commands\UnlockMigration;
     use ZubZet\Framework\Support\Commands\Startup;
-    use ZubZet\Framework\Testing\Coverage\Commands\End as CoverageEnd;
+    use ZubZet\Framework\Testing\Coverage\Commands\Stop as CoverageStop;
     use ZubZet\Framework\Testing\Coverage\Commands\Start as CoverageStart;
 
     class Application {
@@ -29,7 +29,7 @@
                     new UnlockMigration(),
                     new Startup(),
                     new CoverageStart(),
-                    new CoverageEnd(),
+                    new CoverageStop(),
                 ],
             ));
             return $console;

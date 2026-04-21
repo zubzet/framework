@@ -5,6 +5,7 @@
     use SebastianBergmann\CodeCoverage\CodeCoverage;
     use SebastianBergmann\CodeCoverage\Driver\Selector;
     use SebastianBergmann\CodeCoverage\Filter;
+    use Symfony\Component\Filesystem\Filesystem;
 
     /**
      * @internal
@@ -24,7 +25,7 @@
 
         /** Returns the session ID, reading it from disk on first call. */
         public static function getSessionId(): string {
-            if(self::$sessionId === "") {
+            if(empty(self::$sessionId)) {
                 self::$sessionId = trim(file_get_contents(self::$sessionLocation) ?: "");
             }
             return self::$sessionId;
@@ -35,6 +36,10 @@
             $filter = new Filter();
             $filter->includeDirectory("./app");
             $filter->excludeDirectory("./app/Database");
+
+            // Include the framework source for coverage if we're running
+            // within a test framework context,
+            // to allow measuring coverage of framework code during tests
             if($testFramework) {
                 $filter->includeDirectory("../vendor/zubzet/framework/src");
             }
@@ -80,10 +85,15 @@
             return $merged;
         }
 
-        /** Removes all .cov files and the session directory from disk. */
         public static function cleanup(): void {
+            // Remove all coverage data files for the current session
             $dir = self::$dataDirectory . self::getSessionId() . '/';
-            foreach(glob("{$dir}*.cov") ?: [] as $file) unlink($file);
-            if(is_dir($dir)) rmdir($dir);
+            (new Filesystem())->remove($dir);
+
+            // Remove current session file to allow starting a new session
+            $sessionLocation = Collector::$sessionLocation;
+            (new Filesystem())->remove($sessionLocation);
+
+            self::$sessionId = "";
         }
     }

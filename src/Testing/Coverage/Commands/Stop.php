@@ -9,10 +9,10 @@
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Testing\Coverage\Collector;
 
-    final class End extends Command {
+    final class Stop extends Command {
 
         protected function configure(): void {
-            $this->setName('testing:coverage:end');
+            $this->setName('testing:coverage:stop');
             $this->setDescription('Stop the coverage collection session and generate a report');
 
             $this->addOption('cli', 'c', null, 'Output the coverage report to stdout instead of generating an HTML report.');
@@ -21,7 +21,7 @@
         protected function execute(InputInterface $in, OutputInterface $out): int {
             $isCli = $in->getOption('cli');
 
-            if(!file_exists(Collector::$sessionLocation)) {
+            if(!Collector::isActive()) {
                 $out->writeln("<error>No active coverage collection session.</error>");
                 $out->writeln("Start a session with <info>testing:coverage:start</info> before ending it.");
                 return Command::FAILURE;
@@ -34,7 +34,6 @@
             if(is_null($coverage)) {
                 $out->writeln("<comment>No coverage data collected.</comment>");
                 Collector::cleanup();
-                unlink(Collector::$sessionLocation);
                 return Command::SUCCESS;
             }
 
@@ -46,12 +45,19 @@
                     (new HtmlReport)->process($coverage, $reportDir);
                     $out->writeln("Report generated at <info>{$reportDir}</info>");
                 }
-            } finally {
-                Collector::cleanup();
-                unlink(Collector::$sessionLocation);
+
+                register_shutdown_function(function() {
+                    Collector::cleanup();
+                });
+            } catch(\Exception $e) {
+                $out->writeln("<error>Failed to generate coverage report: {$e->getMessage()}</error>");
+                return Command::FAILURE;
             }
+
             $out->writeln("Coverage collection <info>successfully ended</info>.");
 
             return Command::SUCCESS;
         }
     }
+
+?>

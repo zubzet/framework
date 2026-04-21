@@ -14,7 +14,8 @@
         "symfony/console": "7.* || 6.*",
         "doctrine/dbal": "^3.10 || ^4.4",
         "monolog/monolog": "^2.11",
-        "phpunit/php-code-coverage": "9.*"
+        "phpunit/php-code-coverage": "9.*",
+        "symfony/filesystem": "v6.0.19"
     },
     "autoload": {
         "files": [
