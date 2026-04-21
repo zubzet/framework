@@ -13,10 +13,6 @@
          * @param int|null $state
          */
         public function setExceptionBehavior(?int $state = null): void {
-            set_exception_handler(function(\Throwable $e) {
-                logger(LoggerFactory::ZUBZET)->error("exception", ['exception' => $e]);
-            });
-
             // State or attribute check
             if(!is_null($state)) {
                 $this->showErrors = $state;
