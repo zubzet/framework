@@ -117,6 +117,20 @@
         }
 
         /**
+         * Sends a JSON response.
+         *
+         * Sets `Content-Type: application/json` and emits `$data` JSON-encoded.
+         *
+         * @param mixed $data The value to encode as JSON.
+         * @param int $encodingOptions Bitmask of json_encode() options (e.g. JSON_PRETTY_PRINT).
+         * @throws \JsonException If encoding fails. Note that JSON_THROW_ON_ERROR is automatically added to $encodingOptions.
+         */
+        public function json(mixed $data, int $encodingOptions = 0): void {
+            header('Content-Type: application/json');
+            echo json_encode($data, $encodingOptions | JSON_THROW_ON_ERROR);
+        }
+
+        /**
          * Generates a Rest error object
          * @param string $code Code
          * @param string $message Error message
