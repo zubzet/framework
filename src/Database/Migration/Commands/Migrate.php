@@ -86,7 +86,7 @@
             $dbMigrationsRaw = array_column(model("z_migration")->getExecutedMigrations(), 'migration_name');
             $dbMigrations = model("z_migration")->sortMigrations($dbMigrationsRaw);
 
-            $zubzetMigrations = model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration");
+            $zubzetMigrations = model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false);
 
             $fileMigrationsRaw = model("z_migration")->getFiles("./app/Database/migrations");
 
