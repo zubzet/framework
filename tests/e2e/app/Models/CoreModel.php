@@ -41,6 +41,24 @@
                     VALUES ('LastId')";
             return $this->exec($sql)->getInsertId();
         }
-    } 
+
+        public function insertLargeFile() {
+            $assetId = model("z_file")->add(
+                "bigint-test",
+                "test/virtual",
+                "virtual",
+                "bin",
+                FILE_SIZE_100GB,
+            );
+
+            $sql = "SELECT `size` FROM `z_file` WHERE `id` = ?";
+            $row = $this->exec($sql, "i", $assetId)->resultToLine();
+
+            return [
+                "input" => (string) FILE_SIZE_100GB,
+                "stored" => (string) $row["size"],
+            ];
+        }
+    }
 
 ?>

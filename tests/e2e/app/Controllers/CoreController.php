@@ -350,6 +350,10 @@
             $res->sendEmailToUser(1, "This is a Test Email Static", "email/Static", [], "email");
         }
 
+        public function action_bigintFileSize(Request $req, Response $res) {
+            echo json_encode($req->getModel("Core")->insertLargeFile());
+        }
+
         public function action_sendemailtouser_dynamic(Request $req, Response $res) {
             $res->sendEmailToUser(1, "This is a Test Email Dynamic", "email/Dynamic", [
                 "test_data" => "Test Data 1", 

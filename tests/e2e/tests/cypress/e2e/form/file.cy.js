@@ -143,4 +143,11 @@ describe('Form Date Validation', () => {
         cy.contains("TestFile_Small_2.pdf");
         cy.contains("FormUpload:3");
     });
+
+    it('should store file sizes beyond INT range', () => {
+        cy.request('/Core/bigintFileSize').then((response) => {
+            expect(response.status).to.eq(200);
+            expect(response.body.stored).to.equal(response.body.input);
+        });
+    });
 });
