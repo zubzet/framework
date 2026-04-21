@@ -48,7 +48,7 @@
          * @internal
          * @var AssetProxy The instance of the asset proxy
          */
-        public static AssetProxy $assetProxy;
+        public AssetProxy $assetProxy;
 
         /**
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.

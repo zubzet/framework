@@ -2,7 +2,6 @@
 
     namespace ZubZet\Framework\Resources;
 
-    use ZubZet\Framework\ZubZet;
     use League\MimeTypeDetection\FinfoMimeTypeDetector;
 
     class AssetProxy {
@@ -14,13 +13,18 @@
         }
 
         public function registerWebRootSource(string $webRootSource): void {
-            $webRootSource = rtrim($webRootSource, "/");
-
             if(!is_dir($webRootSource)) {
-                throw new \InvalidArgumentException("The provided web root source is not a valid directory: " . $webRootSource);
+                throw new \InvalidArgumentException("The provided web root source needs to be a valid directory: $webRootSource");
             }
 
-            $this->assetSources[] = $webRootSource;
+            // Canonicalize the source so serve() can compare against a stable,
+            // symlink-resolved prefix with a trailing directory separator.
+            $canonical = realpath($webRootSource);
+            if(false === $canonical) {
+                throw new \InvalidArgumentException("The provided web root source could not be resolved: $webRootSource");
+            }
+
+            $this->assetSources[] = $canonical;
         }
 
         public function serve(string $assetPath): void {
@@ -28,24 +32,33 @@
 
             foreach($this->assetSources as $source) {
                 $fullAssetPath = realpath("$source/$assetPath");
-                if(false === $fullAssetPath) {
-                    // Asset not found in this source, try the next one
-                    continue;
-                }
 
-                if(!str_starts_with($fullAssetPath, $source)) {
+                // Asset not found in this source, try the next one
+                if(false === $fullAssetPath) continue;
+
+                // Require an exact directory boundary so sibling paths that merely
+                // share a prefix (e.g. "$source" vs "${source}2") are rejected.
+                $boundary = $source . DIRECTORY_SEPARATOR;
+                if(!str_starts_with($fullAssetPath, $boundary)) {
                     throw new \RuntimeException("Invalid asset path: $fullAssetPath");
                 }
 
+                // realpath() resolving a directory doesn't make it servable, skip if it is not
+                if(!is_file($fullAssetPath) || !is_readable($fullAssetPath)) continue;
+
+                // Asset found, serve it with the correct MIME type
                 $mimeDetector = new FinfoMimeTypeDetector();
                 $mimeType = $mimeDetector->detectMimeTypeFromPath($fullAssetPath);
+
+                // If MIME type detection fails, default to a generic binary stream
+                if(is_null($mimeType)) $mimeType = "application/octet-stream";
 
                 header("Content-Type: $mimeType");
                 readfile($fullAssetPath);
                 return;
             }
 
-            // Not asset was found, return a 404 response
+            // No asset was found, return a 404 response
             http_response_code(404);
             echo "Asset not found: " . e($assetPath);
         }
