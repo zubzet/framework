@@ -81,10 +81,11 @@
                 Route::init($this, $collector);
 
                 // Retrieve all php files in the routes directory
-                $routeFiles = glob($this->routes . "/*.php");
+                $userRouteFiles = glob($this->routes . "/*.php");
+                $frameworkRouteFiles = glob($this->z_framework_root . "IncludedComponents/routes/*.php");
 
                 // Include each route file to register its routes
-                foreach($routeFiles as $file) {
+                foreach(array_merge($userRouteFiles, $frameworkRouteFiles) as $file) {
                     require_once $file;
                 }
             });

@@ -71,7 +71,7 @@
              * @return mixed Configuration value or array of all settings
              */
             function config($key = null, $useDefault = true, $default = null) {
-                return request()->getBooterSettings($key, $useDefault, $default);
+                return zubzet()->getBooterSettings($key, $useDefault, $default);
             }
         });
 

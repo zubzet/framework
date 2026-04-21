@@ -12,3 +12,4 @@ These todos should be as temporary as possible:
 1. Added info:startup command
 1. Added static arguments in routes, middlewares and afterwares
 1. Added coverage report
+1. Added `$res->json()` for sending a JSON response

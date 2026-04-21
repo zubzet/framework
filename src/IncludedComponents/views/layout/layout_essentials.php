@@ -5,26 +5,26 @@
 
 /**
  * Call this to paste the essential head part of a page into the layout
- * @param object $opt Object holding options for rendering
+ * @param array $opt Object holding options for rendering
  */
 function essentialsHead($opt, $customBootstrap) { ?>
 
-    <script src="<?php $opt["generateResourceLink"]("assets/js/jquery.min.js"); ?>"></script>
-    <script src="<?php $opt["generateResourceLink"]("assets/js/popper.min.js"); ?>"></script>
-    
-    <?php if(!$customBootstrap) { ?>
-        <script src="<?php $opt["generateResourceLink"]("assets/js/bootstrap.min.js"); ?>"></script>
-    <?php } ?>
-    
-    <script src="<?php $opt["generateResourceLink"]("assets/js/bs-custom-file-input.js"); ?>"></script>
-    <script src="<?php $opt["generateResourceLink"]("assets/js/Z.js") ?>"></script>
+    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/jquery.min.js"); ?>"></script>
+    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/popper.min.js"); ?>"></script>
 
-    <link href="<?php $opt["generateResourceLink"]("assets/css/bootstrap.min.css"); ?>" rel="stylesheet">
-    
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/all.min.css") ?>">
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/brands.min.css") ?>">
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/v4-shims.min.css") ?>">
-    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("assets/css/font-awesome/fontawesome.min.css") ?>">
+    <?php if(!$customBootstrap) { ?>
+        <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/bootstrap.min.js"); ?>"></script>
+    <?php } ?>
+
+    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/bs-custom-file-input.js"); ?>"></script>
+    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/Z.js") ?>"></script>
+
+    <link href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/bootstrap.min.css"); ?>" rel="stylesheet">
+
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/all.min.css") ?>">
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/brands.min.css") ?>">
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/v4-shims.min.css") ?>">
+    <link rel="stylesheet" href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/font-awesome/fontawesome.min.css") ?>">
 
     <script>
         Z.Request.rootPath = "<?= $opt["root"]; ?>";
@@ -40,7 +40,7 @@ function essentialsHead($opt, $customBootstrap) { ?>
 <?php 
 /**
  * Call this to paste the essential body part of a page into the layout
- * @param object $opt Object holding options for rendering
+ * @param array $opt Object holding options for rendering
  */
 function essentialsBody($opt) { ?>
     <!-- TOKEN EXPIRED -->
