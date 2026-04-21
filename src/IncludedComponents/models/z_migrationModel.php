@@ -113,7 +113,12 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
         }
 
         // @TODO: abstract RecursiveIteratorIterator
-        public function getFiles(string $path): array {
+        public function getFiles(string $path, bool $setupPathIfNotExists = true): array {
+            if (!is_dir($path)) {
+                if (!$setupPathIfNotExists) return [];
+                mkdir($path, 0755, true);
+                return [];
+            }
             $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
             $files = [];
             foreach($rii as $file) {

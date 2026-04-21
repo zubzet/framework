@@ -212,6 +212,24 @@ describe('Migration System - Import', () => {
         cy.exec(`rm -f ${zubzetMigrationPath}/${file} || true`);
     });
 
+    describe("when the migrations folder is missing", () => {
+        const backupDir = `${baseDir}_backup`;
+
+        before(() => {
+            cy.exec(`test ! -e ${backupDir} || (test -d ${backupDir} && rm -rf ${baseDir} && mv ${backupDir} ${baseDir})`);
+            cy.exec(`mv ${baseDir} ${backupDir}`);
+        });
+
+        after(() => {
+            cy.exec(`rm -rf ${baseDir} && mv ${backupDir} ${baseDir}`);
+        });
+
+        it("should not fail when the migrations folder is missing", () => {
+            cy.exec('docker exec application php index.php db:migrate -f');
+            cy.exec(`test -d ${baseDir}`);
+        });
+    });
+
     it("should check the --enforce-external-timeline option", () => {
         cy.dbSeed();
 

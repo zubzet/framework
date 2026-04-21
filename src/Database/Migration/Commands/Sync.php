@@ -128,7 +128,7 @@
             if($includeExternal) {
                 $fileMigrationsRaw = array_merge(
                     $fileMigrationsRaw,
-                    model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration")
+                    model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false)
                 );
             }
             $fileMigrations = model("z_migration")->sortMigrations($fileMigrationsRaw);
