@@ -3,6 +3,8 @@
      * Entrance for the framework. This file should be copied in the root of the project. A .htaccess file should be created which redirects all non-static requests to this file.
      */
 
+    use ZubZet\Framework\Testing\Coverage\Collector;
+
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
@@ -12,8 +14,17 @@
     $source = getenv('COMPOSER_VENDOR_DIR') ?: "./";
     require_once "$source/autoload.php";
 
+    $coverageActive = Collector::isActive();
+    if($coverageActive) {
+        $coverageFramework = filter_var(getenv('DEBUG_ZUBZET_COVERAGE_FRAMEWORK') ?: 'false', FILTER_VALIDATE_BOOLEAN);
+        Collector::start($coverageFramework);
+
+        register_shutdown_function(function() {
+            Collector::stop();
+        });
+    }
+
     //z_framework init
     $z_framework = new z_framework();
     $z_framework->execute();
-
 ?>

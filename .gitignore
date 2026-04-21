@@ -8,3 +8,4 @@ sql.log
 **/cypress/videos/**
 uploads
 .claude
+.coverage
