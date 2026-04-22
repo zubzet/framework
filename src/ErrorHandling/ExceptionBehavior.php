@@ -43,14 +43,21 @@
 
         /**
          * Logs a PHP error on the ZubZet channel using the classified severity.
+         * Swallows any logging failure so that the error handler stays a pure sink
+         * — a broken logger (e.g. the log table not yet existing at bootstrap)
+         * must not replace the original error with an unrelated one.
          */
         private static function logError(int $severity, string $message, string $file, int $line): void {
             [$level, $eventType] = self::classifyErrorSeverity($severity);
-            logger(Logger::ZUBZET)->$level($eventType, [
-                'message' => $message,
-                'file' => $file,
-                'line' => $line,
-            ]);
+            try {
+                logger(Logger::ZUBZET)->$level($eventType, [
+                    'message' => $message,
+                    'file' => $file,
+                    'line' => $line,
+                ]);
+            } catch(\Throwable) {
+                // Logger unavailable; drop the entry so error handling continues.
+            }
         }
 
         /**
@@ -99,21 +106,30 @@
         }
 
         /**
-         * Logs uncaught throwables on the ZubZet channel, then restores the
-         * previous exception handler and rethrows so PHP's default display
-         * (or a future Whoops-style handler) still renders the error page.
+         * Logs uncaught throwables on the ZubZet channel and re-throws so the
+         * next layer (PHP's default fatal display, or a replacement such as a
+         * Whoops-style error page) can render.
+         *
+         * Note: we deliberately do NOT call `restore_exception_handler()` before
+         * the re-throw. On PHP >= 8.3 that combination makes PHP re-invoke this
+         * handler with the re-thrown throwable and recurse until
+         * `zend.max_allowed_stack_size` trips. Plain `throw $e` from inside the
+         * handler lets PHP dispatch to its default path exactly once.
          */
         private static function registerExceptionHandler(): void {
             set_exception_handler(function(\Throwable $e) {
                 LoggerFactory::$uncaughtException = true;
-                logger(Logger::ZUBZET)->error(LogEventType::EXCEPTION, [
-                    'class' => get_class($e),
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-                restore_exception_handler();
+                try {
+                    logger(Logger::ZUBZET)->error(LogEventType::EXCEPTION, [
+                        'class' => \get_class($e),
+                        'message' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                } catch(\Throwable) {
+                    // Swallow logging failures — surfacing the original $e matters more.
+                }
                 throw $e;
             });
         }
