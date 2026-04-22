@@ -1,6 +1,6 @@
 <?php
 
-    namespace ZubZet\Framework\Logger;
+    namespace ZubZet\Framework\Logger\Method;
 
     use Monolog\Handler\StreamHandler;
     use ZubZet\Framework\Logger\JsonFormatter;

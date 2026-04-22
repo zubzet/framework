@@ -2,16 +2,20 @@
 
     namespace ZubZet\Framework\Database;
 
+    use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
+
     trait Interaction {
 
         /**
          * @var null|bool|\mysqli_result $result Result of the last query
          */
+        #[IncludeInCheckpoint]
         public $result;
 
         /**
          * @var int|string|null $insertId Last insert id
          */
+        #[IncludeInCheckpoint]
         public $insertId;
 
         /**

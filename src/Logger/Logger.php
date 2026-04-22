@@ -5,6 +5,9 @@
 
     class Logger extends MonologLogger{
 
+        public const APP = "app";
+        public const ZUBZET = "zubzet";
+
         public array $context = [];
 
         public function contextAdd(array $context): Logger {
@@ -12,7 +15,9 @@
             return $this;
         }
 
-        public function contextMergeFrom(string $logger = ""): Logger {
+        public function contextMergeFrom(string $logger = self::APP): Logger {
+            if(empty($logger)) throw new \InvalidArgumentException("Logger name cannot be empty.");
+
             $loggerInstance = LoggerFactory::getLogger($logger);
             if(is_null($loggerInstance)) throw new \Exception("Logger with name '$logger' not found in cache.");
 
@@ -35,7 +40,7 @@
         }
 
         public static function setTraceId(string $traceId): void {
-            LoggerFactory::setTraceId($traceId);
+            LoggerFactory::$traceId = $traceId;
         }
     }
 

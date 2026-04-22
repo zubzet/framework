@@ -3,14 +3,14 @@
      * File that defines the user model
      */
 
-use ZubZet\Framework\Authentication\Permission\User;
-use ZubZet\Framework\Logger\LogEventType;
-use ZubZet\Framework\Logger\LoggerFactory;
+    use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Logger\Logger;
 
     /**
      * User Model
      * 
-     * This model handles database stuff with the focus on user managment.
+     * This model handles database stuff with the focus on user management.
      * An instance of this class can be acquired with z_framework::getModel("z_user")
      */
     class z_userModel extends z_model {
@@ -73,7 +73,10 @@ use ZubZet\Framework\Logger\LoggerFactory;
             $insertId = $this->getInsertId();
 
             //Log
-            logger(LoggerFactory::ZUBZET)->info(LogEventType::userCreated, ["userId" => $insertId, "email" => $email]);
+            logger(Logger::ZUBZET)->info(LogEventType::USER_CREATED, [
+                "userId" => $insertId,
+                "email" => $email,
+            ]);
 
             if ($passwordString !== null) {
                 $this->getModel("z_login")->updatePassword(
@@ -104,7 +107,9 @@ use ZubZet\Framework\Logger\LoggerFactory;
             $this->exec($query, "siii", $email, $language, $id);
 
             //Log
-            logger(LoggerFactory::ZUBZET)->info(LogEventType::accountUpdated, ["userId" => $id]);
+            logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                "userId" => $id,
+            ]);
         }
 
         /**

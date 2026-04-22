@@ -16,7 +16,7 @@
      */
 
     use ZubZet\Framework\Logger\LogEventType;
-    use ZubZet\Framework\Logger\LoggerFactory;
+    use ZubZet\Framework\Logger\Logger;
 
     /**
      * The ZController contains actions for the admin dashboard / panel
@@ -116,7 +116,7 @@
                         $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
                         $res->doCED("z_user_permission", $subPermissionForm, ["user" => $userId]);
                         $res->updateDatabase("z_user", "id", "i", $userId, $formResult);
-                        logger(LoggerFactory::ZUBZET)->info(LogEventType::accountUpdated, [
+                        logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
                             "userId" => $userId,
                             "email" => $email
                         ]);

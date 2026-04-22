@@ -3,16 +3,21 @@
     namespace ZubZet\Framework\Database;
 
     use ZubZet\Framework\ZubZet;
-    use ZubZet\Framework\Logger\LoggerFactory;
+    use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
+    use ZubZet\Framework\Support\Checkpoint\CanCheckpoint;
+    use ZubZet\Framework\Support\Checkpoint\Checkpointable;
+    use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
 
     use Cake\Database\Query;
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
 
-    class Connection {
+    class Connection implements Checkpointable {
 
         use Interaction;
+        use CanCheckpoint;
 
         public QueryBuilderConnection $queryBuilderConnection;
         private \mysqli $conn;
@@ -208,25 +213,20 @@
 
             $this->lastHeartbeat = time();
 
-            $slowQueryThreshold = config("logger_slow_query_ms", default: null);
+            $slowQueryThreshold = config("logger_slow_query_ms", default: 300);
             if(!is_null($slowQueryThreshold) && $queryDuration >= $slowQueryThreshold) {
-                if(LoggerFactory::$isLogging) {
-                    trigger_error("Slow query logging skipped: recursion detected (query: $query)", E_USER_WARNING);
-                    return $this;
+                // The slow-query log itself runs an INSERT through this same Connection,
+                // which clobbers every #[IncludeInCheckpoint] property. Reentrancy into the
+                // logger is prevented by DatabaseLogger's own guard.
+                $checkpoint = $this->checkpointCurrentState(attributeClass: IncludeInCheckpoint::class);
+                try {
+                    logger(Logger::ZUBZET)->warning(LogEventType::SLOW_QUERY, [
+                        'duration_ms' => round($queryDuration, 2),
+                        'query' => $query,
+                    ]);
+                } finally {
+                    $checkpoint->restore();
                 }
-
-                $savedResult = $this->result;
-                $savedInsertId = $this->insertId;
-
-                LoggerFactory::$isLogging = true;
-                logger(LoggerFactory::ZUBZET)->warning("slowQuery", [
-                    'duration_ms' => round($queryDuration, 2),
-                    'query' => $query,
-                ]);
-                LoggerFactory::$isLogging = false;
-
-                $this->result = $savedResult;
-                $this->insertId = $savedInsertId;
             }
 
             return $this;
@@ -283,7 +283,6 @@
 
         /**
          * Disconnect from the database
-         * @param boolean $forceClose Close the connection regardless of if it seems to be open
          * @return void
          */
         public function disconnect() {
