@@ -3,15 +3,21 @@
     namespace ZubZet\Framework\Database;
 
     use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
+    use ZubZet\Framework\Support\Checkpoint\CanCheckpoint;
+    use ZubZet\Framework\Support\Checkpoint\Checkpointable;
+    use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
 
     use Cake\Database\Query;
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
 
-    class Connection {
+    class Connection implements Checkpointable {
 
         use Interaction;
+        use CanCheckpoint;
 
         public QueryBuilderConnection $queryBuilderConnection;
         private \mysqli $conn;
@@ -188,7 +194,10 @@
                 }
             }
 
+            $queryStart = microtime(true);
             $executionResult = $this->stmt->execute();
+            $queryDuration = (microtime(true) - $queryStart) * 1000;
+
             if(false === $executionResult) {
                 throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
@@ -203,6 +212,22 @@
             $this->stmt->close();
 
             $this->lastHeartbeat = time();
+
+            $slowQueryThreshold = config("logger_slow_query_ms", default: 300);
+            if(!is_null($slowQueryThreshold) && $queryDuration >= $slowQueryThreshold) {
+                // The slow-query log itself runs an INSERT through this same Connection,
+                // which clobbers every #[IncludeInCheckpoint] property. Reentrancy into the
+                // logger is prevented by DatabaseLogger's own guard.
+                $checkpoint = $this->checkpointCurrentState(attributeClass: IncludeInCheckpoint::class);
+                try {
+                    logger(Logger::ZUBZET)->warning(LogEventType::SLOW_QUERY, [
+                        'duration_ms' => round($queryDuration, 2),
+                        'query' => $query,
+                    ]);
+                } finally {
+                    $checkpoint->restore();
+                }
+            }
 
             return $this;
         }
@@ -258,7 +283,6 @@
 
         /**
          * Disconnect from the database
-         * @param boolean $forceClose Close the connection regardless of if it seems to be open
          * @return void
          */
         public function disconnect() {

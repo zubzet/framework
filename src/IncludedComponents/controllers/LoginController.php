@@ -3,9 +3,9 @@
      * This file holds the login controller
      */
 
-use ZubZet\Framework\Authentication\Permission\User;
-use ZubZet\Framework\Logger\LogEventType;
-use ZubZet\Framework\Logger\LoggerFactory;
+    use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Logger\Logger;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -69,7 +69,7 @@ use ZubZet\Framework\Logger\LoggerFactory;
                     $req->getModel("z_login", $req->getZRoot())->addTooManyLoginsEmailByUserId($user["id"]);
 
                     //Log
-                    logger(LoggerFactory::ZUBZET)->warning(LogEventType::accountLoginRateLimited, [
+                    logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
                         "userId" => $user["id"]
                     ]);
 
@@ -202,7 +202,7 @@ use ZubZet\Framework\Logger\LoggerFactory;
                     );
 
                     //Log
-                    logger(LoggerFactory::ZUBZET)->info(LogEventType::passwordResetRequested, [
+                    logger(Logger::ZUBZET)->info(LogEventType::PASSWORD_RESET_REQUESTED, [
                         "userId" => $user["id"]
                     ]);
                 }
@@ -245,7 +245,7 @@ use ZubZet\Framework\Logger\LoggerFactory;
                 $req->getModel("z_login", $req->getZRoot())->disableResetCode($DBResetCode["id"]);
 
                 //Log of password reset
-                logger(LoggerFactory::ZUBZET)->info(LogEventType::passwordReset, [
+                logger(Logger::ZUBZET)->info(LogEventType::PASSWORD_RESET, [
                     "userId" => $DBResetCode["userId"],
                     "reason" => $DBResetCode["reason"]
                 ]);

@@ -16,8 +16,13 @@ const setConfigSetting = (key, value) => {
     });
 };
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
-describe('Controllers', () => {
+// Helper: pick logs whose decoded `message` matches
+const logsByMessage = (logs, message) =>
+    logs
+        .map((l) => JSON.parse(l.value))
+        .filter((v) => v.message === message);
+
+describe('Logger', () => {
 
     let originalConfig;
 
@@ -31,114 +36,116 @@ describe('Controllers', () => {
     });
 
     // Restore original config after all tests have run
-    after(() => cy.writeFile(CONFIG_PATH, originalConfig));
-
-    // ── Database ──────────────────────────────────────────────────────────────
-    describe("Database", () => {
-
-        // Helper function to assert log values
-        const assertLogValues = (logs, { userId = null, name = 'app', method = 'info' } = {}) => {
-            const singleLog = logs[0];
-            const value = JSON.parse(singleLog.value);
-
-            console.log(value);
-
-            expect(value.extra.userId).to.equal(userId);
-            expect(value.extra.execUserId).to.equal(userId);
-            expect(value.extra.source).to.equal("web");
-
-            expect(value.message).to.equal(`This is a test log for cypress e2e testing`);
-            expect(value.channel).to.equal(name);
-            expect(value.level_name).to.equal(method.toUpperCase());
-
-            expect(value.context.stringInput).to.equal("test");
-            expect(value.context.numberInput).to.equal(123);
-            expect(value.context.booleanInput).to.equal(true);
-            expect(value.context.arrayInput).to.deep.equal([1, 2, 3]);
-
-            // Backtrace assertions
-            expect(value.extra).to.have.property('file').that.includes('LoggerController.php');
-            expect(value.extra).to.have.property('line').that.equals(17);
-            expect(value.extra).to.have.property('class').that.equals('LoggerController');
-            expect(value.extra).to.have.property('function').that.equals('action_log');
-            expect(value.extra).to.not.have.property('callType');
-        };
-
-        // Set logger type to database before tests and clear logs before each test
-        before(() => setConfigSetting('logger_type', 'database'));
-        beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
-
-        const cases = [
-            { label: 'without being logged in', name: 'zubzet', loggedIn: false, method: 'info' },
-            { label: 'while being logged in', name: 'zubzet', loggedIn: true, method: 'warning' },
-            { label: 'without being logged in', name: null, loggedIn: false, method: 'emergency' },
-            { label: 'while being logged in', name: null, loggedIn: true, method: 'debug' },
-        ];
-
-        cases.forEach(({ label, name, loggedIn, method }) => {
-            it(`should be possible to log something into the Database ${label} with logger name ${name}`, () => {
-                if(loggedIn) cy.loginAs("admin");
-
-                let baseUrl = "/logger/log?method=" + method;
-                if(name) baseUrl += `&name=${name}`;
-                cy.visit(baseUrl);
-
-                getDatabaseLogs().then((logs) =>
-                    assertLogValues(logs, {
-                        userId: loggedIn ? 1 : null,
-                        name: name ?? 'app',
-                        method,
-                    })
-                );
-            });
-        });
+    after(() => {
+        cy.writeFile(CONFIG_PATH, originalConfig);
     });
 
-    // ── Stream - File ─────────────────────────────────────────────────────────
-    describe("Stream - File", () => {
+    describe("Methods", () => {
+        describe("Database", () => {
 
-        const FILE_LOG_PATH = '../z_config/app.log';
+            // Helper function to assert log values
+            const assertLogValues = (logs, { userId = null, name = 'app', method = 'info' } = {}) => {
+                const singleLog = logs[0];
+                const value = JSON.parse(singleLog.value);
 
-        const getFileLog = () => cy.readFile(FILE_LOG_PATH, 'utf8');
+                console.log(value);
 
-        const assertFileLog = (content, name = 'app', method = 'info') => {
-            let json = JSON.parse(content);
+                expect(value.extra.userId).to.equal(userId);
+                expect(value.extra.execUserId).to.equal(userId);
+                expect(value.extra.source).to.equal("web");
 
-            expect(json.channel).to.equal(name ?? "app");
-            expect(json.level_name).to.equal(method.toUpperCase());
+                expect(value.message).to.equal(`This is a test log for cypress e2e testing`);
+                expect(value.channel).to.equal(name);
+                expect(value.level_name).to.equal(method.toUpperCase());
 
-            // Backtrace assertions
-            expect(json.extra).to.have.property('file').that.includes('LoggerController.php');
-            expect(json.extra).to.have.property('line').that.equals(17);
-            expect(json.extra).to.have.property('class').that.equals('LoggerController');
-            expect(json.extra).to.have.property('function').that.equals('action_log');
-            expect(json.extra).to.not.have.property('callType');
-        };
+                expect(value.context.stringInput).to.equal("test");
+                expect(value.context.numberInput).to.equal(123);
+                expect(value.context.booleanInput).to.equal(true);
+                expect(value.context.arrayInput).to.deep.equal([1, 2, 3]);
 
-        before(() => {
-            setConfigSetting('logger_type', 'stream');
-            setConfigSetting('logger_stream_url', 'z_config/app.log');
+                // Backtrace assertions
+                expect(value.extra).to.have.property('file').that.includes('LoggerController.php');
+                expect(value.extra).to.have.property('line').that.equals(21);
+                expect(value.extra).to.have.property('class').that.equals('LoggerController');
+                expect(value.extra).to.have.property('function').that.equals('action_log');
+                expect(value.extra).to.not.have.property('callType');
+            };
+
+            // Set logger type to database before tests and clear logs before each test
+            before(() => setConfigSetting('logger_type', 'database'));
+            beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
+
+            const cases = [
+                { label: 'without being logged in', name: 'zubzet', loggedIn: false, method: 'info' },
+                { label: 'while being logged in', name: 'zubzet', loggedIn: true, method: 'warning' },
+                { label: 'without being logged in', name: null, loggedIn: false, method: 'emergency' },
+                { label: 'while being logged in', name: null, loggedIn: true, method: 'debug' },
+            ];
+
+            cases.forEach(({ label, name, loggedIn, method }) => {
+                it(`should be possible to log something into the Database ${label} with logger name ${name}`, () => {
+                    if(loggedIn) cy.loginAs("admin");
+
+                    let baseUrl = "/logger/log?method=" + method;
+                    if(name) baseUrl += `&name=${name}`;
+                    cy.visit(baseUrl);
+
+                    getDatabaseLogs().then((logs) =>
+                        assertLogValues(logs, {
+                            userId: loggedIn ? 1 : null,
+                            name: name ?? 'app',
+                            method,
+                        })
+                    );
+                });
+            });
         });
 
-        beforeEach(() => cy.exec(`rm -f ${FILE_LOG_PATH}`));
-        after(() => cy.exec(`rm -f ${FILE_LOG_PATH}`));
+        describe("Stream - File", () => {
 
-        const cases = [
-            { label: 'without being logged in', name: null, loggedIn: false, method: 'info' },
-            { label: 'while being logged in', name: null, loggedIn: true, method: 'warning' },
-            { label: 'without being logged in', name: 'zubzet', loggedIn: false, method: 'emergency' },
-            { label: 'while being logged in', name: 'zubzet', loggedIn: true, method: 'debug' },
-        ];
+            const FILE_LOG_PATH = '../z_config/app.log';
 
-        cases.forEach(({ label, name, loggedIn, method }) => {
-            it(`should be possible to log something into a file stream ${label} with logger name ${name}`, () => {
-                if(loggedIn) cy.loginAs("admin");
+            const getFileLog = () => cy.readFile(FILE_LOG_PATH, 'utf8');
 
-                let baseUrl = "/logger/log?method=" + method;
-                if(name) baseUrl += `&name=${name}`;
-                cy.visit(baseUrl);
+            const assertFileLog = (content, name = 'app', method = 'info') => {
+                let json = JSON.parse(content);
 
-                getFileLog().then((content) => assertFileLog(content, name ?? 'app', method));
+                expect(json.channel).to.equal(name ?? "app");
+                expect(json.level_name).to.equal(method.toUpperCase());
+
+                // Backtrace assertions
+                expect(json.extra).to.have.property('file').that.includes('LoggerController.php');
+                expect(json.extra).to.have.property('line').that.equals(21);
+                expect(json.extra).to.have.property('class').that.equals('LoggerController');
+                expect(json.extra).to.have.property('function').that.equals('action_log');
+                expect(json.extra).to.not.have.property('callType');
+            };
+
+            before(() => {
+                setConfigSetting('logger_type', 'stream');
+                setConfigSetting('logger_stream_url', 'z_config/app.log');
+            });
+
+            beforeEach(() => cy.exec(`rm -f ${FILE_LOG_PATH}`));
+            after(() => cy.exec(`rm -f ${FILE_LOG_PATH}`));
+
+            const cases = [
+                { label: 'without being logged in', name: null, loggedIn: false, method: 'info' },
+                { label: 'while being logged in', name: null, loggedIn: true, method: 'warning' },
+                { label: 'without being logged in', name: 'zubzet', loggedIn: false, method: 'emergency' },
+                { label: 'while being logged in', name: 'zubzet', loggedIn: true, method: 'debug' },
+            ];
+
+            cases.forEach(({ label, name, loggedIn, method }) => {
+                it(`should be possible to log something into a file stream ${label} with logger name ${name}`, () => {
+                    if(loggedIn) cy.loginAs("admin");
+
+                    let baseUrl = "/logger/log?method=" + method;
+                    if(name) baseUrl += `&name=${name}`;
+                    cy.visit(baseUrl);
+
+                    getFileLog().then((content) => assertFileLog(content, name ?? 'app', method));
+                });
             });
         });
     });
@@ -164,5 +171,242 @@ describe('Controllers', () => {
             });
         });
 
+    });
+
+    describe("TraceId", () => {
+        before(() => {
+            setConfigSetting('logger_type', 'database');
+            setConfigSetting('logger_level', 'debug');
+        });
+        beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
+
+        it("should assign the same traceId to every log within a single request", () => {
+            cy.visit("/logger/multiLog");
+            getDatabaseLogs().then((logs) => {
+                expect(logs).to.have.length(2);
+                const v1 = JSON.parse(logs[0].value);
+                const v2 = JSON.parse(logs[1].value);
+                expect(v1.extra.traceId).to.be.a('string').and.have.length.greaterThan(0);
+                expect(v1.extra.traceId).to.equal(v2.extra.traceId);
+            });
+        });
+
+        it("should assign different traceIds to separate requests", () => {
+            cy.visit("/logger/multiLog");
+            cy.visit("/logger/multiLog");
+            getDatabaseLogs().then((logs) => {
+                expect(logs).to.have.length(4);
+                const traceIds = [...new Set(logs.map((l) => JSON.parse(l.value).extra.traceId))];
+                expect(traceIds).to.have.length(2);
+            });
+        });
+
+        it("should expose the current traceId via Logger::getTraceId()", () => {
+            cy.request('/logger/getTraceId').then((res) => {
+                const returned = (typeof res.body === 'string' ? res.body : String(res.body)).trim();
+                expect(returned).to.match(/^[0-9a-f]{32}$/);
+                getDatabaseLogs().then((logs) => {
+                    expect(logs).to.have.length(1);
+                    expect(JSON.parse(logs[0].value).extra.traceId).to.equal(returned);
+                });
+            });
+        });
+
+        it("should honor Logger::setTraceId()", () => {
+            const custom = 'a'.repeat(32);
+            cy.visit(`/logger/setTraceId?trace=${custom}`);
+            getDatabaseLogs().then((logs) => {
+                expect(logs).to.have.length(1);
+                expect(JSON.parse(logs[0].value).extra.traceId).to.equal(custom);
+            });
+        });
+    });
+
+    describe("Context", () => {
+        before(() => {
+            setConfigSetting('logger_type', 'database');
+            setConfigSetting('logger_level', 'debug');
+        });
+        beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
+
+        it("should carry added context forward across log calls on the same logger", () => {
+            cy.visit("/logger/context");
+            getDatabaseLogs().then((logs) => {
+                expect(logs).to.have.length(2);
+                logs.forEach((l) => {
+                    expect(JSON.parse(l.value).extra.x).to.equal(1);
+                });
+            });
+        });
+
+        it("should let contextInspect mutate the stored context", () => {
+            cy.visit("/logger/contextInspect");
+            getDatabaseLogs().then((logs) => {
+                expect(logs).to.have.length(1);
+                const extra = JSON.parse(logs[0].value).extra;
+                expect(extra.x).to.equal(1);
+                expect(extra.y).to.equal(2);
+            });
+        });
+
+        it("should merge context from another logger with source-wins precedence", () => {
+            cy.visit("/logger/contextMerge");
+            getDatabaseLogs().then((logs) => {
+                expect(logs).to.have.length(1);
+                const extra = JSON.parse(logs[0].value).extra;
+                // merged-from ("source") takes precedence on shared keys
+                expect(extra.shared).to.equal("from-source");
+                // target keeps its own non-conflicting keys
+                expect(extra.y).to.equal(2);
+                // source keys are added into target
+                expect(extra.x).to.equal(1);
+            });
+        });
+
+        it("should drop prior context after contextClear", () => {
+            cy.visit("/logger/contextClear");
+            getDatabaseLogs().then((logs) => {
+                expect(logs).to.have.length(1);
+                const extra = JSON.parse(logs[0].value).extra;
+                expect(extra).to.not.have.property('x');
+            });
+        });
+
+        it("should throw InvalidArgumentException when contextMergeFrom is called with an empty string", () => {
+            cy.request({ url: '/logger/contextMergeFromEmpty', failOnStatusCode: false });
+            getDatabaseLogs().then((logs) => {
+                const e = logsByMessage(logs, 'EXCEPTION');
+                expect(e).to.have.length(1);
+                expect(e[0].context.class).to.equal('InvalidArgumentException');
+            });
+        });
+
+        it("should throw when contextMergeFrom references a logger that has not been created", () => {
+            cy.request({ url: '/logger/contextMergeFromMissing', failOnStatusCode: false });
+            getDatabaseLogs().then((logs) => {
+                const e = logsByMessage(logs, 'EXCEPTION');
+                expect(e).to.have.length(1);
+                expect(e[0].context.message).to.contain('does-not-exist');
+            });
+        });
+    });
+
+    describe("Auto-log", () => {
+        describe("Slow Queries", () => {
+            before(() => {
+                setConfigSetting('logger_type', 'database');
+                setConfigSetting('logger_level', 'debug');
+            });
+            beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
+
+            it("should log exactly one SLOW_QUERY row above the threshold (no recursion)", () => {
+                cy.visit("/logger/slowQuery");
+                getDatabaseLogs().then((logs) => {
+                    const slowQueries = logsByMessage(logs, 'SLOW_QUERY');
+                    expect(slowQueries).to.have.length(1);
+                    expect(slowQueries[0].level_name).to.equal('WARNING');
+                    expect(slowQueries[0].channel).to.equal('zubzet');
+                    expect(slowQueries[0].context.duration_ms).to.be.greaterThan(400);
+                    expect(slowQueries[0].context.query).to.match(/SLEEP/i);
+                });
+            });
+
+            it("should preserve insertId when the outer INSERT crosses the slow-query threshold", () => {
+                cy.request('/logger/slowInsertId').then((res) => {
+                    const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+                    expect(body.insertId).to.equal(3);
+                });
+                getDatabaseLogs().then((logs) => {
+                    expect(logsByMessage(logs, 'SLOW_QUERY')).to.have.length(1);
+                });
+            });
+
+            it("should preserve result rows when the outer SELECT crosses the slow-query threshold", () => {
+                cy.request('/logger/slowSelectResult').then((res) => {
+                    const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+                    expect(body.rows).to.have.length(1);
+                    expect(Number(body.rows[0].answer)).to.equal(42);
+                });
+                getDatabaseLogs().then((logs) => {
+                    expect(logsByMessage(logs, 'SLOW_QUERY')).to.have.length(1);
+                });
+            });
+        });
+
+        describe("Slow Request", () => {
+            before(() => {
+                setConfigSetting('logger_type', 'database');
+                setConfigSetting('logger_level', 'debug');
+            });
+            beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
+
+            it("should log a SLOW_REQUEST on the zubzet channel above the threshold", () => {
+                cy.visit("/logger/slowRequest");
+                getDatabaseLogs().then((logs) => {
+                    const slow = logsByMessage(logs, 'SLOW_REQUEST');
+                    expect(slow).to.have.length(1);
+                    expect(slow[0].channel).to.equal('zubzet');
+                    expect(slow[0].level_name).to.equal('WARNING');
+                    expect(slow[0].context.duration_ms).to.be.at.least(700);
+                    expect(slow[0].context.uri).to.equal('logger/slowRequest');
+                });
+            });
+
+            it("should NOT log a SLOW_REQUEST when the request ended in an uncaught exception", () => {
+                cy.request({ url: '/logger/slowRequestThenException', failOnStatusCode: false });
+                getDatabaseLogs().then((logs) => {
+                    expect(logsByMessage(logs, 'SLOW_REQUEST')).to.have.length(0);
+                    expect(logsByMessage(logs, 'EXCEPTION')).to.have.length(1);
+                });
+            });
+        });
+
+        describe("Warnings & Deprecations", () => {
+            before(() => {
+                setConfigSetting('logger_type', 'database');
+                setConfigSetting('logger_level', 'debug');
+            });
+            beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
+
+            it("should log E_USER_DEPRECATED as message=LogEventType::DEPRECATION at NOTICE level", () => {
+                cy.request({ url: '/logger/deprecation', failOnStatusCode: false });
+                getDatabaseLogs().then((logs) => {
+                    const d = logsByMessage(logs, 'DEPRECATION');
+                    expect(d).to.have.length(1);
+                    expect(d[0].level_name).to.equal('NOTICE');
+                    expect(d[0].channel).to.equal('zubzet');
+                    expect(d[0].context.message).to.contain('old API usage');
+                });
+            });
+
+            it("should NOT log errors suppressed with the @ operator", () => {
+                cy.request({ url: '/logger/suppressedWarning', failOnStatusCode: false });
+                getDatabaseLogs().then((logs) => {
+                    expect(logsByMessage(logs, 'WARNING')).to.have.length(0);
+                    expect(logsByMessage(logs, 'ERROR')).to.have.length(0);
+                });
+            });
+        });
+
+        describe("Uncaught Exceptions", () => {
+            before(() => {
+                setConfigSetting('logger_type', 'database');
+                setConfigSetting('logger_level', 'debug');
+            });
+            beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
+
+            it("should log uncaught exceptions with full trace at ERROR level", () => {
+                cy.request({ url: '/logger/uncaughtException', failOnStatusCode: false });
+                getDatabaseLogs().then((logs) => {
+                    const e = logsByMessage(logs, 'EXCEPTION');
+                    expect(e).to.have.length(1);
+                    expect(e[0].level_name).to.equal('ERROR');
+                    expect(e[0].channel).to.equal('zubzet');
+                    expect(e[0].context.class).to.equal('RuntimeException');
+                    expect(e[0].context.message).to.equal('boom');
+                    expect(e[0].context.trace).to.be.a('string').and.have.length.greaterThan(0);
+                });
+            });
+        });
     });
 });

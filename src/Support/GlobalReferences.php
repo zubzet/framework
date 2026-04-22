@@ -5,7 +5,6 @@
     }
 
     namespace {
-        use Monolog\Logger;
         use ZubZet\Framework\ZubZet;
         use ZubZet\Framework\Message\Request;
         use ZubZet\Framework\Message\Response;
@@ -13,6 +12,7 @@
         use ZubZet\Framework\Logger\LoggerFactory;
         use ZubZet\Framework\Core\FunctionConflictResolution;
         use ZubZet\Framework\Database\Connection;
+        use ZubZet\Framework\Logger\Logger;
 
         FunctionConflictResolution::requireAndThen("zubzet", function() {
             /**
@@ -46,7 +46,8 @@
              * @return Request Loaded request instance
              */
             function request(): Request {
-                return zubzet()->req;
+                if(zubzet()->req instanceof Request) return zubzet()->req;
+                throw new RuntimeException("The request instance is not yet available.");
             }
         });
 
@@ -123,7 +124,7 @@
 
         FunctionConflictResolution::requireAndThen("logger", function() {
             function logger(?string $name = null): Logger {
-                return LoggerFactory::getOrCreateLogger($name ?? "app");
+                return LoggerFactory::getOrCreateLogger($name ?? Logger::APP);
             }
         });
     }
