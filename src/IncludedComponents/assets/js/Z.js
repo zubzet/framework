@@ -940,7 +940,7 @@ class ZForm {
    * Clears all field values.
    * Does not remove all fields!
    */
-  clearAllFieldValues() {
+  clearValues() {
     for (const field of Object.values(this.fields)) {
       field.clearValue()
     }
