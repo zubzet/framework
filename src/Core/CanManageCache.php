@@ -34,10 +34,7 @@
         }
 
         public function setCache(string $key, mixed $value): void {
-            // Ensure the cache file exists before mutating it
-            if(!file_exists($this->cacheFile)) {
-                file_put_contents($this->cacheFile, self::$HEADER);
-            }
+            $this->ensureCacheFile();
 
             // Load the cache file as individual lines
             $content = file_get_contents($this->cacheFile);
@@ -81,10 +78,16 @@
 
 
         private function loadCache() {
+            $this->ensureCacheFile();
             $ini_data = file_get_contents($this->cacheFile);
 
             $config = parse_ini_string($ini_data);
             StaticCache::set(self::$CACHE_KEY, self::$CACHE_VALUE, $config);
+        }
+
+        private function ensureCacheFile(): void {
+            if(file_exists($this->cacheFile)) return;
+            file_put_contents($this->cacheFile, self::$HEADER);
         }
 
         private function findCacheLine(array $lines, string $key): ?int {
