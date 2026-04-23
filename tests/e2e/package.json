@@ -11,7 +11,7 @@
         "stop": "npm run docker-compose -- down -v",
         "shell": "docker exec -it application bash",
         "seed": "docker exec application php index.php db:seed",
-        "info": "docker exec application php index.php info:startup",
+        "info": "docker exec application php index.php info:startup --pwd \"$(pwd)\"",
         "cypress": "cypress open --project tests",
         "tests": "env -u ELECTRON_RUN_AS_NODE cypress run --project tests"
     },

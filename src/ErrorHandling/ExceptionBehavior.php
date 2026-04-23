@@ -2,12 +2,18 @@
 
     namespace ZubZet\Framework\ErrorHandling;
 
+    use Whoops\Handler\PlainTextHandler;
+    use Whoops\Handler\PrettyPageHandler;
+    use Whoops\Run;
+    use ZubZet\Framework\Core\CanManageCache;
     use ZubZet\Framework\ErrorHandling\BehaviorOption;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Logger\LoggerFactory;
 
     trait ExceptionBehavior {
+
+        use CanManageCache;
 
         /**
          * Maps a PHP error severity bitmask constant onto a PSR-3 log level and
@@ -66,6 +72,8 @@
          * @param int|null $state
          */
         public function setExceptionBehavior(?int $state = null): void {
+            $this->registerWhoopsHandler();
+
             // State or attribute check
             if(!is_null($state)) {
                 $this->showErrors = $state;
@@ -132,6 +140,44 @@
                 }
                 throw $e;
             });
+        }
+
+        private function registerWhoopsHandler(): void {
+            if(config("execution_type", default: "prod") !== "test") return;
+            $whoops = new Run();
+
+            match(false) {
+                true => $whoops->pushHandler(new PlainTextHandler()),
+                false => $this->handlePrettyPageHandler($whoops),
+            };
+
+            $whoops->register();
+        }
+
+        private function handlePrettyPageHandler(Run $whoops): void {
+            $handler = new PrettyPageHandler();
+            $containerAppPath = "/var/www/html/";
+
+            $pwd = $this->getCache("pwd");
+            if(!is_null($pwd) && !empty($pwd)) {
+                $hostAppPath = rtrim($pwd, "/") . "/";
+
+                $handler->setEditor(function($file, $line) use ($containerAppPath, $hostAppPath) {
+                    if(!str_starts_with($file, $containerAppPath)) return null;
+                    $relative = substr($file, \strlen($containerAppPath));
+                    return "vscode://file/{$hostAppPath}{$relative}:{$line}";
+                });
+            }
+
+            // Where am i
+            $handler->setApplicationPaths([$containerAppPath]);
+
+            // Hide environment variables
+            foreach(array_keys($_ENV) as $key) {
+                $handler->hideSuperglobalKey('_ENV', $key);
+            }
+
+            $whoops->pushHandler($handler);
         }
 
     }
