@@ -2,11 +2,11 @@
 
     namespace ZubZet\Tooling\Version;
 
-use ZubZet\Tooling\Modifiers\ComposerModifier;
-use ZubZet\Tooling\Modifiers\FileContent;
+    use ZubZet\Tooling\Modifiers\ComposerModifier;
+    use ZubZet\Tooling\Modifiers\FileContent;
     use ZubZet\Tooling\Modifiers\MatchingModifier;
-use ZubZet\Tooling\Modifiers\SettingsIni;
-use ZubZet\Tooling\ReleaseState;
+    use ZubZet\Tooling\Modifiers\SettingsIni;
+    use ZubZet\Tooling\ReleaseState;
     use ZubZet\Tooling\Version\BaseVersion;
 
     class V1_2_0 extends BaseVersion implements VersionInterface {
@@ -47,7 +47,7 @@ use ZubZet\Tooling\ReleaseState;
             $settings = new SettingsIni($this, "logger-settings");
             $settings->addProperty("logger_enabled", "true", "");
             $settings->addProperty("logger_type", "stream", "logger_enabled");
-            $settings->addProperty("logger_stream_url", "logs/app.log", "logger_type");
+            $settings->addProperty("logger_stream_url", "z_config/app.log", "logger_type");
             $settings->addProperty("logger_level", "info", "logger_stream_url");
             $settings->save();
 
@@ -126,6 +126,48 @@ use ZubZet\Tooling\ReleaseState;
 
             $composer = new ComposerModifier($this, "composer");
             $composer->upgradeToCurrentVersion();
+
+
+
+            //
+            // Add logging folder to .gitignore
+            //
+            $gitignoreLogging = new FileContent($this, "gitignore-logs");
+            $gitignoreLogging->find(".gitignore");
+            $gitignoreLogging->shouldChangeIfNotIncludes("z_config/app.log");
+            $gitignoreLogging->automateChange(function(string $content): string {
+                return rtrim($content, "\n") . "\n/z_config/app.log\n";
+            });
+            $gitignoreLogging->demandChange([
+                "ZubZet 1.2.0 writes logs to /z_config/app.log by default.",
+                "Please add the file to .gitignore.",
+            ]);
+
+
+            //
+            // Add SlowQuery and SlowRequest to ini settings
+            //
+            $slowSetting = new SettingsIni($this, "slow-settings");
+            $slowSetting->addProperty("logger_slow_request_ms", "700");
+            $slowSetting->addProperty("logger_slow_query_ms", "300", "slow_query_threshold");
+            $slowSetting->save();
+
+
+            //
+            // Add DebugBar Hide Internal Queries to ini settings
+            //
+            $hideInternalQueries = new SettingsIni($this, "debugbar-settings");
+            $hideInternalQueries->addProperty("debugbar_hide_internal_queries", "true");
+            $hideInternalQueries->save();
+
+
+            //
+            // Add Maintenance Mode to ini settings
+            //
+            $maintenanceMode = new SettingsIni($this, "maintenance-mode-settings");
+            $maintenanceMode->addProperty("maintenance_mode", "disabled");
+            $maintenanceMode->save();
+
 
             return true;
         }
