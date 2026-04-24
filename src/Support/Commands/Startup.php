@@ -3,8 +3,10 @@
 
     use Composer\InstalledVersions;
     use Symfony\Component\Console\Command\Command;
+    use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Bootstrap\AutomatedSettings;
     use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
     final class Startup extends Command {
@@ -14,9 +16,16 @@
         protected function configure(): void {
             $this->setName("info:startup");
             $this->setDescription("Prints information for the startup process of the framework.");
+
+            $this->addOption("pwd", null, InputOption::VALUE_REQUIRED, "The current working directory of the caller..");
         }
 
-        protected function execute(InputInterface $_in, OutputInterface $out): int {
+        protected function execute(InputInterface $in, OutputInterface $out): int {
+            $pwdOption = $in->getOption("pwd");
+            if(is_string($pwdOption)) {
+                AutomatedSettings::set("host_working_directory", $pwdOption);
+            }
+
             $this->out = $out;
             $out->setDecorated(true);
 

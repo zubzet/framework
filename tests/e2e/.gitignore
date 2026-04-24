@@ -1,2 +1,32 @@
 composer.lock
 logging
+z_config/z_cache.ini
+
+# Fixtures temporarily copied into the app during e2e runs (cleaned up by tests,
+# but listed here so an interrupted run never lets them slip into a commit).
+app/Database/migrations/Syntax.sql
+app/Database/migrations/2025-10-10.sql
+app/Database/migrations/12-10-2004_Wrong_Date.sql
+app/Database/migrations/1990-10-10_Test_Name.sql
+app/Database/migrations/5000-10-10_Test_Name.sql
+app/Database/migrations/2005-01-01_1_Syn_File.sql
+app/Database/migrations/2005-01-01_2_Syn_File.sql
+app/Database/migrations/2005-01-05_1_Syn_File.sql
+app/Database/migrations/2005-01-10_1_Syn_File.sql
+app/Database/migrations/2005-01-10_2_Syn_File.sql
+app/Database/migrations/2005-01-10_3_Syn_File.php
+app/Database/migrations/2025-01-01_Ex_Ex.sql
+app/Database/migrations/2025-09-30_MigrationPHPImport.sql
+app/Database/migrations/2025-10-01_MigrationEnv.php
+app/Database/migrations/2025-10-01_MigrationEnv1.php
+app/Database/migrations/2025-10-01_MigrationImport.php
+app/Database/migrations/2025-10-01_MigrationImport.sql
+app/Database/migrations/2025-10-01_MigrationManual.php
+app/Database/migrations/2025-10-01_MigrationPHPImport.php
+app/Database/migrations/2025-10-01_MigrationSkip.php
+app/Database/migrations/2025-10-01_SkippedMigration.sql
+app/Database/seed/TestSeeding.sql
+app/Database/seed/TestSeeding.php
+app/Database/seed/Environments/
+app/Routes/RoutingTest.php
+z_automated_setting.ini

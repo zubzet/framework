@@ -9,3 +9,7 @@ sql.log
 uploads
 .claude
 .coverage
+
+# E2E migration fixtures temporarily copied into framework during test runs
+src/IncludedComponents/database/Migration/2025-01-01_Ex_Ex.sql
+src/IncludedComponents/database/Migration/2025-10-01_MigrationImport.sql

@@ -5,14 +5,16 @@
     }
 
     namespace {
+
         use ZubZet\Framework\ZubZet;
+        use ZubZet\Framework\Logger\Logger;
         use ZubZet\Framework\Message\Request;
         use ZubZet\Framework\Message\Response;
         use ZubZet\Framework\Authentication\User;
+        use ZubZet\Framework\Database\Connection;
         use ZubZet\Framework\Logger\LoggerFactory;
         use ZubZet\Framework\Core\FunctionConflictResolution;
-        use ZubZet\Framework\Database\Connection;
-        use ZubZet\Framework\Logger\Logger;
+        use ZubZet\Framework\ErrorHandling\GenericException\NotInstantiatedException;
 
         FunctionConflictResolution::requireAndThen("zubzet", function() {
             /**
@@ -22,7 +24,7 @@
              */
             function zubzet(): ZubZet {
                 if(ZubZet::$instance instanceof ZubZet) return ZubZet::$instance;
-                throw new RuntimeException("The ZubZet framework instance is not yet available.");
+                throw new NotInstantiatedException("ZubZet (The framework itself)");
             }
         });
 
@@ -47,7 +49,7 @@
              */
             function request(): Request {
                 if(zubzet()->req instanceof Request) return zubzet()->req;
-                throw new RuntimeException("The request instance is not yet available.");
+                throw new NotInstantiatedException("Request");
             }
         });
 
@@ -102,7 +104,7 @@
                     return null;
                 }
                 if(!(zubzet()->z_db instanceof Connection)) {
-                    throw new RuntimeException("The database connection is not yet available.");
+                    throw new NotInstantiatedException("Connection (Database)");
                 }
                 return zubzet()->z_db;
             }

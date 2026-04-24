@@ -20,3 +20,4 @@ These todos should be as temporary as possible:
 1. Classify PHP errors into proper log levels and stable `LogEventType` values (`WARNING`, `NOTICE`, `DEPRECATION`, `PARSE`, …); respect `@` suppression
 1. Moved `StreamLogger` and `DatabaseLogger` into `ZubZet\Framework\Logger\Method\`
 1. Renamed `LogEventType` constants to `UPPER_SNAKE_CASE` and promoted channel name constants to `Logger::APP` / `Logger::ZUBZET`
+1. Added Whoops as error page

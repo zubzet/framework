@@ -9,6 +9,7 @@
     use ZubZet\Framework\Message\Response;
     use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Database\Connection;
+    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Resources\AssetProxy;
     use ZubZet\Framework\Core\CanRetrieveModel;
     use ZubZet\Framework\Bootstrap\Configuration;
@@ -16,7 +17,6 @@
     use ZubZet\Framework\Message\Input\State as Input;
     use ZubZet\Framework\Core\CanRetrieveBooterSettings;
     use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
-use ZubZet\Framework\Logger\LoggerFactory;
 
     class ZubZet {
         use Router;
