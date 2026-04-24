@@ -3,15 +3,13 @@
 
     use Composer\InstalledVersions;
     use Symfony\Component\Console\Command\Command;
-    use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
+    use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Bootstrap\AutomatedSettings;
     use Symfony\Component\Console\Formatter\OutputFormatterStyle;
-    use ZubZet\Framework\Core\CanManageCache;
 
     final class Startup extends Command {
-
-        use CanManageCache;
 
         private OutputInterface $out;
 
@@ -25,9 +23,8 @@
         protected function execute(InputInterface $in, OutputInterface $out): int {
             $pwdOption = $in->getOption("pwd");
             if(is_string($pwdOption)) {
-                $this->setCache("pwd", $pwdOption);
+                AutomatedSettings::set("host_working_directory", $pwdOption);
             }
-
 
             $this->out = $out;
             $out->setDecorated(true);

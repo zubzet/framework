@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Bootstrap;
 
     use ZubZet\Framework\Support\HasDynamicAttributes;
+    use ZubZet\Framework\Bootstrap\AutomatedSettings;
 
     trait Configuration {
 
@@ -15,6 +16,7 @@
                 "z_views" => "app/Views/",
                 "routes" => "app/Routes/",
                 "config_file" => "z_config/z_settings.ini",
+                "config_automated_file" => "z_config/z_automated_setting.ini",
                 "z_framework_root" => $frameworkRoot,
             ]);
 
@@ -53,6 +55,16 @@
             $rootDirectory = trim((string) $this->rootDirectory, '\/');
             $this->rootFolder = "/{$rootDirectory}";
             $this->root = "{$this->host}/{$rootDirectory}";
+
+            // Load automated settings
+            if(file_exists($this->config_automated_file)) {
+                $automatedSettings = file_get_contents($this->config_automated_file);
+                $automatedSettings = parse_ini_string($automatedSettings);
+                foreach($automatedSettings as $key => $value) {
+                    $this->{$key} = $value;
+                }
+                AutomatedSettings::load($automatedSettings);
+            }
         }
 
     }

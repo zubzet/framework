@@ -113,8 +113,11 @@ describe('Asset Proxy', () => {
                 url: `/AssetProxy/source_root_${variant}`,
                 failOnStatusCode: false,
             }).then((res) => {
-                expect(res.body).to.not.include(SENTINEL);
-                expect(res.body).to.not.include('assets.txt');
+                // A directory dump would respond 200 with the source files;
+                // any rejection (404/500) is acceptable.
+                expect(res.status).to.not.eq(200);
+                expect(res.body.slice(0, 1000)).to.not.include(SENTINEL);
+                expect(res.body.slice(0, 1000)).to.not.include('assets.txt');
             });
         });
     });

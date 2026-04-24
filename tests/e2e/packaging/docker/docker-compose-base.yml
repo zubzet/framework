@@ -1,6 +1,6 @@
 x-config-z-settings: &config-z-settings
   COMPOSER_VENDOR_DIR: "/var/www/vendor"
-  XDEBUG_MODE: "debug,coverage"
+  XDEBUG_MODE: "debug"
   DEBUG_ZUBZET_COVERAGE_FRAMEWORK: "true"
 
   CONFIG_HOST: http://localhost:8080
