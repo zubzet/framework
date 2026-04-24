@@ -18,6 +18,7 @@
     use ZubZet\Framework\Core\CanRetrieveBooterSettings;
     use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
+    use ZubZet\Framework\Support\DebugBar\DebugBarProvider;
 
     class ZubZet {
         use Router;
@@ -75,6 +76,7 @@
 
             // Static imports
             new Helpers;
+            new DebugBarProvider;
 
             // Starting the initial state of the message system
             $this->setRequestResponse(

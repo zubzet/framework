@@ -3,6 +3,8 @@
  * This file holds essential parts fot the framework that will be pasted into the layout.
  */
 
+use ZubZet\Framework\Support\DebugBar\DebugBarProvider;
+
 /**
  * Call this to paste the essential head part of a page into the layout
  * @param array $opt Object holding options for rendering
@@ -32,6 +34,8 @@ function essentialsHead($opt, $customBootstrap) { ?>
         Z.Request.absRoot = "<?= $opt["absRoot"]; ?>";
     </script>
 
+    <?= DebugBarProvider::renderHead() ?>
+
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
@@ -54,4 +58,5 @@ function essentialsBody($opt) { ?>
         </script>
         <!-- TOKEN EXPIRED -->
     <?php } ?>
+    <?= DebugBarProvider::renderBody() ?>
 <?php } ?>

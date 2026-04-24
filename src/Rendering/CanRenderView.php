@@ -5,6 +5,7 @@
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Rendering\ViewNotFoundException;
+    use ZubZet\Framework\Support\DebugBar\DebugBarProvider;
 
     trait CanRenderView {
 
@@ -69,6 +70,8 @@
 
             $layout = $options["layout"] ?? "layout/default_layout.php";
             $viewPath = self::resolvePath($document);
+
+            DebugBarProvider::renderCollector()?->addRender($document, $opt, $layout);
 
             //Set default parameter values
             $opt["response"] = $this;
