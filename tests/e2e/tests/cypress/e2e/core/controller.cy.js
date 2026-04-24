@@ -40,4 +40,31 @@ describe('Controllers', () => {
         cy.query("title").contains("Render");
         cy.query("data").contains("Data");
     });
+
+    // Regression guards for the Whoops error page pipeline. The bug they cover:
+    // when an uncaught throwable triggered handleException(), loading the Whoops
+    // PrettyPageHandler eagerly autoloaded PlainTextHandler whose `(integer)`
+    // cast emits an E_DEPRECATED on PHP 8.5. ALL-mode promoted that to an
+    // ErrorException inside the exception handler, so the rendered page showed
+    // "Uncaught ErrorException: Non-canonical cast" instead of the real cause.
+    describe('Error rendering (ALL mode)', () => {
+        it('renders the original exception class and message, not a vendor cascade', () => {
+            cy.request({ url: '/Core/throwsException', failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.eq(500);
+                expect(res.body).to.include('regression-controller-exception-marker');
+                expect(res.body).to.include('RuntimeException');
+                expect(res.body).to.not.match(/Non-canonical cast/i);
+                expect(res.body).to.not.include('PlainTextHandler');
+            });
+        });
+
+        it('promotes E_USER_DEPRECATED to a fatal exception (historical ALL contract)', () => {
+            // If a future change skips deprecations, the action's echo runs and
+            // the response is 200 — so the status check is the actual guard.
+            cy.request({ url: '/Core/triggersDeprecation', failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.eq(500);
+                expect(res.body).to.include('regression-controller-deprecation-marker');
+            });
+        });
+    });
 });
