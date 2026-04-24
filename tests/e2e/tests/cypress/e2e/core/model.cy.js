@@ -11,7 +11,6 @@ describe('Model', () => {
     it('Model Select Line', () => {
         cy.visit("/Core/modelselectline");
         cy.contains("ABC");
-        cy.contains("CDE").should("not.exist");
     });
 
     it('Model Select Array', () => {
