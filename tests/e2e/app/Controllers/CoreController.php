@@ -14,6 +14,15 @@
             echo "Controller Fallback";
         }
 
+        public function action_throwsException(Request $req, Response $res) {
+            throw new \RuntimeException("regression-controller-exception-marker");
+        }
+
+        public function action_triggersDeprecation(Request $req, Response $res) {
+            trigger_error("regression-controller-deprecation-marker", E_USER_DEPRECATED);
+            echo "deprecation was not promoted";
+        }
+
         public function action_command(Request $req, Response $res) {
             echo json_encode($req->getParameters());
         }

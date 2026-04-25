@@ -65,10 +65,6 @@
                 set_error_handler(function($severity, $message, $file, $line) {
                     if(!(error_reporting() & $severity)) return false; // respects `@` and error_reporting level
                     self::logError($severity, $message, $file, $line);
-                    // Deprecations in vendor code (e.g. PHP 8.5's (integer) cast in
-                    // whoops/PlainTextHandler) must not become fatal — they would
-                    // cascade inside the exception handler and replace the original.
-                    if($severity & (E_DEPRECATED | E_USER_DEPRECATED)) return true;
                     throw new \ErrorException($message, 0, $severity, $file, $line);
                 });
                 self::registerExceptionHandler();
