@@ -19,7 +19,7 @@ See [zubzet/zubzet](https://github.com/zubzet/zubzet) for the getting-started gu
 
 You're in the right place. This repository hosts the framework core that ships as a Composer dependency inside every ZubZet project.
 
-- **Contribution guide:** [How To Contribute](https://zubzet.com/docs/latest/setup/how-to-contribute)
+- **Contribution guide:** [How To Contribute](https://zubzet.com/docs/latest/contributing/how-to-contribute)
 - **Documentation:** [zubzet.com/docs](https://zubzet.com/docs)
 - **Report a bug / request a feature:** [Issues](https://github.com/zubzet/framework/issues)
 - **License:** [Apache-2.0](./LICENSE)
