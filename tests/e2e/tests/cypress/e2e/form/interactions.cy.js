@@ -12,6 +12,30 @@ describe("Form Interactions", () => {
         });
     });
 
+    it("Submits the form on a single click after typing", () => {
+        cy.intercept("POST", "/Form/interactions").as("submit");
+        cy.visit("/Form/interactions");
+
+        cy.form("field_a").type("Neuer Test");
+        cy.query("form").find("button").click();
+
+        cy.wait("@submit");
+        cy.query("form").contains("Saved!");
+        cy.get("@submit.all").should("have.length", 1);
+    });
+
+    it("Debounces a rapid double-click submit so only one POST is sent", () => {
+        cy.intercept("POST", "/Form/interactions").as("submit");
+        cy.visit("/Form/interactions");
+
+        cy.form("field_a").type("Neuer Test");
+        cy.query("form").find("button").click().click();
+
+        cy.wait("@submit");
+        cy.query("form").contains("Saved!");
+        cy.get("@submit.all").should("have.length", 1);
+    });
+
     it("Initializes a field to its configured default value", () => {
         cy.visit("/Form/interactions");
 

@@ -639,7 +639,7 @@ class ZCEDItem {
     field.label.classList.add("mb-0");
     this.dom.appendChild(field.dom);
     this.fields[field.name] = field;
-    field.on("change", () => {
+    field.on("input", () => {
       this.ced.emit("change");
     });
 
@@ -779,6 +779,12 @@ class ZForm {
    * @returns {void}
    */
   send(customUrl = null) {
+    var now = Date.now();
+    if (this.isSending) return;
+    if (this.lastSendAt && now - this.lastSendAt < 300) return;
+    this.lastSendAt = now;
+    this.isSending = true;
+
     var data = this.getFormData();
 
     for (var pair of data.entries()) {
@@ -827,6 +833,8 @@ class ZForm {
         this.hint("alert-danger", Z.Lang.saveError);
       }
 
+    }).always(() => {
+      this.isSending = false;
     });
   }
 
@@ -839,9 +847,11 @@ class ZForm {
     if (field.type == "CED") this.doReload = true;
 
     this.fields[field.name] = field;
-    field.on('change', () => {
+    var showUnsavedHint = () => {
       this.hint("alert-warning", Z.Lang.unsaved);
-    });
+    };
+    field.on('input', showUnsavedHint);
+    field.on('change', showUnsavedHint);
     bsCustomFileInput.init();
 
     if (field.width + this.currentRowLength > 12) {
