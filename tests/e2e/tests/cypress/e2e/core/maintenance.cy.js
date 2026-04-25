@@ -26,11 +26,11 @@ describe('Maintenance System', () => {
             cy.contains("Dashboard").should("exist");
         });
 
-        it("should show 'Inactive' status in the admin panel", () => {
+        it("should show 'Normal' status in the admin panel", () => {
             cy.loginAs("admin");
             cy.visit("/z/maintenance");
 
-            cy.contains("Inactive").should("exist");
+            cy.contains("Normal").should("exist");
             cy.contains("disabled").should("exist");
         });
 
@@ -77,18 +77,19 @@ describe('Maintenance System', () => {
         });
 
         it("should allow setting bypass cookie via the admin panel", () => {
+            // Use disabled mode so the panel is reachable without a cookie.
+            cy.setConfigSetting('maintenance_mode', 'disabled');
             cy.loginAs("admin");
-            cy.setCookie('maintenance', 'true');
-            
+            cy.clearCookie('maintenance');
+
             cy.visit("/z/maintenance");
 
-            cy.get('#bypass-maintenance').click();
+            cy.get('#bypass-maintenance').should('not.be.disabled').click();
 
-            cy.on('window:alert', (str) => {
-                expect(str).to.include('Bypass cookie set successfully');
-            });
+            cy.getCookie('maintenance').should('exist');
 
             cy.clearCookie('maintenance');
+            cy.setConfigSetting('maintenance_mode', 'soft');
         });
 
         it("should display maintenance page with retry-after header in soft mode without cookie", () => {
@@ -175,8 +176,8 @@ describe('Maintenance System', () => {
 
         it("should show correct status for each mode", () => {
             const modes = [
-                { mode: 'disabled', display: 'Inactive' },
-                { mode: 'soft', display: 'Active' },
+                { mode: 'disabled', display: 'Normal' },
+                { mode: 'soft', display: 'Maintenance' },
             ];
 
             modes.forEach(({ mode, display }) => {
@@ -287,6 +288,101 @@ describe('Maintenance System', () => {
                 failOnStatusCode: false
             }).then((res) => {
                 expect(res.status).to.equal(200);
+            });
+        });
+
+    });
+
+    describe("Mode Parsing", () => {
+
+        it("should accept uppercase values via strtolower", () => {
+            cy.setConfigSetting('maintenance_mode', 'ENABLED');
+
+            cy.request({ url: '/', failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.equal(503);
+            });
+        });
+
+        it("should fall through to disabled when value is unknown", () => {
+            cy.setConfigSetting('maintenance_mode', 'badvalue');
+
+            cy.request({ url: '/', failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.equal(200);
+            });
+        });
+
+    });
+
+    describe("Mode: Full", () => {
+
+        before(() => cy.setConfigSetting('maintenance_mode', 'full'));
+
+        it("should block HTTP with the styled template", () => {
+            cy.request({ url: '/', failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.equal(503);
+                expect(res.body).to.include('currently undergoing maintenance');
+            });
+        });
+
+        it("should still emit the Retry-After header", () => {
+            cy.request({ url: '/', failOnStatusCode: false }).then((res) => {
+                expect(res.headers['retry-after']).to.equal('300');
+            });
+        });
+
+    });
+
+    describe("CLI Bypass", () => {
+
+        afterEach(() => cy.setConfigSetting('maintenance_mode', 'disabled'));
+
+        it("should allow CLI commands when mode is enabled", () => {
+            cy.setConfigSetting('maintenance_mode', 'enabled');
+
+            cy.exec('docker exec application php index.php info:startup', {
+                failOnNonZeroExit: false
+            }).then((result) => {
+                expect(result.exitCode).to.equal(0);
+            });
+        });
+
+        it("should block CLI commands when mode is full", () => {
+            cy.setConfigSetting('maintenance_mode', 'full');
+
+            cy.exec('docker exec application php index.php info:startup', {
+                failOnNonZeroExit: false
+            }).then((result) => {
+                expect(result.exitCode).to.not.equal(0);
+                expect(result.stderr).to.include('Service Unavailable');
+            });
+        });
+
+    });
+
+    describe("Template Loading", () => {
+
+        const OVERRIDE_PATH = '../app/Views/maintenance.html';
+
+        before(() => cy.setConfigSetting('maintenance_mode', 'enabled'));
+
+        afterEach(() => cy.exec(`rm -f ${OVERRIDE_PATH}`, { failOnNonZeroExit: false }));
+
+        it("should reject project templates that contain <?php and fall through to the framework default", () => {
+            cy.writeFile(OVERRIDE_PATH, '<?php echo "EVIL"; ?>');
+
+            cy.request({ url: '/', failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.equal(503);
+                expect(res.body).to.not.include('EVIL');
+                expect(res.body).to.include('currently undergoing maintenance');
+            });
+        });
+
+        it("should fall through to the framework default when the override is empty", () => {
+            cy.writeFile(OVERRIDE_PATH, '');
+
+            cy.request({ url: '/', failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.equal(503);
+                expect(res.body).to.include('currently undergoing maintenance');
             });
         });
 
