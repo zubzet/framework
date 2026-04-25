@@ -731,6 +731,11 @@ class ZForm {
     this.currentRow = null;
     this.rows = [];
 
+    /**
+     * @private
+     */
+    this._isDisabled = false;
+
     if (options.dom) document.getElementById(options.dom).appendChild(this.dom);
   }
 
@@ -811,6 +816,7 @@ class ZForm {
     if (this.lastSendAt && now - this.lastSendAt < 300) return;
     this.lastSendAt = now;
     this.isSending = true;
+    this._updateDisabled();
 
     var data = this.getFormData();
 
@@ -862,6 +868,7 @@ class ZForm {
 
     }).always(() => {
       this.isSending = false;
+      this._updateDisabled();
     });
   }
 
@@ -914,7 +921,8 @@ class ZForm {
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
-    var field = new ZFormField(options);
+    const field = new ZFormField(options);
+    field.form = this;
     this.addField(field);
     return field;
   }
@@ -985,6 +993,41 @@ class ZForm {
     }
   }
 
+  /**
+   * Enables the form
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+
+  }
+
+  /**
+   * Disables the form
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * @returns {boolean} True when form is disabled
+   */
+  isDisabled() {
+    if (this.isSending) return true
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    for (const field of Object.values(this.fields)) {
+      field._updateDisabled();
+    }
+    this.buttonSubmit.disabled = this.isDisabled();
+  }
+
 }
 
 /**
@@ -1009,19 +1052,20 @@ class ZForm {
 /**
  * All parameters are optional
  * @typedef FormFieldOptions
- * @property {string} name Name to use in the request
- * @property {boolean} required Sets if this field is required to be filled in
- * @property {InputType} type Type of the field
- * @property {string} text Text to show in the label
- * @property {string} hint Small text to show under the input. For example: "We do not share you email" or something.
- * @property {any} default Default value 
- * @property {boolean} autofill Enable browser level autofill for this field.
- * @property {string} placeholder Placeholder to show in the input when nothing is entered
- * @property {FieldWidth} width Width of the field in units
- * @property {object} attributes List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
- * @property {Food} food Food for selects or autocomepletes
- * @property {boolean} compact Sets the compact mode. In compact mode, the label is hidden
- * @property {string} prepend Content to put in front of the input. Units are usally put there
+ * @property {string} [name] Name to use in the request
+ * @property {boolean} [required] Sets if this field is required to be filled in
+ * @property {InputType} [type] Type of the field
+ * @property {string} [text] Text to show in the label
+ * @property {string} [hint] Small text to show under the input. For example: "We do not share you email" or something.
+ * @property {any} [default] Default value 
+ * @property {boolean} [autofill] Enable browser level autofill for this field.
+ * @property {string} [placeholder] Placeholder to show in the input when nothing is entered
+ * @property {FieldWidth} [width] Width of the field in units
+ * @property {object} [attributes] List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
+ * @property {Food} [food] Food for selects or autocomepletes
+ * @property {boolean} [compact] Sets the compact mode. In compact mode, the label is hidden
+ * @property {string} [prepend] Content to put in front of the input. Units are usally put there
+ * @property {boolean} [disabled] Does this field start disabled?
  */
 
 /**
@@ -1050,6 +1094,17 @@ class ZFormField {
     this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
     this.autocompleteTextCB = options.autocompleteTextCB;
     this.autocompleteCB = options.autocompleteCB || null;
+
+    /**
+     * @type {ZForm|null}
+     */
+    this.form = null;
+
+    /**
+     * @private
+     * Was this field disabled manually?
+     */
+    this._isDisabled = false
 
     this.optgroup = null;
 
@@ -1253,6 +1308,10 @@ class ZFormField {
     if (options.compact) {
       this.label.classList.add("d-none");
     }
+
+    if (options.disabled) {
+      this.disable();
+    }
   }
 
   /**
@@ -1397,5 +1456,36 @@ class ZFormField {
    */
   reset() {
     this.input.value = this.default ?? "";
+  }
+
+  /**
+   * Disables the form field
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * Enables the form field
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+  }
+
+  isDisabled() {
+    if (this.form) {
+      if (this.form.isDisabled()) return true;
+    }
+
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    this.input.disabled = this.isDisabled();
   }
 }
