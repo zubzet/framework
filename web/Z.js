@@ -769,6 +769,33 @@ class ZForm {
   }
 
   /**
+   * Returns an object where each key is the fieldname with its value as value
+   * @returns {{[fieldName: string]: any}}
+   */
+  getValues() {
+    return Object.fromEntries(
+      Object.entries(this.fields).map(([fieldName, field]) => [fieldName, field.value])
+    )
+  }
+
+  /**
+   * Fills a form with a data object
+   * @param {{[fieldName: string]: any}} data 
+   * @param {Object} options
+   * @param {boolean} [options.resetUnknown] Reset fields which values are not in data?
+   */
+  setValues(data, options = {}) {
+    if (options.resetUnknown) {
+      this.reset()
+    }
+
+    for (const fieldName in data) {
+      if (!(fieldName in this.fields)) continue
+      this.fields[fieldName].value = data[fieldName]
+    }
+  }
+
+  /**
    * Adds custom html to the current part of the Form
    * @returns {void}
    */
