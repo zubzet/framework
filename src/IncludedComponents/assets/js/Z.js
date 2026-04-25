@@ -942,9 +942,9 @@ class ZForm {
    * Clears all field values.
    * Does not remove all fields!
    */
-  clearValues() {
+  reset() {
     for (const field of Object.values(this.fields)) {
-      field.clearValue()
+      field.reset();
     }
   }
 
@@ -1156,10 +1156,6 @@ class ZFormField {
       this.input.setAttribute("placeholder", this.placeholder);
     }
 
-    if (options.value) {
-      this.value = options.value;
-    }
-
     if (options.width) {
       this.setWidth(options.width);
     } else {
@@ -1211,6 +1207,12 @@ class ZFormField {
       this.feedData(options.food);
     }
 
+    if (options.value) {
+      this.value = options.value;
+    } else if (options.default !== undefined) {
+      this.value = options.default;
+    }
+
     if (options.compact) {
       this.label.classList.add("d-none");
     }
@@ -1254,8 +1256,8 @@ class ZFormField {
   }
 
   /**
-   * Marks this field as errorous.
-   * @param {InvalidError} error Error containg information about whats wrong
+   * Marks this field as erroneous.
+   * @param {InvalidError} error Error containing information about whats wrong
    * @returns {void}
    */
   markInvalid(error) {
@@ -1352,9 +1354,11 @@ class ZFormField {
   }
 
   /**
-   * Clears the input value of this form field. Options for selects and auto completes will persist.
+   * Resets the input value of this form field. If a default value was provided in the
+   * field options, the input is reset to that value; otherwise it is cleared.
+   * Options for selects and auto completes will persist.
    */
-  clearValue() {
-    this.input.value = ""
+  reset() {
+    this.input.value = this.default ?? "";
   }
 }
