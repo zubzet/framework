@@ -883,6 +883,7 @@ class ZForm {
    */
   addField(field) {
     if (field.type == "CED") this.doReload = true;
+    field.form = this;
 
     this.fields[field.name] = field;
     var showUnsavedHint = () => {
@@ -891,6 +892,8 @@ class ZForm {
     field.on('input', showUnsavedHint);
     field.on('change', showUnsavedHint);
     bsCustomFileInput.init();
+
+    if (field.isHidden()) return;
 
     if (field.width + this.currentRowLength > 12) {
       var group = document.createElement("div");
@@ -906,6 +909,39 @@ class ZForm {
       this.currentRow.appendChild(field.dom);
     }
     this.currentRowLength += field.width;
+  }
+
+  /**
+   * Rebuilds the whole form layout. Should be executed when visibility of fields changes.
+   * It is not used when fields are added because it could potentially break existing userspace code, that handles field visibility.
+   * @private
+   */
+  _updateLayout() {
+    for (const field of Object.values(this.fields)) {
+      field.dom.remove()
+    }
+
+    this.inputSpace.innerHTML = ""
+
+    let currentLength = Infinity
+    let currentRow = null
+
+    for (const field of Object.values(this.fields)) {
+      if (field.isHidden()) continue;
+
+      if (field.width + currentLength > 12) {
+        const group = document.createElement("div");
+        group.classList.add("form-group");
+        currentRow = document.createElement("div");
+        currentRow.classList.add("form-row");
+        group.appendChild(currentRow);
+        this.inputSpace.appendChild(group);
+        currentLength = 0;
+      }
+
+      currentRow.appendChild(field.dom);
+      currentLength += field.width;
+    }
   }
 
   /**
@@ -946,7 +982,6 @@ class ZForm {
    */
   createField(options) {
     const field = new ZFormField(options);
-    field.form = this;
     this.addField(field);
     return field;
   }
@@ -1097,6 +1132,7 @@ class ZForm {
  * @property {function} [autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
  * @property {function} [autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
  * @property {boolean} [disabled] Does this field start disabled?
+ * @property {boolean} [hidden] Does this field start hidden?
  */
 
 /**
@@ -1136,6 +1172,12 @@ class ZFormField {
      * Was this field disabled manually?
      */
     this._isDisabled = false
+
+    /**
+     * @private
+     * Is this field hidden?
+     */
+    this._isHidden = false
 
     this.optgroup = null;
 
@@ -1369,6 +1411,10 @@ class ZFormField {
 
     if (options.disabled) {
       this.disable();
+    }
+
+    if (options.hidden) {
+      this.hide();
     }
   }
 
@@ -1685,5 +1731,20 @@ class ZFormField {
    */
   _updateDisabled() {
     this.input.disabled = this.isDisabled();
+  }
+
+  hide() {
+    this._isHidden = true
+    if (this.form) this.form._updateLayout();
+  }
+
+  show() {
+    this._isHidden = false
+    if (this.form) this.form._updateLayout();
+  }
+
+  isHidden() {
+    // Logic for conditional fields would be here when implemented
+    return this._isHidden
   }
 }
