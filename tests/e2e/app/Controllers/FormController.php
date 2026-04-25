@@ -2,6 +2,27 @@
 
     class FormController extends z_controller {
 
+        public function action_interactions(Request $req, Response $res) {
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("field_a")),
+                    (new FormField("field_b")),
+                    (new FormField("field_c")),
+                    (new FormField("field_select")),
+                    (new FormField("field_default")),
+                    (new FormField("field_select_default")),
+                ]);
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                return $res->success();
+            }
+
+            return $res->render("form/interactions");
+        }
+
         public function action_validationText(Request $req, Response $res) {
             if($req->hasFormData()) {
                 $formResult = $req->validateForm([
