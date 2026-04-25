@@ -735,6 +735,11 @@ class ZForm {
     this.currentRow = null;
     this.rows = [];
 
+    /**
+     * @private
+     */
+    this._isDisabled = false;
+
     if (options.dom) document.getElementById(options.dom).appendChild(this.dom);
   }
 
@@ -815,6 +820,7 @@ class ZForm {
     if (this.lastSendAt && now - this.lastSendAt < 300) return;
     this.lastSendAt = now;
     this.isSending = true;
+    this._updateDisabled();
 
     var data = this.getFormData();
 
@@ -866,6 +872,7 @@ class ZForm {
 
     }).always(() => {
       this.isSending = false;
+      this._updateDisabled();
     });
   }
 
@@ -938,7 +945,8 @@ class ZForm {
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
-    var field = new ZFormField(options);
+    const field = new ZFormField(options);
+    field.form = this;
     this.addField(field);
     return field;
   }
@@ -1009,6 +1017,41 @@ class ZForm {
     }
   }
 
+  /**
+   * Enables the form
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+
+  }
+
+  /**
+   * Disables the form
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * @returns {boolean} True when form is disabled
+   */
+  isDisabled() {
+    if (this.isSending) return true
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    for (const field of Object.values(this.fields)) {
+      field._updateDisabled();
+    }
+    this.buttonSubmit.disabled = this.isDisabled();
+  }
+
 }
 
 /**
@@ -1053,6 +1096,7 @@ class ZForm {
  * @property {number} [autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
  * @property {function} [autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
  * @property {function} [autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
+ * @property {boolean} [disabled] Does this field start disabled?
  */
 
 /**
@@ -1081,6 +1125,17 @@ class ZFormField {
     this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
     this.autocompleteTextCB = options.autocompleteTextCB;
     this.autocompleteCB = options.autocompleteCB || null;
+
+    /**
+     * @type {ZForm|null}
+     */
+    this.form = null;
+
+    /**
+     * @private
+     * Was this field disabled manually?
+     */
+    this._isDisabled = false
 
     this.optgroup = null;
 
@@ -1310,6 +1365,10 @@ class ZFormField {
 
     if (options.compact) {
       this.label.classList.add("d-none");
+    }
+
+    if (options.disabled) {
+      this.disable();
     }
   }
 
@@ -1595,5 +1654,36 @@ class ZFormField {
       return;
     }
     this.input.value = this.default ?? "";
+  }
+
+  /**
+   * Disables the form field
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * Enables the form field
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+  }
+
+  isDisabled() {
+    if (this.form) {
+      if (this.form.isDisabled()) return true;
+    }
+
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    this.input.disabled = this.isDisabled();
   }
 }
