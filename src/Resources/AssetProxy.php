@@ -10,6 +10,7 @@
 
         public function __construct() {
             $this->registerWebRootSource(config("z_framework_root") . "IncludedComponents/assets/");
+            $this->registerWebRootSource(config("z_frontend_root"));
         }
 
         public function registerWebRootSource(string $webRootSource): void {

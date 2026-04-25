@@ -15,9 +15,9 @@ function essentialsHead($opt, $customBootstrap) { ?>
     <?php if(!$customBootstrap) { ?>
         <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/bootstrap.min.js"); ?>"></script>
     <?php } ?>
-
+^
     <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/bs-custom-file-input.js"); ?>"></script>
-    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/Z.js") ?>"></script>
+    <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/Z.js") ?>"></script>
 
     <link href="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/css/bootstrap.min.css"); ?>" rel="stylesheet">
 

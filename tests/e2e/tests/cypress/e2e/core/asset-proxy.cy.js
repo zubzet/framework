@@ -6,7 +6,7 @@ describe('Asset Proxy', () => {
     const SENTINEL = 'This file is used for security tests';
 
     it('serves a framework JS asset with the exact application/javascript content-type', () => {
-        cy.request('/_zubzet/asset-proxy/js/Z.js').then((res) => {
+        cy.request('/_zubzet/asset-proxy/Z.js').then((res) => {
             expect(res.status).to.eq(200);
             expect(res.headers['content-type']).to.eq('application/javascript');
             expect(res.body.length).to.be.greaterThan(0);

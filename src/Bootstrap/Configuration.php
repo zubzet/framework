@@ -18,6 +18,7 @@
                 "config_file" => "z_config/z_settings.ini",
                 "config_automated_file" => "z_config/z_automated_setting.ini",
                 "z_framework_root" => $frameworkRoot,
+                "z_frontend_root" => realpath("$frameworkRoot../web"),
             ]);
 
             //Parse ini file with inline comments ignored
