@@ -32,7 +32,7 @@
          */
         public function action_index($req, $res) {
             $req->checkPermission("admin.panel");
-            $res->render("z_empty.php", [], "layout/z_admin_layout.php");
+            $res->render("administration/empty.php", [], "layout/z_admin_layout.php");
         }
 
         public function action_maintenance(Request $req, Response $res) {
@@ -43,7 +43,7 @@
                 return $res->success();
             }
 
-            return $res->render("z_maintenance.php", [
+            return $res->render("administration/maintenance.php", [
                 "isActive" => MaintenanceHandler::isActive(),
                 "mode" => MaintenanceHandler::getMode()
             ], "layout/z_admin_layout.php");
@@ -83,7 +83,7 @@
                 return $res->success();
             }
 
-            $res->render("z_add_user.php", [
+            $res->render("administration/add_user.php", [
                 "title" => "Add user"
             ], "layout/z_admin_layout.php");
         }
@@ -137,7 +137,7 @@
                     }
                 }
 
-                $res->render("z_edit_user.php", [
+                $res->render("administration/edit_user.php", [
                     "title" => "Edit user", 
                     "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
                     "roles" => $this->makeFood($req->getModel("z_general")->getTableWhere("z_role", "*", "active = ?", "i", [1]), "id", "name"),
@@ -148,7 +148,7 @@
                     "userId" => $userId
                 ], "layout/z_admin_layout.php");
             } else {
-                $res->render("z_user_select.php", [
+                $res->render("administration/user_select.php", [
                     "users" => $req->getModel("z_user")->getUserList()
                 ], "layout/z_admin_layout.php");
             }
@@ -174,7 +174,7 @@
         function action_groups(Request $req, Response $res) {
             $req->checkPermission("admin.groups.list");
 
-            $res->render("z_groups.php", [
+            $res->render("administration/groups.php", [
                 "groups" => model("z_general")->getGroups()
             ], "layout/z_admin_layout.php");
         }
@@ -225,12 +225,12 @@
                     }
                 }
 
-                $res->render("z_roles.php", [
+                $res->render("administration/roles.php", [
                     "name" => $role["name"],
                     "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"])
                 ], "layout/z_admin_layout.php");
             } else {
-                $res->render("z_role_select.php", [
+                $res->render("administration/role_select.php", [
                     "roles" => $req->getModel("z_general")->getTableWhere("z_role", "*", "active = ? AND is_group = 0", "i", [1])
                 ], "layout/z_admin_layout.php");
             }
