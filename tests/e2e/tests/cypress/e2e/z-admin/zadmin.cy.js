@@ -144,7 +144,7 @@ describe('Z-Admin Panel', () => {
 
     });
 
-    it('Goes into roles', () => {
+    it('Goes into roles and creates a role with a single permission', () => {
         cy.visit("/admin/loginas");
         cy.visit("/z");
 
@@ -159,10 +159,26 @@ describe('Z-Admin Panel', () => {
         cy.get('.btn.btn-primary').find('i.fas.fa-plus').should('exist');
         cy.wait(500);
         cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
-        cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
         cy.get('input#input-2').type('test');
         cy.get('.btn.btn-primary').last().click();
         cy.get(".form-text.text-danger").should('not.be.visible');
+    });
+
+    it('Shows a validation error when an added permission row is left empty', () => {
+        cy.visit("/admin/loginas");
+        cy.visit("/z");
+
+        cy.query("btn-roles").click();
+        cy.query("role-create").click();
+
+        cy.form("name").type("test");
+        cy.get('.btn.btn-primary').find('i.fas.fa-plus').should('exist');
+        cy.wait(500);
+        cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
+        cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
+        cy.get('input#input-2').type('test');
+        cy.get('.btn.btn-primary').last().click();
+        cy.get(".form-text.text-danger").should('be.visible');
     });
 
 });
