@@ -7,134 +7,131 @@
         <title><?= $opt["title"]; ?></title>
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
+
         <?php $opt["layout_essentials_head"]($opt); ?>
         <?php $head($opt); ?>
 
-        <style>
-
-            .wrapper {
-                display: flex;
-                margin: 0px;
-            }
-
-            .sidebar {
-                border-right: 1px solid black;
-                padding: 4px;
-                background-color: #202020;
-                color: #fff;
-            }
-
-            .nav-item i {
-                width: 32px;
-                margin: 3px;
-            }
-
-            .nav-item {
-                
-            }
-
-            .content {
-                margin-left: auto;
-                margin-right: auto;
-                max-width: 1000px;
-            }
-
-            .content-wrapper {
-                border-top: 10px #202020 solid;
-                flex-grow: 1;
-            }
-
-            h1 {
-                animation: rainbow 5s infinite;
-                animation-timing-function: linear;
-                text-shadow: 0 0 1px #fff, 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #00DEFF, 0 0 7px #00DEFF;
-            }
-
-            @media(min-width: 768px) {
-                .sidebar {
-                    min-height: 100vh;
-                }
-            }
-
-            @keyframes rainbow {
-                0%{color: orange; transform: scale(1) rotate(10deg); }
-                10%{color: purple;}
-                20%{color: red;}
-                25%{transform: scale(1.2) rotate(0deg); }
-                30%{color: CadetBlue;}
-                40%{color: yellow;}
-                50%{color: coral; transform: scale(1) rotate(-10deg);}
-                60%{color: green;}
-                70%{color: cyan;}
-                75%{transform: scale(1.2) rotate(0deg);}
-                80%{color: DeepPink;}
-                90%{color: DodgerBlue;}
-                100%{color: orange; transform: scale(1) rotate(10deg); }
-            }
-        </style>
+        <link rel="stylesheet" href="<?= $opt["root"]; ?>_zubzet/asset-proxy/css/admin_layout.css">
     </head>
     <body>
         <div class="container-fluid">
             <div class="row">
-                <div class="sidebar col-md-2 col-12 visible-sm-block hidden-sm">
-                    <h1 id="logo" class="text-center mb-5 mt-4 d-none">Z-Admin</h1>
-                    <button class="btn btn-primary d-md-none btn-block mb-2" data-toggle="collapse" data-target="#navbar"><i class="fa fa-bars"></i></button>
+                <div class="sidebar col-12 col-lg-3 col-xl-2">
+                    <div class="text-center my-4 font-weight-bold">
+                        <h1 id="logo">
+                            ZubZet
+                        </h1>
+                        <h1 class="d-none" id="logo-easter-egg">
+                            ZubZet
+                        </h1>
+                    </div>
+
+                    <button class="btn btn-primary btn-block mb-2 d-lg-none" data-toggle="collapse" data-target="#navbar">
+                        <i class="fa fa-bars"></i>
+                    </button>
+
                     <div id="navbar" class="collapse show">
+                        <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
+                            <i class="fa fa-fw fa-arrow-circle-o-right"></i>
+                            Application
+                        </h1>
                         <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.database")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-database" href="<?= $opt["root"]; ?>z/database">
-                                    <i class="fa fa-database"></i>
+                                    <i class="fa fa-fw fa-database"></i>
                                     Database
                                 </a>
                             <?php } ?>
-                        </div>
-                        <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.maintenance")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-maintenance" href="<?= $opt["root"]; ?>z/maintenance"><i class="fa fa-wrench"></i>Maintenance</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-maintenance" href="<?= $opt["root"]; ?>z/maintenance">
+                                    <i class="fa fa-fw fa-wrench"></i>
+                                    Maintenance
+                                </a>
                             <?php } ?>
+                        </div>
+
+                        <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
+                            <i class="fa fa-fw fa-arrow-circle-o-right"></i>
+                            Users and Roles
+                        </h1>
+                        <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-edit-user" href="<?= $opt["root"]; ?>z/edit_user"><i class="fa fa-user-edit"></i>Edit User</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-edit-user" href="<?= $opt["root"]; ?>z/edit_user">
+                                    <i class="fa fa-fw fa-user-edit"></i>
+                                    Edit User
+                                </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.user.add")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-add-user" href="<?= $opt["root"]; ?>z/add_user"><i class="fa fa-user-plus"></i></i>Add User</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-add-user" href="<?= $opt["root"]; ?>z/add_user">
+                                    <i class="fa fa-fw fa-user-plus"></i>
+                                    Add User
+                                </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.roles.list")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-roles" href="<?= $opt["root"]; ?>z/roles"><i class="fa fa-user-tag"></i>Roles</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-roles" href="<?= $opt["root"]; ?>z/roles">
+                                    <i class="fa fa-fw fa-user-tag"></i>
+                                    Roles
+                                </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.groups.list")) { ?>
-                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-groups" href="<?= $opt["root"]; ?>z/groups"><i class="fa fa-user-friends"></i>Groups</a>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-groups" href="<?= $opt["root"]; ?>z/groups">
+                                    <i class="fa fa-fw fa-user-friends"></i>
+                                    Groups
+                                </a>
                             <?php } ?>
                         </div>
+
+                        <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
+                            <i class="fa fa-fw fa-arrow-circle-o-right"></i>
+                            Other
+                        </h1>
                         <div class="list-group mb-1">
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>">
-                                <i class="fa fa-arrow-left"></i>
+                                <i class="fa fa-fw fa-arrow-left"></i>
                                 Go back
                             </a>
-                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>login/logout"><i class="fa fa-sign-out-alt"></i>Logout</a>
+                            <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>login/logout">
+                                <i class="fa fa-fw fa-sign-out-alt"></i>
+                                Logout
+                            </a>
                         </div>
                     </div>
                 </div>
-                <div class="content<?= ($opt["wideContent"] ?? false) ? "-fluid" : "" ?> pb-2 pt-2 col-md-10">
+                <div class="content<?= ($opt["wideContent"] ?? false) ? "-fluid" : "" ?> pb-2 pt-2 col-lg-9 col-xl-10">
                     <?php $body($opt); ?>
                 </div>
             </div>
         </div>
 
         <?php $opt["layout_essentials_body"]($opt); ?>
+
         <script>
-            $(function() {
-                var isSmall = window.matchMedia("(max-width: 768px)").matches;
-                if (isSmall) {
-                    $("#navbar").removeClass("show");
-                }
+            $(() => {
+                const mql = window.matchMedia("(max-width: 992px)");
+                if(mql.matches) $("#navbar").removeClass("show");
+                mql.addEventListener("change", (e) => {
+                    if(!e.matches) $("#navbar").addClass("show");
+                });
             })
-        </script>
-        <script>
+
             $(document).on("keydown", function(e) {
                 if(!e.ctrlKey || e.key != "j") return;
                 e.preventDefault();
+
+                $("#logo-easter-egg").toggleClass("d-none");
                 $("#logo").toggleClass("d-none");
+
+                localStorage.setItem(
+                    "z_admin_logo_visible",
+                    $("#logo").hasClass("d-none"),
+                );
+            });
+
+            $(() => {
+                if("true" == localStorage.getItem("z_admin_logo_visible")) {
+                    $("#logo-easter-egg").removeClass("d-none");
+                    $("#logo").addClass("d-none");
+                }
             });
         </script>
     </body>
