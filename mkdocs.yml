@@ -96,7 +96,6 @@ nav:
     - Getting Started: .
     - Setup:
         - Installation: setup/installation
-        - How To Contribute: setup/how-to-contribute
         - How To Update: setup/how-to-update
         - How to Upgrade:
             - 1.1.0 to 1.2.0: setup/upgrade/1.1.0-to-1.2.0
@@ -149,3 +148,7 @@ nav:
         - Todo: guides/todo
         - Layouts: guides/layout
         - Emails: guides/email
+    - Contributing:
+        - How To Contribute: contributing/how-to-contribute
+        - Agents:
+            - Working With Agents: contributing/agents/working-with-agents
