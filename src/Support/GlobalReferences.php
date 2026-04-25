@@ -129,6 +129,12 @@
                 return LoggerFactory::getOrCreateLogger($name ?? Logger::APP);
             }
         });
+
+        FunctionConflictResolution::requireAndThen("isCli", function() {
+            function isCli(): bool {
+                return php_sapi_name() === "cli";
+            }
+        });
     }
 
 ?>

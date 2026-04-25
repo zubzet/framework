@@ -56,26 +56,24 @@
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct(array $params = []) {
-            LoggerFactory::handleSlowRequest();
-
             self::$instance = $this;
             new GlobalReferences;
+            new Constants;
 
             $this->loadConfiguration(
                 __DIR__ . DIRECTORY_SEPARATOR,
                 $params,
             );
 
-            // Maintenance mode check
-            new MaintenanceHandler();
+            MaintenanceHandler::gate();
 
-            // Error handling
+            LoggerFactory::handleSlowRequest();
+
             $this->setExceptionBehavior();
 
             $this->assetProxy = new AssetProxy;
 
             // Static imports
-            new Constants;
             new Helpers;
 
             // Starting the initial state of the message system
