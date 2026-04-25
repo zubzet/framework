@@ -84,15 +84,7 @@
          * @return bool True if the request was made from a console
          */
         public function isCli(): bool {
-            if(defined('STDIN')) {
-                return true;
-            }
-
-            $remoteAddr = empty($this->input->SERVER['REMOTE_ADDR']);
-            $userAgent = isset($this->input->SERVER['HTTP_USER_AGENT']);
-            $args = count($this->input->SERVER['argv'] ?? []);
-
-            return $remoteAddr && !$userAgent && $args > 0;
+            return isCli();
         }
 
         public function referer(): ?string {

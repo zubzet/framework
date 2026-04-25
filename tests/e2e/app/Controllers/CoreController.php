@@ -86,6 +86,10 @@
             ], "core/layout");
         }
 
+        public function action_renderemptylayout(Request $req, Response $res) {
+            return $res->render("core/empty", [], "layout/min_layout");
+        }
+
         public function action_e2e_superpermission(Request  $req, Response $res) {
             $checkSuperPermission = $req->checkSuperPermission("core.superpermission", true);
             $checkPermission = $req->checkPermission("core.superpermission", true);

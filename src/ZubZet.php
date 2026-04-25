@@ -17,6 +17,7 @@
     use ZubZet\Framework\Message\Input\State as Input;
     use ZubZet\Framework\Core\CanRetrieveBooterSettings;
     use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
+    use ZubZet\Framework\Maintenance\MaintenanceHandler;
 
     class ZubZet {
         use Router;
@@ -55,23 +56,24 @@
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct(array $params = []) {
-            LoggerFactory::handleSlowRequest();
-
             self::$instance = $this;
             new GlobalReferences;
+            new Constants;
 
             $this->loadConfiguration(
                 __DIR__ . DIRECTORY_SEPARATOR,
                 $params,
             );
 
-            // Error handling
+            MaintenanceHandler::gate();
+
+            LoggerFactory::handleSlowRequest();
+
             $this->setExceptionBehavior();
 
             $this->assetProxy = new AssetProxy;
 
             // Static imports
-            new Constants;
             new Helpers;
 
             // Starting the initial state of the message system
