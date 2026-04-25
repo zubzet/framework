@@ -1034,6 +1034,14 @@ class ZForm {
  */
 class ZFormField {
 
+  get value() {
+    return this.input.value;
+  }
+
+  set value(value) {
+    this.input.value = value;
+  }
+
   /**
    * Creates a new form Field. Usally this called from ZForm.createField and not directly
    * @param {FormFieldOptions} options Options for this field
