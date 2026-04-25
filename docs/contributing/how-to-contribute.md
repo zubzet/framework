@@ -72,6 +72,23 @@ From now on, we use [Conventional Commits](https://www.conventionalcommits.org/)
 - `chore(dev): setup docker development environment`
 - `test: migrate all qa-suite tests`
 
+## Local Development Environment
+
+The dockerized test app under `tests/e2e/` doubles as the local development environment. From `tests/e2e/`:
+
+- `npm run start` — bootstrap the stack: `npm install`, `docker compose up -d --build`, `composer install`, run seeds, print startup info. Returns to the shell when ready.
+- `npm run startup` — same bootstrap as `start`, then keeps `docker compose up` attached in the foreground so logs stream live. Exit (Ctrl-C / closing the terminal) tears the containers down.
+- `npm run stop` — `docker compose down -v`.
+
+### VSCode Tasks
+
+`tests/e2e/.vscode/tasks.json` ships two tasks:
+
+- **Start Dev Environment** — runs `npm run startup` automatically on `folderOpen`, so opening the e2e folder in VSCode brings the stack up and attaches to it. Closing VSCode kills the task and stops the containers, freeing the port for the next project.
+- **Stop Dev Environment** — runs `npm run stop` on demand.
+
+Both tasks render in a dedicated panel. The auto-start fires only when VSCode opens `tests/e2e/` directly (e.g. as a workspace folder), not when opening the framework root.
+
 ## Documentation
 1. **Clone the Repository**
 ```bash
