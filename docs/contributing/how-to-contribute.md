@@ -82,12 +82,14 @@ The dockerized test app under `tests/e2e/` doubles as the local development envi
 
 ### VSCode Tasks
 
-`tests/e2e/.vscode/tasks.json` ships two tasks:
+Both the framework root (`.vscode/tasks.json`) and the e2e folder (`tests/e2e/.vscode/tasks.json`) ship the same two tasks, so the auto-start fires whichever folder you open in VSCode:
 
-- **Start Dev Environment** — runs `npm run startup` automatically on `folderOpen`, so opening the e2e folder in VSCode brings the stack up and attaches to it. Closing VSCode kills the task and stops the containers, freeing the port for the next project.
+- **Start Dev Environment** — runs `npm run startup` automatically on `folderOpen`, bringing the stack up and attaching to it.
 - **Stop Dev Environment** — runs `npm run stop` on demand.
 
-Both tasks render in a dedicated panel. The auto-start fires only when VSCode opens `tests/e2e/` directly (e.g. as a workspace folder), not when opening the framework root.
+Both tasks render in a dedicated panel. On first open VSCode prompts to **Allow Automatic Tasks** — accept it, otherwise the auto-start is silently suppressed (re-enable later via `Tasks: Manage Automatic Tasks`).
+
+Closing the VSCode window does **not** stop the stack — VSCode kills task terminals too aggressively for any cleanup hook to run reliably. Before opening the next project, run **Stop Dev Environment** from the command palette (or `npm run stop` from `tests/e2e/`) to free the ports.
 
 ## Documentation
 1. **Clone the Repository**
