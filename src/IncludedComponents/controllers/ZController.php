@@ -39,13 +39,19 @@
             $req->checkPermission("admin.maintenance");
 
             if($req->isAction("bypass-maintenance")) {
-                setcookie(MaintenanceHandler::$COOKIE_KEY, "true", time() + 3600, "/");
+                $res->setCookie(
+                    MaintenanceHandler::$COOKIE_KEY,
+                    "true",
+                    time() + TIMESPAN_DAY_1,
+                    $req->getRootFolder(),
+                );
                 return $res->success();
             }
 
             return $res->render("administration/maintenance.php", [
                 "isActive" => MaintenanceHandler::isActive(),
-                "mode" => MaintenanceHandler::getMode()
+                "mode" => MaintenanceHandler::getMode(),
+                "browserCanBypass" => MaintenanceHandler::checkBypassCookie(),
             ], "layout/z_admin_layout.php");
         }
 
