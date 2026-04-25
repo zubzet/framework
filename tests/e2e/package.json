@@ -7,7 +7,8 @@
     "private": true,
     "scripts": {
         "docker-compose": "docker compose -f packaging/docker/docker-compose-base.yml",
-        "start": "rm -f composer.lock && npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed && npm run info",
+        "start": "rm composer.lock && npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed && npm run info",
+        "startup": "npm run start && npm run docker-compose -- up",
         "stop": "npm run docker-compose -- down -v",
         "shell": "docker exec -it application bash",
         "seed": "docker exec application php index.php db:seed",
