@@ -1,6 +1,6 @@
 <?php return ["body" => function($opt) { ?>
 
-    <h2>Maintance Mode</h2>
+    <h2>Maintenance Mode</h2>
 
     <div class="card mb-3 mt-3">
         <div class="card-body py-2 px-3">

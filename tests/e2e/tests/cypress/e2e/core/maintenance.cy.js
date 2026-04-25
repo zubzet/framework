@@ -164,13 +164,13 @@ describe('Maintenance System', () => {
 
         it("should display maintenance button in admin layout", () => {
             cy.setConfigSetting('maintenance_mode', 'disabled');
-            
+
             cy.loginAs("admin");
             cy.visit("/z");
 
             cy.query("btn-maintenance").click();
 
-            cy.contains("Maintance Mode").should("exist");
+            cy.contains("Maintenance Mode").should("exist");
         });
 
         it("should show correct status for each mode", () => {
