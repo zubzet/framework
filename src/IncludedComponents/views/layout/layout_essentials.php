@@ -34,11 +34,10 @@ function essentialsHead($opt, $customBootstrap) { ?>
         Z.Request.absRoot = "<?= $opt["absRoot"]; ?>";
     </script>
 
-    <?= DebugBarBridge::renderHead() ?>
-
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
+    <?= DebugBarBridge::renderHead(); ?>
 <?php } ?>
 
 <?php
@@ -58,5 +57,6 @@ function essentialsBody($opt) { ?>
         </script>
         <!-- TOKEN EXPIRED -->
     <?php } ?>
-    <?= DebugBarBridge::renderBody() ?>
+
+    <?= DebugBarBridge::renderBody(); ?>
 <?php } ?>
