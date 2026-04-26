@@ -214,9 +214,11 @@
             $resultData = [];
             $rowCount = 0;
             if($this->result instanceof mysqli_result) {
-                $resultData = $this->resultToArray();
-                $this->result->data_seek(0);
                 $rowCount = $this->result->num_rows;
+                if(DebugBarBridge::isEnabled()) {
+                    $resultData = $this->resultToArray();
+                    $this->result->data_seek(0);
+                }
             } else {
                 $rowCount = $this->conn->affected_rows;
             }
