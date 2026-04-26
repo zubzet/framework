@@ -1,6 +1,6 @@
 <?php
 
-    namespace ZubZet\Framework\Support\DebugBar\Collectors;
+    namespace ZubZet\Framework\ErrorHandling\DebugBar\Collectors;
 
     use DebugBar\DataCollector\AssetProvider;
     use DebugBar\DataCollector\DataCollector;

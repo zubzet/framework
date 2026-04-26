@@ -9,16 +9,16 @@
     use ZubZet\Framework\Message\Response;
     use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Database\Connection;
-    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Resources\AssetProxy;
+    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Core\CanRetrieveModel;
     use ZubZet\Framework\Bootstrap\Configuration;
     use ZubZet\Framework\Support\GlobalReferences;
     use ZubZet\Framework\Message\Input\State as Input;
     use ZubZet\Framework\Core\CanRetrieveBooterSettings;
-    use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
-    use ZubZet\Framework\Support\DebugBar\DebugBarProvider;
+    use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     class ZubZet {
         use Router;
@@ -76,7 +76,6 @@
 
             // Static imports
             new Helpers;
-            new DebugBarProvider;
 
             // Starting the initial state of the message system
             $this->setRequestResponse(
@@ -89,6 +88,8 @@
 
             // User
             $this->user = new User;
+
+            DebugBarBridge::bootstrap();
         }
 
         public function setRequestResponse(Request $request, Response $response) {

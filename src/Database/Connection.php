@@ -14,7 +14,7 @@
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
     use mysqli_result;
-    use ZubZet\Framework\Support\DebugBar\DebugBarProvider;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     class Connection implements Checkpointable {
 
@@ -225,7 +225,7 @@
 
             $this->lastHeartbeat = time();
 
-            DebugBarProvider::queryCollector()?->addQuery($this->conn, $query, $queryDuration / 1000, $rowCount, $args, $resultData);
+            DebugBarBridge::collectQuery($this->conn, $query, $queryDuration / 1000, $rowCount, $args, $resultData);
 
             $slowQueryThreshold = config("logger_slow_query_ms", default: 300);
             if(!is_null($slowQueryThreshold) && $queryDuration >= $slowQueryThreshold) {
