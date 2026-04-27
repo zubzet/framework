@@ -109,11 +109,10 @@ cd tests/e2e
 npm run start
 
 # Run the full suite headless (~3 min, 300+ tests)
-env -u ELECTRON_RUN_AS_NODE npx cypress run --project tests
+npm run tests
 
 # Run one spec
-env -u ELECTRON_RUN_AS_NODE npx cypress run --project tests \
-  --spec 'tests/cypress/e2e/core/maintenance.cy.js'
+npm run tests -- --spec 'tests/cypress/e2e/core/maintenance.cy.js'
 
 # Open Cypress UI
 npm run cypress
