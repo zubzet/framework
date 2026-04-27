@@ -6,6 +6,7 @@ use ZubZet\Framework\Authentication\AuthenticationObject;
 
 use DateTime;
 use ZubZet\Framework\Authentication\HandleTrait;
+use ZubZet\Framework\Authentication\Organisation;
 use ZubZet\Framework\Authentication\RetrievalTrait;
 
 class User extends AuthenticationObject {
@@ -43,6 +44,10 @@ class User extends AuthenticationObject {
 
     public static function byGroup(Group $group): array {
         return model("z_permission")->getUsersByRoleGroup($group);
+    }
+
+    public static function byOrganisation(Organisation $organisation): array {
+        return model("z_permission")->getUsersByOrganisation($organisation);
     }
 
     /**
@@ -102,6 +107,7 @@ class User extends AuthenticationObject {
         $this->setField("user-permissions", null);
         $this->setField("roles", null);
         $this->setField("groups", null);
+        $this->setField("organisation", null);
     }
 
 
@@ -144,6 +150,11 @@ class User extends AuthenticationObject {
      */
     public function updatePassword(string $password): void {
         model('z_login')->updatePassword($this, $password);
+        $this->clearFields();
+    }
+
+    public function updateOrganisation(?Organisation $organisation): void {
+        model('z_permission')->updateUserOrganisation($this, $organisation);
         $this->clearFields();
     }
 
@@ -269,8 +280,17 @@ class User extends AuthenticationObject {
         return $this->getField('email');
     }
 
+    public function organisation(): ?Organisation {
+        if(!is_null($this->getField("organisation")))return $this->getField("organisation");
+        if(is_null($this->getField("organisationId"))) return null;
+
+        $this->setField("organisation", Organisation::byId($this->getField("organisationId")));
+
+        return $this->getField("organisation");
+    }
+
     /**
-     * Get the users` verfied date
+     * Get the users` verified date
      * 
      * @return null|string The users verified date or null if not verified
      */
