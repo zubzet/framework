@@ -21,7 +21,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 - `Bootstrap/` — `Configuration` trait that parses `z_settings.ini`
 - `Core/` — Foundation traits (`CanRetrieveModel`, `CanRetrieveBooterSettings`, `Constants`, `FunctionConflictResolution`)
 - `Database/` — `Connection`, prepared-statement `Interaction`, migration commands
-- `ErrorHandling/` — `ExceptionBehavior`, `WhoopsHandler`, `BehaviorOption`
+- `ErrorHandling/` — `ExceptionBehavior`, `WhoopsHandler`, `BehaviorOption`, `DebugBar/` (bridge, collectors, traits)
 - `Form/` — Validation rules (`required`, `unique`, `exists`, `length`, …)
 - `Logger/` — `LoggerFactory`, channels, slow-request logging
 - `Maintenance/` — Standalone maintenance gate (see [Maintenance Mode](../../core-features/maintenance.md))
@@ -155,6 +155,29 @@ cp /tmp/zsettings.bak tests/e2e/z_config/z_settings.ini
 ```
 
 Occasional flake: a single failing run sometimes recovers on re-run. Re-run once before debugging.
+
+## Debug bar
+
+User-facing docs: [Debug Bar](../../core-features/debug-bar.md).
+
+All debug-bar code lives in `src/ErrorHandling/DebugBar/`:
+
+- `DebugBarBridge.php` is the only static entry point. It bootstraps `StandardDebugBar`, registers collectors, wires the asset proxy, and exposes `renderHead()` / `renderBody()` for the layout. It returns early when `execution_type !== "test"`.
+- `Collectors/` holds the framework's own collectors (`QueryCollector`, `TemplateCollector`, `MonologCollector`).
+- `CanCollect` is a trait used by the bridge to expose strongly typed `collectQuery()` / `collectTemplate()` / `collectLogger()` static helpers that forward into the right collector.
+- `CanFormatValue` is a small trait that normalizes scalars/arrays/objects into a readable string for display.
+
+Call sites that feed the bar:
+
+| Source | Trait/Helper | Collector |
+| ------ | ------------ | --------- |
+| `Connection::exec` | `DebugBarBridge::collectQuery(...)` | `QueryCollector` |
+| `CanRenderView::render` | `DebugBarBridge::collectTemplate(...)` | `TemplateCollector` |
+| `LoggerFactory::getOrCreateLogger` | `DebugBarBridge::collectLogger(...)` | `MonologCollector` (a Monolog handler) |
+
+Internal-query filtering uses source tagging: models that mark themselves with the `IsInternalModel` trait set `isInternalModel = true`, and `Connection::exec` records the calling model on the connection before the query runs. `QueryCollector::addQuery` then drops queries from internal models when `debugbar_hide_internal_queries = true` (default). Direct `db()->exec(...)` calls have no calling model and are always shown.
+
+To add a new collector, implement `DebugBar\DataCollector\DataCollector` (or extend an existing one), register it in `DebugBarBridge::bootstrap()`, and expose a `collectXxx()` method on `CanCollect` that forwards via `self::collect("name", "addXxx", func_get_args())`.
 
 ## Console commands
 
