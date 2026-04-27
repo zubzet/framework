@@ -9,12 +9,11 @@
     use ZubZet\Framework\Support\Checkpoint\CanCheckpoint;
     use ZubZet\Framework\Support\Checkpoint\Checkpointable;
     use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     use Cake\Database\Query;
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
-    use mysqli_result;
-    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     class Connection implements Checkpointable {
 
@@ -211,23 +210,22 @@
 
             $this->result = $this->stmt->get_result();
 
-            $resultData = [];
-            $rowCount = 0;
-            if($this->result instanceof mysqli_result) {
-                $rowCount = $this->result->num_rows;
-                if(DebugBarBridge::isEnabled()) {
-                    $resultData = $this->resultToArray();
-                    $this->result->data_seek(0);
-                }
-            } else {
-                $rowCount = $this->conn->affected_rows;
-            }
+            $rowCount = $this->result instanceof \mysqli_result
+                ? $this->result->num_rows
+                : $this->conn->affected_rows;
 
             $this->stmt->close();
 
             $this->lastHeartbeat = time();
 
-            DebugBarBridge::collectQuery($this->conn, $query, $queryDuration / 1000, $rowCount, $args, $resultData);
+            // Collect the query for the debug bar
+            DebugBarBridge::collectQuery(
+                $this->callingModel,
+                $query,
+                $queryDuration / 1000,
+                $rowCount,
+                array_slice($args, 1),
+            );
 
             $slowQueryThreshold = config("logger_slow_query_ms", default: 300);
             if(!is_null($slowQueryThreshold) && $queryDuration >= $slowQueryThreshold) {

@@ -2,11 +2,13 @@
 
     namespace ZubZet\Framework\ErrorHandling\DebugBar;
 
+    use ZubZet\Framework\Core\Model;
+
     use Monolog\Logger;
 
     trait CanCollect {
 
-        public static function collectQuery(\mysqli $conn, string $sql, float $durationSeconds, int $rowCount, array $arguments, array $resultData): void {
+        public static function collectQuery(Model $model, string $sql, float $durationSeconds, int $rowCount, array $values): void {
             self::collect("queries", "addQuery", func_get_args());
         }
 
