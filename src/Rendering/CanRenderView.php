@@ -2,9 +2,10 @@
 
     namespace ZubZet\Framework\Rendering;
 
-    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Rendering\ViewNotFoundException;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     trait CanRenderView {
 
@@ -67,8 +68,12 @@
                 ];
             }
 
+            // This is used for logging $opt before it is merged with methods and references
+            $data = $opt;
+
             $layout = $options["layout"] ?? "layout/default_layout.php";
             $viewPath = self::resolvePath($document);
+            $layoutPath = self::resolvePath($layout);
 
             //Set default parameter values
             $opt["response"] = $this;
@@ -95,18 +100,23 @@
                 $location = implode("/", request()->getUrlParts());
                 logger(Logger::ZUBZET)->info(LogEventType::RENDER, [
                     "location" => $location,
-                    "document" => $document
+                    "view" => $document,
+                    "viewPath" => $viewPath,
+                    "layout" => $layout,
+                    "layoutPath" => $layoutPath,
                 ]);
             } catch (\Exception $e) {
                 // Do not log this render to avoid having to require a database
             }
+
+            DebugBarBridge::collectTemplate($document, $data, "php", $layout);
 
             //Load the document
             $view = include($viewPath);
 
             //Load the layout
             $layout_url = $layout;
-            $layout = include(self::resolvePath($layout));
+            $layout = include($layoutPath);
 
             $opt["generateResourceLink"] = function($url, $root = true) {
                 $v = $this->getBooterSettings("assetVersion");

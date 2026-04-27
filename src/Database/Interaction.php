@@ -2,6 +2,7 @@
 
     namespace ZubZet\Framework\Database;
 
+    use ZubZet\Framework\Core\Model;
     use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
 
     trait Interaction {
@@ -17,6 +18,12 @@
          */
         #[IncludeInCheckpoint]
         public $insertId;
+
+        /**
+         * @var ?Model $callingModel A reference to the model that is currently handling the query, if any
+         */
+        #[IncludeInCheckpoint]
+        public ?Model $callingModel = null;
 
         /**
          * Returns the id of the last inserted element

@@ -13,11 +13,10 @@ For Git workflow and commit conventions, see **[docs/contributing/how-to-contrib
 cd tests/e2e && npm run start
 
 # Run the full e2e suite (~3 min, 300+ tests)
-env -u ELECTRON_RUN_AS_NODE npx cypress run --project tests
+npm run tests
 
 # Run one spec
-env -u ELECTRON_RUN_AS_NODE npx cypress run --project tests \
-  --spec 'tests/cypress/e2e/core/<name>.cy.js'
+npm run tests -- --spec 'tests/cypress/e2e/core/<name>.cy.js'
 ```
 
 App is at `http://localhost:8080` (NOT `:4000`).

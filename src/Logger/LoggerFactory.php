@@ -9,6 +9,7 @@
 
     use Psr\Log\LoggerInterface;
     use Monolog\Handler\NullHandler;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     class LoggerFactory {
 
@@ -48,6 +49,8 @@
             }
 
             $logger = new Logger($name);
+
+            DebugBarBridge::collectLogger($logger);
 
             $enabled = config("logger_enabled", default: true);
             if(!$enabled) {

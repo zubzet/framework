@@ -1,14 +1,20 @@
 <?php
 
-use Doctrine\DBAL\Schema\Table;
-use ZubZet\Framework\Database\Migration\Commands\Traits\DbalConnection;
-use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
-use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
+    use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DbalConnection;
 
+    use Doctrine\DBAL\Schema\Table;
+
+    /**
+     * @internal
+     */
     class z_migrationModel extends z_model {
 
         use Platform;
         use DbalConnection;
+        use IsInternalModel;
 
         // Check if migrations are locked
         public function isLocked(): bool {

@@ -9,6 +9,7 @@
     use ZubZet\Framework\Support\Checkpoint\CanCheckpoint;
     use ZubZet\Framework\Support\Checkpoint\Checkpointable;
     use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     use Cake\Database\Query;
     use Cake\Database\Driver\Mysql;
@@ -209,9 +210,22 @@
 
             $this->result = $this->stmt->get_result();
 
+            $rowCount = $this->result instanceof \mysqli_result
+                ? $this->result->num_rows
+                : $this->conn->affected_rows;
+
             $this->stmt->close();
 
             $this->lastHeartbeat = time();
+
+            // Collect the query for the debug bar
+            DebugBarBridge::collectQuery(
+                $query,
+                $queryDuration / 1000,
+                $rowCount,
+                array_slice($args, 1),
+                $this->callingModel,
+            );
 
             $slowQueryThreshold = config("logger_slow_query_ms", default: 300);
             if(!is_null($slowQueryThreshold) && $queryDuration >= $slowQueryThreshold) {

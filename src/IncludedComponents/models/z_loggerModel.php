@@ -1,6 +1,13 @@
 <?php
 
+    use ZubZet\Framework\Database\IsInternalModel;
+
+    /**
+     * @internal
+     */
     class z_loggerModel extends z_model  {
+
+        use IsInternalModel;
 
         /**
          * Encodes a normalized log payload as JSON, with a safe fallback on failure.

@@ -3,18 +3,23 @@
      * File that defines the user model
      */
 
-    use ZubZet\Framework\Authentication\Permission\User;
-    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Authentication\Permission\User;
 
     /**
      * User Model
-     * 
+     *
      * This model handles database stuff with the focus on user management.
      * An instance of this class can be acquired with z_framework::getModel("z_user")
+     *
+     * @internal
      */
     class z_userModel extends z_model {
-        
+
+        use IsInternalModel;
+
         /**
          * Returns a user row of the database, selected by the users id
          * @param int $userid ID of the user we want the data about

@@ -55,6 +55,7 @@
          * @return Connection Returning this for chaining 
          */
         public function exec(string|Query $query, $types = "", $params = null): Connection {
+            $this->z_db->callingModel = $this;
             if($query instanceof Query) return $this->z_db->execQuery($query);
 
             return $this->z_db->exec(...func_get_args());

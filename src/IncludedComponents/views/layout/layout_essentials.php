@@ -1,7 +1,9 @@
-<?php 
+<?php
 /**
  * This file holds essential parts fot the framework that will be pasted into the layout.
  */
+
+use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
 /**
  * Call this to paste the essential head part of a page into the layout
@@ -35,9 +37,10 @@ function essentialsHead($opt, $customBootstrap) { ?>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
+    <?= DebugBarBridge::renderHead(); ?>
 <?php } ?>
 
-<?php 
+<?php
 /**
  * Call this to paste the essential body part of a page into the layout
  * @param array $opt Object holding options for rendering
@@ -54,4 +57,6 @@ function essentialsBody($opt) { ?>
         </script>
         <!-- TOKEN EXPIRED -->
     <?php } ?>
+
+    <?= DebugBarBridge::renderBody(); ?>
 <?php } ?>

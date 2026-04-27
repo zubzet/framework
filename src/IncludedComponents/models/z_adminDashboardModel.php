@@ -1,6 +1,13 @@
 <?php
 
+    use ZubZet\Framework\Database\IsInternalModel;
+
+    /**
+     * @internal
+     */
     class z_adminDashboardModel extends z_model {
+
+        use IsInternalModel;
 
         public function getTableStatus(): array {
             $sql = "SHOW TABLE STATUS";

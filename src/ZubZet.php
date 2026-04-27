@@ -9,15 +9,16 @@
     use ZubZet\Framework\Message\Response;
     use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Database\Connection;
-    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Resources\AssetProxy;
+    use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\Core\CanRetrieveModel;
     use ZubZet\Framework\Bootstrap\Configuration;
     use ZubZet\Framework\Support\GlobalReferences;
     use ZubZet\Framework\Message\Input\State as Input;
     use ZubZet\Framework\Core\CanRetrieveBooterSettings;
-    use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
+    use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     class ZubZet {
         use Router;
@@ -84,6 +85,9 @@
 
             // Import of the database connection
             $this->z_db = new Connection;
+
+            // Setup the UI debugbar for dev environments
+            DebugBarBridge::bootstrap();
 
             // User
             $this->user = new User;
