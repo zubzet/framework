@@ -12,7 +12,7 @@
             self::collect("queries", "addQuery", func_get_args());
         }
 
-        public static function collectTemplate(string $name, array $data, ?string $type = null, ?string $path = null): void {
+        public static function collectTemplate(string $name, array $data, string $type, string $layout): void {
             self::collect("templates", "addTemplate", func_get_args());
         }
 

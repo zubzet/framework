@@ -14,30 +14,18 @@
     class TemplateCollector extends DataCollector implements Renderable, AssetProvider {
 
         private array $templates = [];
-        private bool $collectData;
 
-        public function __construct(bool $collectData = true) {
-            $this->collectData = $collectData;
-        }
+        public function addTemplate(string $name, array $data, string $type, string $layout): void {
+            $params = array_map(fn($value) => $this->getDataFormatter()->formatVar($value), $data);
 
-        public function addTemplate(string $name, array $data, ?string $type = null, ?string $path = null): void {
-            $params = $this->collectData
-                ? array_map(fn($value) => $this->getDataFormatter()->formatVar($value), $data)
-                : [];
-
-            $template = [
-                "name" => $name,
-                "param_count" => $this->collectData ? count($params) : null,
+            $this->templates[] = [
+                "name" => "$name (layout: $layout)",
+                "param_count" => count($params),
                 "params" => $params,
                 "type" => $type,
+                "layout" => $layout,
                 "start" => microtime(true),
             ];
-
-            if($path !== null && $this->getXdebugLinkTemplate()) {
-                $template["xdebug_link"] = $this->getXdebugLink($path);
-            }
-
-            $this->templates[] = $template;
         }
 
         public function getName(): string {
