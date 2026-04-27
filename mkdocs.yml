@@ -125,6 +125,7 @@ nav:
         - Console Commands: core-features/console-commands
         - Access Control: core-features/access-control
         - Logging: core-features/logging
+        - Debug Bar: core-features/debug-bar
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
