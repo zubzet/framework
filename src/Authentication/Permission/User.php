@@ -6,7 +6,7 @@ use ZubZet\Framework\Authentication\AuthenticationObject;
 
 use DateTime;
 use ZubZet\Framework\Authentication\HandleTrait;
-use ZubZet\Framework\Authentication\Organisation;
+use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\RetrievalTrait;
 
 class User extends AuthenticationObject {
@@ -46,8 +46,8 @@ class User extends AuthenticationObject {
         return model("z_permission")->getUsersByRoleGroup($group);
     }
 
-    public static function byOrganisation(Organisation $organisation): array {
-        return model("z_permission")->getUsersByOrganisation($organisation);
+    public static function byOrganization(Organization $organization): array {
+        return model("z_user")->getUsersByOrganization($organization);
     }
 
     /**
@@ -107,7 +107,7 @@ class User extends AuthenticationObject {
         $this->setField("user-permissions", null);
         $this->setField("roles", null);
         $this->setField("groups", null);
-        $this->setField("organisation", null);
+        $this->setField("organization", null);
     }
 
 
@@ -153,8 +153,8 @@ class User extends AuthenticationObject {
         $this->clearFields();
     }
 
-    public function updateOrganisation(?Organisation $organisation): void {
-        model('z_permission')->updateUserOrganisation($this, $organisation);
+    public function updateOrganization(?Organization $organization): void {
+        model('z_user')->updateUserOrganization($this, $organization);
         $this->clearFields();
     }
 
@@ -280,13 +280,18 @@ class User extends AuthenticationObject {
         return $this->getField('email');
     }
 
-    public function organisation(): ?Organisation {
-        if(!is_null($this->getField("organisation")))return $this->getField("organisation");
-        if(is_null($this->getField("organisationId"))) return null;
+    public function organization(): ?Organization {
+        if(!is_null($this->getField("organization"))) {
+            return $this->getField("organization");
+        }
+        if(is_null($this->getField("organizationId"))) return null;
 
-        $this->setField("organisation", Organisation::byId($this->getField("organisationId")));
+        $this->setField(
+            "organization",
+            Organization::byId($this->getField("organizationId"))
+        );
 
-        return $this->getField("organisation");
+        return $this->getField("organization");
     }
 
     /**

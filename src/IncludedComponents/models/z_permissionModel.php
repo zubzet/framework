@@ -1,7 +1,6 @@
 <?php
 
     use ZubZet\Framework\Database\IsInternalModel;
-    use ZubZet\Framework\Authentication\Organisation;
     use ZubZet\Framework\Authentication\Permission\Role;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Permission\Group;
@@ -172,28 +171,6 @@
             }
 
             return $perms;
-        }
-
-        /**
-         * @internal
-         */
-        public function getUsersByOrganisation(Organisation $organisation): array {
-            $users = [];
-
-            $query = $this->dbSelect("zu.*", [
-                "zu" => "z_user"
-            ])->where([
-                "zu.organisationId" => $organisation->id(),
-                "zu.active" => 1
-            ]);
-
-            $results = $this->exec($query)->resultToArray();
-
-            foreach($results as $userData) {
-                $users[] = new User($userData);
-            }
-
-            return $users;
         }
 
         /**
@@ -637,17 +614,6 @@
             }
 
             return $userObjects;
-        }
-
-        public function updateUserOrganisation(User $user, ?Organisation $organisation): void {
-            $updateQuery = $this->dbUpdate("z_user", [
-                "organisationId" => is_null($organisation) ? null : $organisation->id()
-            ])->where([
-                "id" => $user->id(),
-                "active" => 1
-            ]);
-
-            $this->exec($updateQuery);
         }
 
     }

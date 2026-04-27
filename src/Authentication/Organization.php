@@ -4,12 +4,12 @@
 
     use ZubZet\Framework\Authentication\Permission\User;
 
-    class Organisation extends AuthenticationObject {
+    class Organization extends AuthenticationObject {
 
         use RetrievalTrait;
         use HandleTrait;
 
-        public static string $dbTable = "z_organisation";
+        public static string $dbTable = "z_organization";
         public static array $dbExpression = [];
 
         public function __construct(array $data) {
@@ -22,23 +22,28 @@
             $this->setField("users", null);
         }
 
-        public static function add(?string $name): Organisation {
-            $organisationData = model("z_organisation")->create($name);
-            return new Organisation($organisationData);
+        public static function add(?string $name): Organization {
+            $organizationData = model("z_organization")->create($name);
+            return new Organization($organizationData);
         }
 
-        public static function byUser(User $user): ?Organisation {
-            return $user->organisation();
+        public static function byUser(User $user): ?Organization {
+            return $user->organization();
         }
 
-        public static function byName(string $name): ?Organisation {
-            $organisationData = model("z_organisation")->byName($name);
-            if(!$organisationData) return null;
-            return new Organisation($organisationData);
+        public static function byName(string $name): array {
+            $organizations = [];
+            $organizationDataList = model("z_organization")->byName($name);
+
+            foreach($organizationDataList as $organizationData) {
+                $organizations[] = new Organization($organizationData);
+            }
+
+            return $organizations;
         }
 
-        public function update(string $name): void {
-            model("z_organisation")->update($this, $name);
+        public function updateName(string $name): void {
+            model("z_organization")->updateName($this, $name);
 
             $this->setField("name", $name);
         }
@@ -54,12 +59,12 @@
         }
 
         public function refreshUsers(): void {
-            $users = model("z_permission")->getUsersByOrganisation($this);
+            $users = model("z_user")->getUsersByOrganization($this);
             $this->setField("users", $users);
         }
 
         public function remove(): void {
-            model("z_organisation")->remove($this);
+            model("z_organization")->remove($this);
         }
     }
 

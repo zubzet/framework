@@ -20,11 +20,11 @@
         public $userId = null;
 
         /**
-         * @var int $orgsId ID of the organisation the user belongs to.
-         * 
-         * Null represents an user that does not belong to an organisation, or an anonymous user.
+         * @var int $orgId ID of the organization the user belongs to.
+         *
+         * Null represents an user that does not belong to an organization, or an anonymous user.
          */
-        public $orgsId = null;
+        public $orgId = null;
 
         /**
          * @var int $execUserId ID of the user that is logged in as this user.
@@ -76,7 +76,7 @@
             if (!is_null($this->userId)) {
                 $user = model("z_user")->getUserById($this->userId);
                 if ($user !== false) {
-                    $this->orgsId = $user["organisationId"];
+                    $this->orgId = $user["organizationId"];
                     $this->isLoggedIn = true;
                     $this->fields = $user;
                 }
