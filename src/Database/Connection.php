@@ -220,11 +220,11 @@
 
             // Collect the query for the debug bar
             DebugBarBridge::collectQuery(
-                $this->callingModel,
                 $query,
                 $queryDuration / 1000,
                 $rowCount,
                 array_slice($args, 1),
+                $this->callingModel,
             );
 
             $slowQueryThreshold = config("logger_slow_query_ms", default: 300);
