@@ -86,10 +86,11 @@
             // Import of the database connection
             $this->z_db = new Connection;
 
+            // Setup the UI debugbar for dev environments
+            DebugBarBridge::bootstrap();
+
             // User
             $this->user = new User;
-
-            DebugBarBridge::bootstrap();
         }
 
         public function setRequestResponse(Request $request, Response $response) {
