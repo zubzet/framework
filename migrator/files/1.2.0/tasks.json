@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Dev Environment",
+            "type": "shell",
+            "command": "cd tests/e2e 2>/dev/null; npm run startup",
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Stop Dev Environment",
+            "type": "shell",
+            "command": "cd tests/e2e 2>/dev/null; npm run stop",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}
