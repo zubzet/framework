@@ -1,17 +1,20 @@
 <?php
 
-use Cake\Database\Expression\IdentifierExpression;
-use Cake\Database\Expression\QueryExpression;
-use Cake\Database\Query\InsertQuery;
-use ZubZet\Framework\Authentication\Permission\Group;
-use ZubZet\Framework\Authentication\Permission\Role;
-use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Authentication\Permission\Role;
+    use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Authentication\Permission\Group;
+
+    use Cake\Database\Query\InsertQuery;
+    use Cake\Database\Expression\QueryExpression;
+    use Cake\Database\Expression\IdentifierExpression;
 
     /**
      * @internal
      */
-
     class z_permissionModel extends z_model {
+
+        use IsInternalModel;
 
         /**
          * Retrieve a permission object (user or role) by id and table

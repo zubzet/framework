@@ -3,10 +3,15 @@
      * This file holds the general model
      */
 
+    use ZubZet\Framework\Database\IsInternalModel;
+
     /**
      * The general model does general stuff that is needed everywhere
+     * @internal
      */
     class z_generalModel extends z_model {
+
+        use IsInternalModel;
 
         /**
          * Gets a list of all languages in the database
