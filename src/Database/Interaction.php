@@ -20,10 +20,10 @@
         public $insertId;
 
         /**
-         * @var Model $callingModel A reference to the model that is currently handling the query
+         * @var ?Model $callingModel A reference to the model that is currently handling the query, if any
          */
         #[IncludeInCheckpoint]
-        public Model $callingModel;
+        public ?Model $callingModel = null;
 
         /**
          * Returns the id of the last inserted element

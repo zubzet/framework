@@ -12,10 +12,10 @@
 
         private array $executedQueries = [];
 
-        public function addQuery(Model $model, string $sql, float $durationSeconds = 0.0, int $rowCount = 0, array $values = []): void {
+        public function addQuery(?Model $model, string $sql, float $durationSeconds = 0.0, int $rowCount = 0, array $values = []): void {
             // Optionally skip collecting internal queries based on configuration
             $hideInternals = config("debugbar_hide_internal_queries", default: true);
-            $isInternal = $model->isInternalModel ?? false;
+            $isInternal = $model?->isInternalModel ?? false;
             if($hideInternals && $isInternal) return;
 
             // Fix indentation for better readability in the debug bar

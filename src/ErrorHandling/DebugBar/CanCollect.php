@@ -8,7 +8,7 @@
 
     trait CanCollect {
 
-        public static function collectQuery(Model $model, string $sql, float $durationSeconds, int $rowCount, array $values): void {
+        public static function collectQuery(?Model $model, string $sql, float $durationSeconds, int $rowCount, array $values): void {
             self::collect("queries", "addQuery", func_get_args());
         }
 
