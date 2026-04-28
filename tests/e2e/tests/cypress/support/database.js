@@ -1,4 +1,5 @@
 Cypress.Commands.add('dbSeed', () => {
-    cy.exec('npm run seed');
+    // Skip the npm-script bootstrap that `npm run seed` adds.
+    cy.exec('docker exec application php index.php db:seed');
     Cypress.session.clearAllSavedSessions();
 })
