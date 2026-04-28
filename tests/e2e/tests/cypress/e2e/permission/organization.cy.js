@@ -54,8 +54,8 @@ describe('Permission System - Organization', () => {
     it('should be possible to create a new organization (add)', () => {
         requestJson('/organization/add').then((output) => {
             expect(output).to.deep.equal({
-                "createdOrganizationDirect": {"id": 511, "name": "org_add_NewOrganization"},
-                "createdOrganizationGet": {"id": 511, "name": "org_add_NewOrganization"}
+                "createdOrganizationDirect": {"id": 512, "name": "org_add_NewOrganization"},
+                "createdOrganizationGet": {"id": 512, "name": "org_add_NewOrganization"}
             });
         });
     });
@@ -100,6 +100,12 @@ describe('Permission System - Organization', () => {
         requestJson('/organization/userByOrganization').then((output) => {
             expect(output).to.have.deep.members(expectedUsers);
             expect(output).to.have.length(expectedUsers.length);
+        });
+    });
+
+    it('should return an empty array for an organization with no users (User::byOrganization)', () => {
+        requestJson('/organization/userByOrganizationEmpty').then((output) => {
+            expect(output).to.deep.equal([]);
         });
     });
 

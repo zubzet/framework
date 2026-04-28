@@ -151,6 +151,20 @@
             echo(json_encode($result));
         }
 
+        public function action_userByOrganizationEmpty(Request $req, Response $res): void {
+            $users = User::byOrganization(Organization::byId(511));
+
+            $result = [];
+            foreach($users as $user) {
+                $result[] = [
+                    "id" => $user->id(),
+                    "email" => $user->email()
+                ];
+            }
+
+            echo(json_encode($result));
+        }
+
 
         /**
          *

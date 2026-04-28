@@ -20,7 +20,9 @@ INSERT INTO `z_organization`(`id`, `name`, `active`, `created`) VALUES
 (508, 'org_remove', 1, '2000-01-01 12:00:00'),
 
 (509, 'org_userOrg_Initial', 1, '2000-01-01 12:00:00'),
-(510, 'org_userOrg_Updated', 1, '2000-01-01 12:00:00');
+(510, 'org_userOrg_Updated', 1, '2000-01-01 12:00:00'),
+
+(511, 'org_userByOrganization_Empty', 1, '2000-01-01 12:00:00');
 
 
 INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`, `organizationId`) VALUES
