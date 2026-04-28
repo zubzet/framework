@@ -2,6 +2,9 @@
 
 This page is for AI coding agents (Claude Code, Cursor, Codex, Aider, etc.) and contributors who need a deeper map of the framework internals than [How To Contribute](../how-to-contribute.md) provides. If you're getting started, read that first.
 
+!!! danger "Stop before publishing — always ask first"
+    Do **not** run `git commit`, `git push`, `gh pr create`, or any other action that publishes changes outward, unless the maintainer has explicitly asked for that step in the current turn. A green test run is **not** authorization. Leave changes in the working tree (staged is fine) and wait. This rule applies even when an earlier turn authorized a commit — authorization is per-action, not blanket. See [Working style for AI agents](#working-style-for-ai-agents) for the rest of the boundaries.
+
 ## Repository layout
 
 | Path | What lives there |
@@ -211,7 +214,7 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 
 ## Working style for AI agents
 
-- **Never commit or push without an explicit ask.** This is critical framework code. AI output is reviewed by hand before it lands — leave changes uncommitted in the working tree (or staged, if helpful) and wait. Even after a successful test run, do not run `git commit`, `git push`, or `gh pr` write actions unless the maintainer asks for them in that turn.
+- **Never commit, push, or open a PR without an explicit ask.** This is critical framework code. AI output is reviewed by hand before it lands — leave changes uncommitted in the working tree (or staged, if helpful) and wait. Even after a successful test run, do not run `git commit`, `git push`, `gh pr create`, or any other publishing action unless the maintainer asks for it in that turn. Authorization is **per-action**: "go ahead and commit" does not authorize a push; a push does not authorize a PR. When in doubt, stop and ask.
 - **Iterative pace.** Make small changes, run tests, report concisely, wait. Don't pre-build large structures unless asked.
 - **Watch for parallel edits.** A `<system-reminder>` notice that a file was modified means re-read it before any further change — never assume your in-context view is current.
 - **"Any other ideas?"** is a request for 3–4 ranked options with trade-offs and a recommendation. Don't implement until asked.
