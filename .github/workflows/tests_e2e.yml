@@ -39,14 +39,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_tag: [
-          "8.0-apache",
-          "8.1-apache",
-          "8.2-apache",
-          "8.3-apache",
-          "8.4-apache",
-          "8.5-apache"
-        ]
+        # Full matrix on push to long-lived branches (main, develop) and version tags.
+        # PRs and feature-branch pushes run extremes-only (8.0 + 8.5) since
+        # version-specific regressions historically surface at the edges.
+        php_tag: ${{ fromJSON((github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v')))) && '["8.0-apache","8.1-apache","8.2-apache","8.3-apache","8.4-apache","8.5-apache"]' || '["8.0-apache","8.5-apache"]') }}
 
     env:
       DISABLE_XDEBUG: "1"
