@@ -685,10 +685,13 @@ class ZForm {
   /**
    * Creates a ZForm instance
    * @param {object} options Options
-   * @param {boolean} options.doReload Should the form reload after submit? This is automatically set to true when using a CED in the form
-   * @param {string} options.dom Id of a dom element to append this form automatically to
-   * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
-   * @param {formErrorHook} options.formErrorHook Function that is only called on form errors
+   * @param {boolean} [options.doReload] Should the form reload after submit? This is automatically set to true when using a CED in the form
+   * @param {string} [options.dom] Id of a dom element to append this form automatically to
+   * @param {saveHook} [options.saveHook] Function that is called after saving. It is only called after a success and not when validation errors occour
+   * @param {formErrorHook} [options.formErrorHook] Function that is only called on form errors
+   * @param {boolean} [options.hidehints] Suppress the inline hint banner (saved / unsaved / error). Defaults to `false` (hints are shown).
+   * @param {boolean} [options.sendOnSubmitClick] If `false`, the built-in submit button no longer calls `send()` automatically — the caller is responsible for triggering submission. Defaults to `true`.
+   * @param {string} [options.customEndpoint] Override the URL `send()` posts to. By default the form posts back to the current action.
    */
   constructor(options = {
     doReload: true, 
@@ -883,7 +886,27 @@ class ZForm {
 
   /**
    * Creates and adds a ZFormField to the form
-   * @param {FormFieldOptions} options for the new Field
+   * @param {object} options Options for the new field
+   * @param {string} [options.name] Name to use in the request
+   * @param {InputType} [options.type] Type of the field
+   * @param {string} [options.text] Text to show in the label
+   * @param {boolean} [options.required] Sets if this field is required to be filled in
+   * @param {string} [options.hint] Small text to show under the input. For example: "We do not share you email" or something.
+   * @param {string} [options.placeholder] Placeholder to show in the input when nothing is entered
+   * @param {any} [options.default] Default value
+   * @param {any} [options.value] Initial value of the input. For `type: "button"` this is the button label.
+   * @param {boolean} [options.autofill] Enable browser-level autofill for this field.
+   * @param {FieldWidth} [options.width] Width of the field in units (1-12, bootstrap grid)
+   * @param {object} [options.attributes] List of attributes to apply to the input element. Keys are attribute names, values are attribute values.
+   * @param {Food} [options.food] Food for selects or autocompletes
+   * @param {boolean} [options.compact] Sets the compact mode. In compact mode, the label is hidden.
+   * @param {string} [options.prepend] Content to put in front of the input. Units are usually put there.
+   * @param {string} [options.style] Bootstrap button class (e.g. `"btn-primary"`, `"btn-danger"`). Only applies when `type` is `"button"`. Defaults to `"btn-primary"`.
+   * @param {string} [options.customFileInputText] Placeholder text shown on a `type: "file"` input before a file is chosen. Defaults to `Z.Lang.choose_file`.
+   * @param {Food[]|string} [options.autocompleteData] Static list of options for `type: "autocomplete"`, or a backend path string the field queries via `Z.Request.root` for dynamic suggestions.
+   * @param {number} [options.autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
+   * @param {function} [options.autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
+   * @param {function} [options.autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
@@ -981,20 +1004,27 @@ class ZForm {
 
 /**
  * All parameters are optional
- * @typedef FormFieldOptions
- * @property {string} name Name to use in the request
- * @property {boolean} required Sets if this field is required to be filled in
- * @property {InputType} type Type of the field
- * @property {string} text Text to show in the label
- * @property {string} hint Small text to show under the input. For example: "We do not share you email" or something.
- * @property {any} default Default value 
- * @property {boolean} autofill Enable browser level autofill for this field.
- * @property {string} placeholder Placeholder to show in the input when nothing is entered
- * @property {FieldWidth} width Width of the field in units
- * @property {object} attributes List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
- * @property {Food} food Food for selects or autocomepletes
- * @property {boolean} compact Sets the compact mode. In compact mode, the label is hidden
- * @property {string} prepend Content to put in front of the input. Units are usally put there
+ * @typedef {object} FormFieldOptions
+ * @property {string} [name] Name to use in the request
+ * @property {boolean} [required] Sets if this field is required to be filled in
+ * @property {InputType} [type] Type of the field
+ * @property {string} [text] Text to show in the label
+ * @property {string} [hint] Small text to show under the input. For example: "We do not share you email" or something.
+ * @property {any} [default] Default value
+ * @property {boolean} [autofill] Enable browser level autofill for this field.
+ * @property {string} [placeholder] Placeholder to show in the input when nothing is entered
+ * @property {FieldWidth} [width] Width of the field in units
+ * @property {object} [attributes] List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
+ * @property {Food} [food] Food for selects or autocomepletes
+ * @property {boolean} [compact] Sets the compact mode. In compact mode, the label is hidden
+ * @property {string} [prepend] Content to put in front of the input. Units are usally put there
+ * @property {any} [value] Initial value of the input. For `type: "button"` this is the button label.
+ * @property {string} [style] Bootstrap button class (e.g. `"btn-primary"`, `"btn-danger"`). Only applies when `type` is `"button"`. Defaults to `"btn-primary"`.
+ * @property {string} [customFileInputText] Placeholder text shown on a `type: "file"` input before a file is chosen. Defaults to `Z.Lang.choose_file`.
+ * @property {Food[]|string} [autocompleteData] Static list of options for `type: "autocomplete"`, or a backend path string that the field queries via `Z.Request.root` for dynamic suggestions.
+ * @property {number} [autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
+ * @property {function} [autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
+ * @property {function} [autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
  */
 
 /**
