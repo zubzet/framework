@@ -54,8 +54,8 @@ describe('Permission System - Organization', () => {
     it('should be possible to create a new organization (add)', () => {
         requestJson('/organization/add').then((output) => {
             expect(output).to.deep.equal({
-                "createdOrganizationDirect": {"id": 512, "name": "org_add_NewOrganization"},
-                "createdOrganizationGet": {"id": 512, "name": "org_add_NewOrganization"}
+                "createdOrganizationDirect": {"id": 10000, "name": "org_add_NewOrganization"},
+                "createdOrganizationGet": {"id": 10000, "name": "org_add_NewOrganization"}
             });
         });
     });
