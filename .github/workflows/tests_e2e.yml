@@ -57,12 +57,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: tests/e2e/package-lock.json
+          bun-version: latest
 
       - name: Cache Cypress binary
         uses: actions/cache@v4
@@ -72,8 +70,8 @@ jobs:
           restore-keys: |
             cypress-${{ runner.os }}-
 
-      - name: Install NPM dependencies
-        run: npm ci
+      - name: Install dependencies
+        run: bun install
 
       - name: Detect host UID
         run: echo "HOST_UID=$(id -u)" >> $GITHUB_ENV
@@ -118,7 +116,7 @@ jobs:
       - name: Run E2E tests (Cypress)
         env:
           CI: true
-        run: npm run tests
+        run: bun run tests
 
       - name: Upload Cypress videos
         if: failure()
