@@ -6,4 +6,5 @@ CREATE TABLE IF NOT EXISTS `z_organization` (
 );
 
 ALTER TABLE `z_user`
-  ADD COLUMN IF NOT EXISTS `organizationId` INT NULL DEFAULT NULL AFTER `id`;
+  ADD COLUMN IF NOT EXISTS `organizationId` INT NULL DEFAULT NULL AFTER `id`,
+  ADD INDEX IF NOT EXISTS `organizationId` (`organizationId`);
