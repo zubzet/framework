@@ -15,7 +15,7 @@
  * @type {object} Z
  * Namespace object for Z.js
  */
-Z = {
+var Z = {
 
   /**
    * Debug mode
