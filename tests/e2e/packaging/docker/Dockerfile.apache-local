@@ -1,85 +1,13 @@
 ARG PHP_TAG=8.0-apache
-FROM php:${PHP_TAG}
+FROM ghcr.io/zubzet/php:${PHP_TAG}
 
-ARG DISABLE_XDEBUG=0
 ARG USER_UID=1000
-ENV DEBIAN_FRONTEND=noninteractive \
-    COMPOSER_ALLOW_SUPERUSER=1
-
-# Make bash the default shell for nicer heredocs
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 USER root
-
-# Provide install-php-extensions from a dedicated image
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
-
-# Buckets to keep things readable
-ARG APT_PACKAGES="ca-certificates git nano curl unzip"
-
-# Keep the extension bucket structure similar to the original,
-# but only list extensions we actually need to install here.
-ARG PHP_EXTENSIONS="bcmath bz2 calendar curl exif gd intl mbstring mysqli pdo_mysql sockets iconv session zip xmlreader xmlwriter simplexml"
-
-RUN <<BASH
-    set -euo pipefail
-
-    # OS packages
-    apt-get update
-    apt-get install -y --no-install-recommends ${APT_PACKAGES}
-
-    # Setup PHP extensions
-    install-php-extensions ${PHP_EXTENSIONS}
-
-    # XDEBUG (conditional)
-    if [[ "${DISABLE_XDEBUG}" == "1" ]]; then
-        echo "Skipping Xdebug install (DISABLE_XDEBUG=1)"
-    else
-        php_mm="$(php -r 'echo PHP_MAJOR_VERSION, ".", PHP_MINOR_VERSION;')"
-
-        case "${php_mm}" in
-            8.5)
-                xdebug_pkg='xdebug-^3.5@stable'
-                ;;
-            8.0|8.1|8.2|8.3|8.4)
-                xdebug_pkg='xdebug-^3.4@stable'
-                ;;
-            *)
-                echo "Unsupported PHP version for Xdebug selection: ${php_mm}" >&2
-                exit 1
-                ;;
-        esac
-
-        install-php-extensions "${xdebug_pkg}"
-
-        # Configure debugging
-        {
-            echo "xdebug.mode=debug"
-            echo "xdebug.start_with_request=yes"
-            echo "xdebug.client_host=host.docker.internal"
-            echo "xdebug.client_port=9003"
-        } > /usr/local/etc/php/conf.d/99-xdebug.ini
-    fi
-
-    # Apache Rewrite engine
-    a2enmod rewrite
-
-    # Cleanup
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-    # Setup Composer
-    set -euo pipefail
-    php -r "copy('https://getcomposer.org/installer','/tmp/composer-setup.php');"
-    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
-    rm /tmp/composer-setup.php
-
-    # Align www-data UID/GID and ownership
-    set -euo pipefail
-    mkdir -p /var/www /var/log/apache2 /run/apache2
-    groupmod -g "${USER_UID}" www-data
-    usermod -u "${USER_UID}" -g www-data www-data
-    chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
-BASH
+RUN usermod -u "${USER_UID}" www-data \
+ && groupmod -g "${USER_UID}" www-data \
+ && chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
 
 WORKDIR /var/www/html
 USER www-data
