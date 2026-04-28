@@ -209,6 +209,7 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 
 ## Working style for AI agents
 
+- **Never commit or push without an explicit ask.** This is critical framework code. AI output is reviewed by hand before it lands — leave changes uncommitted in the working tree (or staged, if helpful) and wait. Even after a successful test run, do not run `git commit`, `git push`, or `gh pr` write actions unless the maintainer asks for them in that turn.
 - **Iterative pace.** Make small changes, run tests, report concisely, wait. Don't pre-build large structures unless asked.
 - **Watch for parallel edits.** A `<system-reminder>` notice that a file was modified means re-read it before any further change — never assume your in-context view is current.
 - **"Any other ideas?"** is a request for 3–4 ranked options with trade-offs and a recommendation. Don't implement until asked.
