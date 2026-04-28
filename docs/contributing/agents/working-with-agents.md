@@ -216,6 +216,19 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 - **Inline aggressively.** When a private function has only one caller, inlining is the project default. Drop dead code and unused parameters confidently.
 - **Run the full e2e suite after any framework-internals change.** Three minutes catches the kind of subtle ordering bugs that bootstrap-adjacent changes cause.
 
+## Migrations
+
+Framework migrations live in `src/IncludedComponents/database/Migration/` and ship with the framework. Project migrations live in `app/Database/migrations`. See [Migrations](../../core-features/migrations/index.md) for the file/filename conventions and CLI commands.
+
+**Bundled migrations must be idempotent.** They may already be partially applied on consumer projects (manual schema work, partial sync state, replays after a recovery) and re-running must not fail. Concretely:
+
+- `CREATE TABLE IF NOT EXISTS …`
+- `ALTER TABLE … ADD COLUMN IF NOT EXISTS …`
+- `ALTER TABLE … ADD INDEX IF NOT EXISTS …` (and the `DROP` variants)
+- `INSERT … ON DUPLICATE KEY UPDATE` or guarded with `WHERE NOT EXISTS`
+
+The `z_version` table prevents re-execution under normal flow, but the rule still applies — a migration that fails on second run is a bug.
+
 ## Common pitfalls
 
 - **Port confusion.** App is at `:8080`, not `:4000`. The `host` setting in INI is informational, not the listening port.
