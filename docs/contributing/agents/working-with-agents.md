@@ -10,8 +10,10 @@ This page is for AI coding agents (Claude Code, Cursor, Codex, Aider, etc.) and 
 | `src/IncludedComponents/` | Bundled controllers, models, views, routes, and migrations the framework ships |
 | `docs/` | MkDocs-rendered documentation (this site) |
 | `tests/e2e/` | Cypress end-to-end test suite running the dockerized app |
+| `web/` | Static assets served via `AssetProxy` — currently just `Z.js` (frontend runtime) |
 | `mkdocs.yml` | Docs site nav and theme config |
 | `composer.json` | PHP 8.0–8.5 support, autoload, dependencies |
+| `jsconfig.json` | Scopes the JS language server to `web/**/*.js` so `Z`, `ZForm`, `ZFormField`, `ZCED`, `ZCEDItem` resolve as globals (autocomplete inside `<script>` blocks of views) |
 
 There is no top-level `package.json` and no PHPUnit suite — testing is end-to-end only, run from `tests/e2e/`.
 

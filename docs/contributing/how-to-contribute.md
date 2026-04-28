@@ -118,6 +118,12 @@ Both tasks render in a dedicated panel. On first open VSCode prompts to **Allow 
 
 Closing the VSCode window does **not** stop the stack — VSCode kills task terminals too aggressively for any cleanup hook to run reliably. Before opening the next project, run **Stop Dev Environment** from the command palette (or `npm run stop` from `tests/e2e/`) to free the ports.
 
+### JavaScript IntelliSense
+
+`jsconfig.json` at the repo root scopes the JS language server to `web/**/*.js`. The runtime `Z` namespace, `ZForm`, `ZFormField`, `ZCED`, and `ZCEDItem` are declared there with JSDoc — the LSP picks them up as globals, so typing `Z.` inside a `<script>` block of a PHP view (or in any file the LSP analyzes as JavaScript) offers completions and parameter hints.
+
+If completions don't surface inside `<script>` blocks of `.php` files: the editor's PHP integration must hand `<script>` regions off to the JS language server. VSCode does this by default; some PHP plugins (e.g. Intelephense Free) claim the entire file and disable embedded language services — extracting the script to a standalone `.js` file is the workaround.
+
 ## Documentation
 1. **Clone the Repository**
 ```bash
