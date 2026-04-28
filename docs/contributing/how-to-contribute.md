@@ -2,6 +2,21 @@
 
 ## Git Workflow
 
+### Branching model
+
+The framework uses a two-tier integration flow:
+
+| Branch | Stability | Source of changes |
+| ------ | --------- | ----------------- |
+| `develop` | **Unstable.** Active integration branch. Features land here once reviewed. May contain in-progress combinations that haven't been validated together. | Feature-branch PRs |
+| `main` | **Release-candidate.** Mostly working, comparable to an RC. Only merged to from `develop` when the combined state is green and reviewed. | Promotion PRs from `develop` |
+
+Practical implications:
+
+- Feature work targets `develop`. PRs may be opened as **draft / WIP** while in progress.
+- Promotions to `main` happen as a separate PR (`develop` → `main`) when the maintainer is satisfied with the integrated state.
+- CI runs the full PHP matrix (8.0–8.5) on pushes to `develop`, `main`, and version tags. PRs and other branches run an extremes-only smoke (8.0 + 8.5).
+
 ### Setup
 
 - **Origin** (your fork): `git@github.com:your-username/framework.git`
@@ -9,12 +24,12 @@
 
 ### Common Workflows
 
-#### Update your local main branch from upstream
+#### Update your local develop branch from upstream
 
 ```bash
 git fetch upstream
-git checkout main
-git merge upstream/main
+git checkout develop
+git merge upstream/develop
 ```
 
 #### Create and push a feature branch
@@ -31,34 +46,46 @@ git push origin feature/your-feature-name
 
 1. Go to `https://github.com/zubzet/framework`
 2. Click "New Pull Request"
-3. Select `main` as base branch
+3. Select `develop` as base branch
 4. Select your feature branch as compare branch
-5. Create PR and request reviews
+5. Create PR and request reviews — open as draft while still in progress
 
 #### Sync your fork with upstream
 
-If main has changed while you're working on a feature branch:
+If develop has changed while you're working on a feature branch:
 
 ```bash
 git fetch upstream
-git rebase upstream/main
+git rebase upstream/develop
 git push origin feature/your-feature-name -f
 ```
 
-#### Keep your main branch in sync
+#### Keep your develop branch in sync
 
 ```bash
-git checkout main
+git checkout develop
 git fetch upstream
+git merge upstream/develop
+git push origin develop
+```
+
+#### Promote develop to main (maintainer)
+
+```bash
+git fetch upstream
+git checkout main
 git merge upstream/main
+git merge upstream/develop
 git push origin main
+# then open the PR upstream and let the full matrix run
 ```
 
 ### Important Notes
 
-- Always work on feature branches, never directly on main
-- Keep your fork updated frequently to avoid conflicts
-- Push to `origin` (your fork), create PR to `upstream` (main repo)
+- Always work on feature branches, never directly on `develop` or `main`.
+- Feature PRs target `develop`; only `develop` → `main` PRs target `main`.
+- Keep your fork updated frequently to avoid conflicts.
+- Push to `origin` (your fork), create PR to `upstream` (main repo).
 
 ## Commit Messages
 We previously used [gitmoji](https://gitmoji.dev/) for commits.

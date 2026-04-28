@@ -204,8 +204,8 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 - **Conventional commits with a scope**: `feat(admin): …`, `fix(layout): …`, `refactor(maintenance): …`, `test(...)`, `docs(...)`. See [How To Contribute](../how-to-contribute.md) for the migration from Gitmoji.
 - **Atomic commits.** Split work by scope. Example: a feature touching code + tests + docs becomes `refactor(...)`, `feat(...)`, `test(...)`, `docs(...)` — four commits, one scope each. Combining (`feat+test`) is not the project style.
 - **One-line messages, no `Co-Authored-By` trailer.**
-- **PR base is `main`.** Verify with `gh pr view <n> --json baseRefName` if unsure; some tooling surfaces stale branch names.
-- CI runs e2e on PHP 8.0, 8.1, 8.2, 8.3, 8.4, 8.5 in parallel. Watch with `gh pr checks <n> --repo zubzet/framework --watch`.
+- **PR base is `develop`.** Feature work merges into `develop`; `develop` is later promoted to `main` via a separate PR. Verify with `gh pr view <n> --json baseRefName` if unsure; some tooling surfaces stale branch names. See [How To Contribute → Branching model](../how-to-contribute.md#branching-model).
+- CI runs e2e on PHP 8.0 and 8.5 for PRs and feature-branch pushes (the version-edge smoke). Pushes to `develop`, `main`, and version tags run the full matrix (8.0–8.5). Watch with `gh pr checks <n> --repo zubzet/framework --watch`.
 
 ## Working style for AI agents
 
