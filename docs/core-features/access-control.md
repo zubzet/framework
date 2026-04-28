@@ -48,6 +48,12 @@ All retrieval methods are **public static** and return fully hydrated `User` obj
     User::byAccessToAnyOf(string ...$permissions): array
     ```
 
+* Returns all active users assigned to the given organization.
+
+    ```php
+    User::byOrganization(Organization $organization): array
+    ```
+
 * Returns all users.
 
     ```php
@@ -108,6 +114,12 @@ User attributes can be updated directly on the instance.
 
     ```php
     $user->updatePassword(string $password);
+    ```
+
+* Assigns the user to an organization, or unsets it when `null` is passed.
+
+    ```php
+    $user->updateOrganization(?Organization $organization);
     ```
 
 * Clears all active login sessions for the user.
@@ -261,6 +273,13 @@ Permission checks always resolve the **complete permission set**.
 
     ```php
     $user->getRoles(): array
+    ```
+
+* Returns the organization the user belongs to, or `null` if none is assigned.
+  The result is cached on the instance — including the `null` case — until `clearFields()` or a write operation invalidates it.
+
+    ```php
+    $user->organization(): ?Organization
     ```
 
 * Validates that the instance exists and is not null.
@@ -425,6 +444,93 @@ The `Role` object represents a named collection of permissions that can be assig
 
     ```php
     $role->refresh();
+    ```
+
+---
+
+## Organization Object
+
+The `Organization` object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique) and is soft-deletable like the other authentication objects.
+
+### Organization Retrieval
+
+* Returns the organization a user belongs to, or `null` if the user has none.
+  This is a convenience pass-through to `$user->organization()`.
+
+    ```php
+    Organization::byUser(User $user): ?Organization
+    ```
+
+* Returns all active organizations matching the given name. Names are not unique, so the result may contain zero, one, or multiple organizations.
+
+    ```php
+    Organization::byName(string $name): array
+    ```
+
+* Returns all organizations.
+
+    ```php
+    Organization::all(): array
+    ```
+
+* Returns an organization by its ID, or `null` if not found or inactive.
+
+    ```php
+    Organization::byId(int|string $id): ?Organization
+    ```
+
+* Returns all organizations matching the given IDs.
+
+    ```php
+    Organization::byIds(int ...$ids): array
+    ```
+
+---
+
+### Creating an Organization
+
+* Creates a new organization with the given name (which may be `null`).
+
+    ```php
+    Organization::add(?string $name): Organization
+    ```
+
+---
+
+### Updating and Removing Organizations
+
+* Updates the organization's name.
+
+    ```php
+    $organization->updateName(string $name);
+    ```
+
+* Soft deletes the organization (`active = 0`). Users that referenced it will then return `null` from `$user->organization()`, even though their `organizationId` column is preserved.
+
+    ```php
+    $organization->remove();
+    ```
+
+---
+
+### Organization Data Access
+
+* Returns the organization's name.
+
+    ```php
+    $organization->name(): string
+    ```
+
+* Returns all active users assigned to this organization.
+
+    ```php
+    $organization->getUsers(): array
+    ```
+
+* Reloads the cached users list.
+
+    ```php
+    $organization->refreshUsers();
     ```
 
 ---

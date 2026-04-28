@@ -209,12 +209,26 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 
 ## Working style for AI agents
 
+- **Never commit or push without an explicit ask.** This is critical framework code. AI output is reviewed by hand before it lands — leave changes uncommitted in the working tree (or staged, if helpful) and wait. Even after a successful test run, do not run `git commit`, `git push`, or `gh pr` write actions unless the maintainer asks for them in that turn.
 - **Iterative pace.** Make small changes, run tests, report concisely, wait. Don't pre-build large structures unless asked.
 - **Watch for parallel edits.** A `<system-reminder>` notice that a file was modified means re-read it before any further change — never assume your in-context view is current.
 - **"Any other ideas?"** is a request for 3–4 ranked options with trade-offs and a recommendation. Don't implement until asked.
 - **"Make a useful decision."** Decide. State trade-offs in 1–2 lines, implement.
 - **Inline aggressively.** When a private function has only one caller, inlining is the project default. Drop dead code and unused parameters confidently.
 - **Run the full e2e suite after any framework-internals change.** Three minutes catches the kind of subtle ordering bugs that bootstrap-adjacent changes cause.
+
+## Migrations
+
+Framework migrations live in `src/IncludedComponents/database/Migration/` and ship with the framework. Project migrations live in `app/Database/migrations`. See [Migrations](../../core-features/migrations/index.md) for the file/filename conventions and CLI commands.
+
+**Bundled migrations must be idempotent.** They may already be partially applied on consumer projects (manual schema work, partial sync state, replays after a recovery) and re-running must not fail. Concretely:
+
+- `CREATE TABLE IF NOT EXISTS …`
+- `ALTER TABLE … ADD COLUMN IF NOT EXISTS …`
+- `ALTER TABLE … ADD INDEX IF NOT EXISTS …` (and the `DROP` variants)
+- `INSERT … ON DUPLICATE KEY UPDATE` or guarded with `WHERE NOT EXISTS`
+
+The `z_version` table prevents re-execution under normal flow, but the rule still applies — a migration that fails on second run is a bug.
 
 ## Common pitfalls
 

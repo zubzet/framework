@@ -6,6 +6,7 @@
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Authentication\Organization;
     use ZubZet\Framework\Authentication\Permission\User;
 
     /**
@@ -299,6 +300,39 @@
                     LIMIT 1";
             $this->exec($sql, "s", $name);
             return $this->resultToLine()["id"] ?? null;
+        }
+
+        /**
+         * @internal
+         */
+        public function getUsersByOrganization(Organization $organization): array {
+            $users = [];
+
+            $query = $this->dbSelect("zu.*", [
+                "zu" => "z_user"
+            ])->where([
+                "zu.organizationId" => $organization->id(),
+                "zu.active" => 1
+            ]);
+
+            $results = $this->exec($query)->resultToArray();
+
+            foreach($results as $userData) {
+                $users[] = new User($userData);
+            }
+
+            return $users;
+        }
+
+        public function updateUserOrganization(User $user, ?Organization $organization): void {
+            $updateQuery = $this->dbUpdate("z_user", [
+                "organizationId" => is_null($organization) ? null : $organization->id()
+            ])->where([
+                "id" => $user->id(),
+                "active" => 1
+            ]);
+
+            $this->exec($updateQuery);
         }
 
     }
