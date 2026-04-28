@@ -19,8 +19,12 @@
 
             self::$isWriting = true;
             try {
-                // Log the record using the z_logger model, which handles normalization and encoding
+                // Log the record using the z_logger model, which handles normalization and encoding.
+                // The insert can fail in legitimate states, e.g. mid-migration before z_interaction_log
+                // has been created, and a logger must never crash it's caller.
                 model("z_logger")->log($record);
+            } catch(\Throwable $e) {
+                // Discard: Logging is best-effort. A different handler (e.g. file) may still capture this.
             } finally {
                 self::$isWriting = false;
             }
