@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "esnext",
+        "allowJs": true,
+        "checkJs": false,
+        "noEmit": true,
+        "lib": ["es2020", "dom"]
+    },
+    "include": [
+        "web/**/*.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "vendor",
+        "_build",
+        "tests/e2e/node_modules"
+    ]
+}
