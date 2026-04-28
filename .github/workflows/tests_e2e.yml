@@ -45,7 +45,6 @@ jobs:
         php_tag: ${{ fromJSON((github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v')))) && '["8.0-apache","8.1-apache","8.2-apache","8.3-apache","8.4-apache","8.5-apache"]' || '["8.0-apache","8.5-apache"]') }}
 
     env:
-      DISABLE_XDEBUG: "1"
       COMPOSE_DOCKER_CLI_BUILD: "1"
       DOCKER_BUILDKIT: "1"
 
@@ -93,7 +92,6 @@ jobs:
           build-args: |
             PHP_TAG=${{ matrix.php_tag }}
             USER_UID=${{ env.HOST_UID }}
-            DISABLE_XDEBUG=${{ env.DISABLE_XDEBUG }}
 
       # Warm dependent images so compose doesn't have to pull them during up
       - name: Pre-pull compose services
