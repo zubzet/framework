@@ -731,6 +731,11 @@ class ZForm {
     this.currentRow = null;
     this.rows = [];
 
+    /**
+     * @private
+     */
+    this._isDisabled = false;
+
     if (options.dom) document.getElementById(options.dom).appendChild(this.dom);
   }
 
@@ -765,6 +770,33 @@ class ZForm {
   }
 
   /**
+   * Returns an object where each key is the fieldname with its value as value
+   * @returns {{[fieldName: string]: any}}
+   */
+  getValues() {
+    return Object.fromEntries(
+      Object.entries(this.fields).map(([fieldName, field]) => [fieldName, field.value])
+    )
+  }
+
+  /**
+   * Fills a form with a data object
+   * @param {{[fieldName: string]: any}} data 
+   * @param {Object} options
+   * @param {boolean} [options.resetUnknown] Reset fields which values are not in data?
+   */
+  setValues(data, options = {}) {
+    if (options.resetUnknown) {
+      this.reset()
+    }
+
+    for (const fieldName in data) {
+      if (!(fieldName in this.fields)) continue
+      this.fields[fieldName].value = data[fieldName]
+    }
+  }
+
+  /**
    * Adds custom html to the current part of the Form
    * @returns {void}
    */
@@ -784,6 +816,7 @@ class ZForm {
     if (this.lastSendAt && now - this.lastSendAt < 300) return;
     this.lastSendAt = now;
     this.isSending = true;
+    this._updateDisabled();
 
     var data = this.getFormData();
 
@@ -835,6 +868,7 @@ class ZForm {
 
     }).always(() => {
       this.isSending = false;
+      this._updateDisabled();
     });
   }
 
@@ -845,6 +879,7 @@ class ZForm {
    */
   addField(field) {
     if (field.type == "CED") this.doReload = true;
+    field.form = this;
 
     this.fields[field.name] = field;
     var showUnsavedHint = () => {
@@ -853,6 +888,8 @@ class ZForm {
     field.on('input', showUnsavedHint);
     field.on('change', showUnsavedHint);
     bsCustomFileInput.init();
+
+    if (field.isHidden()) return;
 
     if (field.width + this.currentRowLength > 12) {
       var group = document.createElement("div");
@@ -868,6 +905,39 @@ class ZForm {
       this.currentRow.appendChild(field.dom);
     }
     this.currentRowLength += field.width;
+  }
+
+  /**
+   * Rebuilds the whole form layout. Should be executed when visibility of fields changes.
+   * It is not used when fields are added because it could potentially break existing userspace code, that handles field visibility.
+   * @private
+   */
+  _updateLayout() {
+    for (const field of Object.values(this.fields)) {
+      field.dom.remove()
+    }
+
+    this.inputSpace.innerHTML = ""
+
+    let currentLength = Infinity
+    let currentRow = null
+
+    for (const field of Object.values(this.fields)) {
+      if (field.isHidden()) continue;
+
+      if (field.width + currentLength > 12) {
+        const group = document.createElement("div");
+        group.classList.add("form-group");
+        currentRow = document.createElement("div");
+        currentRow.classList.add("form-row");
+        group.appendChild(currentRow);
+        this.inputSpace.appendChild(group);
+        currentLength = 0;
+      }
+
+      currentRow.appendChild(field.dom);
+      currentLength += field.width;
+    }
   }
 
   /**
@@ -887,7 +957,7 @@ class ZForm {
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
-    var field = new ZFormField(options);
+    const field = new ZFormField(options);
     this.addField(field);
     return field;
   }
@@ -958,6 +1028,41 @@ class ZForm {
     }
   }
 
+  /**
+   * Enables the form
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+
+  }
+
+  /**
+   * Disables the form
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * @returns {boolean} True when form is disabled
+   */
+  isDisabled() {
+    if (this.isSending) return true
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    for (const field of Object.values(this.fields)) {
+      field._updateDisabled();
+    }
+    this.buttonSubmit.disabled = this.isDisabled();
+  }
+
 }
 
 /**
@@ -982,19 +1087,21 @@ class ZForm {
 /**
  * All parameters are optional
  * @typedef FormFieldOptions
- * @property {string} name Name to use in the request
- * @property {boolean} required Sets if this field is required to be filled in
- * @property {InputType} type Type of the field
- * @property {string} text Text to show in the label
- * @property {string} hint Small text to show under the input. For example: "We do not share you email" or something.
- * @property {any} default Default value 
- * @property {boolean} autofill Enable browser level autofill for this field.
- * @property {string} placeholder Placeholder to show in the input when nothing is entered
- * @property {FieldWidth} width Width of the field in units
- * @property {object} attributes List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
- * @property {Food} food Food for selects or autocomepletes
- * @property {boolean} compact Sets the compact mode. In compact mode, the label is hidden
- * @property {string} prepend Content to put in front of the input. Units are usally put there
+ * @property {string} [name] Name to use in the request
+ * @property {boolean} [required] Sets if this field is required to be filled in
+ * @property {InputType} [type] Type of the field
+ * @property {string} [text] Text to show in the label
+ * @property {string} [hint] Small text to show under the input. For example: "We do not share you email" or something.
+ * @property {any} [default] Default value 
+ * @property {boolean} [autofill] Enable browser level autofill for this field.
+ * @property {string} [placeholder] Placeholder to show in the input when nothing is entered
+ * @property {FieldWidth} [width] Width of the field in units
+ * @property {object} [attributes] List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
+ * @property {Food} [food] Food for selects or autocomepletes
+ * @property {boolean} [compact] Sets the compact mode. In compact mode, the label is hidden
+ * @property {string} [prepend] Content to put in front of the input. Units are usally put there
+ * @property {boolean} [disabled] Does this field start disabled?
+ * @property {boolean} [hidden] Does this field start hidden?
  */
 
 /**
@@ -1023,6 +1130,23 @@ class ZFormField {
     this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
     this.autocompleteTextCB = options.autocompleteTextCB;
     this.autocompleteCB = options.autocompleteCB || null;
+
+    /**
+     * @type {ZForm|null}
+     */
+    this.form = null;
+
+    /**
+     * @private
+     * Was this field disabled manually?
+     */
+    this._isDisabled = false
+
+    /**
+     * @private
+     * Is this field hidden?
+     */
+    this._isHidden = false
 
     this.optgroup = null;
 
@@ -1226,6 +1350,14 @@ class ZFormField {
     if (options.compact) {
       this.label.classList.add("d-none");
     }
+
+    if (options.disabled) {
+      this.disable();
+    }
+
+    if (options.hidden) {
+      this.hide();
+    }
   }
 
   /**
@@ -1370,5 +1502,51 @@ class ZFormField {
    */
   reset() {
     this.input.value = this.default ?? "";
+  }
+
+  /**
+   * Disables the form field
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * Enables the form field
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+  }
+
+  isDisabled() {
+    if (this.form) {
+      if (this.form.isDisabled()) return true;
+    }
+
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    this.input.disabled = this.isDisabled();
+  }
+
+  hide() {
+    this._isHidden = true
+    if (this.form) this.form._updateLayout();
+  }
+
+  show() {
+    this._isHidden = false
+    if (this.form) this.form._updateLayout();
+  }
+
+  isHidden() {
+    // Logic for conditional fields would be here when implemented
+    return this._isHidden
   }
 }
