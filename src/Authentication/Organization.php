@@ -27,10 +27,28 @@
             return new Organization($organizationData);
         }
 
+        /**
+         * Get the organization a given user belongs to.
+         *
+         * Convenience pass-through to {@see User::organization()} so callers can use the
+         * symmetric `Organization::byUser($user)` style alongside other `by*` retrievers.
+         *
+         * @param User $user The user to look up
+         * @return Organization|null The organization or null if the user has none
+         */
         public static function byUser(User $user): ?Organization {
             return $user->organization();
         }
 
+        /**
+         * Get all active organizations matching the given name.
+         *
+         * Organization names are not unique, so this returns an array — possibly empty,
+         * possibly containing multiple organizations sharing the same name.
+         *
+         * @param string $name The name to match exactly
+         * @return Organization[] All active organizations with the given name
+         */
         public static function byName(string $name): array {
             $organizations = [];
             $organizationDataList = model("z_organization")->byName($name);

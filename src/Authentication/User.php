@@ -23,6 +23,10 @@
          * @var int $orgId ID of the organization the user belongs to.
          *
          * Null represents an user that does not belong to an organization, or an anonymous user.
+         *
+         * Named `$orgId` rather than `$organizationId` (which is the column name) because this
+         * property is read frequently in application code and the shorter name keeps call sites
+         * tidy. The corresponding DB column is still `organizationId`.
          */
         public $orgId = null;
 
