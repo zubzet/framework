@@ -25,6 +25,12 @@ describe('Form Date Validation', () => {
         });
     });
 
+    beforeEach(() => {
+        // Wait on the upload POST so the next cy.visit() doesn't race the
+        // server-side write — historically flaky on slower CI shards.
+        cy.intercept('POST', '**').as('upload');
+    });
+
     after(() => {
         // Delete files after testing
         if (Cypress.platform === 'win32') {
@@ -56,6 +62,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Small.pdf", "application/pdf");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Small.pdf").should("exist");
@@ -66,6 +73,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Small.txt", "text/plain");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Small.txt").should("not.exist");
@@ -76,6 +84,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Big.pdf", "application/pdf");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Big.pdf").should("not.exist");
@@ -86,6 +95,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Big.txt", "text/plain");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Big.txt").should("not.exist");
@@ -98,6 +108,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Small_1.pdf", "application/pdf");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Small_1.pdf");
@@ -108,6 +119,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Small_1.txt", "text/plain");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Small_1.txt").should("not.exist");
@@ -118,6 +130,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Big_1.pdf", "application/pdf");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Big_1.pdf").should("not.exist");
@@ -128,6 +141,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Big_1.txt", "text/plain");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Big_1.txt").should("not.exist");
@@ -138,6 +152,7 @@ describe('Form Date Validation', () => {
 
         uploadFile("TestFile_Small_2.pdf", "application/pdf");
         cy.get('button').click();
+        cy.wait('@upload');
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Small_2.pdf");
