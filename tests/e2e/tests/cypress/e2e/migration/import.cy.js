@@ -36,8 +36,9 @@ describe('Migration System - Import', () => {
         "2025-10-01_MigrationImport.sql"
     ];
 
-    after(() => {
-        // Clean up all copied files
+    afterEach(() => {
+        // Clean up all copied files so a mid-test failure can't leak state
+        // into the next test's cy.dbSeed().
         allFiles.forEach((file) => {
             cy.exec(`rm -f ${baseDir}/${file} || true`, { failOnNonZeroExit: false });
         });
@@ -69,6 +70,7 @@ describe('Migration System - Import', () => {
             cy.exec(`rm -f ${target} || true`);
         });
     });
+
 
     // Check if the Files are actually executed and imported correctly
     it('should import valid SQL migration correctly', () => {
