@@ -8,6 +8,7 @@ on:
       - 'tests/e2e/**'
       - 'composer*'
       - 'src/**'
+      - 'web/**'
       - '.github/workflows/tests_e2e.yml'
   push:
     branches: [ '*' ]
@@ -16,6 +17,7 @@ on:
       - 'tests/e2e/**'
       - 'composer*'
       - 'src/**'
+      - 'web/**'
       - '.github/workflows/tests_e2e.yml'
   workflow_dispatch:
     inputs:
