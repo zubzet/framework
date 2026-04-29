@@ -213,7 +213,6 @@
                 ["fas", "bullhorn"],
                 ["fas", "business-time"],
                 ["fas", "check"],
-                ["fas", "external-link"],
                 ["fas", "external-link-alt"],
                 ["fas", "globe"],
                 ["fas", "key"],
@@ -242,6 +241,129 @@
                 // Brands
                 ["fab", "buffer"],
                 ["fab", "facebook"],
+
+                // FA6-native names: replacements for renamed FA5 classes.
+                // Including both forms makes the audit catch a regression
+                // where the bundled FA package drops an alias or the
+                // v4-shim layer stops mapping a legacy name forward.
+                ["fas", "xmark"],
+                ["fas", "gear"],
+                ["fas", "gears"],
+                ["fas", "house"],
+                ["fas", "house-user"],
+                ["fas", "house-chimney"],
+                ["fas", "magnifying-glass"],
+                ["fas", "magnifying-glass-plus"],
+                ["fas", "magnifying-glass-minus"],
+                ["fas", "magnifying-glass-chart"],
+                ["fas", "pen-to-square"],
+                ["fas", "right-from-bracket"],
+                ["fas", "right-to-bracket"],
+                ["fas", "arrow-right-from-bracket"],
+                ["fas", "arrow-up-from-bracket"],
+                ["fas", "floppy-disk"],
+                ["fas", "trash-can"],
+
+                // Circle/square wrappers — common in alert/badge UIs.
+                ["fas", "circle-info"],
+                ["fas", "circle-check"],
+                ["fas", "circle-xmark"],
+                ["fas", "circle-question"],
+                ["fas", "circle-exclamation"],
+                ["fas", "circle-plus"],
+                ["fas", "circle-minus"],
+                ["fas", "circle-arrow-right"],
+                ["fas", "circle-arrow-left"],
+                ["fas", "circle-arrow-up"],
+                ["fas", "circle-arrow-down"],
+                ["fas", "square-check"],
+                ["fas", "square-xmark"],
+                ["fas", "square-arrow-up-right"],
+                ["fas", "square-poll-vertical"],
+
+                // Charting — broad coverage so a glyph rename or font subset
+                // change in dashboard contexts surfaces in the audit.
+                ["fas", "chart-line"],
+                ["fas", "chart-bar"],
+                ["fas", "chart-pie"],
+                ["fas", "chart-column"],
+                ["fas", "chart-area"],
+                ["fas", "chart-simple"],
+
+                // Engineering / dev / tooling.
+                ["fas", "code"],
+                ["fas", "terminal"],
+                ["fas", "bug"],
+                ["fas", "rocket"],
+                ["fas", "robot"],
+                ["fas", "screwdriver-wrench"],
+                ["fas", "hammer"],
+                ["fas", "wrench"],
+
+                // Communication.
+                ["fas", "envelope-open"],
+                ["fas", "message"],
+                ["fas", "comment-dots"],
+                ["fas", "bell-concierge"],
+
+                // User variants.
+                ["fas", "user-gear"],
+                ["fas", "user-pen"],
+                ["fas", "user-clock"],
+                ["fas", "user-check"],
+                ["fas", "user-graduate"],
+                ["fas", "user-tie"],
+                ["fas", "user-group"],
+                ["fas", "user-large"],
+
+                // Location.
+                ["fas", "location-dot"],
+                ["fas", "location-pin"],
+                ["fas", "location-arrow"],
+
+                // Heart/health.
+                ["fas", "heart-pulse"],
+                ["fas", "heart-circle-check"],
+
+                // Money/finance.
+                ["fas", "credit-card"],
+                ["fas", "money-bill"],
+                ["fas", "money-bill-wave"],
+                ["fas", "money-check-dollar"],
+
+                // Arrows / navigation.
+                ["fas", "arrows-rotate"],
+                ["fas", "arrow-right-arrow-left"],
+                ["fas", "right-long"],
+                ["fas", "left-long"],
+
+                // Cloud / files / lists.
+                ["fas", "cloud-arrow-up"],
+                ["fas", "cloud-arrow-down"],
+                ["fas", "bars-staggered"],
+                ["fas", "list-check"],
+                ["fas", "ellipsis"],
+                ["fas", "ellipsis-vertical"],
+                ["fas", "file-code"],
+                ["fas", "file-excel"],
+                ["fas", "file-word"],
+                ["fas", "file-zipper"],
+                ["fas", "file-lines"],
+                ["fas", "file-signature"],
+                ["fas", "file-arrow-up"],
+                ["fas", "file-arrow-down"],
+
+                // Building / institution.
+                ["fas", "building-columns"],
+
+                // Misc UI.
+                ["fas", "unlock"],
+                ["fas", "link-slash"],
+                ["fas", "camera"],
+                ["fas", "image-portrait"],
+                ["fas", "newspaper"],
+                ["fas", "pencil"],
+                ["fas", "bookmark"],
             ];
         }
     }

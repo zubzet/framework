@@ -24,12 +24,18 @@
             background: #fafafa;
             min-height: 70px;
         }
+        /* Fixed-size glyph box. The visual diff crops to this element so
+         * the glyph dominates the diffed pixels — a wrong glyph trips the
+         * per-tile threshold loudly, with no label/whitespace dilution. */
         .icon-audit-cell .icon-audit-glyph {
             font-size: 24px;
             line-height: 32px;
             color: #222;
-            display: block;
+            display: inline-block;
+            width: 32px;
             height: 32px;
+            text-align: center;
+            vertical-align: top;
         }
         .icon-audit-cell .icon-audit-label {
             font-size: 10px;
@@ -41,13 +47,10 @@
 
     <div data-test="visual-page">
         <div class="icon-audit-grid">
-            <?php foreach ($opt["icons"] as [$prefix, $name]) {
-                $cls = htmlspecialchars($prefix . " fa-" . $name, ENT_QUOTES);
-                $label = htmlspecialchars($prefix . " " . $name, ENT_QUOTES);
-            ?>
-                <div class="icon-audit-cell" data-icon="<?= $label ?>">
-                    <i class="icon-audit-glyph <?= $cls ?>" aria-hidden="true"></i>
-                    <div class="icon-audit-label"><?= $label ?></div>
+            <?php foreach ($opt["icons"] as [$prefix, $name]) { ?>
+                <div class="icon-audit-cell" data-icon="<?= "$prefix $name" ?>">
+                    <i class="icon-audit-glyph <?= "$prefix fa-$name" ?>" aria-hidden="true"></i>
+                    <div class="icon-audit-label"><?= "$prefix $name" ?></div>
                 </div>
             <?php } ?>
         </div>

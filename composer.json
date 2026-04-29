@@ -21,7 +21,7 @@
         "php-debugbar/php-debugbar": "^1.23.6",
         "components/jquery": "3.5.*",
         "components/bootstrap": "4.3.*",
-        "components/font-awesome": "5.11.*"
+        "components/font-awesome": "6.5.*"
     },
     "autoload": {
         "files": [
