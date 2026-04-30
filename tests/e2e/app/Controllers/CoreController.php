@@ -83,7 +83,7 @@
         public function action_renderlayout(Request $req, Response $res) {
             return $res->render("core/render", [
                 "data" => "Data",
-            ], "core/layout");
+            ], "layout/new_layout");
         }
 
         public function action_renderemptylayout(Request $req, Response $res) {

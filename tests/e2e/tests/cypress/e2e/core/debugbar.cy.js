@@ -67,7 +67,7 @@ describe('DebugBar', () => {
 
         // Note: a "custom layout is collected" assertion needs a layout that calls
         // layout_essentials_body() so the DebugBar UI is actually rendered. The e2e app's
-        // core/layout intentionally omits it, so we cover the layout-tagging behavior via
+        // layout/new_layout intentionally omits it, so we cover the layout-tagging behavior via
         // the default-layout test above.
 
         it('formats template params via DataFormatter', () => {
