@@ -18,21 +18,26 @@
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
+    use ZubZet\Framework\Message\Response;
 
     /**
      * The ZController contains actions for the admin dashboard / panel
      */
     class ZController extends z_controller {
 
+        public function __construct() {
+            Response::setGlobalDefaultLayout("layout/z_admin_layout.php");
+        }
+
         /**
          * Serves an empty index page with the admin layout
-         * 
+         *
          * @param Request $req The request object
          * @param Response $res The response object
          */
         public function action_index($req, $res) {
             $req->checkPermission("admin.panel");
-            $res->render("administration/empty.php", [], "layout/z_admin_layout.php");
+            $res->render("administration/empty.php");
         }
 
         public function action_maintenance(Request $req, Response $res) {
@@ -52,7 +57,7 @@
                 "isActive" => MaintenanceHandler::isActive(),
                 "mode" => MaintenanceHandler::getMode(),
                 "browserCanBypass" => MaintenanceHandler::checkBypassCookie(),
-            ], "layout/z_admin_layout.php");
+            ]);
         }
 
         /**
@@ -91,7 +96,7 @@
 
             $res->render("administration/add_user.php", [
                 "title" => "Add user"
-            ], "layout/z_admin_layout.php");
+            ]);
         }
 
         /**
@@ -152,11 +157,11 @@
                     "result" => "success",
                     "email" => $user["email"],
                     "userId" => $userId
-                ], "layout/z_admin_layout.php");
+                ]);
             } else {
                 $res->render("administration/user_select.php", [
                     "users" => $req->getModel("z_user")->getUserList()
-                ], "layout/z_admin_layout.php");
+                ]);
             }
         }
 
@@ -182,7 +187,7 @@
 
             $res->render("administration/groups.php", [
                 "groups" => model("z_general")->getGroups()
-            ], "layout/z_admin_layout.php");
+            ]);
         }
 
         /**
@@ -234,11 +239,11 @@
                 $res->render("administration/roles.php", [
                     "name" => $role["name"],
                     "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"])
-                ], "layout/z_admin_layout.php");
+                ]);
             } else {
                 $res->render("administration/role_select.php", [
                     "roles" => $req->getModel("z_general")->getTableWhere("z_role", "*", "active = ? AND is_group = 0", "i", [1])
-                ], "layout/z_admin_layout.php");
+                ]);
             }
 
         }
@@ -275,12 +280,12 @@
                     "paginationNext" => min($table["totalPages"], $page + 1),
                     "paginationLast" => max(1, $page - 1),
                     "totalPages" => $table["totalPages"],
-                ], "layout/z_admin_layout.php");
+                ]);
             }
 
             return $res->render("database/tables.php", [
                 "status" => $req->getModel("z_adminDashboard")->getTableStatus(),
-            ], "layout/z_admin_layout.php");
+            ]);
         }
     }
 
