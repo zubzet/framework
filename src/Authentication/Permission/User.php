@@ -116,11 +116,11 @@ class User extends AuthenticationObject {
      * This will insert the user into the database and return the created user object
      *
      * @param string $email The email of the new user
-     * @param string $password The password of the new user (plain text, will be hashed)
+     * @param ?string $password Optional the password of the new user (plain text, will be hashed)
      * @param ?DateTime $verified Optional datetime object indicating when the user was verified
      * @return User|null The created user object or null on failure
      */
-    public static function add(?string $email, string $password, ?DateTime $verified = null): ?User {
+    public static function add(?string $email, ?string $password, ?DateTime $verified = null): ?User {
         // If a datetime object is provided, format it to a string
         if(!is_null($verified)) $verified = $verified->format("Y-m-d H:i:s");
 

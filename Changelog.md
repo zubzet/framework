@@ -25,3 +25,4 @@ These todos should be as temporary as possible:
 1. Introduce PHPDebugBar
 1. Added optional permission `Group` link to `Organization` (`groupId` column on `z_organization`); `Organization::add()` accepts a `createGroup` flag and exposes `getGroup()` / `refreshGroup()`. `User::updateOrganization()` now syncs the user's group membership when the organization changes (removes the previous org's group, adds the new one).
 1. Added `Role::setPermissionsByRole(Role $role)` to replace a role's permissions with another role's permissions in one call (removes current, copies source).
+1. `User::add()` now accepts `null` for the `$password` parameter, allowing users to be created without a password (e.g. invite or SSO flows where the credential is set later via `updatePassword()`).
