@@ -154,7 +154,18 @@ class User extends AuthenticationObject {
     }
 
     public function updateOrganization(?Organization $organization): void {
+        $previousGroup = $this->organization()?->getGroup();
+        if(!is_null($previousGroup)) {
+            $this->groupsRemove($previousGroup);
+        }
+
         model('z_user')->updateUserOrganization($this, $organization);
+
+        $newGroup = $organization?->getGroup();
+        if(!is_null($newGroup)) {
+            $this->groupsAdd($newGroup);
+        }
+
         $this->clearFields();
     }
 

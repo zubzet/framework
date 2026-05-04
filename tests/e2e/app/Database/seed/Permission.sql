@@ -399,3 +399,32 @@ INSERT INTO `z_user_role`(`id`, `role`, `user`, `active`, `created`) VALUES
 (305, 314, 302, 1, '2000-01-01 12:00:00'),
 (306, 314, 303, 1, '2000-01-01 12:00:00'),
 (307, 314, 304, 0, '2000-01-01 12:00:00');
+
+
+/*
+    Role Data for Role::setPermissionsByRole
+
+    IDs stay below 330 so that Role::add/Group::add tests keep their expected
+    next-id of 330 after seeding.
+*/
+INSERT INTO `z_role`(`id`, `name`, `active`, `created`) VALUES
+(230, 'role_setPermissionsByRole_Source', 1, '2000-01-01 12:00:00'),
+(231, 'role_setPermissionsByRole_Target', 1, '2000-01-01 12:00:00'),
+(232, 'role_setPermissionsByRole_EmptySource', 1, '2000-01-01 12:00:00'),
+(233, 'role_setPermissionsByRole_TargetCleared', 1, '2000-01-01 12:00:00'),
+(234, 'role_setPermissionsByRole_EmptyTarget', 1, '2000-01-01 12:00:00');
+
+
+INSERT INTO `z_role_permission`(`id`, `role`, `name`, `active`, `created`) VALUES
+-- Source role with permissions to be copied
+(230, 230, 'role_setPermissionsByRole.source.1', 1, '2000-01-01 12:00:00'),
+(231, 230, 'role_setPermissionsByRole.source.2', 1, '2000-01-01 12:00:00'),
+(232, 230, 'role_setPermissionsByRole.source.inactive', 0, '2000-01-01 12:00:00'),
+
+-- Target with pre-existing permissions which must be removed on overwrite
+(233, 231, 'role_setPermissionsByRole.target.preexisting.1', 1, '2000-01-01 12:00:00'),
+(234, 231, 'role_setPermissionsByRole.target.preexisting.2', 1, '2000-01-01 12:00:00'),
+
+-- Target whose permissions must be cleared when source has no active permissions
+(235, 233, 'role_setPermissionsByRole.targetCleared.1', 1, '2000-01-01 12:00:00'),
+(236, 233, 'role_setPermissionsByRole.targetCleared.2', 1, '2000-01-01 12:00:00');

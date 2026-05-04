@@ -168,11 +168,78 @@
 
         /**
          *
+         * @var Organization <-> Group Link
+         *
+         */
+        public function action_addWithGroup(Request $req, Response $res): void {
+            $organization = Organization::add("org_addWithGroup_NewOrganization", true);
+            $group = $organization->getGroup();
+
+            echo(json_encode([
+                "organization" => $this->getOrganization($organization, false, true),
+                "groupHasOrgNameSuffix" => $group !== null && $group->name() === "org_addWithGroup_NewOrganization_Group"
+            ]));
+        }
+
+        public function action_addWithoutGroup(Request $req, Response $res): void {
+            $organization = Organization::add("org_addWithoutGroup_NewOrganization");
+            $this->echoOrganization($organization, false, true);
+        }
+
+        public function action_getGroup(Request $req, Response $res): void {
+            $organization = Organization::byId(512);
+            $this->echoOrganization($organization, false, true);
+        }
+
+        public function action_getGroupNull(Request $req, Response $res): void {
+            $organization = Organization::byId(513);
+            $this->echoOrganization($organization, false, true);
+        }
+
+
+        /**
+         *
+         * @var User::updateOrganization Group Sync
+         *
+         */
+        public function action_userUpdateOrganizationGroupSyncAssign(Request $req, Response $res): void {
+            $user = User::byId(550);
+            $user->updateOrganization(Organization::byId(514));
+
+            $reloaded = User::byId(550);
+            echo(json_encode([
+                "groups" => $this->getGroupsOfUser($reloaded)
+            ]));
+        }
+
+        public function action_userUpdateOrganizationGroupSyncChange(Request $req, Response $res): void {
+            $user = User::byId(551);
+            $user->updateOrganization(Organization::byId(515));
+
+            $reloaded = User::byId(551);
+            echo(json_encode([
+                "groups" => $this->getGroupsOfUser($reloaded)
+            ]));
+        }
+
+        public function action_userUpdateOrganizationGroupSyncUnset(Request $req, Response $res): void {
+            $user = User::byId(552);
+            $user->updateOrganization(null);
+
+            $reloaded = User::byId(552);
+            echo(json_encode([
+                "groups" => $this->getGroupsOfUser($reloaded)
+            ]));
+        }
+
+
+        /**
+         *
          * @var Organization Helper Functions
          *
          */
-        private function echoOrganization(?Organization $organization, bool $includeUsers): void {
-            echo(json_encode($this->getOrganization($organization, $includeUsers)));
+        private function echoOrganization(?Organization $organization, bool $includeUsers, bool $includeGroup = false): void {
+            echo(json_encode($this->getOrganization($organization, $includeUsers, $includeGroup)));
         }
 
         private function echoOrganizations(array $organizations, bool $includeUsers): void {
@@ -183,7 +250,7 @@
             echo(json_encode($result));
         }
 
-        private function getOrganization(?Organization $organization, bool $includeUsers): array {
+        private function getOrganization(?Organization $organization, bool $includeUsers, bool $includeGroup = false): array {
             if($organization === null) {
                 return [
                     "found" => false
@@ -207,7 +274,26 @@
                 }
             }
 
+            if($includeGroup) {
+                $group = $organization->getGroup();
+                $organizationData["group"] = $group === null ? null : [
+                    "id" => $group->id(),
+                    "name" => $group->name()
+                ];
+            }
+
             return $organizationData;
+        }
+
+        private function getGroupsOfUser(User $user): array {
+            $groups = [];
+            foreach($user->getGroups() as $group) {
+                $groups[] = [
+                    "id" => $group->id(),
+                    "name" => $group->name()
+                ];
+            }
+            return $groups;
         }
 
     }

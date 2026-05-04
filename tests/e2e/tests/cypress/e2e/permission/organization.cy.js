@@ -151,4 +151,76 @@ describe('Permission System - Organization', () => {
             });
         });
     });
+
+    it('should return the linked group of an organization (getGroup)', () => {
+        requestJson('/organization/getGroup').then((output) => {
+            expect(output).to.deep.equal({
+                "id": 512,
+                "name": "org_getGroup",
+                "group": {
+                    "id": 240,
+                    "name": "org_getGroup_Group"
+                }
+            });
+        });
+    });
+
+    it('should return null when an organization has no linked group (getGroup)', () => {
+        requestJson('/organization/getGroupNull').then((output) => {
+            expect(output).to.deep.equal({
+                "id": 513,
+                "name": "org_getGroupNull",
+                "group": null
+            });
+        });
+    });
+
+    it('should not create a group when add() is called without createGroup', () => {
+        // The earlier `add` test in this file already consumed id 10000.
+        requestJson('/organization/addWithoutGroup').then((output) => {
+            expect(output).to.deep.equal({
+                "id": 10001,
+                "name": "org_addWithoutGroup_NewOrganization",
+                "group": null
+            });
+        });
+    });
+
+    it('should create and link a group when add() is called with createGroup=true', () => {
+        requestJson('/organization/addWithGroup').then((output) => {
+            expect(output.organization.id).to.equal(10002);
+            expect(output.organization.name).to.equal("org_addWithGroup_NewOrganization");
+            expect(output.organization.group).to.not.equal(null);
+            expect(output.organization.group.name).to.equal("org_addWithGroup_NewOrganization_Group");
+            expect(output.groupHasOrgNameSuffix).to.equal(true);
+        });
+    });
+
+    it('should add the new organization`s group when assigning an organization (User::updateOrganization)', () => {
+        requestJson('/organization/userUpdateOrganizationGroupSyncAssign').then((output) => {
+            expect(output).to.deep.equal({
+                "groups": [
+                    {"id": 241, "name": "org_userOrg_groupSync_Initial_Group"}
+                ]
+            });
+        });
+    });
+
+    it('should swap the user`s group when changing organizations (User::updateOrganization)', () => {
+        requestJson('/organization/userUpdateOrganizationGroupSyncChange').then((output) => {
+            expect(output).to.deep.equal({
+                "groups": [
+                    {"id": 242, "name": "org_userOrg_groupSync_Updated_Group"}
+                ]
+            });
+        });
+    });
+
+    it('should remove the user`s group when unsetting the organization (User::updateOrganization with null)', () => {
+        requestJson('/organization/userUpdateOrganizationGroupSyncUnset').then((output) => {
+            expect(output).to.deep.equal({
+                "groups": []
+            });
+        });
+    });
 });
