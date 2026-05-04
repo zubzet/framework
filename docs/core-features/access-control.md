@@ -93,10 +93,12 @@ Users can be created through the static `add` method.
 * Creates a new user.
 
     ```php
-    User::add(?string $email, string $password, ?DateTime $verified = null);
+    User::add(?string $email, ?string $password, ?DateTime $verified = null);
     ```
 
 If no verification date is provided, the user is created as **unverified**.
+
+The `$password` parameter is optional. When `null` is passed, the user is created without a password — useful for invite or SSO flows where a credential is set later via `updatePassword()`.
 
 ---
 
