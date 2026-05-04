@@ -117,6 +117,7 @@ User attributes can be updated directly on the instance.
     ```
 
 * Assigns the user to an organization, or unsets it when `null` is passed.
+  If the previous and/or the new organization has a linked permission group (see `Organization::getGroup()`), the user's group memberships are kept in sync: the previous organization's group is removed and the new organization's group is added.
 
     ```php
     $user->updateOrganization(?Organization $organization);
@@ -420,6 +421,12 @@ The `Role` object represents a named collection of permissions that can be assig
     $role->permissionsRemove(string ...$permissionNames);
     ```
 
+* Replaces this role's permissions with the permissions of another role. The current permissions are removed and the source role's active permissions are copied over.
+
+    ```php
+    $role->setPermissionsByRole(Role $role);
+    ```
+
 ---
 
 ### Role Permission Checks
@@ -490,9 +497,10 @@ The `Organization` object represents a group of users. Users can belong to at mo
 ### Creating an Organization
 
 * Creates a new organization with the given name (which may be `null`).
+  When `$createGroup` is `true`, a permission `Group` named `"{$name}_Group"` is created and linked to the organization. The linked group is then available via `$organization->getGroup()` and is used by `User::updateOrganization()` to sync group membership.
 
     ```php
-    Organization::add(?string $name): Organization
+    Organization::add(?string $name, bool $createGroup = false): Organization
     ```
 
 ---
@@ -531,6 +539,18 @@ The `Organization` object represents a group of users. Users can belong to at mo
 
     ```php
     $organization->refreshUsers();
+    ```
+
+* Returns the permission `Group` linked to this organization, or `null` if none is linked. The result is cached on the instance until `clearFields()` or a write operation invalidates it.
+
+    ```php
+    $organization->getGroup(): ?Group
+    ```
+
+* Reloads the cached linked group.
+
+    ```php
+    $organization->refreshGroup();
     ```
 
 ---
