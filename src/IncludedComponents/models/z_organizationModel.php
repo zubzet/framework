@@ -1,14 +1,20 @@
 <?php
 
     use ZubZet\Framework\Authentication\Organization;
+    use ZubZet\Framework\Authentication\Permission\Group;
 
     class z_organizationModel extends z_model {
 
-        public function create(?string $name): ?array {
-            $query = $this->dbInsert("z_organization", [
+        public function create(?string $name, ?Group $group = null): ?array {
+            $insertValues = [
                 "name" => $name
-            ]);
+            ];
 
+            if(!is_null($group)) {
+                $insertValues["groupId"] = $group->id();
+            }
+
+            $query = $this->dbInsert("z_organization", $insertValues);
             $insertedId = $this->exec($query)->getInsertId();
 
             return $this->byId($insertedId);

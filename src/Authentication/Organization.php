@@ -2,6 +2,7 @@
 
     namespace ZubZet\Framework\Authentication;
 
+    use ZubZet\Framework\Authentication\Permission\Group;
     use ZubZet\Framework\Authentication\Permission\User;
 
     class Organization extends AuthenticationObject {
@@ -20,10 +21,16 @@
         public function loadObject(array $data) {
             $this->data = $data;
             $this->setField("users", null);
+            $this->setField("group", null);
         }
 
-        public static function add(?string $name): Organization {
-            $organizationData = model("z_organization")->create($name);
+        public static function add(?string $name, bool $createGroup = false): Organization {
+            $group = null;
+            if($createGroup) {
+                $group = Group::add($name . "_Group");
+            }
+
+            $organizationData = model("z_organization")->create($name, $group);
             return new Organization($organizationData);
         }
 
@@ -79,6 +86,20 @@
         public function refreshUsers(): void {
             $users = model("z_user")->getUsersByOrganization($this);
             $this->setField("users", $users);
+        }
+
+        public function getGroup(): ?Group {
+            if(is_null($this->getField("group"))) $this->refreshGroup();
+
+            return $this->getField("group");
+        }
+
+        public function refreshGroup(): void {
+            $groupId = $this->getField("groupId");
+            if(is_null($groupId)) return;
+
+            $group = Group::byId($groupId);
+            $this->setField("group", $group);
         }
 
         public function remove(): void {
