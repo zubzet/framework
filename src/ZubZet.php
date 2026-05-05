@@ -19,6 +19,7 @@
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
     use ZubZet\Framework\ErrorHandling\ExceptionBehavior;
     use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
+    use ZubZet\Framework\Testing\Coverage\Collector;
 
     class ZubZet {
         use Router;
@@ -57,6 +58,7 @@
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct(array $params = []) {
+            Collector::initialize();
             self::$instance = $this;
             new GlobalReferences;
             new Constants;
