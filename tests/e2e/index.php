@@ -14,16 +14,6 @@
     $source = getenv('COMPOSER_VENDOR_DIR') ?: "./";
     require_once "$source/autoload.php";
 
-    $coverageActive = Collector::isActive();
-    if($coverageActive) {
-        $coverageFramework = filter_var(getenv('DEBUG_ZUBZET_COVERAGE_FRAMEWORK') ?: 'false', FILTER_VALIDATE_BOOLEAN);
-        Collector::start($coverageFramework);
-
-        register_shutdown_function(function() {
-            Collector::stop();
-        });
-    }
-
     //z_framework init
     $z_framework = new z_framework();
     $z_framework->execute();
