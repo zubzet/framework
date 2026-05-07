@@ -219,7 +219,7 @@ class User extends AuthenticationObject {
         $permissionChanged = true;
 
         // Add roles to user in the database
-        model("z_permission")->addRolesToUser($this, ...$roles);
+        model("z_permission")->addRolesGroupsToUser($this, ...$roles);
 
         // Clear the roles cache for this user
         $this->clearFields();
@@ -257,7 +257,7 @@ class User extends AuthenticationObject {
         $permissionChanged = true;
 
         // Remove roles from user in the database
-        model("z_permission")->removeRolesFromUser($this, ...$roles);
+        model("z_permission")->removeRolesGroupsFromUser($this, ...$roles);
 
         // Clear the roles cache for this user
         $this->clearFields();
