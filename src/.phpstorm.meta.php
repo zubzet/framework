@@ -3,6 +3,8 @@
     /**
      * ❤️ PhpStorm Intelephense
      * https://www.jetbrains.com/help/phpstorm/ide-advanced-metadata.html#define-exit-points
+     *
+     * @codeCoverageIgnore IDE-only metadata; never executed at runtime.
      */
 
     namespace PHPSTORM_META {

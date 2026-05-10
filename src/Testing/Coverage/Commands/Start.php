@@ -7,6 +7,9 @@
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Testing\Coverage\Collector;
 
+    /**
+     * @codeCoverageIgnore Runs before measurement begins; coverage cannot record this.
+     */
     final class Start extends Command {
 
         protected function configure(): void {

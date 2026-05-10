@@ -9,6 +9,7 @@
 
     /**
      * @internal
+     * @codeCoverageIgnore The coverage engine itself; cannot meaningfully measure itself.
      */
     final class Collector {
 
