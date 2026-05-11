@@ -153,74 +153,6 @@
          * Testing the Routing System with Middleware
          */
 
-        // Default Test Route
-        public function TestRoute(Request $req, Response $res) {
-            print_r("TestRoute Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Middleware for Routes which let the request pass
-        public function Route_Middleware_Accept(Request $req, Response $res) {
-            print_r("Route Middleware Accept Executed");
-            print_r($req->getRouteParameter());
-            return true;
-        }
-
-        // Middleware for Groups which let the request pass
-        public function Group_Middleware_Accept(Request $req, Response $res) {
-            print_r("Group Middleware Accept Executed");
-            print_r($req->getRouteParameter());
-            return true;
-        }
-
-        // Middleware for Routes which block the request
-        public function Route_Middleware_Block(Request $req, Response $res) {
-            print_r("Route Middleware Blocked Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Middleware for Groups which block the request
-        public function Group_Middleware_Block(Request $req, Response $res) {
-            print_r("Group Middleware Blocked Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Afterware for Routes
-        public function Route_Afterware(Request $req, Response $res) {
-            print_r("Route Afterware Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Afterware for Groups
-        public function Group_Afterware(Request $req, Response $res) {
-            print_r("Group Afterware Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Action which prints arguments
-        public function TestRoute_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
-            print_r("TestRoute Executed");
-            print_r($req->getRouteParameter());
-            echo " Args: $arg1 $arg2";
-        }
-
-        // Middleware which prints and accepts
-        public function Route_Middleware_Accept_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
-            print_r("Route Middleware Accept Executed");
-            print_r($req->getRouteParameter());
-            echo " Args: $arg1 $arg2";
-            return true;
-        }
-
-        // Afterware which prints arguments
-        public function Route_Afterware_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
-            print_r("Route Afterware Executed");
-            print_r($req->getRouteParameter());
-            echo " Args: $arg1 $arg2";
-        }
-        
-
-
         /**
          * Testing the Query Builder
          */
@@ -369,9 +301,25 @@
 
         public function action_sendemailtouser_dynamic(Request $req, Response $res) {
             $res->sendEmailToUser(1, "This is a Test Email Dynamic", "email/Dynamic", [
-                "test_data" => "Test Data 1", 
+                "test_data" => "Test Data 1",
                 "test_data2" => "Test Data 2"
             ], "email");
+        }
+
+        // Returns the resolved client IP for the current request. Used by
+        // tests/cypress/e2e/core/request.cy.js to exercise Request::ip()'s
+        // header-priority chain.
+        public function action_clientIp(Request $req, Response $res): void {
+            echo $req->ip() ?? "";
+        }
+
+        // Triggers Response::reroute() with $final=true. Used by
+        // tests/cypress/e2e/core/response.cy.js to exercise the final-exit
+        // branch (which the auth-flows logout test does not cover).
+        public function action_rerouteFinal(Request $req, Response $res): void {
+            $res->reroute(["Core", "Action"], false, true);
+            // Unreachable: $final=true exits.
+            echo "should not be reached";
         }
 
     }
