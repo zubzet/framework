@@ -54,7 +54,7 @@
             // Pagination
             $perPage = 20;
             $limit = is_null($page) ? 10000 : $perPage;
-            $offset = (($page ?? 0) - 1) * $perPage;
+            $offset = is_null($page) ? 0 : ($page - 1) * $perPage;
 
             // Request the data
             $sql = $this->dbSelect(["*"])
