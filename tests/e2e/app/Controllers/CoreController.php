@@ -312,16 +312,6 @@
         public function action_clientIp(Request $req, Response $res): void {
             echo $req->ip() ?? "";
         }
-
-        // Triggers Response::reroute() with $final=true. Used by
-        // tests/cypress/e2e/core/response.cy.js to exercise the final-exit
-        // branch (which the auth-flows logout test does not cover).
-        public function action_rerouteFinal(Request $req, Response $res): void {
-            $res->reroute(["Core", "Action"], false, true);
-            // Unreachable: $final=true exits.
-            echo "should not be reached";
-        }
-
     }
 
 ?>
