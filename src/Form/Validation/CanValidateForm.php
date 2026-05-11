@@ -77,7 +77,7 @@
                                 $errors[] = ["name" => $name, "type" => "regex"];
                             }
                         } else if ($type == "integer") {
-                            if (!filter_var($value, FILTER_VALIDATE_INT)) {
+                            if (filter_var($value, FILTER_VALIDATE_INT) === false) {
                                 $errors[] = ["name" => $name, "type" => "integer"];
                             }
                             $value = intval($value);
