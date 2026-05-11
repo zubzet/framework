@@ -33,17 +33,15 @@ describe('Exception Handling (ALL mode)', () => {
 // ErrorController::action_500 is reached when an action throws and
 // showErrors=0 — the Router catches the exception, re-dispatches to
 // /error/500, and the 500 page is rendered instead of Whoops's stacktrace.
+//
+// The probe flips the mode at request time via
+// ExceptionBehavior::setExceptionBehavior(0) instead of mutating
+// z_settings.ini, so the change is scoped to the single request and
+// the setExceptionBehavior code path itself gets covered.
 describe('Exception Handling (showErrors=0)', () => {
-    before(() => {
-        cy.saveConfigBackup();
-        cy.setConfigSetting("showErrors", "0");
-    });
-
-    after(() => cy.restoreConfigBackup());
-
     it('renders the 500 page (no stacktrace) when an action throws', () => {
         cy.request({
-            url: '/Core/throwsException',
+            url: '/Core/throwsExceptionAfterBehaviorNone',
             failOnStatusCode: false,
         }).then((res) => {
             expect(res.status).to.eq(500);

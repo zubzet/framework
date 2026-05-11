@@ -18,6 +18,16 @@
             throw new \RuntimeException("regression-controller-exception-marker");
         }
 
+        // Switches the framework to BehaviorOption::NONE (showErrors=0) via
+        // ExceptionBehavior::setExceptionBehavior, then throws. The router's
+        // exception-catch branch routes to /error/500 because showErrors is
+        // 0. Lets exception-handling.cy.js exercise the 500 page without
+        // touching z_settings.ini, and gives setExceptionBehavior coverage.
+        public function action_throwsExceptionAfterBehaviorNone(Request $req, Response $res) {
+            zubzet()->setExceptionBehavior(0);
+            throw new \RuntimeException("regression-controller-exception-marker");
+        }
+
         public function action_triggersDeprecation(Request $req, Response $res) {
             trigger_error("regression-controller-deprecation-marker", E_USER_DEPRECATED);
             echo "deprecation was not promoted";
