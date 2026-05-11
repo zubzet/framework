@@ -55,6 +55,17 @@
             ]);
         }
 
+        // Test fixtures for db:unlock-migration. Used by migration/system.cy.js.
+        public function action_lockMigration(Request $req, Response $res) {
+            model("z_migration")->ensureMigrationTablesExist();
+            model("z_migration")->lockMigrations();
+            echo json_encode(['locked' => model("z_migration")->isLocked()]);
+        }
+
+        public function action_isMigrationLocked(Request $req, Response $res) {
+            echo json_encode(['locked' => model("z_migration")->isLocked()]);
+        }
+
     }
 
 ?>
