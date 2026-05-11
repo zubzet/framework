@@ -195,16 +195,16 @@
         }
 
         public function action_queryBuilderUpdate(Request $req, Response $res) {
-            $req->getModel("QueryBuilder")->updateLanguage();
+            $req->getModel("QueryBuilder")->update();
 
-            echo json_encode($req->getModel("QueryBuilder")->selectLanguageById(1));
+            echo json_encode($req->getModel("QueryBuilder")->selectInsertById(1));
         }
 
         public function action_queryBuilderDelete(Request $req, Response $res) {
-            $req->getModel("QueryBuilder")->deleteLanguage();
+            $req->getModel("QueryBuilder")->delete();
 
             echo json_encode([
-                "null" => $req->getModel("QueryBuilder")->selectLanguageById(1) == null ? "null" : "not null"
+                "null" => $req->getModel("QueryBuilder")->selectInsertById(1) == null ? "null" : "not null"
             ]);
         }
 

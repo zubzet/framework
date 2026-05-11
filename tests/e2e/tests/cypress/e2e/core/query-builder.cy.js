@@ -60,7 +60,7 @@ describe('Query Builder', () => {
         },
         {
             route: '/Core/queryBuilderUpdate',
-            expected: {"id":1,"name":"UpdatedTestLanguage1","nativeName":"UpdatedTestLanguageNative1","value":"utl1"}
+            expected: {"id":1,"name":"UpdatedTestName1","value":999}
         },
         {
             route: '/Core/queryBuilderDelete',
