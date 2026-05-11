@@ -23,7 +23,7 @@ return ["head" => function($opt) { ?> <!-- File header -->
 
     <div class="list-group">
       <?php foreach($opt["roles"] as $role) { ?>
-        <a data-test="role" href="<?php echo $opt["root"]. "z/roles/" . $role["id"]; ?>" class="list-group-item list-group-item-action"><?php echo $role["name"]; ?></a>
+        <a data-test="role-<?php echo $role["id"]; ?>" href="<?php echo $opt["root"]. "z/roles/" . $role["id"]; ?>" class="list-group-item list-group-item-action"><?php echo $role["name"]; ?></a>
       <?php } ?>
     </div>
 

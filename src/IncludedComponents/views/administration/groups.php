@@ -9,7 +9,7 @@
     <?php } ?>
     <div class="list-group">
         <?php foreach($opt["groups"] as $group) { ?>
-            <span class="list-group-item">
+            <span class="list-group-item" data-test="group-<?= $group["id"]; ?>">
                 <code>[<?= $group["id"]; ?>]</code>
                 <?= $group["name"]; ?>
             </span>
