@@ -6,8 +6,8 @@
             $res->reroute(["core", "action"], true);
         }
 
-        public function action_command(Request $req, Response $res) { //TODO: ???
-            
+        public function action_command(Request $req, Response $res) {
+            echo "Advanced Command Executed";
         }
 
     }
