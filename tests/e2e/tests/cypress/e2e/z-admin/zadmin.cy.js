@@ -272,9 +272,7 @@ describe('Z-Admin Panel', () => {
 
         cy.form("name").should("exist");
         cy.form("name").type("test");
-        cy.get('.btn.btn-primary').find('i.fas.fa-plus').should('exist');
-        cy.wait(500);
-        cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
+        cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').should('be.visible').click();
         cy.get('input#input-2').type('test');
         cy.get('.btn.btn-primary').last().click();
         cy.get(".form-text.text-danger").should('not.be.visible');
@@ -288,9 +286,7 @@ describe('Z-Admin Panel', () => {
         cy.query("role-create").click();
 
         cy.form("name").type("test");
-        cy.get('.btn.btn-primary').find('i.fas.fa-plus').should('exist');
-        cy.wait(500);
-        cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
+        cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').should('be.visible').click();
         cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
         cy.get('input#input-2').type('test');
         cy.get('.btn.btn-primary').last().click();
