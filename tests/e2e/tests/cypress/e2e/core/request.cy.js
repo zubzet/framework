@@ -70,4 +70,46 @@ describe('Request', () => {
             cy.wait('@fileUpload');
         });
     });
+
+    // Request::ip() — walks $_SERVER for HTTP_CLIENT_IP, then
+    // HTTP_X_FORWARDED_FOR, then REMOTE_ADDR. Each header priority is
+    // exercised by sending a different mix.
+    it('ip() resolves from header priority chain', () => {
+        const cases = [
+            // Case 1: explicit Client-IP header wins (PHP exposes it as HTTP_CLIENT_IP).
+            {
+                headers: {
+                    'Client-IP': '203.0.113.10',
+                    'X-Forwarded-For': '198.51.100.20',
+                },
+                expected: '203.0.113.10',
+            },
+            // Case 2: no Client-IP, X-Forwarded-For wins.
+            {
+                headers: { 'X-Forwarded-For': '198.51.100.30' },
+                expected: '198.51.100.30',
+            },
+            // Case 3: no headers at all → falls back to REMOTE_ADDR (the
+            // docker bridge IP). Just assert the body is a non-empty IP-ish
+            // string; we don't pin the exact bridge value because docker
+            // reassigns it.
+            {
+                headers: {},
+                expectedMatch: /^\d+\.\d+\.\d+\.\d+$/,
+            },
+        ];
+
+        cases.forEach(({ headers, expected, expectedMatch }) => {
+            cy.request({
+                url: '/Core/clientIp',
+                headers,
+            }).then((res) => {
+                if (expected !== undefined) {
+                    expect(res.body, JSON.stringify(headers)).to.eq(expected);
+                } else {
+                    expect(res.body, JSON.stringify(headers)).to.match(expectedMatch);
+                }
+            });
+        });
+    });
 });
