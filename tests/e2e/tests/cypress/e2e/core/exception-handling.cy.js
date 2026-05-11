@@ -10,10 +10,6 @@
 // ALL-mode promotes every error (deprecations included) must be preserved.
 
 describe('Exception Handling (ALL mode)', () => {
-    before(() => {
-        cy.dbSeed();
-    });
-
     it('renders the original exception class and message, not a vendor cascade', () => {
         cy.request({ url: '/Core/throwsException', failOnStatusCode: false }).then((res) => {
             expect(res.status).to.eq(500);
@@ -30,6 +26,30 @@ describe('Exception Handling (ALL mode)', () => {
         cy.request({ url: '/Core/triggersDeprecation', failOnStatusCode: false }).then((res) => {
             expect(res.status).to.eq(500);
             expect(res.body).to.include('regression-controller-deprecation-marker');
+        });
+    });
+});
+
+// ErrorController::action_500 is reached when an action throws and
+// showErrors=0 — the Router catches the exception, re-dispatches to
+// /error/500, and the 500 page is rendered instead of Whoops's stacktrace.
+describe('Exception Handling (showErrors=0)', () => {
+    before(() => {
+        cy.saveConfigBackup();
+        cy.setConfigSetting("showErrors", "0");
+    });
+
+    after(() => cy.restoreConfigBackup());
+
+    it('renders the 500 page (no stacktrace) when an action throws', () => {
+        cy.request({
+            url: '/Core/throwsException',
+            failOnStatusCode: false,
+        }).then((res) => {
+            expect(res.status).to.eq(500);
+            expect(res.body, '500 page rendered').to.include('Sorry, we messed up!');
+            expect(res.body, 'no Whoops stacktrace leaked').to.not.include('Whoops!');
+            expect(res.body, 'no exception marker leaked').to.not.include('regression-controller-exception-marker');
         });
     });
 });
