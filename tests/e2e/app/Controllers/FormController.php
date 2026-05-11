@@ -23,6 +23,26 @@
             return $res->render("form/interactions");
         }
 
+        // Probe for the integer() and exists() validation rules. The existing
+        // form-fixture controllers don't exercise these. Validation runs on
+        // every request (no GET-vs-POST split), and the result is emitted as
+        // JSON for cy.request to inspect.
+        public function action_validateIntegerExists(Request $req, Response $res) {
+            $formResult = $req->validateForm([
+                (new FormField("ints"))
+                    ->integer(),
+                // Use seeded z_role table; "fwapi_KnownRole" exists, the
+                // failure case will reference a non-existent value.
+                (new FormField("role_name"))
+                    ->exists("z_role", "name"),
+            ]);
+
+            echo json_encode([
+                'hasErrors' => (bool)$formResult->hasErrors,
+                'errors'    => $formResult->errors,
+            ]);
+        }
+
         public function action_validationText(Request $req, Response $res) {
             if($req->hasFormData()) {
                 $formResult = $req->validateForm([
@@ -237,6 +257,38 @@
                 "files" => $req->getModel("Form")->getUploadedFiles(),
                 "media" => $req->getModel("Form")->getMediaFiles(),
             ]);
+        }
+
+        // Probes the early-return branches of FormModel::uploadFile that
+        // the public /Form/validationFile/form path cannot reach (the file
+        // FormField rule rejects empty/missing files before uploadFile is
+        // called). Used by form/file.cy.js.
+        public function action_probeUploadFileEmpty(Request $req, Response $res) {
+            $result = $req->getModel("Form")->uploadFile(
+                null,
+                "uploads/",
+                $res->getZRoot(),
+            );
+            return $res->json($result === false);
+        }
+
+        public function action_probeUploadFileMoveFails(Request $req, Response $res) {
+            // move_uploaded_file() rejects any tmp_name that is not in
+            // $_FILES (security check). Calling it with a fabricated path
+            // returns false, exercising FormModel::uploadFile's second
+            // early-return branch. Requires showErrors=0 so the emitted
+            // E_WARNING is not promoted to a fatal ErrorException.
+            $result = $req->getModel("Form")->uploadFile(
+                [
+                    "name" => "fake.pdf",
+                    "tmp_name" => "/tmp/this-was-not-uploaded-via-http",
+                    "type" => "application/pdf",
+                    "size" => 100,
+                ],
+                "uploads/",
+                $res->getZRoot(),
+            );
+            return $res->json($result === false);
         }
 
     }

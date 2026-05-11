@@ -165,4 +165,30 @@ describe('Form Date Validation', () => {
             expect(response.body.stored).to.equal(response.body.input);
         });
     });
+
+    // Probes FormModel::uploadFile's early-return branches. The public
+    // /Form/validationFile/form path can't reach these because the
+    // file FormField rule rejects empty/missing files first.
+    describe('FormModel::uploadFile early-return branches', () => {
+        before(() => {
+            cy.saveConfigBackup();
+            // showErrors=0 so the move_uploaded_file warning in the
+            // second probe isn't promoted to a fatal ErrorException.
+            cy.setConfigSetting("showErrors", "0");
+        });
+
+        after(() => cy.restoreConfigBackup());
+
+        it('returns false when given a null file', () => {
+            cy.request('/Form/probeUploadFileEmpty').then((res) => {
+                expect(res.body).to.eq(true);
+            });
+        });
+
+        it('returns false when move_uploaded_file rejects the tmp_name', () => {
+            cy.request('/Form/probeUploadFileMoveFails').then((res) => {
+                expect(res.body).to.eq(true);
+            });
+        });
+    });
 });
