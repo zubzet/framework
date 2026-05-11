@@ -1,19 +1,4 @@
-<?php 
-    /**
-     * This file contains the ZController
-     * 
-     * Permissions used here:
-     *  admin.panel
-     *  admin.user.list
-     *  admin.user.add
-     *  admin.user.edit
-     *  admin.roles.list
-     *  admin.roles.create
-     *  admin.roles.edit
-     *  admin.roles.delete
-     *  admin.log
-     *  admin.su
-     */
+<?php
 
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
@@ -25,19 +10,14 @@
      */
     class ZController extends z_controller {
 
-        public function __construct() {
-            Response::setGlobalDefaultLayout("layout/z_admin_layout.php");
+        public function __construct(Request $req, Response $res) {
+            $res->setDefaultLayout("layout/z_admin_layout.php");
         }
 
-        /**
-         * Serves an empty index page with the admin layout
-         *
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        public function action_index($req, $res) {
+        // Dashboard: one card per admin section the requesting user can access.
+        public function action_index(Request $req, Response $res) {
             $req->checkPermission("admin.panel");
-            $res->render("administration/empty.php");
+            return $res->render("administration/dashboard.php");
         }
 
         public function action_maintenance(Request $req, Response $res) {
@@ -60,231 +40,209 @@
             ]);
         }
 
-        /**
-         * Action for adding a user
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        public function action_add_user($req, $res) {
+        // Action for adding a user
+        public function action_add_user(Request $req, Response $res) {
             $req->checkPermission("admin.user.add");
 
-            if ($req->hasFormData()) {
-                $formResult = $req->validateForm([
-                    (new FormField("email"))
-                        -> unique("z_user", "email"),
-                ]);
+            if(!$req->hasFormData()) {
+                return $res->render("administration/add_user.php");
+            }
 
-                if(!empty($req->getPost("email")) &&
-                   !filter_var($req->getPost("email"), FILTER_VALIDATE_EMAIL)) {
-                    $formResult->addCustomError("email", "filter");
-                }
+            $formResult = $req->validateForm([
+                (new FormField("email"))->unique("z_user", "email"),
+            ]);
 
-                if ($formResult->hasErrors) {
-                    return $res->formErrors($formResult->errors);
-                }
+            $email = $req->getPost("email");
+            if(!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $formResult->addCustomError("email", "filter");
+            }
 
-                $result = $req->getModel("z_user", $res->getZRoot())->add(
-                    (empty($req->getPost("email")) ? null : $req->getPost("email")),
+            if($formResult->hasErrors) {
+                return $res->formErrors($formResult->errors);
+            }
+
+            try {
+                $req->getModel("z_user", $res->getZRoot())->add(
+                    empty($email) ? null : $email,
                     $req->getPost("password"),
                     date("Y-m-d H:i:s"),
                 );
-
-                if(false === $result) return $res->error();
-                return $res->success();
+            } catch(\Exception $e) {
+                $formResult->addCustomError("password", "filter");
+                return $res->formErrors($formResult->errors);
             }
 
-            $res->render("administration/add_user.php", [
-                "title" => "Add user"
-            ]);
+            return $res->success();
         }
 
-        /**
-         * Action for editing a user
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        function action_edit_user($req, $res) {
+        // Action for editing a user
+        public function action_edit_user(Request $req, Response $res) {
             $req->checkPermission("admin.user.list");
 
             $userId = $req->getParameters(0, 1);
-            if (($userId === '0') || !empty($userId)) {
-                $req->checkPermission("admin.user.edit");
-                $user = $req->getModel("z_user")->getUserById($userId);
-                $email = $user["email"];
+            if(empty($userId) && $userId !== '0') {
+                return $res->render("administration/user_select.php", [
+                    "users" => $req->getModel("z_user")->getUserList(),
+                ]);
+            }
 
-                if ($req->hasFormData()) {
-                    $formResult = $req->validateForm([
-                        (new FormField("email"))        -> unique("z_user", "email", "id", $userId),
-                    ]);
+            $req->checkPermission("admin.user.edit");
+            $user = $req->getModel("z_user")->getUserById($userId);
+            $email = $user["email"];
 
-                    $subformResult = $req->validateCED("roles", [
-                        (new FormField("role")) -> required() -> exists("z_role", "id")
-                    ]);
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("email"))->unique("z_user", "email", "id", $userId),
+                ]);
 
-                    $subPermissionForm = $req->validateCED("permissions", [
-                        (new FormField("name")) -> required() -> length(3, 100)
-                    ]);
+                $subformResult = $req->validateCED("roles", [
+                    (new FormField("role"))->required()->exists("z_role", "id"),
+                ]);
 
-                    $newEmail = $req->getPost("email");
+                $subPermissionForm = $req->validateCED("permissions", [
+                    (new FormField("name"))->required()->length(3, 100),
+                ]);
 
-                    if(!empty($newEmail) &&
-                        !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-                            $formResult->addCustomError("email", "filter");
-                        }
-    
-                    if ($formResult->hasErrors || $subformResult->hasErrors) {
-                        $res->formErrors($formResult->errors, $subformResult->errors);
-                    } else {
-                        $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
-                        $res->doCED("z_user_permission", $subPermissionForm, ["user" => $userId]);
-                        $res->updateDatabase("z_user", "id", "i", $userId, $formResult);
-                        logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
-                            "userId" => $userId,
-                            "email" => $email
-                        ]);
-                        $res->success();
-                    }
+                $newEmail = $req->getPost("email");
+                if(!empty($newEmail) && !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                    $formResult->addCustomError("email", "filter");
                 }
 
-                $res->render("administration/edit_user.php", [
-                    "title" => "Edit user", 
-                    "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
-                    "roles" => $this->makeFood($req->getModel("z_general")->getTableWhere("z_role", "*", "active = ?", "i", [1]), "id", "name"),
-                    "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
-                    "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
-                    "result" => "success",
-                    "email" => $user["email"],
-                    "userId" => $userId
+                if($formResult->hasErrors || $subformResult->hasErrors) {
+                    return $res->formErrors($formResult->errors, $subformResult->errors);
+                }
+
+                $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
+                $res->doCED("z_user_permission", $subPermissionForm, ["user" => $userId]);
+                $res->updateDatabase("z_user", "id", "i", $userId, $formResult);
+
+                logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                    "userId" => $userId,
+                    "email" => $email,
                 ]);
-            } else {
-                $res->render("administration/user_select.php", [
-                    "users" => $req->getModel("z_user")->getUserList()
-                ]);
+
+                return $res->success();
             }
-        }
 
-        /**
-         * Action for logging in as someone else
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        function action_login_as($req, $res) {
-            $req->checkPermission("admin.su");
-
-            $userId = $req->getParameters(0, 1);
-            if (($userId === '0') || !empty($userId)) {
-                $res->loginAs($userId, $req->getRequestingUser()->execUserId);
-                $res->rerouteUrl();
-            }
-        }
-
-
-        function action_groups(Request $req, Response $res) {
-            $req->checkPermission("admin.groups.list");
-
-            $res->render("administration/groups.php", [
-                "groups" => model("z_general")->getGroups()
+            return $res->render("administration/edit_user.php", [
+                "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
+                "roles" => $this->makeFood($req->getModel("z_general")->getTableWhere("z_role", "*", "active = ?", "i", [1]), "id", "name"),
+                "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
+                "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
+                "result" => "success",
+                "email" => $user["email"],
+                "userId" => $userId,
             ]);
         }
 
-        /**
-         * Action for the role configuration page
-         * 
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        function action_roles($req, $res) {
+        // Action for logging in as someone else
+        public function action_login_as(Request $req, Response $res) {
+            $req->checkPermission("admin.su");
+
+            $userId = $req->getParameters(0, 1);
+            if(empty($userId) && $userId !== '0') return;
+
+            $res->loginAs($userId, $req->getRequestingUser()->execUserId);
+            return $res->rerouteUrl();
+        }
+
+
+        public function action_groups(Request $req, Response $res) {
+            $req->checkPermission("admin.groups.list");
+
+            return $res->render("administration/groups.php", [
+                "groups" => model("z_general")->getGroups(),
+            ]);
+        }
+
+        // Action for the role configuration page
+        public function action_roles(Request $req, Response $res) {
             $req->checkPermission("admin.roles.list");
 
             $roleId = $req->getParameters(0, 1);
 
-            if ($req->isAction("create")) {
+            if($req->isAction("create")) {
                 $req->checkPermission("admin.roles.create");
                 $rid = $req->getModel("z_user")->createRole();
-                $res->generateRest(["roleId" => $rid]);
+                return $res->generateRest(["roleId" => $rid]);
             }
 
-            if (!empty($roleId) || $roleId === "0") {
-                $req->checkPermission("admin.roles.edit");
-                $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0];
-
-                if(!$role) return $res->error("Role not found");
-
-                if ($req->isAction("delete")) {
-                    $req->checkPermission("admin.roles.delete");
-                    $rid = $req->getModel("z_user")->deactivateRole($roleId);
-                    $res->success();
-                }
-
-                if ($req->hasFormData()) {
-
-                    $formResult = $req->validateForm([
-                        (new FormField("name")) -> required() -> length(3, 100)
-                    ]);
-                    $subformResult = $req->validateCED("permissions", [
-                        (new FormField("name")) -> required() -> length(3, 100)
-                    ]);
-                    if ($subformResult->hasErrors || $formResult->hasErrors) {
-                        $res->formErrors($subformResult->errors, $formResult->errors);
-                    } else {
-                        $res->doCED("z_role_permission", $subformResult, ["role" => $roleId]);
-                        $res->updateDatabase("z_role", "id", "i", $roleId, $formResult);
-                        $res->success();
-                    }
-                }
-
-                $res->render("administration/roles.php", [
-                    "name" => $role["name"],
-                    "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"])
-                ]);
-            } else {
-                $res->render("administration/role_select.php", [
-                    "roles" => $req->getModel("z_general")->getTableWhere("z_role", "*", "active = ? AND is_group = 0", "i", [1])
+            if(empty($roleId) && $roleId !== "0") {
+                return $res->render("administration/role_select.php", [
+                    "roles" => $req->getModel("z_general")->getTableWhere("z_role", "*", "active = ? AND is_group = 0", "i", [1]),
                 ]);
             }
 
+            $req->checkPermission("admin.roles.edit");
+            $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0];
+
+            if(!$role) return $res->error("Role not found");
+
+            if($req->isAction("delete")) {
+                $req->checkPermission("admin.roles.delete");
+                $req->getModel("z_user")->deactivateRole($roleId);
+                return $res->success();
+            }
+
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("name"))->required()->length(3, 100),
+                ]);
+                $subformResult = $req->validateCED("permissions", [
+                    (new FormField("name"))->required()->length(3, 100),
+                ]);
+
+                if($subformResult->hasErrors || $formResult->hasErrors) {
+                    return $res->formErrors($subformResult->errors, $formResult->errors);
+                }
+
+                $res->doCED("z_role_permission", $subformResult, ["role" => $roleId]);
+                $res->updateDatabase("z_role", "id", "i", $roleId, $formResult);
+                return $res->success();
+            }
+
+            return $res->render("administration/roles.php", [
+                "name" => $role["name"],
+                "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"]),
+            ]);
         }
 
         public function action_database(Request $req, Response $res) {
             $req->checkPermission("admin.database");
 
             $table = $req->getParameters(0, 1);
-            if(!empty($table)) {
-                $task = $req->getParameters(1, 1);
-
-                // Find the current page
-                $page = 1;
-                if("page" == $task) $page = max(1, (int)$req->getParameters(2, 1));
-                if("csv" == $task) $page = null;
-
-                $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
-
-                if("csv" == $task) {
-                    $req->getModel("z_adminDashboard")->exportToCsv($table);
-                    return;
-                }
-
-                $paginationStart = max(1, min($page - 2, $table["totalPages"] - 4));
-                $paginationEnd = min($table["totalPages"], $paginationStart + 4);
-
-                return $res->render("database/rows.php", [
-                    "wideContent" => true,
-                    "pageLink" => "/z/database/$table[name]/page/",
-                    "table" => $table,
-                    "page" => $page,
-                    "paginationStart" => $paginationStart,
-                    "paginationEnd" => $paginationEnd,
-                    "paginationNext" => min($table["totalPages"], $page + 1),
-                    "paginationLast" => max(1, $page - 1),
-                    "totalPages" => $table["totalPages"],
+            if(empty($table)) {
+                return $res->render("database/tables.php", [
+                    "status" => $req->getModel("z_adminDashboard")->getTableStatus(),
                 ]);
             }
 
-            return $res->render("database/tables.php", [
-                "status" => $req->getModel("z_adminDashboard")->getTableStatus(),
+            $task = $req->getParameters(1, 1);
+
+            // Find the current page
+            $page = 1;
+            if("page" == $task) $page = max(1, (int) $req->getParameters(2, 1));
+            if("csv" == $task) $page = null;
+
+            $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
+
+            if("csv" == $task) {
+                return $req->getModel("z_adminDashboard")->exportToCsv($table);
+            }
+
+            $paginationStart = max(1, min($page - 2, $table["totalPages"] - 4));
+            $paginationEnd = min($table["totalPages"], $paginationStart + 4);
+
+            return $res->render("database/rows.php", [
+                "wideContent" => true,
+                "pageLink" => "$table[name]/page/",
+                "table" => $table,
+                "page" => $page,
+                "paginationStart" => $paginationStart,
+                "paginationEnd" => $paginationEnd,
+                "paginationNext" => min($table["totalPages"], $page + 1),
+                "paginationLast" => max(1, $page - 1),
+                "totalPages" => $table["totalPages"],
             ]);
         }
     }

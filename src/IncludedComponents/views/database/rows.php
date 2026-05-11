@@ -15,7 +15,7 @@
                 <?= e($table["name"]) ?>
             </div>
             <div class="ml-3">
-                <a class="btn btn-sm btn-outline-secondary" href="<?= "$opt[root]z/database/$table[name]/csv" ?>">
+                <a class="btn btn-sm btn-outline-secondary" data-test="btn-csv-export" href="<?= "$opt[root]z/database/$table[name]/csv" ?>">
                     <i class="fa fa-cloud-download"></i> Export
                 </a>
             </div>
@@ -79,7 +79,7 @@
                 </li>
     
                 <li class="page-item shadow-sm <?= $opt["page"] <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" data-test="pagination-previous" href="<?= "$opt[pageLink]$opt[paginationLast]" ?>">
+                    <a class="page-link" data-test="pagination-previous" href="<?= "$opt[root]z/database/$opt[pageLink]$opt[paginationLast]" ?>">
                         <i class="fa fa-fw fa-step-backward"></i>
                         Previous
                     </a>
@@ -87,21 +87,21 @@
     
                 <?php for ($p = $opt["paginationStart"]; $p <= $opt["paginationEnd"]; $p++) { ?>
                     <li class="page-item shadow-sm <?= $p == $opt["page"] ? 'active' : '' ?>">
-                        <a class="page-link" data-test="pagination-page-<?= e($p) ?>" href="<?= "$opt[pageLink]$p" ?>">
+                        <a class="page-link" data-test="pagination-page-<?= e($p) ?>" href="<?= "$opt[root]z/database/$opt[pageLink]$p" ?>">
                             <?= e($p) ?>
                         </a>
                     </li>
                 <?php } ?>
     
                 <li class="page-item shadow-sm <?= $opt["page"] >= $opt["totalPages"] ? 'disabled' : '' ?>">
-                    <a class="page-link" data-test="pagination-next" href="<?= "$opt[pageLink]$opt[paginationNext]" ?>">
+                    <a class="page-link" data-test="pagination-next" href="<?= "$opt[root]z/database/$opt[pageLink]$opt[paginationNext]" ?>">
                         Next
                         <i class="fa fa-fw fa-step-forward"></i>
                     </a>
                 </li>
     
                 <li class="page-item shadow-sm <?= $opt["page"] >= $opt["totalPages"] ? 'disabled' : '' ?>">
-                    <a class="page-link" data-test="pagination-last" href="<?= "$opt[pageLink]$opt[totalPages]" ?>">
+                    <a class="page-link" data-test="pagination-last" href="<?= "$opt[root]z/database/$opt[pageLink]$opt[totalPages]" ?>">
                         Last
                         <i class="fa fa-fw fa-fast-forward"></i>
                     </a>
