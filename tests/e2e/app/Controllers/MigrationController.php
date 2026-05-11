@@ -36,6 +36,25 @@
             print_r(json_encode($entries));
         }
 
+        // Probe for the custom DBAL TimeStamp type. Used by
+        // migration/timestamp-type.cy.js to verify that the migration in
+        // app/Database/migrations/2026-05-08_TimeStampType.php produced a
+        // TIMESTAMP column via TimeStamp::getSQLDeclaration().
+        public function action_checkTimestampType(Request $req, Response $res) {
+            $row = db()->exec(
+                "SELECT DATA_TYPE, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'z_test_timestamp_type'
+                   AND COLUMN_NAME = 'created'"
+            )->resultToLine();
+
+            return $res->json([
+                "found" => !empty($row),
+                "dataType" => $row["DATA_TYPE"] ?? null,
+                "columnType" => $row["COLUMN_TYPE"] ?? null,
+            ]);
+        }
+
     }
 
 ?>
