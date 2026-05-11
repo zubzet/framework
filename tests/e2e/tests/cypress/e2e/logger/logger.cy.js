@@ -45,10 +45,15 @@ describe('Logger', () => {
 
             // Helper function to assert log values
             const assertLogValues = (logs, { userId = null, name = 'app', method = 'info' } = {}) => {
-                const singleLog = logs[0];
-                const value = JSON.parse(singleLog.value);
+                // SLOW_REQUEST entries from the preceding clearDatabaseLogs
+                // request (or this request) can land in the table under
+                // coverage, so locate the action_log entry by its message
+                // rather than assuming logs[0].
+                const value = logs
+                    .map((l) => JSON.parse(l.value))
+                    .find((v) => v.message === "This is a test log for cypress e2e testing");
 
-                console.log(value);
+                expect(value, 'action_log entry in DB').to.exist;
 
                 expect(value.extra.userId).to.equal(userId);
                 expect(value.extra.execUserId).to.equal(userId);
