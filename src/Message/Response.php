@@ -340,18 +340,19 @@
                 );
             }
 
-            // Remove the cookie
-            $this->unsetCookie(
-                "z_login_token",
-                domainScope: $this->getCookieDomainScope(),
-            );
             $this->deleteOldLoginCookieDomainScope();
 
             logger(Logger::ZUBZET)->info(LogEventType::USER_LOGGED_OUT, ["userId" => $user->userId]);
 
-            // Return to Login as if the user was logged in as someone else
+            // Replace the login cookie: when sudoed, with the exec user's
+            // new session; otherwise delete it so the client is fully out.
             if($user->userId != $user->execUserId) {
                 $this->loginAs($user->execUserId);
+            } else {
+                $this->unsetCookie(
+                    "z_login_token",
+                    domainScope: $this->getCookieDomainScope(),
+                );
             }
 
             return $this->rerouteUrl();
