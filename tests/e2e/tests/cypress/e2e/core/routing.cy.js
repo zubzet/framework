@@ -266,6 +266,24 @@ describe('Routing', () => {
         });
     });
 
+    it("should support each HTTP-verb route helper (put/patch/delete/options)", () => {
+        const verbs = [
+            { method: 'PUT',     url: '/put-test' },
+            { method: 'PATCH',   url: '/patch-test' },
+            { method: 'DELETE',  url: '/delete-test' },
+            { method: 'OPTIONS', url: '/options-test' },
+        ];
+        const expected = "TestRoute ExecutedArray ( )".replace(/\s+/g, ' ').trim();
+
+        verbs.forEach(({ method, url }) => {
+            cy.request({ method, url }).then((response) => {
+                expect(response.status, `${method} ${url}`).to.eq(200);
+                const actual = response.body.replace(/\s+/g, ' ').trim();
+                expect(actual, `${method} ${url}`).to.equal(expected);
+            });
+        });
+    });
+
     it("should check if ANY method is working", () => {
         const cases = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
 
