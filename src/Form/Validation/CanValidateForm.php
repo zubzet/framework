@@ -104,8 +104,6 @@
                             } else {
                                 $errors[] = ["name" => $name, "type" => "file"];
                             }
-                        } else {
-                            $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unknown type
                         }
 
                         $field->value = $value;

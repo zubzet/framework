@@ -33,6 +33,12 @@
                         ->length(5, 20),
                     (new FormField("field_text_unique"))
                         ->unique("duplicate", "value"),
+                    // Exercises the ignoreField branch of the unique rule:
+                    // the seeded row WHERE value="UniqueText" is excluded
+                    // from the uniqueness check, so submitting "UniqueText"
+                    // is treated as not-a-duplicate.
+                    (new FormField("field_text_unique_ignore"))
+                        ->unique("duplicate", "value", "value", "UniqueText"),
                 ]);
 
                 if($formResult->hasErrors) {
@@ -43,6 +49,28 @@
             }
 
             return $res->render("form/validationText");
+        }
+
+        public function action_validationRegex(Request $req, Response $res) {
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    // Letters and spaces only.
+                    (new FormField("field_regex"))
+                        ->regex("/[A-Za-z ]/"),
+                    // Letters and spaces, with `-` and `!` allowed via the
+                    // exceptions list (str_replace'd out before the regex check).
+                    (new FormField("field_regex_exceptions"))
+                        ->regex("/[A-Za-z ]/", ["-", "!"]),
+                ]);
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                return $res->success();
+            }
+
+            return $res->render("form/validationRegex");
         }
 
         public function action_validationNumber(Request $req, Response $res) {
