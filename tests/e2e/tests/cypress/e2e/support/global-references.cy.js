@@ -35,4 +35,38 @@ describe('Global references', () => {
             expect(res.body).to.include('HelperFunction');
         });
     });
+
+    // The "not yet been setup" branches in zubzet() and db() are only
+    // reachable during framework boot — once any request runs, $instance
+    // and $z_db are set for that process. instance_test.php hand-walks
+    // through those states once and emits a single JSON line covering
+    // all four cases.
+    describe('boot-state branches (via instance_test.php)', () => {
+        let probe;
+
+        before(() => {
+            cy.exec('docker exec application php instance_test.php').then((result) => {
+                expect(result.exitCode, 'instance_test.php exits cleanly').to.eq(0);
+                probe = JSON.parse(result.stdout);
+            });
+        });
+
+        it('zubzet() throws NotInstantiatedException when ZubZet::$instance is unset', () => {
+            expect(probe.zubzetNotInstantiated).to.include('ZubZet (The framework itself)');
+            expect(probe.zubzetNotInstantiated).to.include('not yet been setup');
+        });
+
+        it('db() rejects non-default connection keys', () => {
+            expect(probe.nonDefault).to.eq('Only the default connection is supported so far.');
+        });
+
+        it('db("default", allowUnsetConnection: true) returns null when z_db is unset', () => {
+            expect(probe.allowedNullWhenUnset).to.be.true;
+        });
+
+        it('db() throws NotInstantiatedException("Connection (Database)") when z_db is not a Connection', () => {
+            expect(probe.strictWhenUnset).to.include('Connection (Database)');
+            expect(probe.strictWhenUnset).to.include('not yet been setup');
+        });
+    });
 });
