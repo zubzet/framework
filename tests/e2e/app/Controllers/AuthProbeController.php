@@ -38,31 +38,6 @@
         }
 
         /**
-         * Latest active email-verify token for a user.
-         * GET /auth-probe/lastVerifyToken/<userId>
-         */
-        public function action_lastVerifyToken(Request $req, Response $res): void {
-            $userId = (int)$req->getParameters(0, 1);
-
-            $row = db()->exec(
-                "SELECT `id`, `token`, `user`, `active`
-                 FROM `z_email_verify`
-                 WHERE `user` = ? AND `active` = 1
-                 ORDER BY `id` DESC LIMIT 1",
-                "i",
-                $userId
-            )->resultToLine();
-
-            echo json_encode([
-                'found'  => !empty($row),
-                'id'     => isset($row['id']) ? (int)$row['id'] : null,
-                'userId' => isset($row['user']) ? (int)$row['user'] : null,
-                'token'  => $row['token'] ?? null,
-                'active' => !empty($row) && (int)$row['active'] === 1,
-            ]);
-        }
-
-        /**
          * Whether a login token is still active in z_logintoken.
          * GET /auth-probe/tokenActive/<token>
          */
