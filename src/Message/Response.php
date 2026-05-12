@@ -466,6 +466,7 @@
 
             for ($i = 0; $i < count($validationResult->fields); $i++) {
                 $field = $validationResult->fields[$i];
+                if ($field->noSave) continue;
                 $sqlParams[] = ("`" . $field->dbField . "`");
                 $sqlValues[] = "?";
                 $types .= $field->dataType;
