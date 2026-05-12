@@ -159,6 +159,19 @@ describe('Form Date Validation', () => {
         cy.contains("FormUpload:3");
     });
 
+    // Exercises the formUpload subpath's hasErrors → formErrors branch by
+    // uploading a non-PDF (rejected by the FormField file rule).
+    it('Validation File FormUpload Small TXT', () => {
+        cy.visit("/Form/validationFile/formUpload");
+
+        uploadFile("TestFile_Small_1.txt", "text/plain");
+        cy.get('button').click();
+        cy.wait('@upload');
+
+        cy.visit("/Form/validationFile");
+        cy.contains("TestFile_Small_1.txt").should("not.exist");
+    });
+
     it('should store file sizes beyond INT range', () => {
         cy.request('/Core/bigintFileSize').then((response) => {
             expect(response.status).to.eq(200);

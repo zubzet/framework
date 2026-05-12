@@ -4,7 +4,10 @@
 
         public function action_interactions(Request $req, Response $res) {
             if($req->hasFormData()) {
-                $formResult = $req->validateForm([
+                // None of these fields carry validation rules, so a form
+                // submission cannot produce errors here — no formErrors
+                // fallback is needed.
+                $req->validateForm([
                     (new FormField("field_a")),
                     (new FormField("field_b")),
                     (new FormField("field_c")),
@@ -12,10 +15,6 @@
                     (new FormField("field_default")),
                     (new FormField("field_select_default")),
                 ]);
-
-                if($formResult->hasErrors) {
-                    return $res->formErrors($formResult->errors);
-                }
 
                 return $res->success();
             }
@@ -211,6 +210,14 @@
                         return $res->formErrors($formResult->errors);
                     }
 
+                    // @codeCoverageIgnoreStart
+                    // FormModel::uploadFile's failure modes (null/empty file,
+                    // move_uploaded_file rejecting a fabricated tmp_name) are
+                    // exercised directly by action_probeUploadFileEmpty /
+                    // action_probeUploadFileMoveFails. From the public form
+                    // path the FormField rule rejects empty/missing files
+                    // before uploadFile is called, so the false branch here
+                    // is unreachable in normal flow but kept as defensive code.
                     if(!$req->getModel("Form")->uploadFile(
                         $req->getFile("file"),
                         "uploads/",
@@ -218,6 +225,7 @@
                     )) {
                         return $res->error();
                     }
+                    // @codeCoverageIgnoreEnd
                     return $res->success();
                 }
 
