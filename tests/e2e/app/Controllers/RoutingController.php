@@ -83,6 +83,41 @@
             echo " Args: $arg1 $arg2";
         }
 
+        // Probes Request::getRouteParameter($key): named keys round-trip
+        // through FastRoute -> Router::executeControllerAction (which sets
+        // $req->urlParameters), and missing keys fall back via `?? null`.
+        public function action_TestRouteByKey(Request $req, Response $res) {
+            return $res->json([
+                "userId" => $req->getRouteParameter("userId"),
+                "postId" => $req->getRouteParameter("postId"),
+                "missing" => $req->getRouteParameter("nonexistent"),
+            ]);
+        }
+
+        // Probes Request::getUrlParts(). The docker test env pins
+        // CONFIG_ROOTDIRECTORY="" so the strip loop never runs from the
+        // INI side; the *_strip probes below mutate zubzet()->rootDirectory
+        // at request time via HasDynamicAttributes (same idiom as
+        // action_currentUrl's hostOverride in CoreController). Three
+        // separate actions instead of a single overrideable one so the
+        // request controller stays straightforward.
+
+        public function action_urlPartsProbe(Request $req, Response $res) {
+            return $res->json($req->getUrlParts());
+        }
+
+        public function action_urlPartsProbe_strip1(Request $req, Response $res) {
+            zubzet()->rootDirectory = "Routing";
+            unset($req->urlParts);
+            return $res->json($req->getUrlParts());
+        }
+
+        public function action_urlPartsProbe_strip2(Request $req, Response $res) {
+            zubzet()->rootDirectory = "Routing/urlPartsProbe_strip2";
+            unset($req->urlParts);
+            return $res->json($req->getUrlParts());
+        }
+
     }
 
 ?>

@@ -36,6 +36,7 @@
     Route::get('/test', [RoutingController::class, 'TestRoute']);
 
     Route::get('/abc/{userId}/{postId}', [RoutingController::class, 'TestRoute']);
+    Route::get('/abc/{userId}/{postId}/byKey', [RoutingController::class, 'action_TestRouteByKey']);
 
     Route::get('/middleware-accept', [RoutingController::class, 'TestRoute'])
         ->middleware([RoutingController::class, 'Route_Middleware_Accept']);

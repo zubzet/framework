@@ -303,4 +303,42 @@ describe('Request', () => {
             expect(out.jsonError, 'JsonException message captured').to.be.a('string').and.not.empty;
         });
     });
+
+    // Request::getRouteParameter($key) reads named FastRoute placeholders
+    // out of $req->urlParameters. Probe route /abc/{userId}/{postId}/byKey
+    // emits all three reads in one JSON response so the present-key and
+    // `?? null` fallback branches are pinned by a single request.
+    it('getRouteParameter(key) returns the value, or null when missing', () => {
+        cy.request('/abc/42/99/byKey').then((res) => {
+            expect(res.body).to.deep.equal({
+                userId: '42',
+                postId: '99',
+                missing: null,
+            });
+        });
+    });
+
+    // Request::getUrlParts() strips `config("rootDirectory")` segments off
+    // the parsed REQUEST_URI before returning. Each probe is a distinct
+    // action so the controllers stay free of test-only branching.
+
+    it('getUrlParts() returns the parsed path segments verbatim by default', () => {
+        cy.request('/Routing/urlPartsProbe/x/y').then((res) => {
+            expect(res.body).to.deep.equal(['Routing', 'urlPartsProbe', 'x', 'y']);
+        });
+    });
+
+    it('getUrlParts() strips one rootDirectory segment', () => {
+        cy.request('/Routing/urlPartsProbe_strip1/x/y').then((res) => {
+            expect(res.body).to.deep.equal(['urlPartsProbe_strip1', 'x', 'y']);
+        });
+    });
+
+    // count(explode("/", rootDirectory)) drives the strip count, so a
+    // two-segment rootDirectory removes both leading parts.
+    it('getUrlParts() strips two rootDirectory segments (multi-folder)', () => {
+        cy.request('/Routing/urlPartsProbe_strip2/x/y').then((res) => {
+            expect(res.body).to.deep.equal(['x', 'y']);
+        });
+    });
 });
