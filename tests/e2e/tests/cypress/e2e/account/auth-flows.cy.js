@@ -195,6 +195,16 @@ describe('Auth flows', () => {
                 expect(mail.to[0]).to.eq('auth_verify@cypress.test');
             });
         });
+
+        // Failure branch of login_verify.php: when verifyUser returns false
+        // ($success=false), the template renders the resend-prompt section
+        // instead of the success line.
+        it('renders the resend prompt when the verify code is invalid', () => {
+            cy.request('/login/verify/code-that-does-not-exist').then((res) => {
+                expect(res.status).to.eq(200);
+                expect(res.body).to.include('Vermisst du die Bestätigungsmail');
+            });
+        });
     });
 
     // ---------------------------------------------------------------------
