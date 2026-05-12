@@ -96,7 +96,7 @@
             $query = http_build_query($get);
             $this->SERVER["QUERY_STRING"] = $query;
 
-            $currentUri = strtok($this->SERVER["REQUEST_URI"], '?');
+            $currentUri = strtok($this->SERVER["REQUEST_URI"] ?? "", '?');
             $this->SERVER["REQUEST_URI"] = $currentUri . (!empty($get) ? "?$query" : "");
 
             $this->GET = $get;
@@ -145,14 +145,14 @@
                 throw new \LogicException("Cannot set previous input as referer when previous input does not have HTTP_HOST set.");
             }
 
-            $oldServer = $this->previous->SERVER;
-            $referer = "";
-
-            if(!empty($oldServer["REQUEST_SCHEME"]) && !empty($oldServer["HTTP_HOST"])) {
-                $referer .= "$oldServer[REQUEST_SCHEME]://$oldServer[HTTP_HOST]";
+            if(empty($this->previous->SERVER["REQUEST_SCHEME"])) {
+                throw new \LogicException("Cannot set previous input as referer when previous input does not have REQUEST_SCHEME set.");
             }
 
-            if($oldServer["REQUEST_URI"]) {
+            $oldServer = $this->previous->SERVER;
+            $referer = "$oldServer[REQUEST_SCHEME]://$oldServer[HTTP_HOST]";
+
+            if(!empty($oldServer["REQUEST_URI"])) {
                 $path = ltrim($oldServer["REQUEST_URI"], "/");
                 $referer .= "/$path";
             }
