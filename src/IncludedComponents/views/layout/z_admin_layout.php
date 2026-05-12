@@ -93,14 +93,16 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="sidebar col-12 col-lg-3 col-xl-2">
-                    <div class="text-center my-4 font-weight-bold">
-                        <h1 id="logo">
-                            ZubZet
-                        </h1>
-                        <h1 class="d-none" id="logo-easter-egg">
-                            ZubZet
-                        </h1>
-                    </div>
+                    <a href="<?= "$opt[root]z" ?>" class="text-decoration-none text-reset">
+                        <div class="text-center my-4 font-weight-bold">
+                            <h1 id="logo">
+                                ZubZet
+                            </h1>
+                            <h1 class="d-none" id="logo-easter-egg">
+                                ZubZet
+                            </h1>
+                        </div>
+                    </a>
 
                     <button class="btn btn-primary btn-block mb-2 d-lg-none" data-toggle="collapse" data-target="#navbar">
                         <i class="fa fa-bars"></i>

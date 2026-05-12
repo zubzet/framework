@@ -10,6 +10,7 @@ describe('Form Text Validation', () => {
         cy.form('field_text_required').click().type("TextRequired");
         cy.form('field_text_length').click().type("TextLength");
         cy.form('field_text_unique').click().type("TextUnique");
+        cy.form('field_text_unique_ignore').click().type("UniqueIgnore");
         cy.get('button').click();
         cy.get('#form').contains("Saved!");
     });
@@ -56,6 +57,18 @@ describe('Form Text Validation', () => {
         cy.get('button').click();
 
         cy.form('field_text_unique').parent().contains("This already exists!");
+    });
+
+    it('Unique with ignoreField - the ignored row passes the uniqueness check', () => {
+        cy.visit("/Form/validationText");
+
+        cy.form('field_text_required').click().type("TextRequired");
+        cy.form('field_text_length').click().type("TextLength");
+        cy.form('field_text_unique').click().type("TextUnique");
+        // duplicate.value="UniqueText" exists, but the rule ignores it.
+        cy.form('field_text_unique_ignore').click().type("UniqueText");
+        cy.get('button').click();
+        cy.get('#form').contains("Saved!");
     });
 
 });

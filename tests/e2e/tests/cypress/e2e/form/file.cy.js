@@ -27,7 +27,7 @@ describe('Form Date Validation', () => {
 
     beforeEach(() => {
         // Wait on the upload POST so the next cy.visit() doesn't race the
-        // server-side write — historically flaky on slower CI shards.
+        // server-side write - historically flaky on slower CI shards.
         cy.intercept('POST', '**').as('upload');
     });
 
@@ -159,10 +159,60 @@ describe('Form Date Validation', () => {
         cy.contains("FormUpload:3");
     });
 
+    // Exercises the formUpload subpath's hasErrors → formErrors branch by
+    // uploading a non-PDF (rejected by the FormField file rule).
+    it('Validation File FormUpload Small TXT', () => {
+        cy.visit("/Form/validationFile/formUpload");
+
+        uploadFile("TestFile_Small_1.txt", "text/plain");
+        cy.get('button').click();
+        cy.wait('@upload');
+
+        cy.visit("/Form/validationFile");
+        cy.contains("TestFile_Small_1.txt").should("not.exist");
+    });
+
     it('should store file sizes beyond INT range', () => {
         cy.request('/Core/bigintFileSize').then((response) => {
             expect(response.status).to.eq(200);
             expect(response.body.stored).to.equal(response.body.input);
+        });
+    });
+
+    // Probes FormModel::uploadFile's early-return branches. The public
+    // /Form/validationFile/form path can't reach these because the
+    // file FormField rule rejects empty/missing files first.
+    describe('FormModel::uploadFile early-return branches', () => {
+        before(() => {
+            cy.saveConfigBackup();
+            // showErrors=0 so the move_uploaded_file warning in the
+            // second probe isn't promoted to a fatal ErrorException.
+            cy.setConfigSetting("showErrors", "0");
+        });
+
+        after(() => cy.restoreConfigBackup());
+
+        it('returns false when given a null file', () => {
+            cy.request('/Form/probeUploadFileEmpty').then((res) => {
+                expect(res.body).to.eq(true);
+            });
+        });
+
+        // CanRetrieveFromInput::getFile($key, $default) returns $default
+        // when no file was uploaded under that key. Co-located with the
+        // other "fake file" probes because the sentinel mirrors the
+        // fake.pdf shape used by action_probeUploadFileMoveFails.
+        it('getFile() returns the default when the field is absent', () => {
+            cy.request('/Form/probeGetFileDefault').then((res) => {
+                expect(res.body.matches).to.eq(true);
+                expect(res.body.default).to.eq('fake.pdf-fallback-sentinel');
+            });
+        });
+
+        it('returns false when move_uploaded_file rejects the tmp_name', () => {
+            cy.request('/Form/probeUploadFileMoveFails').then((res) => {
+                expect(res.body).to.eq(true);
+            });
         });
     });
 });

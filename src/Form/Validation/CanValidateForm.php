@@ -77,7 +77,7 @@
                                 $errors[] = ["name" => $name, "type" => "regex"];
                             }
                         } else if ($type == "integer") {
-                            if (!filter_var($value, FILTER_VALIDATE_INT)) {
+                            if (filter_var($value, FILTER_VALIDATE_INT) === false) {
                                 $errors[] = ["name" => $name, "type" => "integer"];
                             }
                             $value = intval($value);
@@ -104,8 +104,6 @@
                             } else {
                                 $errors[] = ["name" => $name, "type" => "file"];
                             }
-                        } else {
-                            $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unknown type
                         }
 
                         $field->value = $value;

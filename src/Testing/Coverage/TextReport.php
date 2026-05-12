@@ -9,6 +9,7 @@
 
     /**
      * @internal
+     * @codeCoverageIgnore Only invoked after measurement has stopped (--cli mode); coverage cannot record this.
      */
     final class TextReport {
 

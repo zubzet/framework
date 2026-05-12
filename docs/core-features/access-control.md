@@ -98,7 +98,7 @@ Users can be created through the static `add` method.
 
 If no verification date is provided, the user is created as **unverified**.
 
-The `$password` parameter is optional. When `null` is passed, the user is created without a password — useful for invite or SSO flows where a credential is set later via `updatePassword()`.
+The `$password` parameter is optional. When `null` is passed, the user is created without a password - useful for invite or SSO flows where a credential is set later via `updatePassword()`.
 
 ---
 
@@ -279,7 +279,7 @@ Permission checks always resolve the **complete permission set**.
     ```
 
 * Returns the organization the user belongs to, or `null` if none is assigned.
-  The result is cached on the instance — including the `null` case — until `clearFields()` or a write operation invalidates it.
+  The result is cached on the instance - including the `null` case - until `clearFields()` or a write operation invalidates it.
 
     ```php
     $user->organization(): ?Organization

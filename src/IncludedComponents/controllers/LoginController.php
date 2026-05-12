@@ -105,11 +105,7 @@
          * @param Response $res The response object
          */
         public function action_logout($req, Response $res) {
-            $res->logout();
-            $reroute = $req->getGet("reroute", false);
-            if($reroute) {
-                $res->rerouteUrl($reroute == "index" ? "" : $reroute);
-            }
+            return $res->logout();
         }
 
         /**

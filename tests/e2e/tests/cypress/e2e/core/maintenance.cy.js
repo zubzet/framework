@@ -23,15 +23,15 @@ describe('Maintenance System', () => {
 
         it("should display the dashboard without maintenance page", () => {
             cy.visit("/");
-            cy.contains("Dashboard").should("exist");
+            cy.query("dashboard-controller").should("exist");
         });
 
         it("should show 'Normal' status in the admin panel", () => {
             cy.loginAs("admin");
             cy.visit("/z/maintenance");
 
-            cy.contains("Normal").should("exist");
-            cy.contains("disabled").should("exist");
+            cy.query("maintenance-status").should("contain", "Normal");
+            cy.query("maintenance-mode").should("contain", "disabled");
         });
 
     });
@@ -67,43 +67,13 @@ describe('Maintenance System', () => {
         it("should show 'Active' status in the admin panel when using bypass cookie", () => {
             cy.loginAs("admin");
             cy.setCookie('maintenance', 'true');
-            
-            cy.visit("/z/maintenance");
-
-            cy.contains("Active").should("exist");
-            cy.contains("soft").should("exist");
-
-            cy.clearCookie('maintenance');
-        });
-
-        it("should allow setting bypass cookie via the admin panel", () => {
-            // Use disabled mode so the panel is reachable without a cookie.
-            cy.setConfigSetting('maintenance_mode', 'disabled');
-            cy.loginAs("admin");
-            cy.clearCookie('maintenance');
 
             cy.visit("/z/maintenance");
 
-            cy.get('#bypass-maintenance').should('not.be.disabled').click();
-
-            cy.getCookie('maintenance').should('exist');
+            cy.query("maintenance-status").should("contain", "Maintenance");
+            cy.query("maintenance-mode").should("contain", "soft");
 
             cy.clearCookie('maintenance');
-            cy.setConfigSetting('maintenance_mode', 'soft');
-        });
-
-        it("should display maintenance page with retry-after header in soft mode without cookie", () => {
-            cy.request({
-                url: '/',
-                failOnStatusCode: false,
-                headers: {
-                    'Accept': 'text/html'
-                }
-            }).then((response) => {
-                expect(response.status).to.equal(503);
-                expect(response.headers['retry-after']).to.equal('300');
-                expect(response.body).to.include('currently undergoing maintenance');
-            });
         });
 
     });
@@ -171,7 +141,7 @@ describe('Maintenance System', () => {
 
             cy.query("btn-maintenance").click();
 
-            cy.contains("Maintenance Mode").should("exist");
+            cy.query("maintenance-heading").should("exist");
         });
 
         it("should show correct status for each mode", () => {
@@ -187,8 +157,8 @@ describe('Maintenance System', () => {
 
                 cy.visit("/z/maintenance");
 
-                cy.contains(display).should("exist");
-                cy.contains(mode).should("exist");
+                cy.query("maintenance-status").should("contain", display);
+                cy.query("maintenance-mode").should("contain", mode);
 
                 cy.clearCookie('maintenance');
             });
@@ -203,7 +173,7 @@ describe('Maintenance System', () => {
         it("should display the maintenance page with proper content", () => {
             cy.visit("/", { failOnStatusCode: false });
 
-            cy.contains("currently undergoing maintenance").should("exist");
+            cy.query("maintenance-page").should("exist").and("contain", "currently undergoing maintenance");
         });
 
         it("should return proper HTTP headers", () => {
@@ -452,6 +422,44 @@ describe('Maintenance System', () => {
             });
         });
 
+    });
+
+    // Self-contained soft-mode tests with their own setup/teardown - placed
+    // last so a failure here does not cascade through the rest of the spec.
+    describe('Mode: Soft (self-contained)', () => {
+        beforeEach(() => cy.setConfigSetting('maintenance_mode', 'soft'));
+        afterEach(() => cy.setConfigSetting('maintenance_mode', 'disabled'));
+
+        it("should allow setting bypass cookie via the admin panel", () => {
+            cy.setConfigSetting('maintenance_mode', 'disabled'); // panel reachable
+            cy.loginAs("admin");
+            cy.clearCookie('maintenance');
+
+            cy.visit("/z/maintenance");
+
+            // The click fires Z.Request.action("bypass-maintenance") which
+            // POSTs to the current URL. Intercept and wait for the response
+            // before checking the cookie - under xdebug coverage the
+            // round-trip can exceed cypress's default 4s timeout.
+            cy.intercept('POST', '/z/maintenance').as('bypass');
+            cy.query('btn-bypass-maintenance').should('not.be.disabled').click();
+            cy.wait('@bypass', { timeout: 30000 }).its('response.statusCode').should('eq', 200);
+            cy.getCookie('maintenance').should('exist');
+
+            cy.clearCookie('maintenance');
+        });
+
+        it("should display maintenance page with retry-after header in soft mode without cookie", () => {
+            cy.request({
+                url: '/',
+                failOnStatusCode: false,
+                headers: { 'Accept': 'text/html' },
+            }).then((response) => {
+                expect(response.status).to.equal(503);
+                expect(response.headers['retry-after']).to.equal('300');
+                expect(response.body).to.include('currently undergoing maintenance');
+            });
+        });
     });
 
 });

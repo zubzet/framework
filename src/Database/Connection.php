@@ -189,10 +189,12 @@
 
             if(count($args) > 1) {
                 array_shift($args);
-                $bindingResult = $this->stmt->bind_param(...$args);
-                if(false === $bindingResult) {
-                    throw new \Exception("SQL Binding Error: " . $this->conn->error . "\nQuery: " . $query);
-                }
+                // PHP 8's mysqli throws ArgumentCountError / ValueError when
+                // the type string or value count doesn't match the prepared
+                // statement; bind_param() no longer returns false in any
+                // reachable scenario, so a wrapping `if(false === ...)` check
+                // would be dead code.
+                $this->stmt->bind_param(...$args);
             }
 
             $queryStart = microtime(true);
@@ -201,9 +203,6 @@
 
             if(false === $executionResult) {
                 throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
-            }
-            if($this->stmt->errno) {
-                throw new \Exception("SQL STMT Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
 
             $this->insertId = $this->conn->insert_id;

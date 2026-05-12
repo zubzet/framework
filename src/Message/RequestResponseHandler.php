@@ -32,14 +32,6 @@
         }
 
         /**
-         * Returns the ZControllers directory
-         * @return string
-         */
-        public function getZControllers() {
-            return $this->booter->z_controllers;
-        }
-
-        /**
          * Returns the framework root directory
          * @return string
          */

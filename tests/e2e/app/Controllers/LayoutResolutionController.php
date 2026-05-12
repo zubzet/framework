@@ -54,7 +54,6 @@
         public function action_underflowinstance(Request $req, Response $res) {
             try {
                 $res->popDefaultLayout();
-                echo "no_throw";
             } catch (\UnderflowException $e) {
                 echo "threw:" . $e->getMessage();
             }
@@ -63,7 +62,6 @@
         public function action_underflowglobal(Request $req, Response $res) {
             try {
                 Response::popGlobalDefaultLayout();
-                echo "no_throw";
             } catch (\UnderflowException $e) {
                 echo "threw:" . $e->getMessage();
             }

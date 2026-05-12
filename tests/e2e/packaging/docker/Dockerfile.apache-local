@@ -1,4 +1,4 @@
-ARG PHP_TAG=8.0-apache
+ARG PHP_TAG=8.0-xdebug
 FROM ghcr.io/zubzet/php:${PHP_TAG}
 
 ARG USER_UID=1000

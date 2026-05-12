@@ -26,5 +26,10 @@
             type: "text",
         });
 
+        form.createField({
+            name: "field_text_unique_ignore",
+            type: "text",
+        });
+
     </script>
 <?php }]; ?>

@@ -70,7 +70,7 @@
         function getGroups() {
             $sql = "SELECT *
                     FROM `z_role`
-                    WHERE `is_group`=1";
+                    WHERE `is_group`=1 AND `active`=1";
 
             return $this->exec($sql)->resultToArray();
         }
