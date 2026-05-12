@@ -5,7 +5,8 @@
      * https://www.jetbrains.com/help/phpstorm/ide-advanced-metadata.html#define-exit-points
      */
 
-    // @codeCoverageIgnoreStart IDE-only metadata; never executed at runtime.
+    // IDE-only metadata; never executed at runtime.
+    // @codeCoverageIgnoreStart
 
     namespace PHPSTORM_META {
 
