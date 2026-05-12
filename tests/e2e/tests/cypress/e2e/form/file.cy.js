@@ -198,6 +198,17 @@ describe('Form Date Validation', () => {
             });
         });
 
+        // CanRetrieveFromInput::getFile($key, $default) returns $default
+        // when no file was uploaded under that key. Co-located with the
+        // other "fake file" probes because the sentinel mirrors the
+        // fake.pdf shape used by action_probeUploadFileMoveFails.
+        it('getFile() returns the default when the field is absent', () => {
+            cy.request('/Form/probeGetFileDefault').then((res) => {
+                expect(res.body.matches).to.eq(true);
+                expect(res.body.default).to.eq('fake.pdf-fallback-sentinel');
+            });
+        });
+
         it('returns false when move_uploaded_file rejects the tmp_name', () => {
             cy.request('/Form/probeUploadFileMoveFails').then((res) => {
                 expect(res.body).to.eq(true);

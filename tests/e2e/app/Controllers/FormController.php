@@ -280,6 +280,17 @@
             return $res->json($result === false);
         }
 
+        // Probes CanRetrieveFromInput::getFile()'s default-return branch:
+        // when no file is uploaded under that key, getFile($key, $default)
+        // returns $default verbatim. Used by form/file.cy.js.
+        public function action_probeGetFileDefault(Request $req, Response $res) {
+            $sentinel = "fake.pdf-fallback-sentinel";
+            return $res->json([
+                "default" => $req->getFile("nonexistent_field", $sentinel),
+                "matches" => $req->getFile("nonexistent_field", $sentinel) === $sentinel,
+            ]);
+        }
+
         public function action_probeUploadFileMoveFails(Request $req, Response $res) {
             // move_uploaded_file() rejects any tmp_name that is not in
             // $_FILES (security check). Calling it with a fabricated path

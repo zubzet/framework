@@ -155,6 +155,12 @@
             print_r($req->getGet("TestGet"));
         }
 
+        // Probes the no-key branch of CanRetrieveFromInput::getGet(),
+        // which returns the full GET array. Used by core/request.cy.js.
+        public function action_getAll(Request $req, Response $res) {
+            return $res->json($req->getGet());
+        }
+
         public function action_post(Request $req, Response $res) {
             echo($req->getPost("TestPost"));
         }
@@ -168,8 +174,21 @@
             $res->setCookie('testCookie', 'cookieValue', time() + 3600, '/', '', false, true);
         }
 
+        // Sets two cookies in one response so core/cookies.cy.js can
+        // exercise the getCookies() alias (no-key getCookie branch).
+        public function action_cookiessetMulti(Request $req, Response $res) {
+            $res->setCookie('cookieA', 'valueA', time() + 3600, '/', '', false, true);
+            $res->setCookie('cookieB', 'valueB', time() + 3600, '/', '', false, true);
+        }
+
         public function action_cookieget(Request $req, Response $res) {
             print_r($req->getCookie("testCookie"));
+        }
+
+        // Returns every cookie on the request via the getCookies() alias,
+        // which delegates to getCookie() with no key.
+        public function action_cookiesAll(Request $req, Response $res) {
+            return $res->json($req->getCookies());
         }
 
         public function action_cookieunset(Request $req, Response $res) {

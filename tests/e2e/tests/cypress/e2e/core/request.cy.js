@@ -34,6 +34,18 @@ describe('Request', () => {
         cy.contains("JustATest");
     });
 
+    // getGet() with no key returns the full $_GET array. Sweep a few
+    // params so the test would also catch accidental key-filtering.
+    it('GET (no key) returns the full query-string array', () => {
+        cy.request('/Core/getAll?alpha=one&beta=two&gamma=3').then((res) => {
+            expect(res.body).to.deep.equal({
+                alpha: 'one',
+                beta: 'two',
+                gamma: '3',
+            });
+        });
+    });
+
     it('POST', () => {
         cy.request({
             method: 'POST',
