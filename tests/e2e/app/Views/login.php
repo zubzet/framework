@@ -6,10 +6,10 @@
     <input type="password" id="password" data-test="password">
 
     <button id="btnLogin" data-test="btn-login">
-        Einloggen
+        Sign in
     </button>
     <a class="text-primary" href="<?= $opt["root"]; ?>login/forgot-password">
-        Passwort vergessen?
+        Forgot Password?
     </a>
 
     <script>

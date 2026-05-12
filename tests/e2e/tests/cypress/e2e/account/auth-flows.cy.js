@@ -1,7 +1,7 @@
 // Coverage for src/IncludedComponents/controllers/LoginController.php beyond the
 // happy path of action_index already covered in account/login.cy.js.
 //
-// One spec, one describe per action. Seed range 600–620, see AuthFlows.sql.
+// One spec, one describe per action. Seed range 600-620, see AuthFlows.sql.
 
 describe('Auth flows', () => {
     before(() => {
@@ -141,7 +141,7 @@ describe('Auth flows', () => {
                     expect(check).to.deep.equal({ found: true, ok: false });
                 });
 
-                // Step 7: reset code is now inactive — no active row for user 602.
+                // Step 7: reset code is now inactive - no active row for user 602.
                 requestJson('/AuthProbe/lastResetCode/602').then((after) => {
                     expect(after.found).to.eq(false);
                 });
@@ -202,13 +202,14 @@ describe('Auth flows', () => {
         it('renders the resend prompt when the verify code is invalid', () => {
             cy.request('/login/verify/code-that-does-not-exist').then((res) => {
                 expect(res.status).to.eq(200);
-                expect(res.body).to.include('Vermisst du die Bestätigungsmail');
+                // Framework login_verify.php - English resend prompt.
+                expect(res.body).to.include('You are missing the verification mail');
             });
         });
     });
 
     // ---------------------------------------------------------------------
-    describe('action_index — rate limiting', () => {
+    describe('action_index - rate limiting', () => {
         it('blocks login after configured threshold and emails a security alert', () => {
             cy.setConfigSetting('maxLoginTriesPerTimespan', '2');
             clearMailhog();
@@ -249,7 +250,7 @@ describe('Auth flows', () => {
     // ---------------------------------------------------------------------
     describe('action_create_password / action_change_password', () => {
         it.skip('action_create_password reroutes to /login/reset [skip: stub reroutes to /login/reset which dies without a code; expected behavior unclear without design doc]', () => {
-            // See DEAD_CODE_CANDIDATES.md — these two actions are stubs that
+            // See DEAD_CODE_CANDIDATES.md - these two actions are stubs that
             // forward to /login/reset which dies if no code is in the URL.
             // Intent (when do they make sense, with what setup?) needs a docs
             // pass before the test is meaningful.
