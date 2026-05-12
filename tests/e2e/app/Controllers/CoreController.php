@@ -30,7 +30,14 @@
 
         public function action_triggersDeprecation(Request $req, Response $res) {
             trigger_error("regression-controller-deprecation-marker", E_USER_DEPRECATED);
+            // @codeCoverageIgnoreStart
+            // Unreachable by contract: under BehaviorOption::ALL the
+            // trigger_error above is promoted to an ErrorException before
+            // we get here. The string is kept as a regression marker — if
+            // it ever appears in a response body the test fails loudly,
+            // surfacing a broken promotion path.
             echo "deprecation was not promoted";
+            // @codeCoverageIgnoreEnd
         }
 
         public function action_command(Request $req, Response $res) {
