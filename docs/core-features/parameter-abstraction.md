@@ -49,7 +49,7 @@ The framework includes some extra functionality when it comes to the above menti
 
 ### Getting POST and GET parameters
 `$req->getGet` and `$req->getPost` are methods to get form parameters. These also enable to set default parameters if some are not set.<br>
-**Note:** Post parameters get decoded automatically if their values have a special prefix like `<#decb64#>` or `<#decURI#>`. This decoding allows to transmit special characters.
+**Note:** Post parameters get decoded automatically if their values have the special prefix `<#decURI#>`. This decoding allows to transmit special characters.
 
 ### Cookies
 `$req->getCookie` gets a cookie. It has a second parameter to set a default if the cookie is not set.

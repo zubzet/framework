@@ -28,10 +28,6 @@
 
             // Parse Post request
             array_walk_recursive($_POST, function(&$item) {
-                if(substr($item, 0, 10) == "<#decb64#>") {
-                    $item = substr($item, 10);
-                    $item = base64_decode($item);
-                }
                 if(substr($item, 0, 10) == "<#decURI#>") {
                     $item = substr($item, 10);
                     $item = rawurldecode($item);

@@ -27,3 +27,4 @@ These todos should be as temporary as possible:
 1. Added `Role::setPermissionsByRole(Role $role)` to replace a role's permissions with another role's permissions in one call (removes current, copies source).
 1. `User::add()` now accepts `null` for the `$password` parameter, allowing users to be created without a password (e.g. invite or SSO flows where the credential is set later via `updatePassword()`).
 1. Deprecate getZControllers in RequestResponseHandler
+1. Deprecate `<#decb64#>`
