@@ -316,11 +316,79 @@
             ], "email");
         }
 
-        // Returns the resolved client IP for the current request. Used by
-        // tests/cypress/e2e/core/request.cy.js to exercise Request::ip()'s
-        // header-priority chain.
+        // Returns the resolved client IP. json_encode preserves a real null
+        // (vs flattening it to "") when the method legitimately returns null.
         public function action_clientIp(Request $req, Response $res): void {
-            echo $req->ip() ?? "";
+            echo json_encode($req->ip());
+        }
+
+        // referer / userAgent / getExecutionTime all may return null per the
+        // method contract — json_encode keeps that observable in the test.
+        public function action_referer(Request $req, Response $res): void {
+            echo json_encode($req->referer());
+        }
+
+        public function action_userAgent(Request $req, Response $res): void {
+            echo json_encode($req->userAgent());
+        }
+
+        // Sleeps for ?delay=<ms> when given, then emits Request::getExecutionTime().
+        // The test compares a "fast" call to a deliberately delayed one to prove
+        // the value tracks wall-clock time since REQUEST_TIME_FLOAT.
+        public function action_executionTime(Request $req, Response $res): void {
+            $delayMs = (int)$req->getGet("delay", 0);
+            if ($delayMs > 0) {
+                usleep($delayMs * 1000);
+            }
+            echo json_encode($req->getExecutionTime());
+        }
+
+        // getCurrentURL / getDomain may mutate the framework's configured host
+        // via DynamicAttributes (zubzet()->host = ...). HasDynamicAttributes
+        // routes that through __set, and config("host") reads the new value
+        // back via __get on the same request. The override lasts one request —
+        // the INI re-loads on the next boot.
+        public function action_currentUrl(Request $req, Response $res): void {
+            $hostOverride = $req->getGet("hostOverride");
+            if ($hostOverride !== null && $hostOverride !== "") {
+                zubzet()->host = $hostOverride;
+            }
+            echo $req->getCurrentURL();
+        }
+
+        public function action_domain(Request $req, Response $res): void {
+            $hostOverride = $req->getGet("hostOverride");
+            if ($hostOverride !== null && $hostOverride !== "") {
+                zubzet()->host = $hostOverride;
+            }
+            echo $req->getDomain();
+        }
+
+        // `/Core/readable[/skip…]/<slug>?offset=<n>` → JSON {id, text} per
+        // getReadableParameter's last-hyphen split rule. Offset is passed
+        // through so the test covers both 0 and non-zero offsets.
+        public function action_readable(Request $req, Response $res): void {
+            $offset = (int)$req->getGet("offset", 0);
+            echo json_encode($req->getReadableParameter($offset));
+        }
+
+        // Round-trips getBody() + getJson(). The JSON parse uses
+        // JSON_THROW_ON_ERROR; we catch it here so the test can assert both
+        // the happy path and the malformed-body path within one request.
+        public function action_requestBody(Request $req, Response $res): void {
+            $body = $req->getBody();
+            $json = null;
+            $jsonError = null;
+            try {
+                $json = $req->getJson();
+            } catch (\JsonException $e) {
+                $jsonError = $e->getMessage();
+            }
+            echo json_encode([
+                'body'      => $body,
+                'json'      => $json,
+                'jsonError' => $jsonError,
+            ]);
         }
     }
 
