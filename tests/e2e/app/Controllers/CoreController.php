@@ -100,6 +100,17 @@
             return $res->render("core/empty", [], "layout/min_layout");
         }
 
+        // Renders core/render through the bare-bones layout/empty wrapper —
+        // useful when a partial of the page (e.g. a paginated list) is being
+        // fetched over AJAX and the caller wants the rendered body only,
+        // without surrounding <html>/<head>/<body> chrome. Covered by
+        // core/layout.cy.js.
+        public function action_renderRaw(Request $req, Response $res) {
+            return $res->render("core/render", [
+                "data" => "Data",
+            ], "layout/empty");
+        }
+
         public function action_e2e_superpermission(Request  $req, Response $res) {
             $checkSuperPermission = $req->checkSuperPermission("core.superpermission", true);
             $checkPermission = $req->checkPermission("core.superpermission", true);
