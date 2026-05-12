@@ -48,6 +48,20 @@ describe('Auth flows', () => {
                 expect(after).to.deep.equal({ exists: true, active: false });
             });
         });
+
+        // Response::logout() early-exits via rerouteUrl() when no user is
+        // logged in - covers the `if(!$user->isLoggedIn)` branch and
+        // avoids touching the session-invalidation path.
+        it('reroutes (without crashing) when no user is logged in', () => {
+            cy.clearCookie('z_login_token');
+            cy.request({
+                url: '/login/logout',
+                followRedirect: false,
+            }).then((res) => {
+                expect(res.status).to.be.oneOf([301, 302]);
+                expect(res.headers).to.have.property('location');
+            });
+        });
     });
 
     // ---------------------------------------------------------------------
