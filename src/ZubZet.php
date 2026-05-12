@@ -58,7 +58,12 @@
          * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
          */
         function __construct(array $params = []) {
+            // Collecting code coverage as early as possible. The coverage intiailization is
+            // already implicitly tested by the coverage report generated, so ignoring it.
+            // @codeCoverageIgnoreStart
             Collector::initialize();
+            // @codeCoverageIgnoreEnd
+
             self::$instance = $this;
             new GlobalReferences;
             new Constants;
