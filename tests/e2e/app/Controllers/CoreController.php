@@ -372,6 +372,31 @@
             echo json_encode($req->getReadableParameter($offset));
         }
 
+        // Probes for Request::checkPermission, covered by:
+        //   advanced/command.cy.js         — "console" + boolResult branch
+        //   core/permissions.cy.js         — !isLoggedIn + boolResult branch
+        //
+        // consoleBool exercises checkPermission("console", boolResult: true)
+        // over HTTP — the branch that returns false without exit so the
+        // action can keep running and echo our marker.
+        public function action_consoleBool(Request $req, Response $res): void {
+            echo $req->checkPermission("console", boolResult: true) ? "allowed" : "denied";
+        }
+
+        // permissionCheck runs both checkPermission shapes back-to-back:
+        //   1) boolResult=true   — emits "allowed" / "denied" without exiting.
+        //   2) default behavior  — !isLoggedIn redirects, no-permission 403s,
+        //                          allowed lets the trailing echo run.
+        // Body inspection in the test reveals which branch fired:
+        //   - not logged in:  "denied\n" + login page HTML (no "passed" echo)
+        //   - logged in OK:   "allowed\ncore.permissions passed"
+        public function action_permissionCheck(Request $req, Response $res): void {
+            echo $req->checkPermission("core.permissions", boolResult: true) ? "allowed" : "denied";
+            echo "\n";
+            $req->checkPermission("core.permissions");
+            echo "core.permissions passed";
+        }
+
         // Round-trips getBody() + getJson(). The JSON parse uses
         // JSON_THROW_ON_ERROR; we catch it here so the test can assert both
         // the happy path and the malformed-body path within one request.
