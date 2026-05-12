@@ -2,7 +2,7 @@
     /**
      * Stripped-down boot harness that exercises the framework's
      * "instance not (yet) set up" branches in src/Support/GlobalReferences.php.
-     * Run directly via `php instance_test.php` — never serves an HTTP request.
+     * Run directly via `php instance_test.php` - never serves an HTTP request.
      *
      * Emits a single JSON line covering every branch we want to cover, so the
      * companion cypress spec only needs one cy.exec.
@@ -28,7 +28,7 @@
 
     // Triggers the autoload of src/Support/GlobalReferences.php so the global
     // helper functions (zubzet/db/etc.) get declared. Normally this happens
-    // inside ZubZet::__construct *after* self::$instance is set — but we need
+    // inside ZubZet::__construct *after* self::$instance is set - but we need
     // the function defined *before* instantiation so we can reach the
     // "not yet been setup" branch below.
     new GlobalReferences;
@@ -36,7 +36,7 @@
     $results = [];
 
     // 1. zubzet() called before ZubZet::$instance is ever assigned. Only this
-    //    file's controlled boot can reach this branch — once any request boots
+    //    file's controlled boot can reach this branch - once any request boots
     //    the framework, $instance is permanently set for that process.
     try {
         zubzet();
@@ -46,7 +46,7 @@
     }
 
     // Boot the framework so the remaining db() branches can run. We do *not*
-    // call execute() — that would handle a (non-existent) HTTP request.
+    // call execute() - that would handle a (non-existent) HTTP request.
     new ZubZet();
 
     // 2. db() with a non-default connection key throws InvalidArgumentException.
@@ -63,7 +63,7 @@
     $results["allowedNullWhenUnset"] = db("default", true) === null;
 
     // 4. db() (strict, allowUnsetConnection=false) needs z_db to be SET but
-    //    not a Connection instance — that's the only path to the instanceof
+    //    not a Connection instance - that's the only path to the instanceof
     //    check. With z_db unset, the previous branch would throw __get's
     //    "attribute does not exist" before db() got that far. A stdClass
     //    satisfies isset() while failing the instanceof Connection guard.

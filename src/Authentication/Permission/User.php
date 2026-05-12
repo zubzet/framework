@@ -293,7 +293,7 @@ class User extends AuthenticationObject {
 
     public function organization(): ?Organization {
         // Use a separate marker so a null result (user has no org) is cached too,
-        // not just hits — otherwise every call would re-resolve `organizationId`.
+        // not just hits - otherwise every call would re-resolve `organizationId`.
         if(!isset($this->data["organization-loaded"])) {
             $orgId = $this->getField("organizationId");
             $organization = is_null($orgId) ? null : Organization::byId($orgId);

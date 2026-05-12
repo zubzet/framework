@@ -5,7 +5,7 @@
         public function action_interactions(Request $req, Response $res) {
             if($req->hasFormData()) {
                 // None of these fields carry validation rules, so a form
-                // submission cannot produce errors here — no formErrors
+                // submission cannot produce errors here - no formErrors
                 // fallback is needed.
                 $req->validateForm([
                     (new FormField("field_a")),

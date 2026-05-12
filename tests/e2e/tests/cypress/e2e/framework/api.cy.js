@@ -1,6 +1,6 @@
 // Probes for public framework APIs (z_generalModel, z_userModel) that no
 // internal framework controller exercises end-to-end. Pattern follows
-// permission/user.cy.js — one route per scenario, deep.equal on JSON.
+// permission/user.cy.js - one route per scenario, deep.equal on JSON.
 
 describe('Framework API probes', () => {
     before(() => {
@@ -12,7 +12,7 @@ describe('Framework API probes', () => {
     }
 
     // -----------------------------------------------------------------------
-    describe('z_generalModel — languages', () => {
+    describe('z_generalModel - languages', () => {
         it('getLanguageList returns the seeded languages', () => {
             requestJson('/FrameworkApi/languageList').then((rows) => {
                 // Framework seed has at least EN and DE.
@@ -40,7 +40,7 @@ describe('Framework API probes', () => {
     });
 
     // -----------------------------------------------------------------------
-    describe('z_userModel — role helpers', () => {
+    describe('z_userModel - role helpers', () => {
         it('getRoleIdByRoleName returns the id for known roles, null for unknown', () => {
             requestJson('/FrameworkApi/roleIdByName').then((out) => {
                 expect(out.fwapi_KnownRole).to.eq(251);

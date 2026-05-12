@@ -12,7 +12,7 @@
      *   3. framework default               ("layout/default_layout.php")
      *
      * Both scopes expose a `set*` (clear + push), `push*` and `pop*` so a
-     * "part of the app" — admin area, nested component — can install its
+     * "part of the app" - admin area, nested component - can install its
      * own default and restore the previous one when done.
      */
     trait HandlesDefaultLayout {
@@ -31,7 +31,7 @@
         public static function popGlobalDefaultLayout(): string {
             if (empty(self::$globalDefaultLayoutStack)) {
                 throw new \UnderflowException(
-                    "popGlobalDefaultLayout called on an empty stack — every push must be matched by a single pop."
+                    "popGlobalDefaultLayout called on an empty stack - every push must be matched by a single pop."
                 );
             }
             return array_pop(self::$globalDefaultLayoutStack);
@@ -48,7 +48,7 @@
         public function popDefaultLayout(): string {
             if (empty($this->instanceDefaultLayoutStack)) {
                 throw new \UnderflowException(
-                    "popDefaultLayout called on an empty stack — every push must be matched by a single pop."
+                    "popDefaultLayout called on an empty stack - every push must be matched by a single pop."
                 );
             }
             return array_pop($this->instanceDefaultLayoutStack);

@@ -172,7 +172,7 @@ describe('Z-Admin Panel', () => {
         });
 
         it('accepts an empty email (user created without an email)', () => {
-            // Empty email is intentionally allowed — the action converts "" to null.
+            // Empty email is intentionally allowed - the action converts "" to null.
             postAdd({ email: '', password: 'goodpass' }).then((out) => {
                 expect(out.result).to.eq('success');
             });
@@ -427,7 +427,7 @@ describe('Z-Admin Panel', () => {
             cy.loginAs("admin");
             cy.visit("/z/groups");
 
-            // The Permission seed inserts ~30 groups (is_group=1) — the
+            // The Permission seed inserts ~30 groups (is_group=1) - the
             // template should render the heading plus a few known names.
             cy.contains('Groups');
             cy.query('group-300').should('exist').and('contain', 'group_byId');
@@ -436,7 +436,7 @@ describe('Z-Admin Panel', () => {
         it('a newly created group shows up in the admin list', () => {
             cy.loginAs("admin");
 
-            // Capture the id from the probe response — earlier role-create
+            // Capture the id from the probe response - earlier role-create
             // tests in this spec bump z_role auto_increment, so the id is
             // not deterministic across the suite.
             cy.request('/group/add').then((res) => {
@@ -461,7 +461,7 @@ describe('Z-Admin Panel', () => {
 
             cy.visit("/z/groups");
             cy.query('group-309').should('not.exist');
-            // Untouched group 310 still shows — proves the filter is targeted.
+            // Untouched group 310 still shows - proves the filter is targeted.
             cy.query('group-310').should('exist');
         });
 
@@ -477,7 +477,7 @@ describe('Z-Admin Panel', () => {
         });
     });
 
-    // Tests that assert end-state (no UI flow inside the assertion) — kept
+    // Tests that assert end-state (no UI flow inside the assertion) - kept
     // at the bottom so they observe the data created by the flows above.
     describe('Post-flow assertions', () => {
         // Verifies the user created by "Goes into add User" landed in the DB.
@@ -498,7 +498,7 @@ describe('Z-Admin Panel', () => {
                 expect(res.headers['content-disposition'])
                     .to.match(/attachment/i);
 
-                // Should contain CSV-formatted text — at minimum a header row
+                // Should contain CSV-formatted text - at minimum a header row
                 // with comma-separated column names, plus at least one data row.
                 expect(res.body).to.match(/^[^\n]+,[^\n]+/);
                 expect(res.body.split(/\r?\n/).length).to.be.greaterThan(1);

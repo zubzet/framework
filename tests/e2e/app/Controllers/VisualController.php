@@ -4,7 +4,7 @@
      * Renders deterministic kitchen-sink pages used as the source-of-truth
      * for our visual-regression specs (tests/cypress/e2e/visual/...).
      *
-     * Each action renders one audit page — the spec screenshots it and diffs
+     * Each action renders one audit page - the spec screenshots it and diffs
      * against a committed baseline so we catch FA / Bootstrap upgrade drift.
      */
     class VisualController extends z_controller {
@@ -264,7 +264,7 @@
                 ["fas", "floppy-disk"],
                 ["fas", "trash-can"],
 
-                // Circle/square wrappers — common in alert/badge UIs.
+                // Circle/square wrappers - common in alert/badge UIs.
                 ["fas", "circle-info"],
                 ["fas", "circle-check"],
                 ["fas", "circle-xmark"],
@@ -281,7 +281,7 @@
                 ["fas", "square-arrow-up-right"],
                 ["fas", "square-poll-vertical"],
 
-                // Charting — broad coverage so a glyph rename or font subset
+                // Charting - broad coverage so a glyph rename or font subset
                 // change in dashboard contexts surfaces in the audit.
                 ["fas", "chart-line"],
                 ["fas", "chart-bar"],

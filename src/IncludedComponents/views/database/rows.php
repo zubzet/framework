@@ -131,7 +131,7 @@
                             <?php foreach ($table["columns"] as $col) { ?>
                                 <td class="text-nowrap" data-test="row-<?= e($col["Field"]) ?>">
                                     <?php if(is_null($r[$col["Field"]])) { ?>
-                                        <span class="text-muted">—</span>
+                                        <span class="text-muted">-</span>
                                     <?php } else { ?>
                                         <?= e($r[$col["Field"]]) ?>
                                     <?php } ?>

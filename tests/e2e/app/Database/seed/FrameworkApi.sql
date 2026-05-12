@@ -5,8 +5,8 @@
     in zubzet/9_auto_increment.sql, so the role/group "create new" tests
     that assert id=10000 are not affected by seed rows below it).
 
-    z_role IDs use 250–251 — a free slot in Permission.sql's role layout
-    (it uses 100–118, 200–229, and groups 300–329). Adding rows above 329
+    z_role IDs use 250-251 - a free slot in Permission.sql's role layout
+    (it uses 100-118, 200-229, and groups 300-329). Adding rows above 329
     would push AUTO_INCREMENT past 330, breaking
     permission/role.cy.js's "should be possible to create a new role"
     assertion that expects id=330. Stay below 330.

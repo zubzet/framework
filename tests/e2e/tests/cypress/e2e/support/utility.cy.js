@@ -1,5 +1,5 @@
 // Pure helpers in src/Support/Helpers.php. The PHP action runs each helper
-// against its probe cases and returns a single bool — cypress only checks
+// against its probe cases and returns a single bool - cypress only checks
 // the response body is true.
 
 describe('Global helpers (src/Support/Helpers.php)', () => {

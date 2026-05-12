@@ -27,7 +27,7 @@ describe('Form Date Validation', () => {
 
     beforeEach(() => {
         // Wait on the upload POST so the next cy.visit() doesn't race the
-        // server-side write — historically flaky on slower CI shards.
+        // server-side write - historically flaky on slower CI shards.
         cy.intercept('POST', '**').as('upload');
     });
 

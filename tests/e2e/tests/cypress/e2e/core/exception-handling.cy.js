@@ -22,7 +22,7 @@ describe('Exception Handling (ALL mode)', () => {
 
     it('promotes E_USER_DEPRECATED to a fatal exception (historical ALL contract)', () => {
         // If a future change skips deprecations, the action's echo runs and
-        // the response is 200 — so the status check is the actual guard.
+        // the response is 200 - so the status check is the actual guard.
         cy.request({ url: '/Core/triggersDeprecation', failOnStatusCode: false }).then((res) => {
             expect(res.status).to.eq(500);
             expect(res.body).to.include('regression-controller-deprecation-marker');
@@ -31,7 +31,7 @@ describe('Exception Handling (ALL mode)', () => {
 });
 
 // ErrorController::action_500 is reached when an action throws and
-// showErrors=0 — the Router catches the exception, re-dispatches to
+// showErrors=0 - the Router catches the exception, re-dispatches to
 // /error/500, and the 500 page is rendered instead of Whoops's stacktrace.
 //
 // The probe flips the mode at request time via

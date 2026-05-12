@@ -424,7 +424,7 @@ describe('Maintenance System', () => {
 
     });
 
-    // Self-contained soft-mode tests with their own setup/teardown — placed
+    // Self-contained soft-mode tests with their own setup/teardown - placed
     // last so a failure here does not cascade through the rest of the spec.
     describe('Mode: Soft (self-contained)', () => {
         beforeEach(() => cy.setConfigSetting('maintenance_mode', 'soft'));
@@ -439,7 +439,7 @@ describe('Maintenance System', () => {
 
             // The click fires Z.Request.action("bypass-maintenance") which
             // POSTs to the current URL. Intercept and wait for the response
-            // before checking the cookie — under xdebug coverage the
+            // before checking the cookie - under xdebug coverage the
             // round-trip can exceed cypress's default 4s timeout.
             cy.intercept('POST', '/z/maintenance').as('bypass');
             cy.query('btn-bypass-maintenance').should('not.be.disabled').click();

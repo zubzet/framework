@@ -33,7 +33,7 @@
             // @codeCoverageIgnoreStart
             // Unreachable by contract: under BehaviorOption::ALL the
             // trigger_error above is promoted to an ErrorException before
-            // we get here. The string is kept as a regression marker — if
+            // we get here. The string is kept as a regression marker - if
             // it ever appears in a response body the test fails loudly,
             // surfacing a broken promotion path.
             echo "deprecation was not promoted";
@@ -107,7 +107,7 @@
             return $res->render("core/empty", [], "layout/min_layout");
         }
 
-        // Renders core/render through the bare-bones layout/empty wrapper —
+        // Renders core/render through the bare-bones layout/empty wrapper -
         // useful when a partial of the page (e.g. a paginated list) is being
         // fetched over AJAX and the caller wants the rendered body only,
         // without surrounding <html>/<head>/<body> chrome. Covered by
@@ -260,7 +260,7 @@
                     $checks['placeholder_returns_string'] = $returnType !== null && (string)$returnType === 'string';
                 }
 
-                // bind($param, $value, $type = null): void — at least 2 params
+                // bind($param, $value, $type = null): void - at least 2 params
                 if($checks['method_bind']) {
                     $m = $reflection->getMethod('bind');
                     $params = $m->getParameters();
@@ -341,7 +341,7 @@
         }
 
         // referer / userAgent / getExecutionTime all may return null per the
-        // method contract — json_encode keeps that observable in the test.
+        // method contract - json_encode keeps that observable in the test.
         public function action_referer(Request $req, Response $res): void {
             echo json_encode($req->referer());
         }
@@ -364,7 +364,7 @@
         // getCurrentURL / getDomain may mutate the framework's configured host
         // via DynamicAttributes (zubzet()->host = ...). HasDynamicAttributes
         // routes that through __set, and config("host") reads the new value
-        // back via __get on the same request. The override lasts one request —
+        // back via __get on the same request. The override lasts one request -
         // the INI re-loads on the next boot.
         public function action_currentUrl(Request $req, Response $res): void {
             $hostOverride = $req->getGet("hostOverride");
@@ -391,19 +391,19 @@
         }
 
         // Probes for Request::checkPermission, covered by:
-        //   advanced/command.cy.js         — "console" + boolResult branch
-        //   core/permissions.cy.js         — !isLoggedIn + boolResult branch
+        //   advanced/command.cy.js         - "console" + boolResult branch
+        //   core/permissions.cy.js         - !isLoggedIn + boolResult branch
         //
         // consoleBool exercises checkPermission("console", boolResult: true)
-        // over HTTP — the branch that returns false without exit so the
+        // over HTTP - the branch that returns false without exit so the
         // action can keep running and echo our marker.
         public function action_consoleBool(Request $req, Response $res): void {
             echo $req->checkPermission("console", boolResult: true) ? "allowed" : "denied";
         }
 
         // permissionCheck runs both checkPermission shapes back-to-back:
-        //   1) boolResult=true   — emits "allowed" / "denied" without exiting.
-        //   2) default behavior  — !isLoggedIn redirects, no-permission 403s,
+        //   1) boolResult=true   - emits "allowed" / "denied" without exiting.
+        //   2) default behavior  - !isLoggedIn redirects, no-permission 403s,
         //                          allowed lets the trailing echo run.
         // Body inspection in the test reveals which branch fired:
         //   - not logged in:  "denied\n" + login page HTML (no "passed" echo)

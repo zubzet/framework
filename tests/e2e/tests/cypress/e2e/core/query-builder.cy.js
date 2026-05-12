@@ -83,7 +83,7 @@ describe('Query Builder', () => {
         });
     });
 
-    it('CakePHP ValueBinder compatibility — class and method signatures are intact', () => {
+    it('CakePHP ValueBinder compatibility - class and method signatures are intact', () => {
         cy.request('GET', '/Core/queryBuilderCakePHPCompat').then((response) => {
             expect(response.status).to.eq(200);
 

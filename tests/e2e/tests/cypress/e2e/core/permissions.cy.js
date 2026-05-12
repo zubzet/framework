@@ -33,11 +33,11 @@ describe('Permissions', () => {
 
     // Request::checkPermission's `!user()->isLoggedIn` branch. /Core/permissionCheck
     // runs two checks back-to-back:
-    //   1) boolResult=true  — emits "allowed" / "denied" without exiting.
-    //   2) default           — !isLoggedIn early-returns into executePath(login)
+    //   1) boolResult=true  - emits "allowed" / "denied" without exiting.
+    //   2) default           - !isLoggedIn early-returns into executePath(login)
     //                          + exit (no DB lookup performed), so the trailing
     //                          "core.permissions passed" echo is unreachable.
-    describe('checkPermission — !isLoggedIn branch', () => {
+    describe('checkPermission - !isLoggedIn branch', () => {
 
         it('without a session: boolResult returns false; the second call short-circuits to login (no "passed")', () => {
             // Belt-and-suspenders: cy.session would already isolate between

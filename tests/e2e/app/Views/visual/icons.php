@@ -6,7 +6,7 @@
         html, body { background: #ffffff !important; margin: 0; padding: 0; }
         body { font-family: monospace; }
         *, *::before, *::after { animation: none !important; transition: none !important; }
-        /* Debugbar is dev-mode chrome — its query timings, memory readout,
+        /* Debugbar is dev-mode chrome - its query timings, memory readout,
          * and version stamp differ every run. Hide it for the screenshot. */
         .phpdebugbar, div.phpdebugbar-openhandler { display: none !important; }
         /* 7 cols × 160 + 6 × 8 gap + 32 padding = 1200, fits the 1280 viewport
@@ -25,7 +25,7 @@
             min-height: 70px;
         }
         /* Fixed-size glyph box. The visual diff crops to this element so
-         * the glyph dominates the diffed pixels — a wrong glyph trips the
+         * the glyph dominates the diffed pixels - a wrong glyph trips the
          * per-tile threshold loudly, with no label/whitespace dilution. */
         .icon-audit-cell .icon-audit-glyph {
             font-size: 24px;

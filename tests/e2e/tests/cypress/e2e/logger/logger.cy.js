@@ -321,7 +321,7 @@ describe('Logger', () => {
         // any incidental slow queries that arose from instrumentation.
         // Recursion is still implicitly checked: if the framework's
         // self-logging INSERT recurses on itself, that wouldn't have SLEEP
-        // in its query text — but a missing guard would be visible as a
+        // in its query text - but a missing guard would be visible as a
         // separate SLOW_QUERY entry whose query starts with `INSERT INTO`
         // for the log table, which we explicitly assert against below.
         describe("Slow Queries", () => {
@@ -337,7 +337,7 @@ describe('Logger', () => {
                 logsByMessage(logs, 'SLOW_QUERY')
                     .filter((q) => /SLEEP/i.test(q.context.query));
 
-            // Helper: assert no recursive logging — the logger's own INSERT
+            // Helper: assert no recursive logging - the logger's own INSERT
             // into the log table must never appear among the slow queries.
             const noLogTableRecursion = (logs) => {
                 const recursive = logsByMessage(logs, 'SLOW_QUERY')

@@ -1,4 +1,4 @@
-// Global helper references exposed by src/Support/Helpers.php — zubzet(),
+// Global helper references exposed by src/Support/Helpers.php - zubzet(),
 // model(), request(), response(), config(), user(), db(), view(), and the
 // duplicate-definition guard that throws when an app tries to redefine one.
 
@@ -37,7 +37,7 @@ describe('Global references', () => {
     });
 
     // The "not yet been setup" branches in zubzet() and db() are only
-    // reachable during framework boot — once any request runs, $instance
+    // reachable during framework boot - once any request runs, $instance
     // and $z_db are set for that process. instance_test.php hand-walks
     // through those states once and emits a single JSON line covering
     // all four cases.

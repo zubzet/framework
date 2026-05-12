@@ -50,7 +50,7 @@
         /**
          * Get all active organizations matching the given name.
          *
-         * Organization names are not unique, so this returns an array — possibly empty,
+         * Organization names are not unique, so this returns an array - possibly empty,
          * possibly containing multiple organizations sharing the same name.
          *
          * @param string $name The name to match exactly

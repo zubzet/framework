@@ -5,7 +5,7 @@
     // delivery path is email (which we can also assert via mailhog, but pulling
     // the row is simpler and more reliable for tests that need the token).
     //
-    // Each action emits a single fixed-shape JSON object — fields are null
+    // Each action emits a single fixed-shape JSON object - fields are null
     // (and `found`/`exists` is false) when the row isn't there, so callers
     // can rely on the shape without the action branching on emptiness.
 

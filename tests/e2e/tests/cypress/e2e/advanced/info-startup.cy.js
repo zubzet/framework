@@ -27,7 +27,7 @@ describe('info:startup Command', () => {
         let original;
 
         before(() => {
-            // File may not exist yet (e.g. on a clean CI checkout) — read
+            // File may not exist yet (e.g. on a clean CI checkout) - read
             // via shell so missing-file isn't a hard failure.
             cy.exec('cat ../z_config/z_automated_setting.ini 2>/dev/null || true', { log: false })
                 .then((r) => { original = r.stdout; });

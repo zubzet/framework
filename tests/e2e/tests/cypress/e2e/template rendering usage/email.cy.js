@@ -3,7 +3,7 @@
 // app/Views/rendering/testmail.php inside app/Views/rendering/mail_layout.php.
 // smtp4dev catches the outgoing mail; we assert headers and body via its API.
 
-describe('Rendering — Email', () => {
+describe('Rendering - Email', () => {
     before(() => {
         cy.dbSeed();
     });
@@ -20,7 +20,7 @@ describe('Rendering — Email', () => {
         cy.request(`http://localhost:3300/api/messages/${id}/part/2/source`)
             .then((res) => res.body);
 
-    it('sendEmail() — renders document inside layout and delivers to the recipient', () => {
+    it('sendEmail() - renders document inside layout and delivers to the recipient', () => {
         cy.request('/Rendering/mail');
 
         fetchLatestMail().then((mail) => {
@@ -36,7 +36,7 @@ describe('Rendering — Email', () => {
         });
     });
 
-    it('sendEmailToUser() — resolves the user, picks their language, delivers', () => {
+    it('sendEmailToUser() - resolves the user, picks their language, delivers', () => {
         cy.request('/Rendering/mailuser');
 
         fetchLatestMail().then((mail) => {

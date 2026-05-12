@@ -43,7 +43,7 @@ describe('Commands', () => {
         });
     });
 
-    // Request::checkPermission("console") — guards a controller to CLI-only
+    // Request::checkPermission("console") - guards a controller to CLI-only
     // dispatch. ConsoleOnlyController calls it from __construct so every
     // action it exposes inherits the gate.
     //

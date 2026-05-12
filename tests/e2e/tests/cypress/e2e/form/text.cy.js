@@ -59,7 +59,7 @@ describe('Form Text Validation', () => {
         cy.form('field_text_unique').parent().contains("This already exists!");
     });
 
-    it('Unique with ignoreField — the ignored row passes the uniqueness check', () => {
+    it('Unique with ignoreField - the ignored row passes the uniqueness check', () => {
         cy.visit("/Form/validationText");
 
         cy.form('field_text_required').click().type("TextRequired");

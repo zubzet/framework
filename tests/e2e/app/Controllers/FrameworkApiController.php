@@ -36,7 +36,7 @@
         }
 
         public function action_changeRoleStateAdd(Request $req, Response $res): void {
-            // user 700, role 700 — initially no link
+            // user 700, role 700 - initially no link
             $userId = 700;
             $roleId = 250;
 

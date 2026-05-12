@@ -2,10 +2,10 @@
 // cypress.config.js so the config file stays a one-liner.
 //
 // Two modes:
-//   1. Global diff (no `regions`) — one threshold across the entire image.
+//   1. Global diff (no `regions`) - one threshold across the entire image.
 //      Good for layout-heavy pages where any real change moves enough pixels
 //      to dominate AA jitter.
-//   2. Per-region diff (`regions` array) — pixelmatch each region in
+//   2. Per-region diff (`regions` array) - pixelmatch each region in
 //      isolation. Lets us set a much stricter per-region threshold, because
 //      a real icon-glyph swap saturates its small tile while AA jitter
 //      stays under a few percent per tile. Without this the icon grid

@@ -3,7 +3,7 @@
 //     exercised by app/Database/migrations/2026-05-08_TimeStampType.php and
 //     verified via an INFORMATION_SCHEMA probe.
 //   - `db:unlock-migration` command (src/Database/Migration/Commands/UnlockMigration.php).
-//   - `db:status` command — asserts the trailing lock status line.
+//   - `db:status` command - asserts the trailing lock status line.
 //
 // No dbSeed here: the migration schema is already in place from the test
 // runner's startup `db:seed`. The describes are ordered so the Unlock
@@ -14,7 +14,7 @@ describe('Migration System', () => {
 
     describe('Custom TimeStamp type', () => {
         // import/sync specs reset the migration set, which drops the
-        // z_test_timestamp_type table — reseed so this section runs
+        // z_test_timestamp_type table - reseed so this section runs
         // against a fresh schema regardless of spec order.
         before(() => cy.dbSeed());
 

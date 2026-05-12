@@ -6,7 +6,7 @@
 
     // Probes for defensive branches in src/Support/* that aren't reachable
     // from any natural request flow. Covered by
-    // tests/cypress/e2e/support/internals.cy.js. No DB access — no seed.
+    // tests/cypress/e2e/support/internals.cy.js. No DB access - no seed.
     class SupportProbeController extends z_controller {
 
         // StaticCache::get throws when the *type* bucket has never been set.
@@ -86,7 +86,7 @@
                 ["initializedProp", "uninitializedProp"],
             );
 
-            // Mutate both — the restore must reverse this.
+            // Mutate both - the restore must reverse this.
             $target->initializedProp = "changed";
             $target->uninitializedProp = "newly-set";
 
@@ -94,7 +94,7 @@
 
             echo json_encode([
                 "initializedAfter"      => $target->initializedProp,
-                // isset is false for typed-unset properties — exactly what
+                // isset is false for typed-unset properties - exactly what
                 // we want to assert: the unset($this->target->$name) branch ran.
                 "uninitializedSetAfter" => isset($target->uninitializedProp),
             ]);

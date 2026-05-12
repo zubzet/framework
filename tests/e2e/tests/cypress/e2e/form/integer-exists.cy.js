@@ -1,7 +1,7 @@
-// Coverage for src/Form/Validation/Field.php — integer() and exists().
+// Coverage for src/Form/Validation/Field.php - integer() and exists().
 // Same JSON-probe pattern as the role/group/session specs.
 
-describe('Form Field — integer() and exists() rules', () => {
+describe('Form Field - integer() and exists() rules', () => {
     before(() => {
         cy.dbSeed();
     });

@@ -112,7 +112,7 @@ jobs:
       - name: Run E2E tests (Cypress)
         env:
           CI: true
-        # Test failures shouldn't abort the run — the coverage report is the
+        # Test failures shouldn't abort the run - the coverage report is the
         # primary output. The step's status still surfaces in the run UI.
         continue-on-error: true
         run: bun run tests

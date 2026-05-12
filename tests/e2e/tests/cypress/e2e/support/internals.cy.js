@@ -1,7 +1,7 @@
 // Defensive branches in src/Support/* that aren't reachable from any
-// natural request flow — StaticCache::get error paths, HasDynamicAttributes
+// natural request flow - StaticCache::get error paths, HasDynamicAttributes
 // guards, and Checkpoint::restore. Probes live in SupportProbeController.
-// No cy.dbSeed — none of these touch the database.
+// No cy.dbSeed - none of these touch the database.
 
 describe('Support internals', () => {
 
@@ -52,7 +52,7 @@ describe('Support internals', () => {
             requestJson('/SupportProbe/checkpointRestore').then((out) => {
                 expect(out.initializedAfter, 'initialized prop restored').to.eq('initial-value');
                 // After restore, the previously-unset typed property is unset
-                // again — proving the `unset($this->target->$name)` branch ran.
+                // again - proving the `unset($this->target->$name)` branch ran.
                 expect(out.uninitializedSetAfter, 'uninitialized prop unset again').to.be.false;
             });
         });

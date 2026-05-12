@@ -105,7 +105,7 @@ describe('DebugBar', () => {
     });
 
     describe('Gating', () => {
-        // The bar must NEVER render outside execution_type=test — leaking SQL, params,
+        // The bar must NEVER render outside execution_type=test - leaking SQL, params,
         // log context and traceIds into a prod page is a privacy/security regression.
         it('is suppressed when execution_type != test', () => {
             cy.setConfigSetting('execution_type', 'prod');
