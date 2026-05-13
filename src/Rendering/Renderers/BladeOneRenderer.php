@@ -1,0 +1,42 @@
+<?php
+
+    namespace ZubZet\Framework\Rendering\Renderers;
+
+    use eftec\bladeone\BladeOne;
+    use ZubZet\Framework\Rendering\Renderer;
+
+    /** Renders `*.blade.php` views via eftec/bladeone. */
+    class BladeOneRenderer implements Renderer {
+
+        private array $templatePaths;
+        private BladeOne $blade;
+
+        public function __construct(array $templatePaths, string $compileDir) {
+            $this->templatePaths = $templatePaths;
+            $this->blade = new BladeOne($this->templatePaths, $compileDir, BladeOne::MODE_AUTO);
+        }
+
+        public function supports(string $viewPath): bool {
+            return str_ends_with($viewPath, '.blade.php');
+        }
+
+        public function render(string $viewPath, array $opt): string {
+            return $this->blade->run($this->resolveViewName($viewPath), $opt);
+        }
+
+        public function blade(): BladeOne {
+            return $this->blade;
+        }
+
+        private function resolveViewName(string $viewPath): string {
+            foreach($this->templatePaths as $base) {
+                if(!str_starts_with($viewPath, $base)) continue;
+                $relative = substr($viewPath, strlen($base), -strlen('.blade.php'));
+                return str_replace([DIRECTORY_SEPARATOR, '/'], '.', $relative);
+            }
+            throw new \RuntimeException("BladeOne template '$viewPath' is not under any registered template path.");
+        }
+
+    }
+
+?>
