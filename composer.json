@@ -20,7 +20,9 @@
         "php-debugbar/php-debugbar": "^1.23.6",
         "components/jquery": "3.5.*",
         "components/bootstrap": "4.6.*",
-        "components/font-awesome": "6.5.*"
+        "components/font-awesome": "6.5.*",
+        "eftec/bladeone": "^4.19",
+        "psr/simple-cache": "^2.0 || ^3.0"
     },
     "autoload": {
         "files": [

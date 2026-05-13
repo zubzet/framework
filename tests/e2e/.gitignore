@@ -1,6 +1,7 @@
 composer.lock
 logging
 z_config/z_cache.ini
+z_config/.cache/
 
 # Bun lockfile - CI migrates from package-lock.json on every run, so committing
 # bun.lock would create a second lockfile to keep in sync with no real benefit.
