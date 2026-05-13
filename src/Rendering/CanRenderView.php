@@ -4,10 +4,21 @@
 
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Rendering\Renderer;
     use ZubZet\Framework\Rendering\ViewNotFoundException;
+    use ZubZet\Framework\Rendering\Renderers\BladeOneRenderer;
+    use ZubZet\Framework\Support\FileCache;
     use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     trait CanRenderView {
+
+        /** @var Renderer[] */
+        private array $renderers = [];
+        private bool $defaultRenderersRegistered = false;
+
+        public function registerRenderer(Renderer $r): void {
+            $this->renderers[] = $r;
+        }
 
         /**
          * @internal
@@ -61,6 +72,8 @@
          * @param string|array $options Rendering options, e.g., or a string for layout
          */
         public function render($document, $opt = [], $options = []) {
+            $this->bootstrapDefaultRenderers();
+
             // Legacy as $options used to be $layout
             if(!is_array($options)) {
                 $options = [
@@ -95,6 +108,32 @@
                 essentialsHead($opt, $customBootstrap);
             };
 
+            $opt["generateResourceLink"] = function($url, $root = true) {
+                $v = $this->getBooterSettings("assetVersion");
+                echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
+            };
+
+            $opt["echo"] = function($val) {
+                echo nl2br(htmlspecialchars($val));
+            };
+
+            // Issue #145: Blade-compatible escape (no strip_tags) + component invoker
+            // that lets any view render a Blade component.
+            $opt["e"] = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $opt["component"] = function(string $name, array $data = [], ?callable $slot = null) {
+                foreach($this->renderers as $r) {
+                    if($r instanceof BladeOneRenderer) {
+                        if($slot !== null) {
+                            ob_start();
+                            $slot();
+                            $data["slot"] = ob_get_clean();
+                        }
+                        return $r->blade()->run($name, $data);
+                    }
+                }
+                return "";
+            };
+
             // Optional log view
             try {
                 $location = implode("/", request()->getUrlParts());
@@ -111,21 +150,19 @@
 
             DebugBarBridge::collectTemplate($document, $data, "php", $layout);
 
+            // Renderer pipeline: first renderer that supports this view wins.
+            foreach($this->renderers as $renderer) {
+                if(!$renderer->supports($viewPath)) continue;
+                echo $this->wrapInLayout($renderer->render($viewPath, $opt), $opt, $layoutPath);
+                return;
+            }
+
             //Load the document
             $view = include($viewPath);
 
             //Load the layout
             $layout_url = $layout;
             $layout = include($layoutPath);
-
-            $opt["generateResourceLink"] = function($url, $root = true) {
-                $v = $this->getBooterSettings("assetVersion");
-                echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
-            };
-
-            $opt["echo"] = function($val) {
-                echo nl2br(htmlspecialchars($val));
-            };
 
             //Makes $body and $head optional
             if(!isset($view["body"])) $view["body"] = function(){};
@@ -137,6 +174,32 @@
             ob_end_clean();
 
             echo $rendered;
+        }
+
+        /** Wrap a renderer-produced body string in the configured layout. */
+        private function wrapInLayout(string $body, array $opt, string $layoutPath): string {
+            $layout = include($layoutPath);
+            $bodyFn = function() use ($body) { echo $body; };
+            $headFn = function() {};
+
+            ob_start();
+            $layout["layout"]($opt, $bodyFn, $headFn);
+            return ob_get_clean();
+        }
+
+        /** Register the renderers the framework ships with on first use. */
+        private function bootstrapDefaultRenderers(): void {
+            if($this->defaultRenderersRegistered) return;
+            $this->defaultRenderersRegistered = true;
+
+            $templatePaths = [
+                zubzet()->z_views,
+                zubzet()->z_framework_root."IncludedComponents/views/",
+            ];
+            $cacheDir = config("cache_dir", default: "z_config/.cache/");
+            $compileDir = (new FileCache($cacheDir))->directoryFor("blade");
+
+            $this->registerRenderer(new BladeOneRenderer($templatePaths, $compileDir));
         }
 
     }
