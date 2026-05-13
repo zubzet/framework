@@ -98,6 +98,12 @@ describe('Response', () => {
         // configured *legacy* domain so the unified-login transition
         // doesn't leave orphaned cookies on the old scope. PHP emits
         // lowercase `domain=` and the cleared value is `deleted` (or "").
+        //
+        // PHP <= 8.1 emits the Netscape "01-Jan-1970" date form; PHP 8.2+
+        // switched to the RFC 7231 "01 Jan 1970" form. The regex below
+        // accepts either separator so this test passes on every supported
+        // PHP version. `Max-Age=0` is the version-independent "expire now"
+        // signal we additionally pin.
         it('deleteOldLoginCookieDomainScope clears the legacy-domain login cookie', () => {
             cy.request('/Response/loginAsWithLegacyScope').then((res) => {
                 const headers = [].concat(res.headers['set-cookie'] || []);
@@ -105,7 +111,8 @@ describe('Response', () => {
                     h.toLowerCase().includes('domain=.legacy.example'));
                 expect(legacy, 'Set-Cookie targeting .legacy.example').to.exist;
                 expect(legacy).to.match(/z_login_token=(deleted|);/);
-                expect(legacy).to.match(/expires=Thu, 01-Jan-1970/);
+                expect(legacy).to.match(/expires=Thu,\s+01[ -]Jan[ -]1970/);
+                expect(legacy).to.match(/Max-Age=0/);
             });
             cy.clearCookie('z_login_token');
         });
