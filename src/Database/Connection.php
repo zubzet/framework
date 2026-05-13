@@ -318,7 +318,16 @@
                 }
             }
             $this->lastHeartbeat = time();
-            return $this->conn->ping();
+            // mysqli::ping() is deprecated since PHP 8.4 (the reconnect
+            // feature was removed in 8.2, leaving ping redundant). A
+            // lightweight SELECT 1 round-trips the server identically and
+            // surfaces a dead connection as a mysqli_sql_exception under
+            // PHP 8.1+'s default MYSQLI_REPORT_STRICT.
+            try {
+                return $this->conn->query("SELECT 1") !== false;
+            } catch(\mysqli_sql_exception) {
+                return false;
+            }
         }
 
         /**
