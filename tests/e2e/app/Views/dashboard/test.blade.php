@@ -77,6 +77,13 @@
             @endslot
             <strong>Slots</strong> carry markup, the default slot is <code>$slot</code>.
         @endcomponent
+
+        {{-- $opt['component'] - invoker callable from any view (legacy .php too). --}}
+        <div data-test="blade-component-invoker">
+            {!! $component('components.card', ['variant' => 'warning', 'title' => 'Via $component'], function() {
+                echo 'Rendered from outside <code>@component</code> via the <code>$component</code> closure.';
+            }) !!}
+        </div>
     </section>
 
     <section class="mb-4">
