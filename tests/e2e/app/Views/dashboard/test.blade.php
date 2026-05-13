@@ -83,7 +83,7 @@
         <h2>Framework helpers</h2>
         <p data-test="blade-root">root: {{ $root }}</p>
         <p data-test="blade-title">title: {{ $title }}</p>
-        <p data-test="blade-escape-closure">e('A &amp; B') &rarr; {!! $e('A & B') !!}</p>
+        <p data-test="blade-escape-helper">e('A &amp; B') &rarr; {{ e('A & B') }}</p>
     </section>
 
 </div>
