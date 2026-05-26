@@ -24,10 +24,10 @@
             $this->setField("group", null);
         }
 
-        public static function add(?string $name, bool $createGroup = false): Organization {
+        public static function add(?string $name, bool $createGroup = false, ?string $groupName = null): Organization {
             $group = null;
             if($createGroup) {
-                $group = Group::add($name . "_Group");
+                $group = Group::add($groupName ?? $name . "_Group");
             }
 
             $organizationData = model("z_organization")->create($name, $group);
