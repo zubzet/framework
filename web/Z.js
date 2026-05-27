@@ -1469,10 +1469,8 @@ class ZFormField {
     badge.setAttribute("data-value", value);
     badge.innerHTML = "&times; " + text;
     badge.addEventListener("click", () => {
-      // Honor PR 143's field.disable() — a disabled multi-select must not
-      // let badges be removed either. typeof-guarded so this still works
-      // pre-PR-143.
-      if (typeof this.isDisabled === "function" && this.isDisabled()) return;
+      // A disabled multi-select must not let badges be removed either.
+      if (this.isDisabled()) return;
 
       var idx = this.selectedValues.indexOf(value);
       if (idx >= 0) this.selectedValues.splice(idx, 1);
