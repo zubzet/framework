@@ -28,10 +28,10 @@ The form is created with `Z.Forms.create`. The `dom` attribute takes the id of a
 | Attribute   | Description                                                                                                                                                                                                                                                                                                    |
 |-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`      | Corresponds to the name in the post request.                                                                                                                                                                                                                                                                   |
-| `type`      | The input type. Any valid HTML standard type is accepted, as well as `textarea` and `select`. This attribute does not affect server-side value parsing.                                                                                                                                                         |
+| `type`      | The input type. Any valid HTML standard type is accepted, as well as `textarea`, `select`, `multi-select`, and `autocomplete`. This attribute does not affect server-side value parsing.                                                                                                                       |
 | `text`      | Label text for the input field.                                                                                                                                                                                                                                                                               |
-| `value`     | Default value for the input field.                                                                                                                                                                                                                                                                            |
-| `food`      | Required for `select` types. It defines the options available and is formatted as an array: `[{value: 1, text: "one"}, {value: 2, text: "two"}, ...]`. This array can be generated via `$controller->makeFood`.                                                                                                  |
+| `value`     | Default value for the input field. For `multi-select`, pass an array (e.g. `["1","4"]`) or `<?= json_encode([...]) ?>`.                                                                                                                                                                                       |
+| `food`      | Required for `select` and `multi-select` types. It defines the options available and is formatted as an array: `[{value: 1, text: "one"}, {value: 2, text: "two"}, ...]`. This array can be generated via `$controller->makeFood`.                                                                              |
 | `required`  | Specifies whether the field is required. When set to `true`, the input must be filled before form submission.                                                                                                                                                                                                  |
 | `width`     | Defines the width of the form element in 1/12 units of the total width. Effective on medium or larger devices. On small devices, the width is always 100%.                                                                                                                                                      |
 | `attributes`| Allows adding additional attributes for the generated input element (e.g., `min`, `max` for number inputs). Example usage: `attributes: {'min': 1, 'max': 10}`.                                                                                                                                                  |
@@ -89,6 +89,23 @@ As the first parameter it takes an array of fields to validate. To these field, 
 `$formResult->hasErrors` returns true or false depended on the validation result of `$req->validateForm()`.
 If the validation fails, `$res->formErrors($formResult->errors)` will return the errors to the frontend, where they will be displayed.
 
+### **Rules on array values (multi-select)**
+
+A `multi-select` field's value arrives at the server as a real PHP array. Three existing rules are *list-aware* — they adapt automatically when the field value is an array — and one new rule (`->in()`) covers the in-memory allow-list case:
+
+- `->length($min, $max)` — `strlen()` for scalars; **`count()`** for arrays. So `->length(1, 3)` on a multi-select means "between 1 and 3 selections."
+- `->regex($pattern, $exceptions)` — runs the regex against each item; the field fails as soon as any item fails.
+- `->exists("table", "field")` — applied per item: every picked entry must exist as a row's `field` in `table`.
+- `->in($allowedValues)` — the value (or each item, for arrays) must appear in the given in-memory allow-list. No DB query. Use this to guard `select` / `multi-select` fields against tampered POST payloads where the client sent an option that wasn't in the rendered dropdown. Works on plain `select` (single-value) and `multi-select` (per-item).
+
+```php
+$formResult = $req->validateForm([
+    (new FormField("skills"))
+        ->required()
+        ->length(1, 5)
+        ->in($availableSkillIds),   // every picked id must be in the rendered list
+]);
+```
 
 ### **Saving functions**
 
@@ -232,6 +249,7 @@ public function action_manage(Request $req, Response $res) {
 - Additionally supported::
     - textarea
     - select
+    - multi-select
     - autocomplete
 
 ### Autocomplete
@@ -350,3 +368,74 @@ return $res->render("employee/employee_edit.php", [
     });
 </script>
 ```
+
+### Multi Select
+The `multi-select` type behaves like `select` but lets the user pick more than one value. Picked entries appear as removable badges under the dropdown and the picked option is hidden from the dropdown until the badge is removed. Uses the same `food` shape (and same `makeFood` helper) as `select`.
+
+#### Value semantics
+- `field.value` returns the picked entries as a **JavaScript array** of values.
+- Assigning `field.value = ["a", "b"]` replaces the selection. Non-array input is treated as an empty selection.
+- On submit, each pick is sent as a native PHP array entry (`name[]=a&name[]=b`), so `$_POST[name]` arrives as a real **PHP array** — no `json_decode` needed in user code. An **empty** multi-select is omitted from the POST entirely — just like an unchecked checkbox — so the existing `->required()` rule (`isset($_POST[$name])`) catches it without any special-casing.
+- `insertDatabase` / `updateDatabase` automatically `json_encode` array field values before binding, so a `JSON` (or `TEXT`/`VARCHAR`) column receives a real JSON string. User code never has to encode manually.
+- Pre-fill from PHP with either an inline JS literal or `json_encode` dumped directly (no surrounding quotes):
+
+```php
+form.createField({
+    name: "skills",
+    type: "multi-select",
+    food: <?= $opt["skillsFood"] ?>,
+    value: <?= json_encode($opt["employee"]["skills"] ?? []) ?>,
+});
+```
+
+#### Food shapes
+- `{value, text}` — value is what gets posted, text is what's shown in the dropdown and the badge.
+- `{value}` alone — value is also used as the label.
+- `{text}` alone — text doubles as the value.
+- `{type: "optgroup", text}` — groups the options that follow (until the next optgroup) under an `<optgroup>` label. Optgroups are collapsed automatically when every option below them has been picked, and come back when one is removed.
+
+#### Example
+
+```php
+// Controller
+return $res->render("project/manage.php", [
+    "skills" => $this->makeFood(
+        $req->getModel("Skill")->getAll(),
+        "id", "name",
+    ),
+]);
+```
+
+```js
+// View
+<div id="form"></div>
+<script>
+    var form = Z.Forms.create({ dom: "form" });
+
+    form.createField({
+        name: "skills",
+        type: "multi-select",
+        text: "Skills",
+        placeholder: "Add a skill...",   // replaces the default "---"
+        food: <?= $opt["skills"] ?>,
+        required: true,                  // empty selection fails ->required()
+        default: ["1"],                  // pre-fill; reset() returns to this
+    });
+</script>
+```
+
+#### Backend
+```php
+$formResult = $req->validateForm([
+    (new FormField("skills", "skills_json"))
+        ->required(),
+]);
+
+if ($formResult->hasErrors) {
+    return $res->formErrors($formResult->errors);
+}
+
+$res->insertDatabase("project", $formResult);
+```
+
+`$req->getPost("skills")` and `$formResult->fields[0]->value` both come back as real PHP arrays (e.g. `["1", "4"]`). `insertDatabase` then auto-`json_encode`s the array before binding, so the column stores a JSON string (`["1","4"]`) — a `JSON`, `TEXT`, or `VARCHAR` column all work. Nothing in user code needs to special-case the multi-select.
