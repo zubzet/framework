@@ -468,10 +468,10 @@ class ZCED { //Create, edit, delete
 
   /**
    * Compatibility stubs so a CED participates in ZForm's per-field
-   * iterations (addField visibility skip, _updateDisabled, reset).
-   * CEDs don't currently support being hidden or disabled as a unit —
-   * these no-ops keep the form-level machinery from throwing when
-   * iterating mixed fields.
+   * iterations (addField visibility skip, _updateDisabled, getValues,
+   * setValues, reset). CEDs don't currently support being hidden or
+   * disabled as a unit — these are no-ops that keep the form-level
+   * machinery from throwing when iterating mixed fields.
    */
   isHidden() { return false; }
   isDisabled() { return false; }
@@ -749,6 +749,15 @@ class ZForm {
 
     /**
      * @private
+     * Ordered record of every top-level item added to the form (fields,
+     * custom HTML, separators, empty spacers). _updateLayout() iterates
+     * this list to rebuild the layout from scratch without dropping any
+     * non-field content.
+     */
+    this.items = [];
+
+    /**
+     * @private
      */
     this._isDisabled = false;
 
@@ -813,13 +822,17 @@ class ZForm {
   }
 
   /**
-   * Adds custom html to the current part of the Form
+   * Adds custom html to the current part of the Form. Breaks the current
+   * row so any field added afterwards starts on a fresh row below.
    * @returns {void}
    */
   addCustomHTML(html) {
     var node = document.createElement("div");
     node.innerHTML = html;
+    this.items.push({type: "html", node: node});
     this.inputSpace.appendChild(node);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
@@ -905,8 +918,20 @@ class ZForm {
     field.on('change', showUnsavedHint);
     bsCustomFileInput.init();
 
+    this.items.push({type: "field", field: field});
+
     if (field.isHidden()) return;
 
+    this._appendFieldToLayout(field);
+  }
+
+  /**
+   * Appends a single visible field to the live layout, creating a new
+   * row/group when the current row would overflow. Shared by addField()
+   * (initial build) and _updateLayout() (rebuild on visibility change).
+   * @private
+   */
+  _appendFieldToLayout(field) {
     if (field.width + this.currentRowLength > 12) {
       var group = document.createElement("div");
       group.classList.add("form-group");
@@ -926,33 +951,29 @@ class ZForm {
   /**
    * Rebuilds the whole form layout. Should be executed when visibility of fields changes.
    * It is not used when fields are added because it could potentially break existing userspace code, that handles field visibility.
+   *
+   * Replays this.items in insertion order so addCustomHTML / addSeperator /
+   * createEmpty nodes survive the rebuild — wiping inputSpace would drop
+   * them otherwise. Also resets the instance row state so a subsequent
+   * createField() lands in the right place.
    * @private
    */
   _updateLayout() {
-    for (const field of Object.values(this.fields)) {
-      field.dom.remove()
-    }
+    this.inputSpace.innerHTML = "";
+    this.currentRow = null;
+    this.currentRowLength = 12;
 
-    this.inputSpace.innerHTML = ""
-
-    let currentLength = Infinity
-    let currentRow = null
-
-    for (const field of Object.values(this.fields)) {
-      if (field.isHidden()) continue;
-
-      if (field.width + currentLength > 12) {
-        const group = document.createElement("div");
-        group.classList.add("form-group");
-        currentRow = document.createElement("div");
-        currentRow.classList.add("form-row");
-        group.appendChild(currentRow);
-        this.inputSpace.appendChild(group);
-        currentLength = 0;
+    for (const item of this.items) {
+      if (item.type === "field") {
+        if (item.field.isHidden()) continue;
+        this._appendFieldToLayout(item.field);
+      } else {
+        // Custom HTML, separators, and empty spacers are re-attached as-is
+        // and break the current row so following fields start fresh.
+        this.inputSpace.appendChild(item.node);
+        this.currentRow = null;
+        this.currentRowLength = 12;
       }
-
-      currentRow.appendChild(field.dom);
-      currentLength += field.width;
     }
   }
 
@@ -1006,15 +1027,23 @@ class ZForm {
   createEmpty(size = 12) {
     var div = document.createElement("div");
     div.classList.add("col-0", "col-md-" + size);
+    this.items.push({type: "empty", node: div});
     this.inputSpace.appendChild(div);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
-   * Adds an <hr> tag at the end of the generated form
+   * Adds an <hr> tag at the end of the generated form. Breaks the current
+   * row so any field added afterwards starts on a fresh row below.
    * @returns {void}
    */
   addSeperator() {
-    this.inputSpace.appendChild(document.createElement("hr"));
+    var node = document.createElement("hr");
+    this.items.push({type: "separator", node: node});
+    this.inputSpace.appendChild(node);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
