@@ -310,5 +310,80 @@
             return $res->json($result === false);
         }
 
+        public function action_validationMultiSelect(Request $req, Response $res) {
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("field_multi_select", "value_json")),
+                    (new FormField("field_multi_select_required", "value"))
+                        ->required()
+                ]);
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                $insertId = $res->insertDatabase("model_test_insert", $formResult);
+
+                return $res->success([
+                    "id" => $insertId,
+                    "values_only" => $req->getPost("field_multi_select_values_only"),
+                    "text_only" => $req->getPost("field_multi_select_text_only"),
+                    "both" => $req->getPost("field_multi_select"),
+                    "required" => $req->getPost("field_multi_select_required"),
+                ]);
+            }
+
+            return $res->render("form/validationMultiSelect", [
+                "exampleData" => $this->makeFood([
+                    ["id" => "one",   "label" => "One"],
+                    ["id" => "two",   "label" => "Two"],
+                    ["id" => "three", "label" => "Three"],
+                ], "id", "label"),
+            ]);
+        }
+
+        // Probe for the list-aware variants of length/regex and the new
+        // ->in() allow-list rule. length and regex now accept array field
+        // values (multi-select); ->in() applies an in-memory allow-list
+        // and works for both scalar select and array multi-select.
+        // No DB persistence here, just validation echoed back as JSON.
+        public function action_validationListRules(Request $req, Response $res) {
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("field_list_length"))
+                        ->length(1, 2),
+                    (new FormField("field_list_regex"))
+                        ->regex("/^[a-z]+$/"),
+                    (new FormField("field_list_in_array"))
+                        ->in(["one", "two"]),
+                    (new FormField("field_list_in_select"))
+                        ->in(["one", "two"]),
+                    // Per-item DB check on a multi-select: every picked
+                    // role name must exist in z_role.
+                    (new FormField("field_list_exists_multi"))
+                        ->exists("z_role", "name"),
+                ]);
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                return $res->success();
+            }
+
+            return $res->render("form/validationListRules", [
+                "options" => $this->makeFood([
+                    ["id" => "one",   "label" => "One"],
+                    ["id" => "two",   "label" => "Two"],
+                    ["id" => "three", "label" => "Three"],
+                ], "id", "label"),
+                "mixedCase" => $this->makeFood([
+                    ["id" => "abc", "label" => "abc"],
+                    ["id" => "def", "label" => "def"],
+                    ["id" => "XYZ", "label" => "XYZ"],
+                ], "id", "label"),
+            ]);
+        }
+
     }
 ?>
