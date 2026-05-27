@@ -131,6 +131,28 @@
         }
 
         /**
+         * Adds an `in` rule
+         *
+         * The submitted value must appear in the given in-memory allow-list.
+         * Unlike `exists()` this does not hit the database. Useful to guard
+         * `select` / `multi-select` fields against tampered POST payloads
+         * where the client sent an option that wasn't in the rendered
+         * dropdown. For array-valued fields the rule is applied per item:
+         * every picked entry must be in the allow-list.
+         *
+         * @param array $allowedValues The list of allowed values
+         * @return Field Returns itself to allow chaining
+         */
+        function in(array $allowedValues) {
+            $this->rules[] = [
+                "name" => $this->name,
+                "type" => "in",
+                "allowedValues" => $allowedValues,
+            ];
+            return $this;
+        }
+
+        /**
          * Adds a required rule
          * 
          * With this rule an error is created when no input for this field is given.

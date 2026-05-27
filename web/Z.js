@@ -111,6 +111,7 @@ Z = {
     error_range: "The number is too large to too small. It must be between [0] and [1].",
     error_unique: "This already exists!",
     error_exist: "This does not exist!",
+    error_in: "This value is not in the allowed list!",
     error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
     error_regex: "The input does not meet the required pattern!",

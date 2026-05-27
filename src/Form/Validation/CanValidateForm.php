@@ -76,6 +76,16 @@
                                     break;
                                 }
                             }
+                        } else if ($type == "in") {
+                            // Array values: every item must be in the
+                            // configured in-memory allow-list.
+                            $items = is_array($value) ? $value : [$value];
+                            foreach ($items as $item) {
+                                if (!in_array($item, $rule["allowedValues"])) {
+                                    $errors[] = ["name" => $name, "type" => "in"];
+                                    break;
+                                }
+                            }
                         } else if ($type == "regex") {
                             // For array values the regex is applied per item;
                             // the field fails as soon as any item fails.
