@@ -465,6 +465,18 @@ class ZCED { //Create, edit, delete
       this.items[this.items.length - 1].dom.classList.remove("mb-1");
     }
   }
+
+  /**
+   * Compatibility stubs so a CED participates in ZForm's per-field
+   * iterations (addField visibility skip, _updateDisabled, reset).
+   * CEDs don't currently support being hidden or disabled as a unit —
+   * these no-ops keep the form-level machinery from throwing when
+   * iterating mixed fields.
+   */
+  isHidden() { return false; }
+  isDisabled() { return false; }
+  _updateDisabled() { /* no-op */ }
+  reset() { /* no-op */ }
 }
 
 /**
