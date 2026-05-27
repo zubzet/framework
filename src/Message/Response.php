@@ -415,7 +415,9 @@
                 if($field->dbField == $pkField && $field->value == $pkValue) continue;
 
                 $fields[] = $field->dbField;
-                $values[] = $field->value;
+                // Array values (e.g. from multi-select) are stored as JSON;
+                // mysqli bind_param can't bind a PHP array directly.
+                $values[] = is_array($field->value) ? json_encode($field->value) : $field->value;
                 $types .= $field->dataType;
             }
 
@@ -470,7 +472,9 @@
                 $sqlParams[] = ("`" . $field->dbField . "`");
                 $sqlValues[] = "?";
                 $types .= $field->dataType;
-                $vals[] = $field->value;
+                // Array values (e.g. from multi-select) are stored as JSON;
+                // mysqli bind_param can't bind a PHP array directly.
+                $vals[] = is_array($field->value) ? json_encode($field->value) : $field->value;
             }
 
             $sqlCmdParams = implode(",", $sqlParams);

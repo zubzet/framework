@@ -111,6 +111,7 @@ Z = {
     error_range: "The number is too large to too small. It must be between [0] and [1].",
     error_unique: "This already exists!",
     error_exist: "This does not exist!",
+    error_in: "This value is not in the allowed list!",
     error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
     error_regex: "The input does not meet the required pattern!",
@@ -999,7 +1000,7 @@ class ZForm {
 
 /**
  * Types to use in an input field. All html default ones, textarea, select and autocomplete are supported.
- * @typedef {"button"|"checkbox"|"color"|"date"|"datetime-local"|"email"|"file"|"hidden"|"image"|"month"|"number"|"password"|"radio"|"range"|"reset"|"search"|"submit"|"tel"|"text"|"time"|"url"|"week"|"select"|"textarea"|"autocomplete"} InputType
+ * @typedef {"button"|"checkbox"|"color"|"date"|"datetime-local"|"email"|"file"|"hidden"|"image"|"month"|"number"|"password"|"radio"|"range"|"reset"|"search"|"submit"|"tel"|"text"|"time"|"url"|"week"|"select"|"multi-select"|"textarea"|"autocomplete"} InputType
  */
 
 /**
@@ -1095,6 +1096,33 @@ class ZFormField {
       }
       this.input.classList.add("form-control");
       this.input.appendChild(option);
+    } else if (this.type == "multi-select") {     // --- Multi Select ---
+      // Visible <select> the user picks from; badges below show the
+      // chosen entries and the submitted value is a JSON array.
+      customDiv = document.createElement("div");
+
+      this.input = document.createElement("select");
+      this.input.classList.add("form-control");
+      this.placeholderOption = document.createElement("option");
+      this.placeholderOption.setAttribute("value", "");
+      this.placeholderOption.innerHTML = this.placeholder || "---";
+      this.input.appendChild(this.placeholderOption);
+      customDiv.appendChild(this.input);
+
+      this.badgeContainer = document.createElement("div");
+      this.badgeContainer.classList.add("mt-2");
+      customDiv.appendChild(this.badgeContainer);
+
+      this.foodMap = {};
+      this.optionMap = {};
+      this.selectedValues = [];
+
+      this.input.addEventListener("change", () => {
+        var pick = this.input.value;
+        if (pick === "") return;
+        this.addSelectedValue(pick);
+        this.input.value = "";
+      });
     } else if (this.type == "textarea") {         // --- Textarea ---
       this.input = document.createElement("textarea");
       this.input.classList.add("form-control");
@@ -1262,10 +1290,19 @@ class ZFormField {
    * @type {any}
    */
   get value() {
+    if (this.type == "multi-select") {
+      return this.selectedValues.slice();
+    }
     return this.input.value;
   }
 
   set value(value) {
+    if (this.type == "multi-select") {
+      var arr = Array.isArray(value) ? value : [];
+      this.clearSelectedValues();
+      for (var v of arr) this.addSelectedValue(String(v));
+      return;
+    }
     if (this.input.type != "file") {
       this.input.value = value;
     } else {
@@ -1275,6 +1312,76 @@ class ZFormField {
         this.fileValue.innerText = value;
       }
     }
+  }
+
+  /**
+   * Adds a value to a multi-select. Creates the removable badge and keeps
+   * the internal selected-list in sync. Duplicates are ignored.
+   * @param {string} value Value to add
+   * @returns {void}
+   */
+  addSelectedValue(value) {
+    if (this.selectedValues.includes(value)) return;
+    this.selectedValues.push(value);
+
+    var option = this.optionMap[value];
+    if (option) {
+      option.hidden = true;
+      this._updateOptgroupVisibility(option.parentElement);
+    }
+
+    var text = this.foodMap[value] !== undefined ? this.foodMap[value] : value;
+    var badge = document.createElement("span");
+    badge.classList.add("badge", "badge-primary", "mr-1", "mb-1", "p-2");
+    badge.style.cursor = "pointer";
+    badge.setAttribute("data-value", value);
+    badge.innerHTML = "&times; " + text;
+    badge.addEventListener("click", () => {
+      // Honor PR 143's field.disable() — a disabled multi-select must not
+      // let badges be removed either. typeof-guarded so this still works
+      // pre-PR-143.
+      if (typeof this.isDisabled === "function" && this.isDisabled()) return;
+
+      var idx = this.selectedValues.indexOf(value);
+      if (idx >= 0) this.selectedValues.splice(idx, 1);
+      if (option) {
+        option.hidden = false;
+        this._updateOptgroupVisibility(option.parentElement);
+      }
+      badge.remove();
+      this.input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    this.badgeContainer.appendChild(badge);
+  }
+
+  /**
+   * Clears all selected values from a multi-select. Restores every option
+   * (and any collapsed optgroups) back into the dropdown.
+   * @returns {void}
+   */
+  clearSelectedValues() {
+    this.selectedValues = [];
+    this.badgeContainer.innerHTML = "";
+    for (var k in this.optionMap) {
+      this.optionMap[k].hidden = false;
+    }
+    // Optgroups follow their children's visibility — restore any that
+    // were collapsed when all their options were hidden.
+    if (this.input) {
+      var groups = this.input.querySelectorAll("optgroup");
+      for (var i = 0; i < groups.length; i++) groups[i].hidden = false;
+    }
+  }
+
+  /**
+   * Hide an optgroup when every option under it is hidden, show it
+   * otherwise. No-op if `parent` isn't an <optgroup>.
+   * @private
+   */
+  _updateOptgroupVisibility(parent) {
+    if (!parent || parent.tagName !== "OPTGROUP") return;
+    var hasVisible = parent.querySelector("option:not([hidden])") !== null;
+    parent.hidden = !hasVisible;
   }
 
   /**
@@ -1333,8 +1440,43 @@ class ZFormField {
    * @returns {void}
    */
   feedData(food, clear = true) {
-    if (this.type != "select") {
+    if (this.type != "select" && this.type != "multi-select") {
       console.warn("Do not feed select data to non select input!");
+    }
+
+    if (this.type == "multi-select") {
+      if (clear) {
+        this.input.innerHTML = "";
+        this.input.appendChild(this.placeholderOption);
+        this.foodMap = {};
+        this.optionMap = {};
+        this.clearSelectedValues();
+      }
+
+      var currentOptgroup = null;
+      for (var data of food) {
+        if (data.type == "optgroup") {
+          currentOptgroup = document.createElement("optgroup");
+          currentOptgroup.setAttribute("label", data.text);
+          this.input.appendChild(currentOptgroup);
+          continue;
+        }
+
+        var value = data.value ?? data.text;
+        var text = data.text ?? data.value;
+        this.foodMap[value] = text;
+
+        var option = document.createElement("option");
+        option.innerHTML = text;
+        option.setAttribute("value", value);
+        (currentOptgroup || this.input).appendChild(option);
+        this.optionMap[value] = option;
+      }
+
+      if (this.options.value !== undefined) {
+        this.value = this.options.value;
+      }
+      return;
     }
 
     if (clear) {
@@ -1364,7 +1506,7 @@ class ZFormField {
     }
 
     if(this.optgroup != null) this.input.appendChild(this.optgroup);
-    
+
     if (this.options.value !== undefined) {
       this.value = this.options.value;
     }
@@ -1375,11 +1517,28 @@ class ZFormField {
    * @returns {string} The data containing string
    */
   getPostString() {
+    if (this.type == "multi-select") {
+      if (this.value.length === 0) return "";
+      // PHP-native array form: name[]=v1&name[]=v2 -> $_POST[name] is an
+      // actual array. Empty selection is omitted entirely so isset() in
+      // the server-side required rule catches it.
+      var parts = [];
+      for (var v of this.value) {
+        parts.push(this.name + "[]=<#decURI#>" + encodeURIComponent(v));
+      }
+      return parts.join("&");
+    }
     return this.name + "=<#decURI#>" + encodeURIComponent(this.value);
   }
 
   /**
    * Appends data to a form data object. This form data object can then be used to send the form with multipart/form-data
+   *
+   * Multi-selects emit one `name[]=value` entry per selected item so PHP
+   * parses `$_POST[name]` as a real array. An empty multi-select is
+   * *omitted* from the FormData entirely — `isset($_POST[$name])` is
+   * false, so the existing server-side `->required()` rule catches it.
+   *
    * @param {FormData} data An existing FormData object to append to
    * @returns {void}
    */
@@ -1387,6 +1546,11 @@ class ZFormField {
     if (this.type == "file") {
       if (this.input.files[0]) {
         data.append(this.name, this.input.files[0], this.value);
+      }
+    } else if (this.type == "multi-select") {
+      if (this.value.length === 0) return;
+      for (var v of this.value) {
+        data.append(this.name + "[]", "<#decURI#>" + encodeURIComponent(v));
       }
     } else {
       data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
@@ -1399,6 +1563,10 @@ class ZFormField {
    * Options for selects and auto completes will persist.
    */
   reset() {
+    if (this.type == "multi-select") {
+      this.value = this.default ?? [];
+      return;
+    }
     this.input.value = this.default ?? "";
   }
 }
