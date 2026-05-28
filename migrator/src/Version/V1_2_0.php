@@ -87,15 +87,15 @@
 
 
             // PHP Superglobals → request()->input replacement
-            $superglobals = ["COOKIE", "POST", "GET", "REQUEST", "FILES", "SERVER"];
+            $superGlobals = ["COOKIE", "POST", "GET", "REQUEST", "FILES", "SERVER"];
 
-            $superglobalMatcher = new MatchingModifier($this, "superglobals-detection");
+            $superglobalMatcher = new MatchingModifier($this, "super-globals-detection");
             $superglobalMatcher->from(["./app"]);
 
-            foreach($superglobals as $global) {
+            foreach($superGlobals as $global) {
                 $superglobalMatcher->matchLineByLine(
                     '/\$_' . $global . '\[/',
-                    "ZubZet 1.2.0 deprecates direct PHP superglobal access.",
+                    "ZubZet 1.2.0 deprecates direct PHP superglobal access. Use request()->input->$global instead.",
                 );
             }
 
@@ -105,7 +105,7 @@
             )));
 
             foreach($affectedFiles as $file) {
-                $fileContent = new FileContent($this, "superglobals-" . basename($file));
+                $fileContent = new FileContent($this, "super-globals-" . basename($file));
                 $fileContent->find(basename($file), dirname($file));
                 $fileContent->shouldChangeIfPattern('/\$_(COOKIE|POST|GET|REQUEST|FILES|SERVER)\[/');
                 $fileContent->automateChange(function(string $content): string {
