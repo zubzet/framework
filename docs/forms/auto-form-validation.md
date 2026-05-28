@@ -318,6 +318,36 @@ public function action_manage(Request $req, Response $res) {
     - select
     - multi-select
     - autocomplete
+- Specially rendered:
+    - checkbox
+
+### Checkbox
+The `checkbox` type renders with a Bootstrap `form-check` layout: the box sits to the left of its label, and clicking the label toggles the box. `text` becomes the label.
+
+```js
+form.createField({
+    name: "send_notifications",
+    type: "checkbox",
+    text: "Send me notifications",
+    default: true,         // optional; start checked
+});
+```
+
+Value semantics differ from text inputs:
+
+- `field.value` is a **boolean** (the checked state). Assigning accepts `true`/`false`, `1`/`0`, `"1"`/`"0"`, `"true"`/`"false"`, or `"on"`.
+- On submit the box **always** sends its state — `1` when ticked, `0` when not. (Unlike a native HTML checkbox it is never omitted.) This means `updateDatabase` / `insertDatabase` write a clean `0`/`1` to a binary column, so toggling a setting **off** persists just like toggling it on.
+
+Because a checkbox always submits a value, `->required()` is effectively a no-op on it. To enforce that a box must be ticked (e.g. accept-terms), use **`->checked()`**:
+
+```php
+$formResult = $req->validateForm([
+    (new FormField("accept_terms"))
+        ->checked(),   // errors unless the box is ticked
+]);
+```
+
+`->checked()` is sugar over `->in(["1", "true", "on"])` — the box's value must be a ticked representation.
 
 ### Autocomplete
 The `autocomplete` type creates a text input with an additional feature: it displays suggestions based on predefined data as the user types.

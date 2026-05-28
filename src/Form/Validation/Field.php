@@ -153,6 +153,20 @@
         }
 
         /**
+         * Adds a "must be ticked" rule for checkboxes.
+         *
+         * A `checkbox` field always submits "1" (ticked) or "0" (unticked),
+         * so `required()` is a no-op for it. Use this to enforce that the box
+         * is actually ticked (e.g. accept-terms). Sugar over `in()` with the
+         * common truthy representations.
+         *
+         * @return Field Returns itself to allow chaining
+         */
+        function checked() {
+            return $this->in(["1", "true", "on"]);
+        }
+
+        /**
          * Adds a required rule
          * 
          * With this rule an error is created when no input for this field is given.

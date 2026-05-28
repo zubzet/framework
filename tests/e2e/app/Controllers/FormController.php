@@ -41,6 +41,46 @@
             return $res->render("form/ergonomics");
         }
 
+        // Fixture reproducing "real world" ways views bend the form API:
+        // conditional wrapper visibility via closest('.form-group'),
+        // cascading computed values, appending custom DOM into a field's
+        // group, a hand-rolled hidden-JSON + cards multi-select, and jQuery
+        // submit-button manipulation. Guards that Z.js stays compatible with
+        // these patterns.
+        public function action_weirdPatterns(Request $req, Response $res) {
+            return $res->render("form/weirdPatterns");
+        }
+
+        // Fixture for the DOM-structure contract spec: one field per
+        // structurally-distinct type so the spec can lock the rendered
+        // markup the hacky patterns above depend on.
+        public function action_domContract(Request $req, Response $res) {
+            return $res->render("form/domContract");
+        }
+
+        // Checkbox fixture: value (checked) semantics and the ->checked()
+        // "must be ticked" rule.
+        public function action_validationCheckbox(Request $req, Response $res) {
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("terms"))
+                        ->checked(),
+                ]);
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                return $res->success([
+                    "agree"      => $req->getPost("agree"),
+                    "subscribed" => $req->getPost("subscribed"),
+                    "terms"      => $req->getPost("terms"),
+                ]);
+            }
+
+            return $res->render("form/validationCheckbox");
+        }
+
         // Probe for the integer() and exists() validation rules. The existing
         // form-fixture controllers don't exercise these. Validation runs on
         // every request (no GET-vs-POST split), and the result is emitted as
