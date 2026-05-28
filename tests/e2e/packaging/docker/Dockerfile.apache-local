@@ -1,87 +1,13 @@
-# Use the official PHP Apache image (matrix-friendly: set in CI as 8.0-apache .. 8.4-apache)
-ARG PHP_TAG=8.0-apache
-FROM php:${PHP_TAG}
+ARG PHP_TAG=8.0-xdebug
+FROM ghcr.io/zubzet/php:${PHP_TAG}
 
-ARG DISABLE_XDEBUG=0
 ARG USER_UID=1000
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Make bash the default shell for nicer heredocs
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 USER root
+RUN usermod -u "${USER_UID}" www-data \
+ && groupmod -g "${USER_UID}" www-data \
+ && chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
 
-# Buckets to keep things readable
-ARG APT_PACKAGES="git nano curl unzip \
-  libcurl4-openssl-dev libbz2-dev libonig-dev libicu-dev libxml2-dev \
-  libjpeg62-turbo-dev libpng-dev libwebp-dev libfreetype6-dev \
-  libzip-dev zlib1g-dev \
-  libmariadb-dev-compat libmariadb-dev \
-  ${PHPIZE_DEPS}"
-
-ARG PHP_EXT_CORE="bcmath bz2 calendar curl exif gd intl mbstring mysqli pdo_mysql sockets iconv session zip"
-ARG PHP_EXT_XML="xmlreader xmlwriter simplexml" # dom is built first, see below
-
-RUN <<BASH
-    set -euo pipefail
-
-    # OS packages
-    apt-get update
-    apt-get install -y --no-install-recommends ${APT_PACKAGES}
-
-    # Setup PHP extensions
-    docker-php-source extract
-
-    # Install GD
-    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
-
-    # Core extensions (no DOM dependency)
-    docker-php-ext-install -j"$(nproc)" ${PHP_EXT_CORE}
-
-    # DOM must be built before XML* that include its headers
-    docker-php-ext-install -j"$(nproc)" dom
-
-    # XML* that depend on DOM
-    CFLAGS="${CFLAGS-} -I/usr/src/php" \
-    CPPFLAGS="${CPPFLAGS-} -I/usr/src/php" \
-    docker-php-ext-install -j"$(nproc)" ${PHP_EXT_XML}
-
-    # XDEBUG (conditional)
-    if [[ "${DISABLE_XDEBUG}" == "1" ]]; then
-        echo "Skipping Xdebug install (DISABLE_XDEBUG=1)"
-    else
-        # Install Xdebug
-        pecl install xdebug
-        docker-php-ext-enable xdebug
-
-        # Configure debugging
-        {
-            echo "xdebug.mode=debug"
-            echo "xdebug.start_with_request=yes"
-            echo "xdebug.client_host=host.docker.internal"
-            echo "xdebug.client_port=9003"
-        } > /usr/local/etc/php/conf.d/99-xdebug.ini
-    fi
-
-    # Apache Rewrite engine
-    a2enmod rewrite
-
-    # Cleanup
-    docker-php-source delete
-    apt-get purge -y --auto-remove
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-BASH
-
-# Setup Composer
-RUN <<BASH
-    set -euo pipefail
-    php -r "copy('https://getcomposer.org/installer','/tmp/composer-setup.php');"
-    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
-    rm /tmp/composer-setup.php
-BASH
-
-# Align www-data UID/GID and ownership
-RUN usermod -u "${USER_UID}" www-data && groupmod -g "${USER_UID}" www-data && \
-    chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
-
+WORKDIR /var/www/html
 USER www-data

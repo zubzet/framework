@@ -36,8 +36,9 @@ describe('Migration System - Import', () => {
         "2025-10-01_MigrationImport.sql"
     ];
 
-    after(() => {
-        // Clean up all copied files
+    afterEach(() => {
+        // Clean up all copied files so a mid-test failure can't leak state
+        // into the next test's cy.dbSeed().
         allFiles.forEach((file) => {
             cy.exec(`rm -f ${baseDir}/${file} || true`, { failOnNonZeroExit: false });
         });
@@ -69,6 +70,7 @@ describe('Migration System - Import', () => {
             cy.exec(`rm -f ${target} || true`);
         });
     });
+
 
     // Check if the Files are actually executed and imported correctly
     it('should import valid SQL migration correctly', () => {
@@ -131,7 +133,7 @@ describe('Migration System - Import', () => {
 
         cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${baseDir}/${file}`);
         cy.exec('docker exec application php index.php db:migrate --dry -f');
-        cy.visit("/migration/checkImport");
+        cy.visit({ url: "/migration/checkImport", failOnStatusCode: false });
 
         cy.contains("Table 'app.migration_import' doesn't exist");
 
@@ -143,7 +145,7 @@ describe('Migration System - Import', () => {
 
         cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${baseDir}/${file}`);
         cy.exec('docker exec application php index.php db:migrate -f');
-        cy.visit("/migration/checkSkippedMigrations");
+        cy.visit({ url: "/migration/checkSkippedMigrations", failOnStatusCode: false });
 
         cy.contains("Table 'app.migration_skip' doesn't exist");
 
@@ -182,7 +184,7 @@ describe('Migration System - Import', () => {
 
         cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${baseDir}/${file}`);
         cy.exec('docker exec application php index.php db:migrate -e production -f');
-        cy.visit("/migration/checkEnvMigrations");
+        cy.visit({ url: "/migration/checkEnvMigrations", failOnStatusCode: false });
 
         cy.contains("Table 'app.migration_env' doesn't exist");
 
@@ -205,11 +207,29 @@ describe('Migration System - Import', () => {
 
         cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${zubzetMigrationPath}/${file}`);
         cy.exec('docker exec application php index.php db:migrate --exclude-external -f');
-        cy.visit("/migration/checkImport");
+        cy.visit({ url: "/migration/checkImport", failOnStatusCode: false });
 
         cy.contains("Table 'app.migration_import' doesn't exist");
 
         cy.exec(`rm -f ${zubzetMigrationPath}/${file} || true`);
+    });
+
+    describe("when the migrations folder is missing", () => {
+        const backupDir = `${baseDir}_backup`;
+
+        before(() => {
+            cy.exec(`test ! -e ${backupDir} || (test -d ${backupDir} && rm -rf ${baseDir} && mv ${backupDir} ${baseDir})`);
+            cy.exec(`mv ${baseDir} ${backupDir}`);
+        });
+
+        after(() => {
+            cy.exec(`rm -rf ${baseDir} && mv ${backupDir} ${baseDir}`);
+        });
+
+        it("should not fail when the migrations folder is missing", () => {
+            cy.exec('docker exec application php index.php db:migrate -f');
+            cy.exec(`test -d ${baseDir}`);
+        });
     });
 
     it("should check the --enforce-external-timeline option", () => {

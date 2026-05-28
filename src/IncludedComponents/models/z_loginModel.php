@@ -3,14 +3,18 @@
      * This file holds the login model
      */
 
-    use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Session;
+    use ZubZet\Framework\Database\IsInternalModel;
     use ZubZet\Utilities\PasswordHash\PasswordHash;
+    use ZubZet\Framework\Authentication\Permission\User;
 
     /**
      * The login model holds logging in and out of users
+     * @internal
      */
     class z_loginModel extends z_model {
+
+        use IsInternalModel;
 
         /**
          * Retrieve a session by its token

@@ -6,8 +6,13 @@
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Form\Upload;
     use ZubZet\Framework\Support\Rest;
-    use ZubZet\Framework\Rendering\View;
+    use ZubZet\Framework\Rendering\CanRenderView;
+    use ZubZet\Framework\Rendering\HandlesDefaultLayout;
     use ZubZet\Framework\Form\Validation\Result;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Message\Output\State;
+
 
     /**
      * @var object $opt Holds options needed for rendering
@@ -19,7 +24,15 @@
      */
     class Response extends RequestResponseHandler {
 
-        use View;
+        use CanRenderView;
+        use HandlesDefaultLayout;
+
+        public State $output;
+
+        public function __construct() {
+            $this->output = new State;
+            parent::__construct();
+        }
 
         /**
          * Reroutes to another action
@@ -29,13 +42,13 @@
          */
         public function reroute($path = [], $alias = false, $final = false) {
             if(!$alias) {
-                $this->booter->reroute($path);
+                zubzet()->reroute($path);
             } else {
-                $parts = array_values($this->booter->urlParts);
-                foreach ($path as $i => $path_part) {
-                    $parts[$i] = $path_part;
+                $parts = array_values(request()->getUrlParts());
+                foreach($path as $i => $pathPart) {
+                    $parts[$i] = $pathPart;
                 }
-                $this->booter->reroute($parts);
+                zubzet()->reroute($parts);
             }
             if($final) exit;
         }
@@ -67,7 +80,7 @@
          * @param string $domainScope The domain scope of the cookie
          */
         public function unsetCookie(string $name, string $path = "/", string $domainScope = "") {
-            unset($_COOKIE[$name]);
+            unset(request()->input->COOKIE[$name]);
             setcookie(
                 $name,
                 '',
@@ -81,7 +94,7 @@
          * Creates an upload object that handles the rest of the upload.
          * @return Upload A new instance of the Upload class
          */
-        public function upload() {
+        public function upload(): Upload {
             return new Upload;
         }
 
@@ -89,8 +102,11 @@
          * Gets a new Rest object
          * @param array $payload Data payload
          */
-        private function getNewRest($payload) {
-            return new Rest($payload, $this->booter->urlParts);
+        private function getNewRest(array $payload): Rest {
+            return new Rest(
+                $payload,
+                request()->getUrlParts(),
+            );
         }
 
         /**
@@ -98,8 +114,22 @@
          * @param array $payload Data payload
          * @param bool $die Whether to exit after generating the Rest object
          */
-        public function generateRest($payload, $die = true) {
+        public function generateRest(array $payload, bool $die = true): void {
             $this->getNewRest($payload)->execute($die);
+        }
+
+        /**
+         * Sends a JSON response.
+         *
+         * Sets `Content-Type: application/json` and emits `$data` JSON-encoded.
+         *
+         * @param mixed $data The value to encode as JSON.
+         * @param int $encodingOptions Bitmask of json_encode() options (e.g. JSON_PRETTY_PRINT).
+         * @throws \JsonException If encoding fails. Note that JSON_THROW_ON_ERROR is automatically added to $encodingOptions.
+         */
+        public function json(mixed $data, int $encodingOptions = 0): void {
+            header('Content-Type: application/json');
+            echo json_encode($data, $encodingOptions | JSON_THROW_ON_ERROR);
         }
 
         /**
@@ -108,8 +138,11 @@
          * @param string $message Error message
          */
         public function generateRestError($code, $message) {
-            $model = model("z_general");
-            $model->logAction($model->getLogCategoryIdByName("resterror"), "Rest error (Code: $code): $message", $code);
+            logger(Logger::ZUBZET)->warning(LogEventType::REST_ERROR, [
+                "code" => $code,
+                "message" => $message
+            ]);
+
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
 
@@ -231,31 +264,34 @@
         /**
          * Logs the current user in as someone else
          * @param int $userId ID of the user to sudo into
-         * @param int $user_exec ID of the executing user
+         * @param ?int $user_exec ID of the executing user
          */
-        public function loginAs($userId, $user_exec = null) {
+        public function loginAs(int $userId, ?int $user_exec = null) {
             if($user_exec === null) $user_exec = $userId;
             $session = model("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec);
 
             $this->setCookie(
                 "z_login_token",
                 $session->token(),
-                time() + intval($this->booter->settings["loginTimeoutSeconds"]),
+                time() + intval($this->getBooterSettings("loginTimeoutSeconds")),
                 "/",
                 $this->getCookieDomainScope(),
             );
             $this->deleteOldLoginCookieDomainScope();
 
             if ($userId == $user_exec) {
-                model("z_general")->logAction(model("z_general")->getLogCategoryIdByName("login"), "User $user_exec logged in as $userId", $user_exec);
+                logger(Logger::ZUBZET)->info(LogEventType::USER_LOGGED_IN, ["userId" => $userId]);
             } else {
-                model("z_general")->logAction(model("z_general")->getLogCategoryIdByName("loginas"), "User $user_exec logged in.", $user_exec);
+                logger(Logger::ZUBZET)->info(LogEventType::USER_LOGGED_IN_ANOTHER, [
+                    "userId" => $userId,
+                    "userId_exec" => $user_exec
+                ]);
             }
         }
 
         public function getCookieDomainScope(): string {
             $cookieScope = "";
-            if("true" == ($this->booter->settings["login_scope_allow_subdomains"] ?? "false")) {
+            if("true" == ($this->getBooterSettings("login_scope_allow_subdomains") ?: "false")) {
                 $cookieScope = "." . $this->booter->req->getDomain();
             }
             return $cookieScope;
@@ -304,22 +340,19 @@
                 );
             }
 
-            // Remove the cookie
-            $this->unsetCookie(
-                "z_login_token",
-                domainScope: $this->getCookieDomainScope(),
-            );
             $this->deleteOldLoginCookieDomainScope();
 
-            model("z_general")->logActionByCategory(
-                "logout",
-                "User logged out (" . ($user->fields["email"] ?? "~No Email~") . ")",
-                $user->fields["email"],
-            );
+            logger(Logger::ZUBZET)->info(LogEventType::USER_LOGGED_OUT, ["userId" => $user->userId]);
 
-            // Return to Login as if the user was logged in as someone else
+            // Replace the login cookie: when sudoed, with the exec user's
+            // new session; otherwise delete it so the client is fully out.
             if($user->userId != $user->execUserId) {
                 $this->loginAs($user->execUserId);
+            } else {
+                $this->unsetCookie(
+                    "z_login_token",
+                    domainScope: $this->getCookieDomainScope(),
+                );
             }
 
             return $this->rerouteUrl();
@@ -331,23 +364,13 @@
          * Helpful when `login_scope_allow_subdomains` is altered after users already logged in.
          */
         private function deleteOldLoginCookieDomainScope(): void {
-            $deleteOldCookieDomainScope = $this->booter->settings["login_scope_allow_subdomains_delete_domainscope_name"] ?? null;
+            $deleteOldCookieDomainScope = $this->getBooterSettings("login_scope_allow_subdomains_delete_domainscope_name");
             if (!is_null($deleteOldCookieDomainScope)) {
                 $this->unsetCookie(
                     "z_login_token",
                     domainScope: $deleteOldCookieDomainScope,
                 );
             }
-        }
-
-        /**
-         * Logs something
-         * @param string $categoryName Name of the log category in the database
-         * @param string $text Log text
-         * @param int $value Log value
-         */
-        public function log($categoryName, $text, $value) {
-            model("z_general")->logActionByCategory($categoryName, $text, $value);
         }
 
         /**
@@ -392,7 +415,9 @@
                 if($field->dbField == $pkField && $field->value == $pkValue) continue;
 
                 $fields[] = $field->dbField;
-                $values[] = $field->value;
+                // Array values (e.g. from multi-select) are stored as JSON;
+                // mysqli bind_param can't bind a PHP array directly.
+                $values[] = is_array($field->value) ? json_encode($field->value) : $field->value;
                 $types .= $field->dataType;
             }
 
@@ -443,10 +468,13 @@
 
             for ($i = 0; $i < count($validationResult->fields); $i++) {
                 $field = $validationResult->fields[$i];
+                if ($field->noSave) continue;
                 $sqlParams[] = ("`" . $field->dbField . "`");
                 $sqlValues[] = "?";
                 $types .= $field->dataType;
-                $vals[] = $field->value;
+                // Array values (e.g. from multi-select) are stored as JSON;
+                // mysqli bind_param can't bind a PHP array directly.
+                $vals[] = is_array($field->value) ? json_encode($field->value) : $field->value;
             }
 
             $sqlCmdParams = implode(",", $sqlParams);
@@ -462,15 +490,18 @@
             foreach ($validationResult->fields as $field) {
                 if ($field->isFile) {
                     $upload = $this->upload();
-                    if(!isset($_FILES[$field->name])) {
+
+                    if(empty(request()->getFile($field->name))) {
                         $field->noSave = true;
                         continue;
-                    } //TODO: Might take required into account
+                    }
+
+                    //TODO: Might take required into account
                     $uploadCode = $upload->upload(
-                        $_FILES[$field->name], 
-                        $this->booter->req->getBooterSettings("uploadFolder", default: "uploads/"), 
-                        $field->rules["fileMaxSize"] ?? 0, 
-                        $field->rules["types"] ?? []
+                        request()->getFile($field->name),
+                        $this->booter->req->getBooterSettings("uploadFolder", default: "uploads/"),
+                        $field->rules["fileMaxSize"] ?? 0,
+                        $field->rules["types"] ?? [],
                     );
                     if ($uploadCode) $this->error("Upload error: " . $uploadCode);
                     $field->value = $upload->fileId;
@@ -490,7 +521,7 @@
             $db = $this->booter->z_db;
             $name = $validationResult->name;
 
-            foreach ($_POST[$name] as $item) {
+            foreach (request()->getPost($name) as $item) {
                 $z = $item["Z"];
 
                 if ($z == "create") {

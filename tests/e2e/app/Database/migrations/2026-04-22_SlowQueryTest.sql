@@ -1,0 +1,4 @@
+CREATE TABLE `slow_query` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    `data` VARCHAR(16) NOT NULL
+);

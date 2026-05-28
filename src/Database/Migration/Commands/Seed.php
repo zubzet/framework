@@ -26,6 +26,20 @@
                 "Runs the seeding process without running the migrations first.",
             );
 
+            $this->addOption(
+                "environments-included",
+                "i",
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                "Include seed folders/files after excludes are applied",
+            );
+
+            $this->addOption(
+                "environments-excluded",
+                "e",
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                "Exclude seed folders/files from execution",
+            );
+
             $this->setDatabaseConnection();
         }
 
@@ -34,13 +48,24 @@
             $out->writeln("<comment>Seeding started at: " . date("Y-m-d H:i:s") . "</comment>");
 
             $skipMigrations = $in->getOption("skip-migrations");
+            $includedEnvironmentPaths = $in->getOption("environments-included");
+            $excludedEnvironmentPaths = $in->getOption("environments-excluded");
 
             if(!$skipMigrations) {
                 $out->writeln("<comment>Running migrations before seeding...</comment>");
                 $this->resetDatabase($out);
             }
 
-            $seedFiles = model("z_migration")->getFiles("./app/Database/seed");
+            $seedRoot = "./app/Database/seed";
+            $seedFiles = model("z_migration")->getFiles($seedRoot);
+
+            // Filter seed files based on include/exclude options
+            $seedFiles = $this->filterSeedFiles(
+                $seedFiles,
+                $seedRoot,
+                $excludedEnvironmentPaths,
+                $includedEnvironmentPaths,
+            );
 
             foreach($seedFiles as $seedFile) {
                 try {
@@ -126,6 +151,66 @@
 
             // Buffer the SQL statements and execute them in batches to optimize performance
             $this->bufferedStatements .= "\n-- SEED FILE: $filepath\n$sqlStatement";
+        }
+
+        /**
+         * Seed filtering always starts with all files.
+         * Step 1: remove matching excluded paths.
+         * Step 2: add matching included paths back in.
+         */
+        private function filterSeedFiles(array $seedFiles, string $seedRoot, array $excludedPaths, array $includedPaths): array {
+            // No files -> no filtering needed
+            if(empty($seedFiles)) return [];
+
+            $selectedSeeds = [];
+
+            foreach($seedFiles as $seedFile) {
+                // Exclude any files that match the excluded paths first
+                if($this->matchesAnySelector($seedFile, $excludedPaths, $seedRoot)) continue;
+
+                $selectedSeeds[$seedFile] = true;
+            }
+
+            foreach($seedFiles as $seedFile) {
+                // Then add back in any files that match the included paths, even if they were previously excluded
+                if(!$this->matchesAnySelector($seedFile, $includedPaths, $seedRoot)) continue;
+
+                $selectedSeeds[$seedFile] = true;
+            }
+
+            $filteredSeedFiles = [];
+
+            foreach($seedFiles as $seedFile) {
+                if(!isset($selectedSeeds[$seedFile])) continue;
+
+                // Preserve the original order of the seed files as returned by getFiles()
+                $filteredSeedFiles[] = $seedFile;
+            }
+
+            return $filteredSeedFiles;
+        }
+
+        private function matchesAnySelector(string $seedFile, array $selectors, string $seedRoot): bool {
+            foreach($selectors as $selector) {
+                if(!$this->matchesSelector($seedFile, (string) $selector, $seedRoot)) continue;
+                return true;
+            }
+
+            return false;
+        }
+
+        private function matchesSelector(string $seedFile, string $selector, string $seedRoot): bool {
+            $selector = trim($selector);
+            if($selector === "") return false;
+
+            // Normalize paths to ensure consistent matching
+            $selectorPath = rtrim($seedRoot, "/") . "/" . ltrim($selector, "/");
+
+            // If the selector is a file (e.g. "Environments/Prod/seed.sql"), it matches if the seed file path is exactly the same.
+            if($seedFile === $selectorPath) return true;
+
+            // Otherwise check if the seed file is within the selector folder (e.g. "Environments/Prod/" matches "Environments/Prod/seed.sql")
+            return str_starts_with($seedFile, $selectorPath . "/");
         }
     }
 

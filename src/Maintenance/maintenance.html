@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Maintenance</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f4;
+            color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 1.2em;
+            color: #555;
+        }
+
+        .spinner {
+            margin: 30px auto;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ccc;
+            border-top: 4px solid #111;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hint {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .hint a {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" data-test="maintenance-page">
+        <h1>We'll be back soon</h1>
+        <div class="spinner"></div>
+        <p>Our website is currently undergoing maintenance.</p>
+        <p>Please check back later.</p>
+        <p class="hint">
+            If you think this is an error, please contact the web administrator.
+        </p>
+    </div>
+    <script>
+        // Automatically refresh the page every 5 minutes to check if maintenance is over
+        setTimeout(() => location.reload(), 300000);
+    </script>
+</body>
+</html>

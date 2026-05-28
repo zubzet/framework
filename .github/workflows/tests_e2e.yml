@@ -8,6 +8,7 @@ on:
       - 'tests/e2e/**'
       - 'composer*'
       - 'src/**'
+      - 'web/**'
       - '.github/workflows/tests_e2e.yml'
   push:
     branches: [ '*' ]
@@ -16,6 +17,7 @@ on:
       - 'tests/e2e/**'
       - 'composer*'
       - 'src/**'
+      - 'web/**'
       - '.github/workflows/tests_e2e.yml'
   workflow_dispatch:
     inputs:
@@ -39,16 +41,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_tag: [
-          "8.0-apache",
-          "8.1-apache",
-          "8.2-apache",
-          "8.3-apache",
-          "8.4-apache"
-        ]
+        # Full matrix on push to long-lived branches (main, develop) and version tags.
+        # PRs and feature-branch pushes run extremes-only (8.0 + 8.5) since
+        # version-specific regressions historically surface at the edges.
+        php_tag: ${{ fromJSON((github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v')))) && '["8.0-apache","8.1-apache","8.2-apache","8.3-apache","8.4-apache","8.5-apache"]' || '["8.0-apache","8.5-apache"]') }}
 
     env:
-      DISABLE_XDEBUG: "1"
       COMPOSE_DOCKER_CLI_BUILD: "1"
       DOCKER_BUILDKIT: "1"
 
@@ -60,12 +58,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: tests/e2e/package-lock.json
+          bun-version: latest
 
       - name: Cache Cypress binary
         uses: actions/cache@v4
@@ -75,8 +71,8 @@ jobs:
           restore-keys: |
             cypress-${{ runner.os }}-
 
-      - name: Install NPM dependencies
-        run: npm ci
+      - name: Install dependencies
+        run: bun install
 
       - name: Detect host UID
         run: echo "HOST_UID=$(id -u)" >> $GITHUB_ENV
@@ -98,7 +94,6 @@ jobs:
           build-args: |
             PHP_TAG=${{ matrix.php_tag }}
             USER_UID=${{ env.HOST_UID }}
-            DISABLE_XDEBUG=${{ env.DISABLE_XDEBUG }}
 
       # Warm dependent images so compose doesn't have to pull them during up
       - name: Pre-pull compose services
@@ -116,12 +111,12 @@ jobs:
           docker exec application composer install --no-interaction --prefer-dist --no-progress
 
       - name: Seed database
-        run: docker exec application php app/Database/import.php
+        run: docker exec application php index.php db:seed
 
       - name: Run E2E tests (Cypress)
         env:
           CI: true
-        run: npm run tests
+        run: bun run tests
 
       - name: Upload Cypress videos
         if: failure()

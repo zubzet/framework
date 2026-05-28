@@ -195,6 +195,21 @@ class UserController extends z_controller {
         ]));
     }
 
+    public function action_addWithoutPassword(Request $req, Response $res): void {
+        $user = User::add("user_addWithoutPassword@cypress.test", null, new DateTime("2005-01-01 00:00:00"));
+        $createdUserDirect = $this->getUser($user, false, false);
+
+        $user = User::byId($user->id());
+        $createdUserGet = $this->getUser($user, false, false);
+
+        echo(json_encode([
+            "createdUserDirect" => $createdUserDirect,
+            "createdUserGet" => $createdUserGet,
+            "passwordIsNull" => $user->getField("password") === null,
+            "saltIsNull" => $user->getField("salt") === null,
+        ]));
+    }
+
     public function action_hasAccessToAll(Request $req, Response $res): void {
         echo(json_encode([
             "hasAccess_50" => User::byId(150)->hasAccessAll("user.hasAccessToAll.1", "user.hasAccessToAll.2"),

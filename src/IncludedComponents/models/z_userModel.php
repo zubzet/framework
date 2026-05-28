@@ -3,16 +3,24 @@
      * File that defines the user model
      */
 
-use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Authentication\Organization;
+    use ZubZet\Framework\Authentication\Permission\User;
 
     /**
      * User Model
-     * 
-     * This model handles database stuff with the focus on user managment.
+     *
+     * This model handles database stuff with the focus on user management.
      * An instance of this class can be acquired with z_framework::getModel("z_user")
+     *
+     * @internal
      */
     class z_userModel extends z_model {
-        
+
+        use IsInternalModel;
+
         /**
          * Returns a user row of the database, selected by the users id
          * @param int $userid ID of the user we want the data about
@@ -71,7 +79,10 @@ use ZubZet\Framework\Authentication\Permission\User;
             $insertId = $this->getInsertId();
 
             //Log
-            $this->logActionByCategory("user", "User $email created");
+            logger(Logger::ZUBZET)->info(LogEventType::USER_CREATED, [
+                "userId" => $insertId,
+                "email" => $email,
+            ]);
 
             if ($passwordString !== null) {
                 $this->getModel("z_login")->updatePassword(
@@ -102,7 +113,9 @@ use ZubZet\Framework\Authentication\Permission\User;
             $this->exec($query, "siii", $email, $language, $id);
 
             //Log
-            $this->logAction($this->getLogCategoryIdByName("user"), "User account updated (User ID: $id)", $id);
+            logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                "userId" => $id,
+            ]);
         }
 
         /**
@@ -287,6 +300,39 @@ use ZubZet\Framework\Authentication\Permission\User;
                     LIMIT 1";
             $this->exec($sql, "s", $name);
             return $this->resultToLine()["id"] ?? null;
+        }
+
+        /**
+         * @internal
+         */
+        public function getUsersByOrganization(Organization $organization): array {
+            $users = [];
+
+            $query = $this->dbSelect("zu.*", [
+                "zu" => "z_user"
+            ])->where([
+                "zu.organizationId" => $organization->id(),
+                "zu.active" => 1
+            ]);
+
+            $results = $this->exec($query)->resultToArray();
+
+            foreach($results as $userData) {
+                $users[] = new User($userData);
+            }
+
+            return $users;
+        }
+
+        public function updateUserOrganization(User $user, ?Organization $organization): void {
+            $updateQuery = $this->dbUpdate("z_user", [
+                "organizationId" => is_null($organization) ? null : $organization->id()
+            ])->where([
+                "id" => $user->id(),
+                "active" => 1
+            ]);
+
+            $this->exec($updateQuery);
         }
 
     }

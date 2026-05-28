@@ -7,7 +7,7 @@ site_description: A modular, prototyping speed oriented PHP framework.
 # Repository
 repo_name: zubzet/framework
 repo_url: https://github.com/zubzet/framework
-edit_uri: docs/
+edit_uri: edit/main/docs/
 
 # Copyright
 copyright: ZubZet contributors
@@ -96,9 +96,9 @@ nav:
     - Getting Started: .
     - Setup:
         - Installation: setup/installation
-        - How To Contribute: setup/how-to-contribute
         - How To Update: setup/how-to-update
         - How to Upgrade:
+            - 1.1.0 to 1.2.0: setup/upgrade/1.1.0-to-1.2.0
             - 1.0.0 to 1.1.0: setup/upgrade/1.0.0-to-1.1.0
             - 0.11 to 1.0.0: setup/upgrade/0.11-to-1.0.0
             - 0.10 to 0.11: setup/upgrade/0.10-to-0.11
@@ -124,6 +124,11 @@ nav:
         - Global Helper Functions: core-features/global-helper-functions
         - Console Commands: core-features/console-commands
         - Access Control: core-features/access-control
+        - Logging: core-features/logging
+        - Debug Bar: core-features/debug-bar
+        - Error Handling: core-features/error-handling
+        - Asset Proxy: core-features/asset-proxy
+        - Maintenance: core-features/maintenance
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
@@ -147,3 +152,7 @@ nav:
         - Todo: guides/todo
         - Layouts: guides/layout
         - Emails: guides/email
+    - Contributing:
+        - How To Contribute: contributing/how-to-contribute
+        - Agents:
+            - Working With Agents: contributing/agents/working-with-agents

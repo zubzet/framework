@@ -1,14 +1,20 @@
 <?php
 
-use Doctrine\DBAL\Schema\Table;
-use ZubZet\Framework\Database\Migration\Commands\Traits\DbalConnection;
-use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
-use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
+    use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DbalConnection;
 
+    use Doctrine\DBAL\Schema\Table;
+
+    /**
+     * @internal
+     */
     class z_migrationModel extends z_model {
 
         use Platform;
         use DbalConnection;
+        use IsInternalModel;
 
         // Check if migrations are locked
         public function isLocked(): bool {
@@ -113,7 +119,12 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
         }
 
         // @TODO: abstract RecursiveIteratorIterator
-        public function getFiles(string $path): array {
+        public function getFiles(string $path, bool $setupPathIfNotExists = true): array {
+            if (!is_dir($path)) {
+                if (!$setupPathIfNotExists) return [];
+                mkdir($path, 0755, true);
+                return [];
+            }
             $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
             $files = [];
             foreach($rii as $file) {
@@ -164,8 +175,11 @@ use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
                 throw new InvalidArgumentException("Syntax error: '$filename'. Date must be exactly YYYY-MM-DD.");
             }
 
-            // Date validations
-            $dateObj = DateTime::createFromFormat('Y-m-d', $dateString);
+            // Date validations. '!' anchors the time to 00:00:00 so two files
+            // with the same date compare equal (sortMigrations falls through to
+            // the version tiebreak) and date-range filtering in db:sync is not
+            // sensitive to the wall-clock time the object was created at.
+            $dateObj = DateTime::createFromFormat('!Y-m-d', $dateString);
             if(!$dateObj) {
                 throw new InvalidArgumentException("Syntax error: '$filename'. Invalid date format. Expected format: YYYY-MM-DD.");
             }

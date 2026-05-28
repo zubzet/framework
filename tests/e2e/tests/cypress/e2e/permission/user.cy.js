@@ -244,8 +244,22 @@ describe('Permission System - User', () => {
     it('should check if a user can be added', () => {
         requestJson('/user/add').then((output) => {
             expect(output).to.deep.equal(
-                {"createdUserDirect": {"id": 424,"email": "user_add@cypress.test","isVerified": true,"verified": "2005-01-01 00:00:00"},"createdUserGet": {"id": 424,"email": "user_add@cypress.test","isVerified": true,"verified": "2005-01-01 00:00:00"},"passwordWorking": true}
+                {"createdUserDirect":{"id":10000,"email":"user_add@cypress.test","isVerified":true,"verified":"2005-01-01 00:00:00"},"createdUserGet":{"id":10000,"email":"user_add@cypress.test","isVerified":true,"verified":"2005-01-01 00:00:00"},"passwordWorking":true}
             );
+        });
+    });
+
+    it('should add a user without a password (null password)', () => {
+        requestJson('/user/addWithoutPassword').then((output) => {
+            expect(output.createdUserDirect).to.deep.equal({
+                id: output.createdUserDirect.id,
+                email: 'user_addWithoutPassword@cypress.test',
+                isVerified: true,
+                verified: '2005-01-01 00:00:00',
+            });
+            expect(output.createdUserGet).to.deep.equal(output.createdUserDirect);
+            expect(output.passwordIsNull).to.equal(true);
+            expect(output.saltIsNull).to.equal(true);
         });
     });
 

@@ -7,18 +7,23 @@
     "private": true,
     "scripts": {
         "docker-compose": "docker compose -f packaging/docker/docker-compose-base.yml",
-        "start": "npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed",
+        "start": "rm -f composer.lock && npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed && npm run info",
+        "startup": "npm run start && npm run docker-compose -- up",
         "stop": "npm run docker-compose -- down -v",
         "shell": "docker exec -it application bash",
         "seed": "docker exec application php index.php db:seed",
+        "info": "docker exec application php index.php info:startup --pwd \"$(pwd)\"",
         "cypress": "cypress open --project tests",
         "tests": "env -u ELECTRON_RUN_AS_NODE cypress run --project tests"
     },
     "devDependencies": {
-        "chai": "^6.0.1",
-        "cypress": "^15.2.0",
-        "mocha": "^11.7.2",
-        "puppeteer": "^24.19.0",
+        "chai": "^6.2.2",
+        "cypress": "^15.14.0",
+        "pixelmatch": "^5.3.0",
+        "pngjs": "^7.0.0",
         "unicode-substring": "^1.0.0"
+    },
+    "overrides": {
+        "uuid": "^14.0.0"
     }
 }

@@ -1,6 +1,13 @@
 <?php
 
+    use ZubZet\Framework\Database\IsInternalModel;
+
+    /**
+     * @internal
+     */
     class z_adminDashboardModel extends z_model {
+
+        use IsInternalModel;
 
         public function getTableStatus(): array {
             $sql = "SHOW TABLE STATUS";
@@ -47,7 +54,7 @@
             // Pagination
             $perPage = 20;
             $limit = is_null($page) ? 10000 : $perPage;
-            $offset = (($page ?? 0) - 1) * $perPage;
+            $offset = is_null($page) ? 0 : ($page - 1) * $perPage;
 
             // Request the data
             $sql = $this->dbSelect(["*"])

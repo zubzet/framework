@@ -211,6 +211,31 @@ describe('Routing', () => {
             route: "/accept-afterware-parameters/U13/P12/middleware-block-afterware",
             expected: "Group Middleware Accept ExecutedArray ( [userId] => U13 [postId] => P12 ) Route Middleware Blocked ExecutedArray ( [userId] => U13 [postId] => P12 ) "
         },
+        // Arguments on action
+        {
+            route: "/arguments/action",
+            expected: "TestRoute ExecutedArray ( ) Args: abc 123"
+        },
+        // Arguments on middleware (accept)
+        {
+            route: "/arguments/middleware-accept",
+            expected: "Route Middleware Accept ExecutedArray ( ) Args: abc 123TestRoute ExecutedArray ( ) Args:"
+        },
+        // Arguments on afterware
+        {
+            route: "/arguments/afterware",
+            expected: "TestRoute ExecutedArray ( ) Args: Route Afterware ExecutedArray ( ) Args: abc 123"
+        },
+        // Arguments on all three
+        {
+            route: "/arguments/all",
+            expected: "Route Middleware Accept ExecutedArray ( ) Args: def 456TestRoute ExecutedArray ( ) Args: abc 123Route Afterware ExecutedArray ( ) Args: ghi 789"
+        },
+        // Arguments combined with route parameters
+        {
+            route: "/arguments/U13/action",
+            expected: "TestRoute ExecutedArray ( [userId] => U13 ) Args: abc 123"
+        },
     ];
 
     it('should check the Routing-System with all routes', () => {
@@ -226,16 +251,6 @@ describe('Routing', () => {
         });
     });
 
-    it("should throw an error cause of false method", () => {
-        cy.request({
-            method: 'POST',
-            url: '/test',
-            failOnStatusCode: false
-        }).then((response) => {
-            expect(response.body.trim()).to.contains("Uncaught Slim\\Exception\\HttpMethodNotAllowedException: Method not allowed.");
-        });
-    });
-
 
     it("should check if POST method is working", () => {
         cy.request({
@@ -248,6 +263,24 @@ describe('Routing', () => {
             let expected = "TestRoute ExecutedArray ( )".replace(/\s+/g, ' ').trim();
 
             expect(actual).to.equals(expected);
+        });
+    });
+
+    it("should support each HTTP-verb route helper (put/patch/delete/options)", () => {
+        const verbs = [
+            { method: 'PUT',     url: '/put-test' },
+            { method: 'PATCH',   url: '/patch-test' },
+            { method: 'DELETE',  url: '/delete-test' },
+            { method: 'OPTIONS', url: '/options-test' },
+        ];
+        const expected = "TestRoute ExecutedArray ( )".replace(/\s+/g, ' ').trim();
+
+        verbs.forEach(({ method, url }) => {
+            cy.request({ method, url }).then((response) => {
+                expect(response.status, `${method} ${url}`).to.eq(200);
+                const actual = response.body.replace(/\s+/g, ' ').trim();
+                expect(actual, `${method} ${url}`).to.equal(expected);
+            });
         });
     });
 
@@ -287,7 +320,7 @@ describe('Routing', () => {
             url: '/define-get',
             failOnStatusCode: false
         }).then((response) => {
-            expect(response.body.trim()).to.contains("Uncaught Slim\\Exception\\HttpMethodNotAllowedException: Method not allowed.");
+            expect(response.body.trim()).to.contains(".notfound");
         });
     });
 

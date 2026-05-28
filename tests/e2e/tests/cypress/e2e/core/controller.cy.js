@@ -40,4 +40,12 @@ describe('Controllers', () => {
         cy.query("title").contains("Render");
         cy.query("data").contains("Data");
     });
+
+    it("framework's default IndexController renders the placeholder index view", () => {
+        // Hits IncludedComponents/controllers/IndexController::action_index, which
+        // renders views/index.php inside layout/default_layout.php. Test apps
+        // normally override defaultIndex; this test exercises the framework default.
+        cy.visit("/index/index");
+        cy.contains("Replace this title");
+    });
 });

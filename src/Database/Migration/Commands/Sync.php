@@ -97,7 +97,10 @@
             }
 
             if($startDate) {
-                $startDateObj = \DateTime::createFromFormat('Y-m-d', $startDate);
+                // '!' anchors the time to 00:00:00; without it createFromFormat
+                // keeps the current time-of-day, making date comparisons below
+                // wall-clock-sensitive (flaky across a second boundary).
+                $startDateObj = \DateTime::createFromFormat('!Y-m-d', $startDate);
 
                 if(!$startDateObj || $startDateObj->format('Y-m-d') !== $startDate) {
                     $out->writeln("<error>Invalid start date format. Expected format: YYYY-MM-DD.</error>");
@@ -111,7 +114,7 @@
             }
 
             if($endDate) {
-                $endDateObj = \DateTime::createFromFormat('Y-m-d', $endDate);
+                $endDateObj = \DateTime::createFromFormat('!Y-m-d', $endDate);
 
                 if(!$endDateObj || $endDateObj->format('Y-m-d') !== $endDate) {
                     $out->writeln("<error>Invalid end date format. Expected format: YYYY-MM-DD.</error>");
@@ -128,7 +131,7 @@
             if($includeExternal) {
                 $fileMigrationsRaw = array_merge(
                     $fileMigrationsRaw,
-                    model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration")
+                    model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false)
                 );
             }
             $fileMigrations = model("z_migration")->sortMigrations($fileMigrationsRaw);

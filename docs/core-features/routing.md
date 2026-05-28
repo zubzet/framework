@@ -1,7 +1,7 @@
 # Routing in ZubZet
 
 Since version **1.0.0**, ZubZet not only includes the internal routing system ([controller-based actions](/docs/core-features/controllers-and-actions)) but also provides a route definition system.  
-The routing definition system is based on [Slim](https://www.slimframework.com/).
+The routing definition system is powered by [FastRoute](https://github.com/nikic/FastRoute). *(ZubZet 1.2.0 switched the underlying engine from Slim to FastRoute — your route definitions are unchanged.)*
 
 ---
 
@@ -201,4 +201,35 @@ class ExampleController extends z_controller {
     }
   }
 }
+```
+
+---
+
+## Static Arguments
+
+Since version **1.2.0**, you can attach **static arguments** to a route, middleware, or
+afterMiddleware directly in its definition. Unlike [route parameters](#route-parameters) (which come
+from the URL), static arguments are fixed values baked into the route — handy for reusing one handler
+with different configuration.
+
+Pass an array as the **third argument**:
+
+```php
+Route::get('/reports/sales', [ReportController::class, 'render'], ['sales', 2026]);
+```
+
+The values are handed to the action **after** `Request` and `Response`:
+
+```php
+public function render(Request $req, Response $res, string $type, int $year) {
+    // $type === 'sales', $year === 2026
+}
+```
+
+Middlewares and afterMiddlewares accept static arguments the same way:
+
+```php
+Route::get('/admin', [AdminController::class, 'index'], ['dashboard'])
+    ->middleware([AuthController::class, 'requireRole'], ['admin'])
+    ->afterMiddleware([AuditController::class, 'log'], ['admin-view']);
 ```

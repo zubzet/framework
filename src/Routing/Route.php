@@ -2,25 +2,19 @@
 
     namespace ZubZet\Framework\Routing;
 
-    use Slim\App;
-    use Slim\Psr7\Response;
-    use Slim\Routing\RouteContext;
-    use Slim\Interfaces\RouteInterface;
-    use Slim\Routing\RouteCollectorProxy;
-    use Slim\Interfaces\RouteGroupInterface;
-
-    use Psr\Http\Message\ResponseInterface;
-    use Psr\Http\Message\ServerRequestInterface;
+    use FastRoute\RouteCollector;
+    use Request;
+    use Response;
+    use ZubZet\Framework\ZubZet;
 
     class Route {
 
         use HttpMethod;
 
         /**
-         * A stack to hold the current router context (App or RouteCollectorProxy).
-         * @var (App|RouteCollectorProxy)[]
+         * The active FastRoute collector.
          */
-        private static array $routerStack = [];
+        private static ?RouteCollector $collector = null;
 
         /**
          * Stack to manage group prefixes.
@@ -28,27 +22,33 @@
          */
         private static array $prefixStack = [];
 
+        /**
+         * Stack to manage middleware inheritance of nested groups.
+         * @var array<int, array{middleware: array, afterMiddleware: array}>
+         */
+        private static array $groupStateStack = [];
+
         public static array $storedPrefixedGroups = [];
 
         /**
          * Initializes the static Router.
          * This must be called once before loading route files.
-         *
-         * @param mixed $booter The main framework class for callbacks.
          */
-        public static function init($booter): void {
-            self::$routerStack = [$booter->slimApplication];
+        public static function init(ZubZet $booter, RouteCollector $collector): void {
+            self::$collector = $collector;
+            self::$prefixStack = [];
+            self::$groupStateStack = [];
+            self::$storedPrefixedGroups = [];
         }
 
         /**
-         * Gets the current router from the top of the stack.
-         * @return App|RouteCollectorProxy
+         * Gets the current route collector.
          */
-        private static function getCurrentRouter(): App|RouteCollectorProxy {
-            if (empty(self::$routerStack)) {
-                throw new \Exception("Router has not been initialized. Please call Route::init() first.");
+        private static function getCurrentRouter(): RouteCollector {
+            if (self::$collector === null) {
+                throw new \LogicException("Route collector has not been initialized.");
             }
-            return end(self::$routerStack);
+            return self::$collector;
         }
 
         public static function group(string $prefix = "", ?callable $callback = null): PendingGroup {
@@ -59,36 +59,34 @@
         /**
          * Performs middleware matching for stored groups based on the current URL parts.
          */
-        public static function performStoredGroupsMatchingPrefix(array $urlParts, $callback): void {
+        public static function performStoredGroupsMatchingPrefix(array $urlParts, \Closure|callable $callback): void {
             // Construct the current path from URL parts
             $currentPath = '/' . implode('/', $urlParts);
 
             // Collect middlewares to execute
-            $toExecuteMiddleware = [];
-            $toExecuteAfterMiddleware = [];
+            $toExecuteMiddlewares = [];
+            $toExecuteAfterMiddlewares = [];
 
-            foreach(self::$storedPrefixedGroups as $groupPath => $data) {
+            foreach(self::$storedPrefixedGroups as $groupPath => $prefixGroup) {
                 // Check if the current path matches the group prefix
-                $isMatch = ($currentPath === $groupPath) ||
-                        (str_starts_with($currentPath, $groupPath . '/'));
-
-
+                $isExactMatch = $currentPath === $groupPath;
+                $isMatch = $isExactMatch || str_starts_with($currentPath, $groupPath . '/');
                 if(!$isMatch) continue;
 
                 // Collect middlewares and afterwares to execute
-                foreach($data['middleware'] as $mw) {
-                    $toExecuteMiddleware[] = $mw;
+                foreach($prefixGroup["middleware"] as $middleware) {
+                    $toExecuteMiddlewares[] = $middleware;
                 }
 
-                foreach($data['afterMiddleware'] as $amw) {
-                    $toExecuteAfterMiddleware[] = $amw;
+                foreach($prefixGroup["afterMiddleware"] as $afterMiddleware) {
+                    $toExecuteAfterMiddlewares[] = $afterMiddleware;
                 }
             }
 
             // Execute collected middlewares and exit if any returns any other than true
-            foreach($toExecuteMiddleware as $mw) {
-                [$class, $method] = $mw;
-                $result = zubzet()->executeControllerAction($class, $method, []);
+            foreach($toExecuteMiddlewares as $toExecuteMiddleware) {
+                [$class, $method] = $toExecuteMiddleware->getAction();
+                $result = self::callControllerAction($class, $method, arguments: $toExecuteMiddleware->arguments);
                 if($result !== true) exit;
             }
 
@@ -96,9 +94,9 @@
             $callback();
 
             // Execute after middlewares
-            foreach($toExecuteAfterMiddleware as $amw) {
-                [$class, $method] = $amw;
-                zubzet()->executeControllerAction($class, $method, []);
+            foreach($toExecuteAfterMiddlewares as $toExecuteAfterMiddleware) {
+                [$class, $method] = $toExecuteAfterMiddleware->getAction();
+                self::callControllerAction($class, $method, arguments: $toExecuteAfterMiddleware->arguments);
             }
         }
 
@@ -106,87 +104,154 @@
          * Creates a route group.
          */
         public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware): void {
-            $parentRouter = self::getCurrentRouter();
-
             // Push the prefix onto the stack.
             self::$prefixStack[] = $prefix;
 
-            $group = $parentRouter->group($prefix, function (RouteCollectorProxy $group) use ($callback) {
-                self::$routerStack[] = $group;
-                $callback();
-                array_pop(self::$routerStack);
-            });
-
+            // Store fallback middleware behavior by prefix path.
             self::$storedPrefixedGroups[(implode("", self::$prefixStack))] = [
                 'middleware' => $middlewares,
                 'afterMiddleware' => $afterMiddleware,
             ];
 
-            // Pop the prefix from the stack after leaving the group.
-            array_pop(self::$prefixStack);
+            // Push inherited group middleware state.
+            self::$groupStateStack[] = [
+                'middleware' => $middlewares,
+                'afterMiddleware' => $afterMiddleware,
+            ];
 
-            self::performRouteInclusions($middlewares, $afterMiddleware, $group);
+            $callback();
+
+            array_pop(self::$groupStateStack);
+            array_pop(self::$prefixStack);
         }
 
-        public static function performRoute(string $method, string $endpoint, array|callable $action, array $middlewares, array $afterMiddleware): void {
+        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware): void {
             $router = self::getCurrentRouter();
 
-            $route = $router->$method(
-                $endpoint,
-                function(ServerRequestInterface $request, ResponseInterface $response, array $args) use ($action) {
-                    if(is_callable($action)) {
-                        $action($request, $response, $args);
-                    } else {
-                        [$controllerClass, $actionMethod] = $action;
-                        zubzet()->executeControllerAction($controllerClass, $actionMethod, $args);
+            $effectiveMiddlewares = [
+                ...self::getInheritedMiddlewares(),
+                ...$middlewares,
+            ];
+
+            $effectiveAfterMiddlewares = [
+                ...$afterMiddleware,
+                ...self::getInheritedAfterMiddlewares(),
+            ];
+
+            $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares) {
+                foreach($effectiveMiddlewares as $middleware) {
+                    [$middlewareClass, $middlewareMethod] = $middleware->getAction();
+
+                    // Execute the middleware and check its result.
+                    $result = self::callControllerAction($middlewareClass, $middlewareMethod, $args, $middleware->arguments);
+
+                    // Stop processing if middleware returns any other than true.
+                    if($result !== true) {
+                        return;
                     }
+                }
 
-                    return new Response();
-                },
+                // Execute the main action, which can be either a callable or a controller action.
+                if(is_callable($action->getAction())) {
+                    self::performCallableAction($action->getAction(), $args);
+                } else {
+                    [$controllerClass, $actionMethod] = $action->getAction();
+                    self::callControllerAction($controllerClass, $actionMethod, $args, $action->arguments);
+                }
+
+                // After the main action, execute after middlewares.
+                foreach($effectiveAfterMiddlewares as $afterMiddlewareState) {
+                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState->getAction();
+                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args, $afterMiddlewareState->arguments);
+                }
+            };
+
+            // Register the route with FastRoute.
+            $router->addRoute(
+                self::resolveMethod($method),
+                self::buildEndpoint($endpoint),
+                $handler,
             );
-
-            self::performRouteInclusions($middlewares, $afterMiddleware, $route);
         }
-        private static $isCancelled = false;
 
-        private static function performRouteInclusions(array $middlewares, array $afterMiddlewares, RouteInterface|RouteGroupInterface $routable): void {
+        private static function resolveMethod(string $method): string|array {
+            $method = strtoupper($method);
 
-            $routable->add(function ($request, $handler) use ($middlewares, $afterMiddlewares) {
-                // Get the current route context and arguments.
-                $route = RouteContext::fromRequest($request)->getRoute();
-                // If the route is null, we assume no arguments are needed.
-                $args = $route?->getArguments() ?? [];
+            // Support "ANY" as a special method that maps to all HTTP methods.
+            if($method === "ANY") {
+                return ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
+            }
 
-                foreach($middlewares as $middleware) {
-                    [$middlewareClass, $middlewareMethod] = $middleware;
+            return $method;
+        }
 
-                    $result = zubzet()->executeControllerAction($middlewareClass, $middlewareMethod, $args);
+        private static function buildEndpoint(string $endpoint): string {
+            $prefix = implode("", self::$prefixStack);
+            $path = $prefix . $endpoint;
 
-                    if($result === true) continue;
+            if($path === "") {
+                return "/";
+            }
 
-                    self::$isCancelled = true;
+            $path = "/" . ltrim($path, "/");
+            $path = preg_replace('#/+#', '/', $path) ?? $path;
 
-                    // If any middleware returns false, we stop processing and return an empty response.
-                    return new Response();
+            if($path !== "/") {
+                $path = rtrim($path, "/");
+            }
+
+            return $path;
+        }
+
+        /**
+         * Keeps callback compatibility with route closures using 0..3 parameters.
+         */
+        private static function performCallableAction(callable $action, array $args): void {
+            $reflection = new \ReflectionFunction(\Closure::fromCallable($action));
+
+            $resolved = array_map(function(\ReflectionParameter $param) use ($args) {
+                $type = $param->getType();
+                $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : null;
+
+                return match(true) {
+                    $typeName === 'array' => $args,
+                    is_a($typeName, Request::class, true) => request(),
+                    is_a($typeName, Response::class, true) => response(),
+                    $param->isDefaultValueAvailable() => $param->getDefaultValue(),
+                    default => null,
+                };
+            }, $reflection->getParameters());
+
+            $action(...$resolved);
+        }
+
+        private static function getInheritedMiddlewares(): array {
+            $middlewares = [];
+
+            foreach(self::$groupStateStack as $groupState) {
+                foreach($groupState["middleware"] as $middleware) {
+                    $middlewares[] = $middleware;
                 }
+            }
 
-                $handler->handle($request);
+            return $middlewares;
+        }
 
-                // Cancel if route processing was cancelled by middleware
-                if(self::$isCancelled) {
-                    return new Response();
+        private static function getInheritedAfterMiddlewares(): array {
+            $afterMiddlewares = [];
+
+            // Group after-middlewares run from inner group to outer group.
+            foreach(array_reverse(self::$groupStateStack) as $groupState) {
+                foreach($groupState["afterMiddleware"] as $afterMiddleware) {
+                    $afterMiddlewares[] = $afterMiddleware;
                 }
+            }
 
-                // Applying after middlewares
-                foreach($afterMiddlewares as $afterMiddleware) {
-                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddleware;
+            return $afterMiddlewares;
+        }
 
-                    zubzet()->executeControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args);
-                }
-
-                return new Response();
-            });
-
+        private static function callControllerAction(string $class, string $method, array $args = [], array $arguments = []): mixed {
+            return zubzet()->executeControllerAction($class, $method, $args, $arguments);
         }
     }
 

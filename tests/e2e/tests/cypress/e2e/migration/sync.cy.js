@@ -1,6 +1,13 @@
 describe('Migration System - Sync', () => {
 
     before(() => {
+        // Defensive cleanup: a prior interrupted run on the same container can
+        // leave fixture files behind, which then taint the next run's sync results.
+        syncFiles.forEach(({file}) => {
+            cy.exec(`rm -f ${baseDir}/${file} || true`, { failOnNonZeroExit: false });
+        });
+        cy.exec(`rm -f ../../../src/IncludedComponents/database/Migration/2025-01-01_Ex_Ex.sql || true`, { failOnNonZeroExit: false });
+
         cy.dbSeed();
 
         syncFiles.forEach(({file, table}) => {

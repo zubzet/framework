@@ -5,6 +5,9 @@
      * https://www.jetbrains.com/help/phpstorm/ide-advanced-metadata.html#define-exit-points
      */
 
+    // IDE-only metadata; never executed at runtime.
+    // @codeCoverageIgnoreStart
+
     namespace PHPSTORM_META {
 
         use ZubZet\Framework\ZubZet;
@@ -28,5 +31,7 @@
         ]));
 
     }
+
+    // @codeCoverageIgnoreEnd
 
 ?>

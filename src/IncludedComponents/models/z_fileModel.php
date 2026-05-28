@@ -3,10 +3,15 @@
      * This file holds the file model
      */
 
+    use ZubZet\Framework\Database\IsInternalModel;
+
     /**
      * The file model handles dynamic files
+     * @internal
      */
     class z_fileModel extends z_model {
+
+        use IsInternalModel;
 
         /**
          * Adds a reference to a file to the database

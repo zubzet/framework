@@ -3,7 +3,9 @@
      * This file holds the login controller
      */
 
-use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\Logger\Logger;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -32,7 +34,7 @@ use ZubZet\Framework\Authentication\Permission\User;
                 }
                 
                 if ($user["verified"] == NULL) {
-                    $link = $req->booter->rootFolder . "login/verify";
+                    $link = $req->getRootFolder() . "login/verify";
                     $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
                 }
                 
@@ -67,7 +69,9 @@ use ZubZet\Framework\Authentication\Permission\User;
                     $req->getModel("z_login", $req->getZRoot())->addTooManyLoginsEmailByUserId($user["id"]);
 
                     //Log
-                    $req->getModel("z_general")->logActionByCategory("SecurityAlert", "Too many login tries. Account temporarily locked. (user ID: $user[id])", $user["id"]);
+                    logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
+                        "userId" => $user["id"]
+                    ]);
 
                     $res->error("Too many login tries. Try again later.");
                 }
@@ -101,11 +105,7 @@ use ZubZet\Framework\Authentication\Permission\User;
          * @param Response $res The response object
          */
         public function action_logout($req, Response $res) {
-            $res->logout();
-            $reroute = $req->getGet("reroute", false);
-            if($reroute) {
-                $res->rerouteUrl($reroute == "index" ? "" : $reroute);
-            }
+            return $res->logout();
         }
 
         /**
@@ -198,7 +198,9 @@ use ZubZet\Framework\Authentication\Permission\User;
                     );
 
                     //Log
-                    $req->getModel("z_general")->logActionByCategory("PasswordResetRequest", "Password reset requested for " . $user["email"], $user["id"]);
+                    logger(Logger::ZUBZET)->info(LogEventType::PASSWORD_RESET_REQUESTED, [
+                        "userId" => $user["id"]
+                    ]);
                 }
 
                 $res->generateRest([
@@ -239,14 +241,10 @@ use ZubZet\Framework\Authentication\Permission\User;
                 $req->getModel("z_login", $req->getZRoot())->disableResetCode($DBResetCode["id"]);
 
                 //Log of password reset
-                $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordReset");
-                switch ($DBResetCode["reason"]) {
-                    case "forgot": $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordReset"); break;
-                    case "create": $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordCreated"); break;
-                    case "change": $catId = $req->getModel("z_general")->getLogCategoryIdByName("PasswordChanged"); break;
-                }
-
-                $req->getModel("z_general")->logAction($catId, "Password reseted (UserId: $DBResetCode[userId])", $DBResetCode["userId"]);
+                logger(Logger::ZUBZET)->info(LogEventType::PASSWORD_RESET, [
+                    "userId" => $DBResetCode["userId"],
+                    "reason" => $DBResetCode["reason"]
+                ]);
 
                 //Rerouting back to root
                 $res->rerouteUrl();
@@ -272,8 +270,8 @@ use ZubZet\Framework\Authentication\Permission\User;
             $model = $req->getModel("z_user");
             $success = $model->verifyUser($code);
 
-            if (isset($_POST["email"])) {
-                $user = $model->getUserByEmail($_POST["email"]);
+            if (!empty($req->getPost("email"))) {
+                $user = $model->getUserByEmail($req->getPost("email"));
 
                 if (!empty($user)) {
                     $this->send_verify_mail($req, $res, $user["id"]);

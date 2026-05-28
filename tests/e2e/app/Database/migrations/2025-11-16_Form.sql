@@ -12,7 +12,8 @@ INSERT INTO `duplicate` (`value`) VALUES
 
 CREATE TABLE `model_test_insert` (
     `id` INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
-    `value` VARCHAR(255) NOT NULL
+    `value` VARCHAR(255) NULL DEFAULT NULL,
+    `value_json` JSON NULL DEFAULT NULL
 );
 
 CREATE TABLE `model_test_select` (

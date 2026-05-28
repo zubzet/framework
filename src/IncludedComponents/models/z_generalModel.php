@@ -3,10 +3,15 @@
      * This file holds the general model
      */
 
+    use ZubZet\Framework\Database\IsInternalModel;
+
     /**
      * The general model does general stuff that is needed everywhere
+     * @internal
      */
     class z_generalModel extends z_model {
+
+        use IsInternalModel;
 
         /**
          * Gets a list of all languages in the database
@@ -65,7 +70,7 @@
         function getGroups() {
             $sql = "SELECT *
                     FROM `z_role`
-                    WHERE `is_group`=1";
+                    WHERE `is_group`=1 AND `active`=1";
 
             return $this->exec($sql)->resultToArray();
         }

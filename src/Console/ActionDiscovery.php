@@ -2,7 +2,11 @@
 
     namespace ZubZet\Framework\Console;
 
+    use ZubZet\Framework\Support\StaticCache;
+
     class ActionDiscovery {
+
+        private const CACHE_KEY = "console_actions_by_controller";
 
         /**
          * @internal
@@ -12,6 +16,10 @@
          * @return string[][]
          */
         public static function find(string $directory): array {
+            if(StaticCache::has(self::CACHE_KEY, $directory)) {
+                return StaticCache::get(self::CACHE_KEY, $directory);
+            }
+
             $actionsByController = [];
             foreach((new \DirectoryIterator($directory)) as $file) {
                 if("php" !== $file->getExtension()) continue;
@@ -21,6 +29,10 @@
                 include_once $file->getPathname();
                 $classesAfter = get_declared_classes();
                 $controller = array_diff($classesAfter, $classesBefore);
+
+                // Skip if no new class was found
+                if(empty($controller)) continue;
+
                 $controller = array_values($controller)[0];
                 $controllerName = strtolower(substr($controller, 0, -10));
 
@@ -39,7 +51,7 @@
                 }, $methods);
             }
 
-            return $actionsByController;
+            return StaticCache::set(self::CACHE_KEY, $directory, $actionsByController);
         }
     }
 

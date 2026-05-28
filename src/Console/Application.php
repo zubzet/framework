@@ -8,6 +8,9 @@
     use ZubZet\Framework\Database\Migration\Commands\Status;
     use ZubZet\Framework\Database\Migration\Commands\Sync;
     use ZubZet\Framework\Database\Migration\Commands\UnlockMigration;
+    use ZubZet\Framework\Support\Commands\Startup;
+    use ZubZet\Framework\Testing\Coverage\Commands\Stop as CoverageStop;
+    use ZubZet\Framework\Testing\Coverage\Commands\Start as CoverageStart;
 
     class Application {
         public static function bootstrap(\z_framework $booter): ConsoleApplication {
@@ -24,6 +27,9 @@
                     new Sync(),
                     new Seed(),
                     new UnlockMigration(),
+                    new Startup(),
+                    new CoverageStart(),
+                    new CoverageStop(),
                 ],
             ));
             return $console;

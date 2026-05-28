@@ -2,17 +2,28 @@
 
     namespace ZubZet\Framework\Database;
 
+    use ZubZet\Framework\Core\Model;
+    use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
+
     trait Interaction {
 
         /**
          * @var null|bool|\mysqli_result $result Result of the last query
          */
+        #[IncludeInCheckpoint]
         public $result;
 
         /**
          * @var int|string|null $insertId Last insert id
          */
+        #[IncludeInCheckpoint]
         public $insertId;
+
+        /**
+         * @var ?Model $callingModel A reference to the model that is currently handling the query, if any
+         */
+        #[IncludeInCheckpoint]
+        public ?Model $callingModel = null;
 
         /**
          * Returns the id of the last inserted element

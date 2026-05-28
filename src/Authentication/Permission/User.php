@@ -6,6 +6,7 @@ use ZubZet\Framework\Authentication\AuthenticationObject;
 
 use DateTime;
 use ZubZet\Framework\Authentication\HandleTrait;
+use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\RetrievalTrait;
 
 class User extends AuthenticationObject {
@@ -43,6 +44,10 @@ class User extends AuthenticationObject {
 
     public static function byGroup(Group $group): array {
         return model("z_permission")->getUsersByRoleGroup($group);
+    }
+
+    public static function byOrganization(Organization $organization): array {
+        return model("z_user")->getUsersByOrganization($organization);
     }
 
     /**
@@ -102,6 +107,7 @@ class User extends AuthenticationObject {
         $this->setField("user-permissions", null);
         $this->setField("roles", null);
         $this->setField("groups", null);
+        $this->setField("organization", null);
     }
 
 
@@ -110,11 +116,11 @@ class User extends AuthenticationObject {
      * This will insert the user into the database and return the created user object
      *
      * @param string $email The email of the new user
-     * @param string $password The password of the new user (plain text, will be hashed)
+     * @param ?string $password Optional the password of the new user (plain text, will be hashed)
      * @param ?DateTime $verified Optional datetime object indicating when the user was verified
      * @return User|null The created user object or null on failure
      */
-    public static function add(?string $email, string $password, ?DateTime $verified = null): ?User {
+    public static function add(?string $email, ?string $password, ?DateTime $verified = null): ?User {
         // If a datetime object is provided, format it to a string
         if(!is_null($verified)) $verified = $verified->format("Y-m-d H:i:s");
 
@@ -144,6 +150,22 @@ class User extends AuthenticationObject {
      */
     public function updatePassword(string $password): void {
         model('z_login')->updatePassword($this, $password);
+        $this->clearFields();
+    }
+
+    public function updateOrganization(?Organization $organization): void {
+        $previousGroup = $this->organization()?->getGroup();
+        if(!is_null($previousGroup)) {
+            $this->groupsRemove($previousGroup);
+        }
+
+        model('z_user')->updateUserOrganization($this, $organization);
+
+        $newGroup = $organization?->getGroup();
+        if(!is_null($newGroup)) {
+            $this->groupsAdd($newGroup);
+        }
+
         $this->clearFields();
     }
 
@@ -197,7 +219,7 @@ class User extends AuthenticationObject {
         $permissionChanged = true;
 
         // Add roles to user in the database
-        model("z_permission")->addRolesToUser($this, ...$roles);
+        model("z_permission")->addRolesGroupsToUser($this, ...$roles);
 
         // Clear the roles cache for this user
         $this->clearFields();
@@ -235,7 +257,7 @@ class User extends AuthenticationObject {
         $permissionChanged = true;
 
         // Remove roles from user in the database
-        model("z_permission")->removeRolesFromUser($this, ...$roles);
+        model("z_permission")->removeRolesGroupsFromUser($this, ...$roles);
 
         // Clear the roles cache for this user
         $this->clearFields();
@@ -269,8 +291,21 @@ class User extends AuthenticationObject {
         return $this->getField('email');
     }
 
+    public function organization(): ?Organization {
+        // Use a separate marker so a null result (user has no org) is cached too,
+        // not just hits - otherwise every call would re-resolve `organizationId`.
+        if(!isset($this->data["organization-loaded"])) {
+            $orgId = $this->getField("organizationId");
+            $organization = is_null($orgId) ? null : Organization::byId($orgId);
+            $this->setField("organization", $organization);
+            $this->setField("organization-loaded", true);
+        }
+
+        return $this->getField("organization");
+    }
+
     /**
-     * Get the users` verfied date
+     * Get the users` verified date
      * 
      * @return null|string The users verified date or null if not verified
      */

@@ -2,6 +2,10 @@
 
     namespace ZubZet\Framework;
 
+    // @codeCoverageIgnoreStart
+    // class_alias() calls run at autoload-time, before testing:coverage:start,
+    // so the recorded coverage is always 0%. The aliases are still tested
+
     class_alias(ZubZet::class, "z_framework");
     class_alias(Database\Connection::class, "z_db");
 
@@ -18,5 +22,7 @@
 
     class_alias(Support\Rest::class, "Rest");
     class_alias(Authentication\User::class, "User");
+
+    // @codeCoverageIgnoreEnd
 
 ?>

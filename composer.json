@@ -6,14 +6,22 @@
         "wiki": "https://zubzet.com/docs"
     },
     "require": {
-        "php": ">=8.0 <8.5",
+        "php": ">=8.0 <8.6",
         "zubzet/password-hash-utilities": "1.0.*",
         "cakephp/database": "^4.5",
-        "slim/slim": "^4.14",
-        "slim/psr7": "^1.7",
+        "nikic/fast-route": "^1.3",
         "phpmailer/phpmailer": "^6.7",
         "symfony/console": "7.* || 6.*",
-        "doctrine/dbal": "^3.10 || ^4.4"
+        "doctrine/dbal": "^3.10 || ^4.4",
+        "monolog/monolog": "^2.11",
+        "phpunit/php-code-coverage": "9.*",
+        "symfony/filesystem": "v6.0.19",
+        "league/mime-type-detection": "^1.16",
+        "filp/whoops": "^2.18.4",
+        "php-debugbar/php-debugbar": "^1.23.6",
+        "components/jquery": "3.5.*",
+        "components/bootstrap": "4.6.*",
+        "components/font-awesome": "6.5.*"
     },
     "autoload": {
         "files": [

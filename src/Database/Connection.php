@@ -2,53 +2,82 @@
 
     namespace ZubZet\Framework\Database;
 
+    use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
+    use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
+    use ZubZet\Framework\Support\Checkpoint\CanCheckpoint;
+    use ZubZet\Framework\Support\Checkpoint\Checkpointable;
+    use ZubZet\Framework\Support\Checkpoint\IncludeInCheckpoint;
+    use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
+
+    use Cake\Database\Query;
     use Cake\Database\Driver\Mysql;
     use Cake\Database\Connection as QueryBuilderConnection;
-    use Cake\Database\Query;
-    use ZubZet\Framework\QueryBuilder\ZubZetValueBinder;
 
-    class Connection {
+    class Connection implements Checkpointable {
 
         use Interaction;
+        use CanCheckpoint;
 
-        public QueryBuilderConnection $cakePHPDatabase;
+        public QueryBuilderConnection $queryBuilderConnection;
         private \mysqli $conn;
         private \mysqli_stmt $stmt;
-        public \z_framework $booter;
+        public ZubZet $booter;
 
         public int $lastConnect;
         public int $lastHeartbeat;
         public int $connectTimeout;
 
-        private string $user;
-        private string $password;
+        private ?string $host;
+        private ?string $password;
+        private ?string $user;
+        private ?string $database;
 
-        public function __construct(\z_framework &$booter) {
-            $this->booter = $booter;
+        public function __construct() {
+            $this->booter = zubzet();
 
-            $this->cakePHPDatabase = new QueryBuilderConnection([
+            $this->queryBuilderConnection = new QueryBuilderConnection([
                 'driver' => Mysql::class,
             ]);
 
-            $this->connectTimeout = $booter->req->getBooterSettings(
-                "db_connection_timeout",
-                default: 900,
-            );
+            // Check if timeout config is a valid number
+            $timeout = config("db_connection_timeout", default: 900);
+            if(!is_numeric($timeout)) {
+                throw new \InvalidArgumentException("Config key 'db_connection_timeout' must be numeric, got: '$timeout'");
+            }
+            $this->connectTimeout = (int) $timeout;
 
-            $this->user = $booter->dbusername;
-            $this->password = $booter->dbpassword;
+            $this->host = config("dbhost");
+            $this->user = config("dbusername");
+            $this->password = config("dbpassword");
+            $this->database = config("dbname");
         }
 
         private function connect() {
             // Make sure no previous connection exists
             $this->disconnect();
 
+            // Validate that all required config keys are present if using the database connection
+            $missing = array_keys(array_filter([
+                'dbhost' => $this->host,
+                'dbusername' => $this->user,
+                'dbpassword' => $this->password,
+                'dbname' => $this->database,
+            ], fn($v) => empty($v)));
+
+            if(!empty($missing)) {
+                throw new \RuntimeException(
+                    "Database connection requires valid configuration. Missing or empty config key(s): " . implode(', ', $missing)
+                );
+            }
+
             // Connect to the database
             $this->conn = new \mysqli(
-                $this->booter->dbhost,
+                $this->host,
                 $this->user,
                 $this->password,
-                $this->booter->dbname,
+                $this->database,
             );
 
             // Set the connection charset
@@ -72,15 +101,23 @@
             }
 
             // Check if we need to reconnect due to timeout
-            if(!isset($this->lastConnect) || time() - $this->lastConnect >= $this->connectTimeout) {
-                if(!isset($this->lastHeartbeat) || time() - $this->lastHeartbeat >= $this->connectTimeout) {
-                    // Try a heartbeat to see if the connection is still alive
-                    $connectionAlive = false;
-                    try {
-                        $connectionAlive = $this->heartbeat(waitForTimeout: false);
-                    } catch(\Exception) {} finally {
-                        if(!$connectionAlive) $this->connect();
-                    }
+            if(isset($this->lastConnect) && time() - $this->lastConnect < $this->connectTimeout) {
+                return;
+            }
+
+            // Check if we recently did a heartbeat, if so we can skip the check
+            if(isset($this->lastHeartbeat) && time() - $this->lastHeartbeat < $this->connectTimeout) {
+                return;
+            }
+
+            // Try a heartbeat to see if the connection is still alive
+            $connectionAlive = false;
+
+            try {
+                $connectionAlive = $this->heartbeat(waitForTimeout: false);
+            } catch(\Exception) {} finally {
+                if(!$connectionAlive) {
+                    $this->connect();
                 }
             }
         }
@@ -143,7 +180,16 @@
             $this->assertConnection();
 
             $args = func_get_args();
-            $preparationResult = $this->conn->prepare($query);
+
+            // PHP 8.1+ defaults mysqli to MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT,
+            // which throws mysqli_sql_exception before prepare() / execute() can
+            // return false. Catch and rethrow with the framework's error prefix
+            // so the API contract is identical across PHP versions.
+            try {
+                $preparationResult = $this->conn->prepare($query);
+            } catch(\mysqli_sql_exception $e) {
+                throw new \Exception("SQL Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+            }
             if(is_bool($preparationResult)) {
                 throw new \Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
             }
@@ -152,27 +198,62 @@
 
             if(count($args) > 1) {
                 array_shift($args);
-                $bindingResult = $this->stmt->bind_param(...$args);
-                if(false === $bindingResult) {
-                    throw new \Exception("SQL Binding Error: " . $this->conn->error . "\nQuery: " . $query);
-                }
+                // PHP 8's mysqli throws ArgumentCountError / ValueError when
+                // the type string or value count doesn't match the prepared
+                // statement; bind_param() no longer returns false in any
+                // reachable scenario, so a wrapping `if(false === ...)` check
+                // would be dead code.
+                $this->stmt->bind_param(...$args);
             }
 
-            $executionResult = $this->stmt->execute();
+            $queryStart = microtime(true);
+            try {
+                $executionResult = $this->stmt->execute();
+            } catch(\mysqli_sql_exception $e) {
+                throw new \Exception("SQL Execution Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+            }
+            $queryDuration = (microtime(true) - $queryStart) * 1000;
+
             if(false === $executionResult) {
                 throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
-            }
-            if($this->stmt->errno) {
-                throw new \Exception("SQL STMT Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
 
             $this->insertId = $this->conn->insert_id;
 
             $this->result = $this->stmt->get_result();
 
+            $rowCount = $this->result instanceof \mysqli_result
+                ? $this->result->num_rows
+                : $this->conn->affected_rows;
+
             $this->stmt->close();
 
             $this->lastHeartbeat = time();
+
+            // Collect the query for the debug bar
+            DebugBarBridge::collectQuery(
+                $query,
+                $queryDuration / 1000,
+                $rowCount,
+                array_slice($args, 1),
+                $this->callingModel,
+            );
+
+            $slowQueryThreshold = config("logger_slow_query_ms", default: 300);
+            if(!is_null($slowQueryThreshold) && $queryDuration >= $slowQueryThreshold) {
+                // The slow-query log itself runs an INSERT through this same Connection,
+                // which clobbers every #[IncludeInCheckpoint] property. Reentrancy into the
+                // logger is prevented by DatabaseLogger's own guard.
+                $checkpoint = $this->checkpointCurrentState(attributeClass: IncludeInCheckpoint::class);
+                try {
+                    logger(Logger::ZUBZET)->warning(LogEventType::SLOW_QUERY, [
+                        'duration_ms' => round($queryDuration, 2),
+                        'query' => $query,
+                    ]);
+                } finally {
+                    $checkpoint->restore();
+                }
+            }
 
             return $this;
         }
@@ -180,24 +261,38 @@
         public function executeMultiQuery(string $query, bool $throwOnFailure = true): bool {
             $this->assertConnection();
 
-            if($this->conn->multi_query($query) === false) {
-                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
-                return false;
-            }
-
-            do {
-                if($this->conn->errno) {
+            // PHP 8.1+ defaults mysqli to STRICT reporting, which makes
+            // multi_query() / next_result() throw mysqli_sql_exception instead
+            // of returning false / setting errno. Catch any of them and route
+            // back through the framework's throwOnFailure contract.
+            try {
+                if($this->conn->multi_query($query) === false) {
                     if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
-
-                    while($this->conn->more_results()) $this->conn->next_result();
                     return false;
                 }
 
-                if($result = $this->conn->store_result()) $result->free();
-            } while($this->conn->more_results() && $this->conn->next_result());
+                do {
+                    if($this->conn->errno) {
+                        if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
 
-            if($this->conn->errno) {
-                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
+                        while($this->conn->more_results()) $this->conn->next_result();
+                        return false;
+                    }
+
+                    if($result = $this->conn->store_result()) $result->free();
+                } while($this->conn->more_results() && $this->conn->next_result());
+
+                if($this->conn->errno) {
+                    if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
+                    return false;
+                }
+            } catch(\mysqli_sql_exception $e) {
+                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+                while($this->conn->more_results()) {
+                    try {
+                        $this->conn->next_result();
+                    } catch(\mysqli_sql_exception) {}
+                }
                 return false;
             }
 
@@ -223,12 +318,20 @@
                 }
             }
             $this->lastHeartbeat = time();
-            return $this->conn->ping();
+            // mysqli::ping() is deprecated since PHP 8.4 (the reconnect
+            // feature was removed in 8.2, leaving ping redundant). A
+            // lightweight SELECT 1 round-trips the server identically and
+            // surfaces a dead connection as a mysqli_sql_exception under
+            // PHP 8.1+'s default MYSQLI_REPORT_STRICT.
+            try {
+                return $this->conn->query("SELECT 1") !== false;
+            } catch(\mysqli_sql_exception) {
+                return false;
+            }
         }
 
         /**
          * Disconnect from the database
-         * @param boolean $forceClose Close the connection regardless of if it seems to be open
          * @return void
          */
         public function disconnect() {
