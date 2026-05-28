@@ -1337,6 +1337,19 @@ class ZFormField {
         this.addSelectedValue(pick);
         this.input.value = "";
       });
+    } else if (this.type == "checkbox") {         // --- Checkbox ---
+      // Bootstrap form-check layout: the box sits left of its label and
+      // clicking the label toggles it (via the shared for/id). The label
+      // was appended above in the generic flow; move it to the right of
+      // the input here.
+      customDiv = document.createElement("div");
+      customDiv.classList.add("form-check");
+      this.input = document.createElement("input");
+      this.input.setAttribute("type", "checkbox");
+      this.input.classList.add("form-check-input");
+      this.label.classList.add("form-check-label");
+      customDiv.appendChild(this.input);
+      customDiv.appendChild(this.label);
     } else if (this.type == "textarea") {         // --- Textarea ---
       this.input = document.createElement("textarea");
       this.input.classList.add("form-control");
@@ -1515,6 +1528,9 @@ class ZFormField {
     if (this.type == "multi-select") {
       return this.selectedValues.slice();
     }
+    if (this.type == "checkbox") {
+      return this.input.checked;
+    }
     return this.input.value;
   }
 
@@ -1523,6 +1539,12 @@ class ZFormField {
       var arr = Array.isArray(value) ? value : [];
       this.clearSelectedValues();
       for (var v of arr) this.addSelectedValue(String(v));
+      return;
+    }
+    if (this.type == "checkbox") {
+      // Accept booleans, 1/0, "1"/"0", "true"/"false", "on".
+      this.input.checked = value === true || value === 1
+        || value === "1" || value === "true" || value === "on";
       return;
     }
     if (this.input.type != "file") {
@@ -1748,6 +1770,11 @@ class ZFormField {
       }
       return parts.join("&");
     }
+    if (this.type == "checkbox") {
+      // Always submit the state ("1"/"0") so a binary DB column can be
+      // toggled off as well as on. "must be ticked" is a ->checked() rule.
+      return this.name + "=<#decURI#>" + (this.input.checked ? "1" : "0");
+    }
     return this.name + "=<#decURI#>" + encodeURIComponent(this.value);
   }
 
@@ -1772,6 +1799,10 @@ class ZFormField {
       for (var v of this.value) {
         data.append(this.name + "[]", "<#decURI#>" + encodeURIComponent(v));
       }
+    } else if (this.type == "checkbox") {
+      // Always submit the state ("1"/"0") so a binary DB column can be
+      // toggled off as well as on. "must be ticked" is a ->checked() rule.
+      data.set(this.name, "<#decURI#>" + (this.input.checked ? "1" : "0"));
     } else {
       data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
     }
@@ -1785,6 +1816,10 @@ class ZFormField {
   reset() {
     if (this.type == "multi-select") {
       this.value = this.default ?? [];
+      return;
+    }
+    if (this.type == "checkbox") {
+      this.value = this.default ?? false;
       return;
     }
     this.input.value = this.default ?? "";
