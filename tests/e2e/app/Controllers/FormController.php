@@ -41,6 +41,16 @@
             return $res->render("form/ergonomics");
         }
 
+        // Fixture reproducing "real world" ways views bend the form API:
+        // conditional wrapper visibility via closest('.form-group'),
+        // cascading computed values, appending custom DOM into a field's
+        // group, a hand-rolled hidden-JSON + cards multi-select, and jQuery
+        // submit-button manipulation. Guards that Z.js stays compatible with
+        // these patterns.
+        public function action_weirdPatterns(Request $req, Response $res) {
+            return $res->render("form/weirdPatterns");
+        }
+
         // Probe for the integer() and exists() validation rules. The existing
         // form-fixture controllers don't exercise these. Validation runs on
         // every request (no GET-vs-POST split), and the result is emitted as
