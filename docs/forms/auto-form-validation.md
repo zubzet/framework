@@ -87,6 +87,13 @@ field.isHidden();       // true while hidden
 
 Custom HTML (`addCustomHTML`) and separators (`addSeperator`) keep their place when fields are shown or hidden. Do not mix `show()` / `hide()` with manual DOM manipulation of a field's wrapper (e.g. `$(field.dom).parent().hide()`) — the two will fight over the layout.
 
+The built-in submit button can be hidden too — useful for live forms that have no submit:
+
+```js
+form.hideSubmit();
+form.showSubmit();
+```
+
 ### **Reading and writing all values**
 
 ```js
@@ -96,6 +103,27 @@ form.setValues(data, { resetUnknown: true }); // reset fields not present in dat
 ```
 
 CED fields are skipped by `getValues` / `setValues`; their data round-trips through the normal submit instead.
+
+Keys passed to `setValues` that don't match any field are kept on `form.meta` and returned by `getValues`, but are never submitted to the backend. This lets a value like an id ride along with the form data:
+
+```js
+form.setValues({ first_name: "Ada", id: 42 }); // id has no field -> stored as meta
+form.getValues();                               // { first_name: "Ada", id: 42 }
+form.meta;                                      // { id: 42 }   (inspectable)
+```
+
+### **Live / client-only forms**
+
+With `collectOnly: true` the form never posts to the backend. Clicking the submit button hands the collected values (`getValues()`, meta included) straight to `saveHook` instead. Combined with `inputHook` — called with `getValues()` on every change — the form becomes a live value source you can wire into the page without a round-trip.
+
+```js
+var form = Z.Forms.create({
+    dom: "form",
+    collectOnly: true,                  // submit -> saveHook(getValues()), no POST
+    saveHook: (values) => { /* values incl. meta */ },
+    inputHook: (values) => { /* fires on every keystroke / select change */ },
+});
+```
 
 
 ## Back-end
