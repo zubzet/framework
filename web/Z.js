@@ -705,12 +705,14 @@ class ZForm {
    * @param {boolean} [options.hidehints] Suppress the inline hint banner (saved / unsaved / error). Defaults to `false` (hints are shown).
    * @param {boolean} [options.sendOnSubmitClick] If `false`, the built-in submit button no longer calls `send()` automatically — the caller is responsible for triggering submission. Defaults to `true`.
    * @param {string} [options.customEndpoint] Override the URL `send()` posts to. By default the form posts back to the current action.
+   * @param {boolean} [options.collectOnly] Client-only mode: the submit button never posts to the backend. Instead it hands the collected values (`getValues()`) to `saveHook`. Defaults to `false`.
+   * @param {function} [options.inputHook] Called with `getValues()` on every field change (typing, selecting, etc). Lets the form be consumed live without a submit.
    */
   constructor(options = {
-    doReload: true, 
-    dom: null, 
-    saveHook: null, 
-    formErrorHook:null, 
+    doReload: true,
+    dom: null,
+    saveHook: null,
+    formErrorHook:null,
     hidehints: false,
     sendOnSubmitClick: true,
     customEndpoint: null
@@ -724,6 +726,16 @@ class ZForm {
     this.formErrorHook = options.formErrorHook;
     this.sendOnSubmitClick = "sendOnSubmitClick" in options ? options.sendOnSubmitClick : true;
     this.customEndpoint = options.customEndpoint || null;
+    this.collectOnly = options.collectOnly || false;
+    this.inputHook = options.inputHook || null;
+
+    /**
+     * Client-only metadata carried alongside the form values. Keys passed
+     * to setValues() that don't match a field land here and are returned by
+     * getValues(), but are never submitted to the backend — handy for an id
+     * or other context attached to the record being edited.
+     */
+    this.meta = {};
 
     this.hidehints = options.hidehints;
 
@@ -740,6 +752,10 @@ class ZForm {
     this.dom.appendChild(this.inputSpace);
 
     this.buttonSubmit = this.createActionButton(Z.Lang.submit, "btn-primary", () => {
+      if(this.collectOnly) {
+        if(this.saveHook) this.saveHook(this.getValues());
+        return;
+      }
       if(this.sendOnSubmitClick) this.send(this.customEndpoint);
     });
 
@@ -795,21 +811,28 @@ class ZForm {
   }
 
   /**
-   * Returns an object where each key is the fieldname with its value as value.
-   * CEDs are skipped: they have no scalar value and round-trip through
+   * Returns an object of the form's values: every (non-CED) field's value,
+   * merged with any client-only `meta` carried via setValues(). CEDs are
+   * skipped — they have no scalar value and round-trip through
    * getFormData / getPostString instead.
    * @returns {{[fieldName: string]: any}}
    */
   getValues() {
-    return Object.fromEntries(
-      Object.entries(this.fields)
-        .filter(([, field]) => field.type !== "CED")
-        .map(([fieldName, field]) => [fieldName, field.value])
-    );
+    return {
+      ...this.meta,
+      ...Object.fromEntries(
+        Object.entries(this.fields)
+          .filter(([, field]) => field.type !== "CED")
+          .map(([fieldName, field]) => [fieldName, field.value])
+      )
+    };
   }
 
   /**
-   * Fills a form with a data object. CEDs are skipped (see getValues).
+   * Fills a form with a data object. Keys matching a field set that field's
+   * value; keys matching no field are kept in `this.meta` (client-only,
+   * never submitted) so values like an id can ride along. CED keys are
+   * skipped.
    * @param {{[fieldName: string]: any}} data
    * @param {Object} options
    * @param {boolean} [options.resetUnknown] Reset fields which values are not in data?
@@ -820,9 +843,13 @@ class ZForm {
     }
 
     for (const fieldName in data) {
-      if (!(fieldName in this.fields)) continue;
-      if (this.fields[fieldName].type === "CED") continue;
-      this.fields[fieldName].value = data[fieldName];
+      const field = this.fields[fieldName];
+      if (field) {
+        if (field.type === "CED") continue;
+        field.value = data[fieldName];
+      } else {
+        this.meta[fieldName] = data[fieldName];
+      }
     }
   }
 
@@ -916,11 +943,12 @@ class ZForm {
     field.form = this;
 
     this.fields[field.name] = field;
-    var showUnsavedHint = () => {
+    var onFieldChange = () => {
       this.hint("alert-warning", Z.Lang.unsaved);
+      if (this.inputHook) this.inputHook(this.getValues());
     };
-    field.on('input', showUnsavedHint);
-    field.on('change', showUnsavedHint);
+    field.on('input', onFieldChange);
+    field.on('change', onFieldChange);
     bsCustomFileInput.init();
 
     this.items.push({type: "field", field: field});
@@ -1086,6 +1114,23 @@ class ZForm {
     this.dom.appendChild(button);
     button.addEventListener("click", action);
     return button;
+  }
+
+  /**
+   * Hides the built-in submit button. Useful for collectOnly / live forms
+   * that are consumed via inputHook and don't need a submit.
+   * @returns {void}
+   */
+  hideSubmit() {
+    this.buttonSubmit.style.display = "none";
+  }
+
+  /**
+   * Shows the built-in submit button again.
+   * @returns {void}
+   */
+  showSubmit() {
+    this.buttonSubmit.style.display = "";
   }
 
   /**
