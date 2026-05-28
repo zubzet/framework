@@ -36,6 +36,8 @@ The form is created with `Z.Forms.create`. The `dom` attribute takes the id of a
 | `width`     | Defines the width of the form element in 1/12 units of the total width. Effective on medium or larger devices. On small devices, the width is always 100%.                                                                                                                                                      |
 | `attributes`| Allows adding additional attributes for the generated input element (e.g., `min`, `max` for number inputs). Example usage: `attributes: {'min': 1, 'max': 10}`.                                                                                                                                                  |
 | `prepend`| Adds a visual element before the input field. This can be used for prefixes, labels, or other indicators. Example usage: prepend: 'Prefix' creates an input field with a preceding text or symbol. |
+| `disabled`| Starts the field disabled. The input is greyed out and cannot be edited until `field.enable()` is called. |
+| `hidden`| Starts the field hidden. It is left out of the layout until `field.show()` is called. The field still exists and submits its value. |
 
 
 ### **Simple input example**
@@ -57,6 +59,43 @@ The return value if `form.createField` is the created field. It has an attribute
 `form.addCustomHTML()`. With this you can add Html inside of the form.
 
 `form.addSeperator()`. This inserts a simple `<hr>` element at the end of the current builded form.
+
+### **Disabling fields**
+
+A field can be disabled and re-enabled at runtime. A disabled field is greyed out and cannot be edited, but still submits its value.
+
+```js
+field.disable();        // disable a single field
+field.enable();         // re-enable it
+field.isDisabled();     // true while disabled
+
+form.disable();         // disable the whole form (all fields + submit button)
+form.enable();          // re-enable it
+```
+
+`form.disable()` and a field's own `field.disable()` are independent: re-enabling the form does not re-enable a field that was disabled on its own. While a form is submitting it disables itself automatically and restores the previous state when the request finishes.
+
+### **Showing and hiding fields**
+
+Fields can be removed from and added back to the layout at runtime. A hidden field still exists and submits its value — it is just not rendered.
+
+```js
+field.hide();           // remove from the layout
+field.show();           // add it back in its original position
+field.isHidden();       // true while hidden
+```
+
+Custom HTML (`addCustomHTML`) and separators (`addSeperator`) keep their place when fields are shown or hidden. Do not mix `show()` / `hide()` with manual DOM manipulation of a field's wrapper (e.g. `$(field.dom).parent().hide()`) — the two will fight over the layout.
+
+### **Reading and writing all values**
+
+```js
+form.getValues();                       // { fieldName: value, ... }
+form.setValues({ first_name: "Ada" });  // set the named fields
+form.setValues(data, { resetUnknown: true }); // reset fields not present in data first
+```
+
+CED fields are skipped by `getValues` / `setValues`; their data round-trips through the normal submit instead.
 
 
 ## Back-end
