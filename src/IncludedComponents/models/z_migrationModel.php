@@ -175,8 +175,11 @@
                 throw new InvalidArgumentException("Syntax error: '$filename'. Date must be exactly YYYY-MM-DD.");
             }
 
-            // Date validations
-            $dateObj = DateTime::createFromFormat('Y-m-d', $dateString);
+            // Date validations. '!' anchors the time to 00:00:00 so two files
+            // with the same date compare equal (sortMigrations falls through to
+            // the version tiebreak) and date-range filtering in db:sync is not
+            // sensitive to the wall-clock time the object was created at.
+            $dateObj = DateTime::createFromFormat('!Y-m-d', $dateString);
             if(!$dateObj) {
                 throw new InvalidArgumentException("Syntax error: '$filename'. Invalid date format. Expected format: YYYY-MM-DD.");
             }
