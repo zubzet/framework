@@ -1104,7 +1104,6 @@ class ZForm {
   enable() {
     this._isDisabled = false;
     this._updateDisabled();
-
   }
 
   /**
@@ -1217,13 +1216,13 @@ class ZFormField {
      * @private
      * Was this field disabled manually?
      */
-    this._isDisabled = false
+    this._isDisabled = false;
 
     /**
      * @private
      * Is this field hidden?
      */
-    this._isHidden = false
+    this._isHidden = false;
 
     this.optgroup = null;
 
@@ -1778,17 +1777,16 @@ class ZFormField {
   }
 
   hide() {
-    this._isHidden = true
+    this._isHidden = true;
     if (this.form) this.form._updateLayout();
   }
 
   show() {
-    this._isHidden = false
+    this._isHidden = false;
     if (this.form) this.form._updateLayout();
   }
 
   isHidden() {
-    // Logic for conditional fields would be here when implemented
-    return this._isHidden
+    return this._isHidden;
   }
 }
