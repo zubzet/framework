@@ -45,6 +45,25 @@
             }
 
 
+            // Other deprecations introduced in ZubZet 1.2.0
+            $deprecations = new MatchingModifier($this, "deprecations-1-2-0");
+            $deprecations->from(["./app"]);
+            $deprecations->matchLineByLine(
+                "/getZControllers/",
+                [
+                    "ZubZet 1.2.0 deprecates getZControllers() on the RequestResponseHandler.",
+                ]
+            );
+            $deprecations->matchLineByLine(
+                "/<#decb64#>/",
+                [
+                    "ZubZet 1.2.0 deprecates the <#decb64#> POST-parameter prefix.",
+                    "Use <#decURI#> or standard encoding instead.",
+                ]
+            );
+            $deprecations->warn();
+
+
             // Add new settings for logging system
             $settings = new SettingsIni($this, "logger-settings");
             $settings->addProperty("logger_enabled", "true", "");
