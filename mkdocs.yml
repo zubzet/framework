@@ -126,6 +126,9 @@ nav:
         - Access Control: core-features/access-control
         - Logging: core-features/logging
         - Debug Bar: core-features/debug-bar
+        - Error Handling: core-features/error-handling
+        - Asset Proxy: core-features/asset-proxy
+        - Maintenance: core-features/maintenance
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
