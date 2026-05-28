@@ -51,6 +51,13 @@
             return $res->render("form/weirdPatterns");
         }
 
+        // Fixture for the DOM-structure contract spec: one field per
+        // structurally-distinct type so the spec can lock the rendered
+        // markup the hacky patterns above depend on.
+        public function action_domContract(Request $req, Response $res) {
+            return $res->render("form/domContract");
+        }
+
         // Probe for the integer() and exists() validation rules. The existing
         // form-fixture controllers don't exercise these. Validation runs on
         // every request (no GET-vs-POST split), and the result is emitted as
