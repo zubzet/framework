@@ -36,3 +36,52 @@ Lists all available console commands.
 
 Executes a controller action directly from the console environment.
 This is useful for running application logic, maintenance tasks, or background operations without an HTTP request.
+
+### info:startup
+
+Prints a startup banner with the ZubZet version, application name, environment, PHP version, and asset
+version — a quick health check after deployment.
+
+```bash
+php index.php info:startup
+```
+
+Pass `--pwd "$(pwd)"` so clickable file links in the [error page](error-handling.md) resolve to your
+host paths (the dev stack's `npm run info` does this for you).
+
+### Database commands
+
+| Command | Description |
+| ------- | ----------- |
+| `db:migrate` | Run all pending migrations (framework-bundled and your own under `app/Database/migrations`). |
+| `db:seed` | Run migrations, then load seed data from `app/Database/seed`. |
+| `db:status` | Show which migrations have been applied. |
+| `db:sync` | Mark migrations as applied up to a version/date without running their SQL. |
+| `db:unlock-migration` | Release a stuck migration lock. |
+
+`db:seed` accepts environment filters to control which seed folders run:
+
+```bash
+# Only seed the "Dev" environment
+php index.php db:seed --environments-included=Dev
+
+# Seed everything except "Prod" (repeatable)
+php index.php db:seed --environments-excluded=Prod
+
+# Skip the automatic migration step
+php index.php db:seed --skip-migrations
+```
+
+See [Migrations](migrations/index.md) for the full migration workflow.
+
+### Coverage
+
+Collect a runtime code-coverage report:
+
+```bash
+php index.php testing:coverage:start
+# ... exercise the app via tests or manual requests ...
+php index.php testing:coverage:stop
+```
+
+Add `--cli` to `testing:coverage:stop` to print a text summary instead of generating the HTML report.
