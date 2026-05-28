@@ -128,6 +128,76 @@ describe('Form Ergonomics', () => {
         });
     });
 
+    describe('Meta values (non-field keys)', () => {
+        it('setValues keeps a non-field key on form.meta and getValues returns it', () => {
+            cy.window().then((win) => {
+                win.form.setValues({ field_a: 'Ada', id: 42 });
+                const values = win.form.getValues();
+                expect(values).to.have.property('field_a', 'Ada');
+                expect(values).to.have.property('id', 42);
+                expect(win.form.meta).to.deep.eq({ id: 42 });
+            });
+            // The matching field was still populated.
+            cy.form('field_a').should('have.value', 'Ada');
+        });
+
+        it('meta is client-only — it is not submitted to the backend', () => {
+            cy.intercept('POST', '/Form/ergonomics').as('submit');
+
+            cy.window().then((win) => win.form.setValues({ field_a: 'Ada', id: 42 }));
+            cy.query('submit-btn').click();
+
+            cy.wait('@submit').then((interception) => {
+                // FormData body carries field_a but never the meta-only "id".
+                // Match the multipart field-name boundary so "id" doesn't
+                // accidentally match inside "field_hidden".
+                const body = interception.request.body;
+                expect(body).to.contain('name="field_a"');
+                expect(body).to.not.contain('name="id"');
+            });
+        });
+    });
+
+    describe('Submit button visibility', () => {
+        it('hideSubmit() hides the button, showSubmit() brings it back', () => {
+            cy.query('submit-btn').should('be.visible');
+
+            cy.window().then((win) => win.form.hideSubmit());
+            cy.query('submit-btn').should('not.be.visible');
+
+            cy.window().then((win) => win.form.showSubmit());
+            cy.query('submit-btn').should('be.visible');
+        });
+    });
+
+    describe('collectOnly (client-only submit)', () => {
+        it('submit hands getValues() to saveHook and never POSTs', () => {
+            cy.intercept('POST', '/Form/ergonomics').as('liveSubmit');
+
+            cy.get('#live-form').find('input[name=live_text]').type('hi');
+            cy.query('live-submit').click();
+
+            // saveHook fired with the collected values.
+            cy.query('saved-mirror').should('contain.text', '"live_text":"hi"');
+
+            // No request was made.
+            cy.get('@liveSubmit.all').should('have.length', 0);
+        });
+    });
+
+    describe('inputHook (live value changes)', () => {
+        it('fires with getValues() on every keystroke', () => {
+            cy.get('#live-form').find('input[name=live_text]').type('ab');
+            // Last keystroke leaves the full value in the mirror.
+            cy.query('live-mirror').should('contain.text', '"live_text":"ab"');
+        });
+
+        it('fires on a select change too', () => {
+            cy.get('#live-form').find('select[name=live_select]').select('b');
+            cy.query('live-mirror').should('contain.text', '"live_select":"b"');
+        });
+    });
+
     describe('Auto-disable during submit', () => {
         it('disables the submit button while the request is in flight, re-enables after', () => {
             cy.intercept('POST', '/Form/ergonomics', (req) => {

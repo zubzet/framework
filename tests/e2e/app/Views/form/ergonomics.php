@@ -9,6 +9,12 @@
     <!-- Second form with a CED, for the ZCED-stub / getValues-skip tests. -->
     <div id="ced-form" data-test="ced-form"></div>
 
+    <!-- Third form: collectOnly + inputHook (live, client-only). The hooks
+         mirror their payload into these markers for the spec to read. -->
+    <div id="live-form" data-test="live-form"></div>
+    <div data-test="live-mirror"></div>
+    <div data-test="saved-mirror"></div>
+
     <script>
         var form = Z.Forms.create({ dom: "form" });
 
@@ -75,5 +81,28 @@
                 { name: "label", type: "text" },
             ],
         });
+
+        // Live / client-only form: collectOnly routes submit to saveHook,
+        // inputHook fires on every change. Both mirror their payload.
+        var liveForm = Z.Forms.create({
+            dom: "live-form",
+            collectOnly: true,
+            inputHook: function(values) {
+                document.querySelector("[data-test=live-mirror]").innerText = JSON.stringify(values);
+            },
+            saveHook: function(values) {
+                document.querySelector("[data-test=saved-mirror]").innerText = JSON.stringify(values);
+            },
+        });
+        liveForm.createField({ name: "live_text", type: "text" });
+        liveForm.createField({
+            name: "live_select",
+            type: "select",
+            food: [
+                { value: "a", text: "A" },
+                { value: "b", text: "B" },
+            ],
+        });
+        $(liveForm.buttonSubmit).attr("data-test", "live-submit");
     </script>
 <?php }]; ?>
