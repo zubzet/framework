@@ -21,4 +21,4 @@ npm run tests -- --spec 'tests/cypress/e2e/core/<name>.cy.js'
 
 App is at `http://localhost:8080` (NOT `:4000`).
 
-PRs target `main`. Use atomic conventional commits (`refactor(...)`, `feat(...)`, `test(...)`, `docs(...)` — one scope per commit, one-line message, no `Co-Authored-By` trailer).
+Feature PRs target `develop` (promoted to `main` separately) — not `main`. Use atomic conventional commits (`refactor(...)`, `feat(...)`, `test(...)`, `docs(...)` — one scope per commit, one-line message, no `Co-Authored-By` trailer).
