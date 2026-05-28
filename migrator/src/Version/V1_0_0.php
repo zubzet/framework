@@ -16,7 +16,7 @@
     use ZubZet\Tooling\Modifiers\MatchingModifier;
 
     class V1_0_0 extends BaseVersion implements VersionInterface {
-        public string $stability = ReleaseState::ReleaseCandidate;
+        public string $stability = ReleaseState::Stable;
 
         public function upgrade(): bool {
             $composer = new ComposerModifier($this, "composer");
