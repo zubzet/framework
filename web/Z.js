@@ -795,29 +795,34 @@ class ZForm {
   }
 
   /**
-   * Returns an object where each key is the fieldname with its value as value
+   * Returns an object where each key is the fieldname with its value as value.
+   * CEDs are skipped: they have no scalar value and round-trip through
+   * getFormData / getPostString instead.
    * @returns {{[fieldName: string]: any}}
    */
   getValues() {
     return Object.fromEntries(
-      Object.entries(this.fields).map(([fieldName, field]) => [fieldName, field.value])
-    )
+      Object.entries(this.fields)
+        .filter(([, field]) => field.type !== "CED")
+        .map(([fieldName, field]) => [fieldName, field.value])
+    );
   }
 
   /**
-   * Fills a form with a data object
-   * @param {{[fieldName: string]: any}} data 
+   * Fills a form with a data object. CEDs are skipped (see getValues).
+   * @param {{[fieldName: string]: any}} data
    * @param {Object} options
    * @param {boolean} [options.resetUnknown] Reset fields which values are not in data?
    */
   setValues(data, options = {}) {
     if (options.resetUnknown) {
-      this.reset()
+      this.reset();
     }
 
     for (const fieldName in data) {
-      if (!(fieldName in this.fields)) continue
-      this.fields[fieldName].value = data[fieldName]
+      if (!(fieldName in this.fields)) continue;
+      if (this.fields[fieldName].type === "CED") continue;
+      this.fields[fieldName].value = data[fieldName];
     }
   }
 
