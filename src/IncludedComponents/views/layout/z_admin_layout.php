@@ -11,20 +11,98 @@
         <?php $opt["layout_essentials_head"]($opt); ?>
         <?php $head($opt); ?>
 
-        <link rel="stylesheet" href="<?= $opt["root"]; ?>_zubzet/asset-proxy/css/admin_layout.css">
+        <style>
+            .wrapper {
+                display: flex;
+                margin: 0px;
+            }
+
+            .sidebar {
+                border-right: 1px solid black;
+                padding: 4px;
+                background-color: #202020;
+                color: #fff;
+            }
+
+            .nav-item i {
+                width: 32px;
+                margin: 3px;
+            }
+
+            .content {
+                margin-left: auto;
+                margin-right: auto;
+                max-width: 1000px;
+            }
+
+            .content-wrapper {
+                border-top: 10px #202020 solid;
+                flex-grow: 1;
+            }
+
+            #logo, #logo-easter-egg {
+                font-family: 'Arial Black', sans-serif;
+            }
+
+            #logo-easter-egg {
+                display: inline-block;
+                animation: easter-egg 6s infinite ease-in-out;
+                text-shadow: 0 0 4px #fff, 0 0 10px #00DEFF, 0 0 18px #ff00ea;
+            }
+
+            @keyframes easter-egg {
+                0% {
+                    color: orange;
+                    transform: rotate(-12deg) scale(1);
+                    translate:   0px   0px;
+                }
+
+                25% {
+                    color: cyan;
+                    transform: rotate(8deg) scale(1.1);
+                    translate: 18px -10px;
+                }
+
+                50% {
+                    color: DeepPink;
+                    transform: rotate(0deg) scaleX(-1.15) scaleY(1.15);
+                    translate: -15px 10px;
+                }
+
+                75% {
+                    color: yellow;
+                    transform: rotate(-8deg) scale(1.1);
+                    translate: 10px 12px;
+                }
+
+                100% {
+                    color: orange;
+                    transform: rotate(-12deg) scale(1);
+                    translate: 0px 0px;
+                }
+            }
+
+            @media(min-width: 992px) {
+                .sidebar {
+                    min-height: 100vh;
+                }
+            }
+        </style>
     </head>
     <body>
         <div class="container-fluid">
             <div class="row">
                 <div class="sidebar col-12 col-lg-3 col-xl-2">
-                    <div class="text-center my-4 font-weight-bold">
-                        <h1 id="logo">
-                            ZubZet
-                        </h1>
-                        <h1 class="d-none" id="logo-easter-egg">
-                            ZubZet
-                        </h1>
-                    </div>
+                    <a href="<?= "$opt[root]z" ?>" class="text-decoration-none text-reset">
+                        <div class="text-center my-4 font-weight-bold">
+                            <h1 id="logo">
+                                ZubZet
+                            </h1>
+                            <h1 class="d-none" id="logo-easter-egg">
+                                ZubZet
+                            </h1>
+                        </div>
+                    </a>
 
                     <button class="btn btn-primary btn-block mb-2 d-lg-none" data-toggle="collapse" data-target="#navbar">
                         <i class="fa fa-bars"></i>

@@ -67,7 +67,7 @@ describe('DebugBar', () => {
 
         // Note: a "custom layout is collected" assertion needs a layout that calls
         // layout_essentials_body() so the DebugBar UI is actually rendered. The e2e app's
-        // core/layout intentionally omits it, so we cover the layout-tagging behavior via
+        // layout/new_layout intentionally omits it, so we cover the layout-tagging behavior via
         // the default-layout test above.
 
         it('formats template params via DataFormatter', () => {
@@ -105,7 +105,7 @@ describe('DebugBar', () => {
     });
 
     describe('Gating', () => {
-        // The bar must NEVER render outside execution_type=test — leaking SQL, params,
+        // The bar must NEVER render outside execution_type=test - leaking SQL, params,
         // log context and traceIds into a prod page is a privacy/security regression.
         it('is suppressed when execution_type != test', () => {
             cy.setConfigSetting('execution_type', 'prod');

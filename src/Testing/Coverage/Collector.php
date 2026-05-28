@@ -9,6 +9,7 @@
 
     /**
      * @internal
+     * @codeCoverageIgnore The coverage engine itself; cannot meaningfully measure itself.
      */
     final class Collector {
 
@@ -18,9 +19,33 @@
 
         private static ?CodeCoverage $coverage = null;
 
+        public static function initialize(): void {
+            if(Collector::isActive()) {
+                if(!self::hasDriver()) {
+                    throw new \RuntimeException(
+                        "Coverage session is active (" . self::$sessionLocation . " exists), " .
+                        "but no PHP code coverage driver is loaded. " .
+                        "Install and enable Xdebug or PCOV, or remove " . self::$sessionLocation . " to disable coverage."
+                    );
+                }
+
+                $coverageFramework = filter_var(getenv('DEBUG_ZUBZET_COVERAGE_FRAMEWORK') ?: 'false', FILTER_VALIDATE_BOOLEAN);
+                Collector::start($coverageFramework);
+
+                register_shutdown_function(function() {
+                    Collector::stop();
+                });
+            }
+        }
+
         /** Returns true if a coverage session file exists. */
         public static function isActive(): bool {
             return file_exists(self::$sessionLocation);
+        }
+
+        /** Returns true if a PHP code coverage driver (Xdebug or PCOV) is loaded. */
+        public static function hasDriver(): bool {
+            return extension_loaded('xdebug') || extension_loaded('pcov');
         }
 
         /** Returns the session ID, reading it from disk on first call. */

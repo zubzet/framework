@@ -200,4 +200,51 @@ describe('Permission System - User', () => {
             );
         });
     });
+
+    it('should replace the target role`s permissions with the source role`s permissions (setPermissionsByRole)', () => {
+        const expectedBefore = [
+            "role_setPermissionsByRole.target.preexisting.1",
+            "role_setPermissionsByRole.target.preexisting.2"
+        ];
+        const expectedAfter = [
+            "role_setPermissionsByRole.source.1",
+            "role_setPermissionsByRole.source.2"
+        ];
+
+        requestJson('/role/setPermissionsByRoleReplace').then((output) => {
+            expect(output.before).to.have.members(expectedBefore);
+            expect(output.before).to.have.length(expectedBefore.length);
+
+            expect(output.after).to.have.members(expectedAfter);
+            expect(output.after).to.have.length(expectedAfter.length);
+        });
+    });
+
+    it('should clear the target role`s permissions when the source role has none (setPermissionsByRole)', () => {
+        const expectedBefore = [
+            "role_setPermissionsByRole.targetCleared.1",
+            "role_setPermissionsByRole.targetCleared.2"
+        ];
+
+        requestJson('/role/setPermissionsByRoleFromEmpty').then((output) => {
+            expect(output.before).to.have.members(expectedBefore);
+            expect(output.before).to.have.length(expectedBefore.length);
+
+            expect(output.after).to.deep.equal([]);
+        });
+    });
+
+    it('should add the source role`s permissions to a target with none (setPermissionsByRole)', () => {
+        const expectedAfter = [
+            "role_setPermissionsByRole.source.1",
+            "role_setPermissionsByRole.source.2"
+        ];
+
+        requestJson('/role/setPermissionsByRoleToEmpty').then((output) => {
+            expect(output.before).to.deep.equal([]);
+
+            expect(output.after).to.have.members(expectedAfter);
+            expect(output.after).to.have.length(expectedAfter.length);
+        });
+    });
 });

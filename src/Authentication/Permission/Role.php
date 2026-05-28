@@ -201,5 +201,24 @@ class Role extends AuthenticationObject {
         $this->setField("permissions", model("z_permission")->getPermissionsByRoleGroup($this));
     }
 
+    /**
+     * Replace this Role's permissions with the permissions of another Role.
+     * Removes all currently assigned permissions and copies the source Role's permissions over.
+     *
+     * @param Role $role The role whose permissions should be adopted
+     * @return void
+     */
+    public function setPermissionsByRole(Role $role): void {
+        $currentPermissions = $this->getPermissions();
+        if(!empty($currentPermissions)) {
+            $this->permissionsRemove(...$currentPermissions);
+        }
+
+        $newPermissions = $role->getPermissions();
+        if(!empty($newPermissions)) {
+            $this->permissionsAdd(...$newPermissions);
+        }
+    }
+
 
 }

@@ -7,6 +7,7 @@
     use ZubZet\Framework\Form\Upload;
     use ZubZet\Framework\Support\Rest;
     use ZubZet\Framework\Rendering\CanRenderView;
+    use ZubZet\Framework\Rendering\HandlesDefaultLayout;
     use ZubZet\Framework\Form\Validation\Result;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
@@ -24,6 +25,7 @@
     class Response extends RequestResponseHandler {
 
         use CanRenderView;
+        use HandlesDefaultLayout;
 
         public State $output;
 
@@ -338,18 +340,19 @@
                 );
             }
 
-            // Remove the cookie
-            $this->unsetCookie(
-                "z_login_token",
-                domainScope: $this->getCookieDomainScope(),
-            );
             $this->deleteOldLoginCookieDomainScope();
 
             logger(Logger::ZUBZET)->info(LogEventType::USER_LOGGED_OUT, ["userId" => $user->userId]);
 
-            // Return to Login as if the user was logged in as someone else
+            // Replace the login cookie: when sudoed, with the exec user's
+            // new session; otherwise delete it so the client is fully out.
             if($user->userId != $user->execUserId) {
                 $this->loginAs($user->execUserId);
+            } else {
+                $this->unsetCookie(
+                    "z_login_token",
+                    domainScope: $this->getCookieDomainScope(),
+                );
             }
 
             return $this->rerouteUrl();
@@ -412,7 +415,9 @@
                 if($field->dbField == $pkField && $field->value == $pkValue) continue;
 
                 $fields[] = $field->dbField;
-                $values[] = $field->value;
+                // Array values (e.g. from multi-select) are stored as JSON;
+                // mysqli bind_param can't bind a PHP array directly.
+                $values[] = is_array($field->value) ? json_encode($field->value) : $field->value;
                 $types .= $field->dataType;
             }
 
@@ -463,10 +468,13 @@
 
             for ($i = 0; $i < count($validationResult->fields); $i++) {
                 $field = $validationResult->fields[$i];
+                if ($field->noSave) continue;
                 $sqlParams[] = ("`" . $field->dbField . "`");
                 $sqlValues[] = "?";
                 $types .= $field->dataType;
-                $vals[] = $field->value;
+                // Array values (e.g. from multi-select) are stored as JSON;
+                // mysqli bind_param can't bind a PHP array directly.
+                $vals[] = is_array($field->value) ? json_encode($field->value) : $field->value;
             }
 
             $sqlCmdParams = implode(",", $sqlParams);

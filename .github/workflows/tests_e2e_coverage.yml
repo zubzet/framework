@@ -1,0 +1,140 @@
+name: E2E coverage report
+
+on:
+  workflow_dispatch:
+  # Fallback trigger so the workflow can be started from a fork PR before
+  # this file lands on the base repo's default branch. Adding the `coverage`
+  # label to the PR runs the workflow; remove + re-add to re-run.
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: e2e-coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'coverage')
+    runs-on: ubuntu-latest
+    timeout-minutes: 120  # xdebug coverage is ~5x slower than a normal e2e run
+    permissions:
+      contents: read
+
+    env:
+      COMPOSE_DOCKER_CLI_BUILD: "1"
+      DOCKER_BUILDKIT: "1"
+
+    defaults:
+      run:
+        working-directory: tests/e2e
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('tests/e2e/package-lock.json') }}
+          restore-keys: |
+            cypress-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Detect host UID
+        run: echo "HOST_UID=$(id -u)" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build with the xdebug-enabled PHP 8.5 base so the coverage driver
+      # is available inside the application container.
+      - name: Docker build (8.5-xdebug)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./tests/e2e/packaging/docker
+          file: ./tests/e2e/packaging/docker/Dockerfile.apache-local
+          tags: docker-application:latest
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=app-8.5-xdebug
+          cache-to: type=gha,mode=max,scope=app-8.5-xdebug
+          build-args: |
+            PHP_TAG=8.5-xdebug
+            USER_UID=${{ env.HOST_UID }}
+
+      # Compose override that switches XDEBUG_MODE to coverage. This keeps
+      # the base file untouched (which may have debug,coverage for local dev).
+      - name: Write coverage compose override
+        run: |
+          cat > packaging/docker/docker-compose.override.yml <<'EOF'
+          services:
+            application:
+              environment:
+                XDEBUG_MODE: "coverage"
+                DEBUG_ZUBZET_COVERAGE_FRAMEWORK: "true"
+          EOF
+
+      - name: Pre-pull compose services
+        run: |
+          docker compose \
+            -f packaging/docker/docker-compose-base.yml \
+            -f packaging/docker/docker-compose.override.yml \
+            pull || true
+
+      - name: Start application stack
+        run: |
+          docker compose \
+            -f packaging/docker/docker-compose-base.yml \
+            -f packaging/docker/docker-compose.override.yml \
+            up -d --remove-orphans --wait
+          docker compose \
+            -f packaging/docker/docker-compose-base.yml \
+            -f packaging/docker/docker-compose.override.yml \
+            ps
+
+      - name: Install PHP dependencies (inside container)
+        run: docker exec application composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Seed database
+        run: docker exec application php index.php db:seed
+
+      - name: Start coverage session
+        run: docker exec application php index.php testing:coverage:start
+
+      - name: Run E2E tests (Cypress)
+        env:
+          CI: true
+        # Test failures shouldn't abort the run - the coverage report is the
+        # primary output. The step's status still surfaces in the run UI.
+        continue-on-error: true
+        run: bun run tests
+
+      - name: Stop coverage and generate report
+        if: always()
+        run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.run_attempt }}
+          if-no-files-found: warn
+          path: tests/e2e/.coverage/report/**
+
+      - name: Upload Cypress screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots-${{ github.run_attempt }}
+          if-no-files-found: ignore
+          path: |
+            tests/e2e/tests/cypress/screenshots/**
+            tests/e2e/cypress/screenshots/**

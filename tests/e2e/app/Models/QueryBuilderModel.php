@@ -72,17 +72,17 @@
             return $this->exec($query)->resultToArray();
         }
 
-        public function selectLanguageById($id) {
-            $query = $this->dbSelect("*", "z_language")
-                            ->where(["id" => $id]);
-
-            return $this->exec($query)->resultToLine();
-        }
-
         public function selectInsert() {
             $query = $this->dbSelect(["id", "name", "value"], "query_builder_insert");
 
             return $this->exec($query)->resultToArray();
+        }
+
+        public function selectInsertById($id) {
+            $query = $this->dbSelect(["id", "name", "value"], "query_builder_insert")
+                            ->where(["id" => $id]);
+
+            return $this->exec($query)->resultToLine();
         }
 
         public function insert() {
@@ -104,41 +104,17 @@
             $this->exec($query);
         }
 
-        public function insertLanguage() {
-            $query = $this->dbInsert("z_language", [
-                "name" => "TestLanguage1",
-                "nativeName" => "TestLanguageNative1",
-                "value" => "tl1"
-            ]);
-
-            $this->exec($query);
-
-            $query = $this->dbInsert("z_language", [
-                "name" => "TestLanguage2",
-                "nativeName" => "TestLanguageNative2",
-                "value" => "tl2"
-            ])->values([
-                "name" => "TestLanguage3",
-                "nativeName" => "TestLanguageNative3",
-                "value" => "tl3"
-            ]);
+        public function update() {
+            $query = $this->dbUpdate("query_builder_insert", [
+                "name" => "UpdatedTestName1",
+                "value" => 999,
+            ])->where(["id" => 1]);
 
             $this->exec($query);
         }
 
-        public function updateLanguage() {
-            $query = $this->dbUpdate("z_language", [
-                "name" => "UpdatedTestLanguage1",
-                "nativeName" => "UpdatedTestLanguageNative1",
-                "value" => "utl1"
-            ])
-            ->where(["id" => 1]);
-
-            $this->exec($query);
-        }
-
-        public function deleteLanguage() {
-            $query = $this->dbDelete("z_language")
+        public function delete() {
+            $query = $this->dbDelete("query_builder_insert")
                 ->where(["id" => 1]);
 
             $this->exec($query);

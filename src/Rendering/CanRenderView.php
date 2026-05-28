@@ -71,7 +71,7 @@
             // This is used for logging $opt before it is merged with methods and references
             $data = $opt;
 
-            $layout = $options["layout"] ?? "layout/default_layout.php";
+            $layout = $options["layout"] ?? $this->resolveDefaultLayout();
             $viewPath = self::resolvePath($document);
             $layoutPath = self::resolvePath($layout);
 

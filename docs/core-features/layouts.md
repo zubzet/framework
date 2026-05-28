@@ -40,3 +40,6 @@ public function action_index(Request $req, Response $res) {
     return $res->render("admin/index.php", [], "admin/layout.php");
 }
 ```
+
+## Setting a default layout for part of your app
+When `$res->render` is called without an explicit layout, the framework picks one in this order: per-instance default → global default → `layout/default_layout.php`. Use `$res->setDefaultLayout("admin/layout.php")` from a route middleware (instance scope) or `Response::setGlobalDefaultLayout("admin/layout.php")` from a controller `__construct` (request scope) to change that default for a section of the app. Both scopes also expose `pushDefaultLayout` / `popDefaultLayout` (and the global equivalents) so nested components can install a layout and restore the previous one when they're done.

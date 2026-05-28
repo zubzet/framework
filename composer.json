@@ -18,7 +18,10 @@
         "symfony/filesystem": "v6.0.19",
         "league/mime-type-detection": "^1.16",
         "filp/whoops": "^2.18.4",
-        "php-debugbar/php-debugbar": "^1.23.6"
+        "php-debugbar/php-debugbar": "^1.23.6",
+        "components/jquery": "3.5.*",
+        "components/bootstrap": "4.6.*",
+        "components/font-awesome": "6.5.*"
     },
     "autoload": {
         "files": [

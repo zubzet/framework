@@ -130,6 +130,48 @@
             ]));
         }
 
+        public function action_setPermissionsByRoleReplace(Request $req, Response $res): void {
+            $source = Role::byId(230);
+            $target = Role::byId(231);
+
+            $before = $target->getPermissions();
+            $target->setPermissionsByRole($source);
+            $after = Role::byId(231)->getPermissions();
+
+            echo(json_encode([
+                "before" => $before,
+                "after" => $after
+            ]));
+        }
+
+        public function action_setPermissionsByRoleFromEmpty(Request $req, Response $res): void {
+            $source = Role::byId(232);
+            $target = Role::byId(233);
+
+            $before = $target->getPermissions();
+            $target->setPermissionsByRole($source);
+            $after = Role::byId(233)->getPermissions();
+
+            echo(json_encode([
+                "before" => $before,
+                "after" => $after
+            ]));
+        }
+
+        public function action_setPermissionsByRoleToEmpty(Request $req, Response $res): void {
+            $source = Role::byId(230);
+            $target = Role::byId(234);
+
+            $before = $target->getPermissions();
+            $target->setPermissionsByRole($source);
+            $after = Role::byId(234)->getPermissions();
+
+            echo(json_encode([
+                "before" => $before,
+                "after" => $after
+            ]));
+        }
+
 
 
         /**

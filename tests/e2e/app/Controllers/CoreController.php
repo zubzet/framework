@@ -18,9 +18,26 @@
             throw new \RuntimeException("regression-controller-exception-marker");
         }
 
+        // Switches the framework to BehaviorOption::NONE (showErrors=0) via
+        // ExceptionBehavior::setExceptionBehavior, then throws. The router's
+        // exception-catch branch routes to /error/500 because showErrors is
+        // 0. Lets exception-handling.cy.js exercise the 500 page without
+        // touching z_settings.ini, and gives setExceptionBehavior coverage.
+        public function action_throwsExceptionAfterBehaviorNone(Request $req, Response $res) {
+            zubzet()->setExceptionBehavior(0);
+            throw new \RuntimeException("regression-controller-exception-marker");
+        }
+
         public function action_triggersDeprecation(Request $req, Response $res) {
             trigger_error("regression-controller-deprecation-marker", E_USER_DEPRECATED);
+            // @codeCoverageIgnoreStart
+            // Unreachable by contract: under BehaviorOption::ALL the
+            // trigger_error above is promoted to an ErrorException before
+            // we get here. The string is kept as a regression marker - if
+            // it ever appears in a response body the test fails loudly,
+            // surfacing a broken promotion path.
             echo "deprecation was not promoted";
+            // @codeCoverageIgnoreEnd
         }
 
         public function action_command(Request $req, Response $res) {
@@ -83,11 +100,22 @@
         public function action_renderlayout(Request $req, Response $res) {
             return $res->render("core/render", [
                 "data" => "Data",
-            ], "core/layout");
+            ], "layout/new_layout");
         }
 
         public function action_renderemptylayout(Request $req, Response $res) {
             return $res->render("core/empty", [], "layout/min_layout");
+        }
+
+        // Renders core/render through the bare-bones layout/empty wrapper -
+        // useful when a partial of the page (e.g. a paginated list) is being
+        // fetched over AJAX and the caller wants the rendered body only,
+        // without surrounding <html>/<head>/<body> chrome. Covered by
+        // core/layout.cy.js.
+        public function action_renderRaw(Request $req, Response $res) {
+            return $res->render("core/render", [
+                "data" => "Data",
+            ], "layout/empty");
         }
 
         public function action_e2e_superpermission(Request  $req, Response $res) {
@@ -127,6 +155,12 @@
             print_r($req->getGet("TestGet"));
         }
 
+        // Probes the no-key branch of CanRetrieveFromInput::getGet(),
+        // which returns the full GET array. Used by core/request.cy.js.
+        public function action_getAll(Request $req, Response $res) {
+            return $res->json($req->getGet());
+        }
+
         public function action_post(Request $req, Response $res) {
             echo($req->getPost("TestPost"));
         }
@@ -140,8 +174,21 @@
             $res->setCookie('testCookie', 'cookieValue', time() + 3600, '/', '', false, true);
         }
 
+        // Sets two cookies in one response so core/cookies.cy.js can
+        // exercise the getCookies() alias (no-key getCookie branch).
+        public function action_cookiessetMulti(Request $req, Response $res) {
+            $res->setCookie('cookieA', 'valueA', time() + 3600, '/', '', false, true);
+            $res->setCookie('cookieB', 'valueB', time() + 3600, '/', '', false, true);
+        }
+
         public function action_cookieget(Request $req, Response $res) {
             print_r($req->getCookie("testCookie"));
+        }
+
+        // Returns every cookie on the request via the getCookies() alias,
+        // which delegates to getCookie() with no key.
+        public function action_cookiesAll(Request $req, Response $res) {
+            return $res->json($req->getCookies());
         }
 
         public function action_cookieunset(Request $req, Response $res) {
@@ -152,74 +199,6 @@
         /**
          * Testing the Routing System with Middleware
          */
-
-        // Default Test Route
-        public function TestRoute(Request $req, Response $res) {
-            print_r("TestRoute Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Middleware for Routes which let the request pass
-        public function Route_Middleware_Accept(Request $req, Response $res) {
-            print_r("Route Middleware Accept Executed");
-            print_r($req->getRouteParameter());
-            return true;
-        }
-
-        // Middleware for Groups which let the request pass
-        public function Group_Middleware_Accept(Request $req, Response $res) {
-            print_r("Group Middleware Accept Executed");
-            print_r($req->getRouteParameter());
-            return true;
-        }
-
-        // Middleware for Routes which block the request
-        public function Route_Middleware_Block(Request $req, Response $res) {
-            print_r("Route Middleware Blocked Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Middleware for Groups which block the request
-        public function Group_Middleware_Block(Request $req, Response $res) {
-            print_r("Group Middleware Blocked Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Afterware for Routes
-        public function Route_Afterware(Request $req, Response $res) {
-            print_r("Route Afterware Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Afterware for Groups
-        public function Group_Afterware(Request $req, Response $res) {
-            print_r("Group Afterware Executed");
-            print_r($req->getRouteParameter());
-        }
-
-        // Action which prints arguments
-        public function TestRoute_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
-            print_r("TestRoute Executed");
-            print_r($req->getRouteParameter());
-            echo " Args: $arg1 $arg2";
-        }
-
-        // Middleware which prints and accepts
-        public function Route_Middleware_Accept_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
-            print_r("Route Middleware Accept Executed");
-            print_r($req->getRouteParameter());
-            echo " Args: $arg1 $arg2";
-            return true;
-        }
-
-        // Afterware which prints arguments
-        public function Route_Afterware_WithArguments(Request $req, Response $res, $arg1 = null, $arg2 = null) {
-            print_r("Route Afterware Executed");
-            print_r($req->getRouteParameter());
-            echo " Args: $arg1 $arg2";
-        }
-        
-
 
         /**
          * Testing the Query Builder
@@ -263,16 +242,16 @@
         }
 
         public function action_queryBuilderUpdate(Request $req, Response $res) {
-            $req->getModel("QueryBuilder")->updateLanguage();
+            $req->getModel("QueryBuilder")->update();
 
-            echo json_encode($req->getModel("QueryBuilder")->selectLanguageById(1));
+            echo json_encode($req->getModel("QueryBuilder")->selectInsertById(1));
         }
 
         public function action_queryBuilderDelete(Request $req, Response $res) {
-            $req->getModel("QueryBuilder")->deleteLanguage();
+            $req->getModel("QueryBuilder")->delete();
 
             echo json_encode([
-                "null" => $req->getModel("QueryBuilder")->selectLanguageById(1) == null ? "null" : "not null"
+                "null" => $req->getModel("QueryBuilder")->selectInsertById(1) == null ? "null" : "not null"
             ]);
         }
 
@@ -300,7 +279,7 @@
                     $checks['placeholder_returns_string'] = $returnType !== null && (string)$returnType === 'string';
                 }
 
-                // bind($param, $value, $type = null): void — at least 2 params
+                // bind($param, $value, $type = null): void - at least 2 params
                 if($checks['method_bind']) {
                     $m = $reflection->getMethod('bind');
                     $params = $m->getParameters();
@@ -369,11 +348,110 @@
 
         public function action_sendemailtouser_dynamic(Request $req, Response $res) {
             $res->sendEmailToUser(1, "This is a Test Email Dynamic", "email/Dynamic", [
-                "test_data" => "Test Data 1", 
+                "test_data" => "Test Data 1",
                 "test_data2" => "Test Data 2"
             ], "email");
         }
 
+        // Returns the resolved client IP. json_encode preserves a real null
+        // (vs flattening it to "") when the method legitimately returns null.
+        public function action_clientIp(Request $req, Response $res): void {
+            echo json_encode($req->ip());
+        }
+
+        // referer / userAgent / getExecutionTime all may return null per the
+        // method contract - json_encode keeps that observable in the test.
+        public function action_referer(Request $req, Response $res): void {
+            echo json_encode($req->referer());
+        }
+
+        public function action_userAgent(Request $req, Response $res): void {
+            echo json_encode($req->userAgent());
+        }
+
+        // Sleeps for ?delay=<ms> when given, then emits Request::getExecutionTime().
+        // The test compares a "fast" call to a deliberately delayed one to prove
+        // the value tracks wall-clock time since REQUEST_TIME_FLOAT.
+        public function action_executionTime(Request $req, Response $res): void {
+            $delayMs = (int)$req->getGet("delay", 0);
+            if ($delayMs > 0) {
+                usleep($delayMs * 1000);
+            }
+            echo json_encode($req->getExecutionTime());
+        }
+
+        // getCurrentURL / getDomain may mutate the framework's configured host
+        // via DynamicAttributes (zubzet()->host = ...). HasDynamicAttributes
+        // routes that through __set, and config("host") reads the new value
+        // back via __get on the same request. The override lasts one request -
+        // the INI re-loads on the next boot.
+        public function action_currentUrl(Request $req, Response $res): void {
+            $hostOverride = $req->getGet("hostOverride");
+            if ($hostOverride !== null && $hostOverride !== "") {
+                zubzet()->host = $hostOverride;
+            }
+            echo $req->getCurrentURL();
+        }
+
+        public function action_domain(Request $req, Response $res): void {
+            $hostOverride = $req->getGet("hostOverride");
+            if ($hostOverride !== null && $hostOverride !== "") {
+                zubzet()->host = $hostOverride;
+            }
+            echo $req->getDomain();
+        }
+
+        // `/Core/readable[/skip…]/<slug>?offset=<n>` → JSON {id, text} per
+        // getReadableParameter's last-hyphen split rule. Offset is passed
+        // through so the test covers both 0 and non-zero offsets.
+        public function action_readable(Request $req, Response $res): void {
+            $offset = (int)$req->getGet("offset", 0);
+            echo json_encode($req->getReadableParameter($offset));
+        }
+
+        // Probes for Request::checkPermission, covered by:
+        //   advanced/command.cy.js         - "console" + boolResult branch
+        //   core/permissions.cy.js         - !isLoggedIn + boolResult branch
+        //
+        // consoleBool exercises checkPermission("console", boolResult: true)
+        // over HTTP - the branch that returns false without exit so the
+        // action can keep running and echo our marker.
+        public function action_consoleBool(Request $req, Response $res): void {
+            echo $req->checkPermission("console", boolResult: true) ? "allowed" : "denied";
+        }
+
+        // permissionCheck runs both checkPermission shapes back-to-back:
+        //   1) boolResult=true   - emits "allowed" / "denied" without exiting.
+        //   2) default behavior  - !isLoggedIn redirects, no-permission 403s,
+        //                          allowed lets the trailing echo run.
+        // Body inspection in the test reveals which branch fired:
+        //   - not logged in:  "denied\n" + login page HTML (no "passed" echo)
+        //   - logged in OK:   "allowed\ncore.permissions passed"
+        public function action_permissionCheck(Request $req, Response $res): void {
+            echo $req->checkPermission("core.permissions", boolResult: true) ? "allowed" : "denied";
+            echo "\n";
+            $req->checkPermission("core.permissions");
+            echo "core.permissions passed";
+        }
+
+        // Round-trips getBody() + getJson(). The JSON parse uses
+        // JSON_THROW_ON_ERROR; we catch it here so the test can assert both
+        // the happy path and the malformed-body path within one request.
+        public function action_requestBody(Request $req, Response $res): void {
+            $body = $req->getBody();
+            $json = null;
+            $jsonError = null;
+            try {
+                $json = $req->getJson();
+            } catch (\JsonException $e) {
+                $jsonError = $e->getMessage();
+            }
+            echo json_encode([
+                'body'      => $body,
+                'json'      => $json,
+                'jsonError' => $jsonError,
+            ]);
+        }
     }
 
 ?>

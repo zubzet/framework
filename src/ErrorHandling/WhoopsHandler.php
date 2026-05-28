@@ -58,9 +58,15 @@
 
         private function maskSensitiveSuperglobalKeys(PrettyPageHandler $handler): void {
             foreach(self::MASKED_SUPERGLOBALS as $superglobal) {
+                // Whoops's hideSuperglobalKey API uses the underscored
+                // PHP name (_GET, _POST, ...); Input\State drops the
+                // underscore. Strip it when reading the live request, and
+                // fall back to $GLOBALS for anything Input\State doesn't
+                // model (e.g. _ENV) or when request() isn't ready yet.
+                $inputProperty = ltrim($superglobal, '_');
                 try {
-                    $values = request()->input->{$superglobal};
-                } catch(NotInstantiatedException) {
+                    $values = request()->input->{$inputProperty};
+                } catch(\Throwable) {
                     $values = $GLOBALS[$superglobal] ?? null;
                 }
 

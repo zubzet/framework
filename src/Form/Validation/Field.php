@@ -64,9 +64,12 @@
 
         /**
          * Adds a filter rule
-         * 
+         *
          * Creates an error when a filter fails. All filter_var compatible filters are available.
-         * 
+         *
+         * Does not support array values (e.g. `multi-select`) — `filter_var()`
+         * expects a scalar; pair `multi-select` with `->in()` instead.
+         *
          * @param int $filter A valid PHP filter
          * @return Field Returns itself to allow chaining
          */
@@ -81,10 +84,13 @@
 
         /**
          * Adds a unique rule
-         * 
-         * This rule checks if a dataset with a specific value already exists.  
+         *
+         * This rule checks if a dataset with a specific value already exists.
          * A set to ignore can also be specified. An error will be created when the set exists.
-         * 
+         *
+         * Does not support array values (e.g. `multi-select`) — the rule
+         * runs a single uniqueness query against a scalar value.
+         *
          * @param string $table Table name in the database
          * @param string $field Field name in the table
          * @param string $ignoreField name of the field in which the ignore value is
@@ -105,22 +111,59 @@
 
         /**
          * Adds an exists rule
-         * 
-         * This rule checks if a dataset with a specific value already exists.  
-         * A set to ignore can also be specified. An error will be created when the set does not exist.
-         * 
+         *
+         * This rule checks if a dataset with a specific value already exists
+         * in the database. For array-valued fields (e.g. `multi-select`) the
+         * rule is applied per item, every picked entry must exist.
+         *
          * @param string $table Table name in the database
          * @param string $field Field name in the table
          * @return Field Returns itself to allow chaining
          */
         function exists($table, $field) {
             $this->rules[] = [
-                "name" => $this->name, 
-                "type" => "exist", 
-                "table" => $table, 
+                "name" => $this->name,
+                "type" => "exist",
+                "table" => $table,
                 "field" => $field
             ];
             return $this;
+        }
+
+        /**
+         * Adds an `in` rule
+         *
+         * The submitted value must appear in the given in-memory allow-list.
+         * Unlike `exists()` this does not hit the database. Useful to guard
+         * `select` / `multi-select` fields against tampered POST payloads
+         * where the client sent an option that wasn't in the rendered
+         * dropdown. For array-valued fields the rule is applied per item:
+         * every picked entry must be in the allow-list.
+         *
+         * @param array $allowedValues The list of allowed values
+         * @return Field Returns itself to allow chaining
+         */
+        function in(array $allowedValues) {
+            $this->rules[] = [
+                "name" => $this->name,
+                "type" => "in",
+                "allowedValues" => $allowedValues,
+            ];
+            return $this;
+        }
+
+        /**
+         * Adds a "must be ticked" rule for checkboxes.
+         *
+         * A `checkbox` field always submits "1" (ticked) or "0" (unticked),
+         * so `required()` is a no-op for it. Use this to enforce that the box
+         * is actually ticked (e.g. accept-terms). Sugar over `in()` with the
+         * common truthy representations.
+         *
+         * @return Field Returns itself to allow chaining
+         */
+        function checked() {
+            return $this->in(["1", "true", "on"]);
         }
 
         /**
@@ -141,11 +184,15 @@
 
         /**
          * Adds a length rule
-         * 
-         * This rule will create an error when the input is too long or too short
-         * 
-         * @param int $min Minimum number of chars
-         * @param int $max Maximum number of chars
+         *
+         * This rule will create an error when the input is too long or too short.
+         *
+         * For array-valued fields (e.g. `multi-select`) length is measured as
+         * the item count (`count($value)`) instead of the character count, so
+         * `->length(1, 3)` means "between 1 and 3 selections."
+         *
+         * @param int $min Minimum number of chars (or items for arrays)
+         * @param int $max Maximum number of chars (or items for arrays)
          * @return Field Returns itself to allow chaining
          */
         function length($min, $max) {
@@ -160,10 +207,13 @@
 
         /**
          * Adds an integer rule
-         * 
+         *
          * This rule will create an error when the input was not a value that could be parsed to an integer.
          * Also this function sets the type of the field to "i".
-         * 
+         *
+         * Does not support array values (e.g. `multi-select`) — `filter_var()`
+         * and `intval()` expect a scalar.
+         *
          * @return Field Returns itself to allow chaining
          */
         function integer() {
@@ -177,9 +227,12 @@
 
         /**
          * Adds a range rule
-         * 
+         *
          * This rule checks if the input, as a number, is within a range. If the number is not in the range, an error will be created.
-         * 
+         *
+         * Does not support array values (e.g. `multi-select`) — the comparison
+         * (`$value < $min`) expects a scalar.
+         *
          * @param float $min Min allowed value
          * @param float $max Max allowed value
          * @return Field Returns itself to allow chaining
@@ -196,9 +249,12 @@
 
         /**
          * Adds a date rule
-         * 
-         * This rule checks if the input value adheres to a given date format
-         * 
+         *
+         * This rule checks if the input value adheres to a given date format.
+         *
+         * Does not support array values (e.g. `multi-select`) — `strtotime()`
+         * expects a scalar.
+         *
          * @param string $format The tested date format
          * @return Field Returns itself to allow chaining
          */
@@ -232,7 +288,10 @@
 
         /**
          * Adds a regular expression rule to the field
-         * 
+         *
+         * For array-valued fields (e.g. `multi-select`) the regex is applied
+         * per item; the field fails as soon as any single item fails.
+         *
          * @param string $expression The regex expression
          * @param string[] $exceptions An array of characters to be excluded from the regex
          * @return Field Returns itself to allow chaining

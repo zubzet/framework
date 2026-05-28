@@ -60,7 +60,7 @@ describe('Query Builder', () => {
         },
         {
             route: '/Core/queryBuilderUpdate',
-            expected: {"id":1,"name":"UpdatedTestLanguage1","nativeName":"UpdatedTestLanguageNative1","value":"utl1"}
+            expected: {"id":1,"name":"UpdatedTestName1","value":999}
         },
         {
             route: '/Core/queryBuilderDelete',
@@ -83,7 +83,7 @@ describe('Query Builder', () => {
         });
     });
 
-    it('CakePHP ValueBinder compatibility — class and method signatures are intact', () => {
+    it('CakePHP ValueBinder compatibility - class and method signatures are intact', () => {
         cy.request('GET', '/Core/queryBuilderCakePHPCompat').then((response) => {
             expect(response.status).to.eq(200);
 

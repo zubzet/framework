@@ -23,7 +23,11 @@
                 // The insert can fail in legitimate states, e.g. mid-migration before z_interaction_log
                 // has been created, and a logger must never crash it's caller.
                 model("z_logger")->log($record);
+
+                // @codeCoverageIgnoreStart
             } catch(\Throwable $e) {
+                // @codeCoverageIgnoreEnd
+
                 // Discard: Logging is best-effort. A different handler (e.g. file) may still capture this.
             } finally {
                 self::$isWriting = false;

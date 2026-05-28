@@ -9,6 +9,9 @@
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Testing\Coverage\Collector;
 
+    /**
+     * @codeCoverageIgnore Runs after measurement ends; coverage cannot record this.
+     */
     final class Stop extends Command {
 
         protected function configure(): void {

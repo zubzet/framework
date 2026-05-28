@@ -46,7 +46,9 @@
                         $value = $data[$name];
 
                         if ($type == "length") {
-                            $len = strlen($value);
+                            // For array values (e.g. multi-select) length is
+                            // the item count; for scalar values it's strlen.
+                            $len = is_array($value) ? count($value) : strlen($value);
                             if ($len < $rule["min"] || $len > $rule["max"]) {
                                 $errors[] = ["name" => $name, "type" => "length", "info" => [$rule["min"], $rule["max"]]];
                             }
@@ -65,19 +67,41 @@
                                 }
                             }
                         } else if ($type == "exist") {
-                            if (!db()->checkIfExists($rule["table"], $rule["field"], $value)) {
-                                $errors[] = ["name" => $name, "type" => "exist"];
+                            // Array values: every item must exist in the
+                            // configured (table, field).
+                            $items = is_array($value) ? $value : [$value];
+                            foreach ($items as $item) {
+                                if (!db()->checkIfExists($rule["table"], $rule["field"], $item)) {
+                                    $errors[] = ["name" => $name, "type" => "exist"];
+                                    break;
+                                }
+                            }
+                        } else if ($type == "in") {
+                            // Array values: every item must be in the
+                            // configured in-memory allow-list.
+                            $items = is_array($value) ? $value : [$value];
+                            foreach ($items as $item) {
+                                if (!in_array($item, $rule["allowedValues"])) {
+                                    $errors[] = ["name" => $name, "type" => "in"];
+                                    break;
+                                }
                             }
                         } else if ($type == "regex") {
-                            $tmp_value = $value;
-                            foreach ($rule["exceptions"] as $exception) {
-                                $tmp_value = str_replace($exception, "", $tmp_value);
-                            }
-                            if (!preg_replace($rule["expression"], "", $tmp_value) != $tmp_value) {
-                                $errors[] = ["name" => $name, "type" => "regex"];
+                            // For array values the regex is applied per item;
+                            // the field fails as soon as any item fails.
+                            $items = is_array($value) ? $value : [$value];
+                            foreach ($items as $item) {
+                                $tmp_value = $item;
+                                foreach ($rule["exceptions"] as $exception) {
+                                    $tmp_value = str_replace($exception, "", $tmp_value);
+                                }
+                                if (!preg_replace($rule["expression"], "", $tmp_value) != $tmp_value) {
+                                    $errors[] = ["name" => $name, "type" => "regex"];
+                                    break;
+                                }
                             }
                         } else if ($type == "integer") {
-                            if (!filter_var($value, FILTER_VALIDATE_INT)) {
+                            if (filter_var($value, FILTER_VALIDATE_INT) === false) {
                                 $errors[] = ["name" => $name, "type" => "integer"];
                             }
                             $value = intval($value);
@@ -104,8 +128,6 @@
                             } else {
                                 $errors[] = ["name" => $name, "type" => "file"];
                             }
-                        } else {
-                            $errors[] = ["name" => $name, "type" => "contact_admin"]; //Unknown type
                         }
 
                         $field->value = $value;

@@ -180,7 +180,16 @@
             $this->assertConnection();
 
             $args = func_get_args();
-            $preparationResult = $this->conn->prepare($query);
+
+            // PHP 8.1+ defaults mysqli to MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT,
+            // which throws mysqli_sql_exception before prepare() / execute() can
+            // return false. Catch and rethrow with the framework's error prefix
+            // so the API contract is identical across PHP versions.
+            try {
+                $preparationResult = $this->conn->prepare($query);
+            } catch(\mysqli_sql_exception $e) {
+                throw new \Exception("SQL Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+            }
             if(is_bool($preparationResult)) {
                 throw new \Exception("SQL Error: " . $this->conn->error . "\nQuery: " . $query);
             }
@@ -189,21 +198,24 @@
 
             if(count($args) > 1) {
                 array_shift($args);
-                $bindingResult = $this->stmt->bind_param(...$args);
-                if(false === $bindingResult) {
-                    throw new \Exception("SQL Binding Error: " . $this->conn->error . "\nQuery: " . $query);
-                }
+                // PHP 8's mysqli throws ArgumentCountError / ValueError when
+                // the type string or value count doesn't match the prepared
+                // statement; bind_param() no longer returns false in any
+                // reachable scenario, so a wrapping `if(false === ...)` check
+                // would be dead code.
+                $this->stmt->bind_param(...$args);
             }
 
             $queryStart = microtime(true);
-            $executionResult = $this->stmt->execute();
+            try {
+                $executionResult = $this->stmt->execute();
+            } catch(\mysqli_sql_exception $e) {
+                throw new \Exception("SQL Execution Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+            }
             $queryDuration = (microtime(true) - $queryStart) * 1000;
 
             if(false === $executionResult) {
                 throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
-            }
-            if($this->stmt->errno) {
-                throw new \Exception("SQL STMT Error: " . $this->stmt->error . "\nQuery: " . $query);
             }
 
             $this->insertId = $this->conn->insert_id;
@@ -249,24 +261,38 @@
         public function executeMultiQuery(string $query, bool $throwOnFailure = true): bool {
             $this->assertConnection();
 
-            if($this->conn->multi_query($query) === false) {
-                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
-                return false;
-            }
-
-            do {
-                if($this->conn->errno) {
+            // PHP 8.1+ defaults mysqli to STRICT reporting, which makes
+            // multi_query() / next_result() throw mysqli_sql_exception instead
+            // of returning false / setting errno. Catch any of them and route
+            // back through the framework's throwOnFailure contract.
+            try {
+                if($this->conn->multi_query($query) === false) {
                     if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
-
-                    while($this->conn->more_results()) $this->conn->next_result();
                     return false;
                 }
 
-                if($result = $this->conn->store_result()) $result->free();
-            } while($this->conn->more_results() && $this->conn->next_result());
+                do {
+                    if($this->conn->errno) {
+                        if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
 
-            if($this->conn->errno) {
-                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
+                        while($this->conn->more_results()) $this->conn->next_result();
+                        return false;
+                    }
+
+                    if($result = $this->conn->store_result()) $result->free();
+                } while($this->conn->more_results() && $this->conn->next_result());
+
+                if($this->conn->errno) {
+                    if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
+                    return false;
+                }
+            } catch(\mysqli_sql_exception $e) {
+                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+                while($this->conn->more_results()) {
+                    try {
+                        $this->conn->next_result();
+                    } catch(\mysqli_sql_exception) {}
+                }
                 return false;
             }
 
@@ -292,7 +318,16 @@
                 }
             }
             $this->lastHeartbeat = time();
-            return $this->conn->ping();
+            // mysqli::ping() is deprecated since PHP 8.4 (the reconnect
+            // feature was removed in 8.2, leaving ping redundant). A
+            // lightweight SELECT 1 round-trips the server identically and
+            // surfaces a dead connection as a mysqli_sql_exception under
+            // PHP 8.1+'s default MYSQLI_REPORT_STRICT.
+            try {
+                return $this->conn->query("SELECT 1") !== false;
+            } catch(\mysqli_sql_exception) {
+                return false;
+            }
         }
 
         /**

@@ -173,6 +173,7 @@ class SessionController extends z_controller {
         echo(json_encode([
             'isLoggedIn' => $user->isLoggedIn,
             'userId'     => $user->userId,
+            'execUserId' => $user->execUserId,
         ]));
     }
 

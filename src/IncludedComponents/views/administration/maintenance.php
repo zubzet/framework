@@ -1,6 +1,6 @@
 <?php return ["body" => function($opt) { ?>
 
-    <h2>Maintenance Mode</h2>
+    <h2 data-test="maintenance-heading">Maintenance Mode</h2>
 
     <div class="row text-center">
         <div class="col-12 col-lg-4">
@@ -9,7 +9,7 @@
                     <small class="text-muted d-block">
                         Currently Active
                     </small>
-                    <strong class="text-primary">
+                    <strong class="text-primary" data-test="maintenance-status">
                         <?= $opt["isActive"] ? "Maintenance" : "Normal" ?>
                     </strong>
                 </div>
@@ -21,7 +21,7 @@
                     <small class="text-muted d-block">
                         Current Mode
                     </small>
-                    <strong>
+                    <strong data-test="maintenance-mode">
                         <?= e($opt["mode"]); ?>
                     </strong>
                 </div>
@@ -33,7 +33,7 @@
                     <small class="text-muted d-block">
                         Your Browser Status
                     </small>
-                    <strong>
+                    <strong data-test="maintenance-browser">
                         <?= $opt["browserCanBypass"] ? "Can Bypass" : "Cannot Bypass"; ?>
                     </strong>
                 </div>
@@ -42,7 +42,7 @@
     </div>
 
     <div class="my-3 d-flex justify-content-center">
-        <button class="btn btn-primary border mx-3 shadow-sm" id="bypass-maintenance" <?= $opt["browserCanBypass"] ? "disabled" : "" ?>>
+        <button class="btn btn-primary border mx-3 shadow-sm" data-test="btn-bypass-maintenance" id="bypass-maintenance" <?= $opt["browserCanBypass"] ? "disabled" : "" ?>>
             <i class="fas fa-shield-alt mr-2"></i>
             Bypass Cookie
             <?= $opt["browserCanBypass"] ? "(Already set)" : "" ?>

@@ -111,6 +111,7 @@ Z = {
     error_range: "The number is too large to too small. It must be between [0] and [1].",
     error_unique: "This already exists!",
     error_exist: "This does not exist!",
+    error_in: "This value is not in the allowed list!",
     error_integer: "This is not an integer!",
     error_date: "Please give a correct date!",
     error_regex: "The input does not meet the required pattern!",
@@ -464,6 +465,18 @@ class ZCED { //Create, edit, delete
       this.items[this.items.length - 1].dom.classList.remove("mb-1");
     }
   }
+
+  /**
+   * Compatibility stubs so a CED participates in ZForm's per-field
+   * iterations (addField visibility skip, _updateDisabled, getValues,
+   * setValues, reset). CEDs don't currently support being hidden or
+   * disabled as a unit — these are no-ops that keep the form-level
+   * machinery from throwing when iterating mixed fields.
+   */
+  isHidden() { return false; }
+  isDisabled() { return false; }
+  _updateDisabled() { /* no-op */ }
+  reset() { /* no-op */ }
 }
 
 /**
@@ -685,16 +698,21 @@ class ZForm {
   /**
    * Creates a ZForm instance
    * @param {object} options Options
-   * @param {boolean} options.doReload Should the form reload after submit? This is automatically set to true when using a CED in the form
-   * @param {string} options.dom Id of a dom element to append this form automatically to
-   * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occour
-   * @param {formErrorHook} options.formErrorHook Function that is only called on form errors
+   * @param {boolean} [options.doReload] Should the form reload after submit? This is automatically set to true when using a CED in the form
+   * @param {string} [options.dom] Id of a dom element to append this form automatically to
+   * @param {saveHook} [options.saveHook] Function that is called after saving. It is only called after a success and not when validation errors occour
+   * @param {formErrorHook} [options.formErrorHook] Function that is only called on form errors
+   * @param {boolean} [options.hidehints] Suppress the inline hint banner (saved / unsaved / error). Defaults to `false` (hints are shown).
+   * @param {boolean} [options.sendOnSubmitClick] If `false`, the built-in submit button no longer calls `send()` automatically — the caller is responsible for triggering submission. Defaults to `true`.
+   * @param {string} [options.customEndpoint] Override the URL `send()` posts to. By default the form posts back to the current action.
+   * @param {boolean} [options.collectOnly] Client-only mode: the submit button never posts to the backend. Instead it hands the collected values (`getValues()`) to `saveHook`. Defaults to `false`.
+   * @param {function} [options.inputHook] Called with `getValues()` on every field change (typing, selecting, etc). Lets the form be consumed live without a submit.
    */
   constructor(options = {
-    doReload: true, 
-    dom: null, 
-    saveHook: null, 
-    formErrorHook:null, 
+    doReload: true,
+    dom: null,
+    saveHook: null,
+    formErrorHook:null,
     hidehints: false,
     sendOnSubmitClick: true,
     customEndpoint: null
@@ -708,6 +726,16 @@ class ZForm {
     this.formErrorHook = options.formErrorHook;
     this.sendOnSubmitClick = "sendOnSubmitClick" in options ? options.sendOnSubmitClick : true;
     this.customEndpoint = options.customEndpoint || null;
+    this.collectOnly = options.collectOnly || false;
+    this.inputHook = options.inputHook || null;
+
+    /**
+     * Client-only metadata carried alongside the form values. Keys passed
+     * to setValues() that don't match a field land here and are returned by
+     * getValues(), but are never submitted to the backend — handy for an id
+     * or other context attached to the record being edited.
+     */
+    this.meta = {};
 
     this.hidehints = options.hidehints;
 
@@ -724,12 +752,30 @@ class ZForm {
     this.dom.appendChild(this.inputSpace);
 
     this.buttonSubmit = this.createActionButton(Z.Lang.submit, "btn-primary", () => {
+      if(this.collectOnly) {
+        if(this.saveHook) this.saveHook(this.getValues());
+        return;
+      }
       if(this.sendOnSubmitClick) this.send(this.customEndpoint);
     });
 
     this.currentRowLength = 12;
     this.currentRow = null;
     this.rows = [];
+
+    /**
+     * @private
+     * Ordered record of every top-level item added to the form (fields,
+     * custom HTML, separators, empty spacers). _updateLayout() iterates
+     * this list to rebuild the layout from scratch without dropping any
+     * non-field content.
+     */
+    this.items = [];
+
+    /**
+     * @private
+     */
+    this._isDisabled = false;
 
     if (options.dom) document.getElementById(options.dom).appendChild(this.dom);
   }
@@ -765,13 +811,60 @@ class ZForm {
   }
 
   /**
-   * Adds custom html to the current part of the Form
+   * Returns an object of the form's values: every (non-CED) field's value,
+   * merged with any client-only `meta` carried via setValues(). CEDs are
+   * skipped — they have no scalar value and round-trip through
+   * getFormData / getPostString instead.
+   * @returns {{[fieldName: string]: any}}
+   */
+  getValues() {
+    return {
+      ...this.meta,
+      ...Object.fromEntries(
+        Object.entries(this.fields)
+          .filter(([, field]) => field.type !== "CED")
+          .map(([fieldName, field]) => [fieldName, field.value])
+      )
+    };
+  }
+
+  /**
+   * Fills a form with a data object. Keys matching a field set that field's
+   * value; keys matching no field are kept in `this.meta` (client-only,
+   * never submitted) so values like an id can ride along. CED keys are
+   * skipped.
+   * @param {{[fieldName: string]: any}} data
+   * @param {Object} options
+   * @param {boolean} [options.resetUnknown] Reset fields which values are not in data?
+   */
+  setValues(data, options = {}) {
+    if (options.resetUnknown) {
+      this.reset();
+    }
+
+    for (const fieldName in data) {
+      const field = this.fields[fieldName];
+      if (field) {
+        if (field.type === "CED") continue;
+        field.value = data[fieldName];
+      } else {
+        this.meta[fieldName] = data[fieldName];
+      }
+    }
+  }
+
+  /**
+   * Adds custom html to the current part of the Form. Breaks the current
+   * row so any field added afterwards starts on a fresh row below.
    * @returns {void}
    */
   addCustomHTML(html) {
     var node = document.createElement("div");
     node.innerHTML = html;
+    this.items.push({type: "html", node: node});
     this.inputSpace.appendChild(node);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
@@ -784,6 +877,7 @@ class ZForm {
     if (this.lastSendAt && now - this.lastSendAt < 300) return;
     this.lastSendAt = now;
     this.isSending = true;
+    this._updateDisabled();
 
     var data = this.getFormData();
 
@@ -835,6 +929,7 @@ class ZForm {
 
     }).always(() => {
       this.isSending = false;
+      this._updateDisabled();
     });
   }
 
@@ -845,15 +940,31 @@ class ZForm {
    */
   addField(field) {
     if (field.type == "CED") this.doReload = true;
+    field.form = this;
 
     this.fields[field.name] = field;
-    var showUnsavedHint = () => {
+    var onFieldChange = () => {
       this.hint("alert-warning", Z.Lang.unsaved);
+      if (this.inputHook) this.inputHook(this.getValues());
     };
-    field.on('input', showUnsavedHint);
-    field.on('change', showUnsavedHint);
+    field.on('input', onFieldChange);
+    field.on('change', onFieldChange);
     bsCustomFileInput.init();
 
+    this.items.push({type: "field", field: field});
+
+    if (field.isHidden()) return;
+
+    this._appendFieldToLayout(field);
+  }
+
+  /**
+   * Appends a single visible field to the live layout, creating a new
+   * row/group when the current row would overflow. Shared by addField()
+   * (initial build) and _updateLayout() (rebuild on visibility change).
+   * @private
+   */
+  _appendFieldToLayout(field) {
     if (field.width + this.currentRowLength > 12) {
       var group = document.createElement("div");
       group.classList.add("form-group");
@@ -871,6 +982,35 @@ class ZForm {
   }
 
   /**
+   * Rebuilds the whole form layout. Should be executed when visibility of fields changes.
+   * It is not used when fields are added because it could potentially break existing userspace code, that handles field visibility.
+   *
+   * Replays this.items in insertion order so addCustomHTML / addSeperator /
+   * createEmpty nodes survive the rebuild — wiping inputSpace would drop
+   * them otherwise. Also resets the instance row state so a subsequent
+   * createField() lands in the right place.
+   * @private
+   */
+  _updateLayout() {
+    this.inputSpace.innerHTML = "";
+    this.currentRow = null;
+    this.currentRowLength = 12;
+
+    for (const item of this.items) {
+      if (item.type === "field") {
+        if (item.field.isHidden()) continue;
+        this._appendFieldToLayout(item.field);
+      } else {
+        // Custom HTML, separators, and empty spacers are re-attached as-is
+        // and break the current row so following fields start fresh.
+        this.inputSpace.appendChild(item.node);
+        this.currentRow = null;
+        this.currentRowLength = 12;
+      }
+    }
+  }
+
+  /**
    * Creates an CED and adds it directly to the form.
    * @param {CEDBlueprint} blueprint The blueprint that defines the attributes of the CED
    * @return {ZCED} The newly generated CED
@@ -883,11 +1023,31 @@ class ZForm {
 
   /**
    * Creates and adds a ZFormField to the form
-   * @param {FormFieldOptions} options for the new Field
+   * @param {object} options Options for the new field
+   * @param {string} [options.name] Name to use in the request
+   * @param {InputType} [options.type] Type of the field
+   * @param {string} [options.text] Text to show in the label
+   * @param {boolean} [options.required] Sets if this field is required to be filled in
+   * @param {string} [options.hint] Small text to show under the input. For example: "We do not share you email" or something.
+   * @param {string} [options.placeholder] Placeholder to show in the input when nothing is entered
+   * @param {any} [options.default] Default value
+   * @param {any} [options.value] Initial value of the input. For `type: "button"` this is the button label.
+   * @param {boolean} [options.autofill] Enable browser-level autofill for this field.
+   * @param {FieldWidth} [options.width] Width of the field in units (1-12, bootstrap grid)
+   * @param {object} [options.attributes] List of attributes to apply to the input element. Keys are attribute names, values are attribute values.
+   * @param {Food} [options.food] Food for selects or autocompletes
+   * @param {boolean} [options.compact] Sets the compact mode. In compact mode, the label is hidden.
+   * @param {string} [options.prepend] Content to put in front of the input. Units are usually put there.
+   * @param {string} [options.style] Bootstrap button class (e.g. `"btn-primary"`, `"btn-danger"`). Only applies when `type` is `"button"`. Defaults to `"btn-primary"`.
+   * @param {string} [options.customFileInputText] Placeholder text shown on a `type: "file"` input before a file is chosen. Defaults to `Z.Lang.choose_file`.
+   * @param {Food[]|string} [options.autocompleteData] Static list of options for `type: "autocomplete"`, or a backend path string the field queries via `Z.Request.root` for dynamic suggestions.
+   * @param {number} [options.autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
+   * @param {function} [options.autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
+   * @param {function} [options.autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
-    var field = new ZFormField(options);
+    const field = new ZFormField(options);
     this.addField(field);
     return field;
   }
@@ -900,15 +1060,23 @@ class ZForm {
   createEmpty(size = 12) {
     var div = document.createElement("div");
     div.classList.add("col-0", "col-md-" + size);
+    this.items.push({type: "empty", node: div});
     this.inputSpace.appendChild(div);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
-   * Adds an <hr> tag at the end of the generated form
+   * Adds an <hr> tag at the end of the generated form. Breaks the current
+   * row so any field added afterwards starts on a fresh row below.
    * @returns {void}
    */
   addSeperator() {
-    this.inputSpace.appendChild(document.createElement("hr"));
+    var node = document.createElement("hr");
+    this.items.push({type: "separator", node: node});
+    this.inputSpace.appendChild(node);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
@@ -949,6 +1117,23 @@ class ZForm {
   }
 
   /**
+   * Hides the built-in submit button. Useful for collectOnly / live forms
+   * that are consumed via inputHook and don't need a submit.
+   * @returns {void}
+   */
+  hideSubmit() {
+    this.buttonSubmit.style.display = "none";
+  }
+
+  /**
+   * Shows the built-in submit button again.
+   * @returns {void}
+   */
+  showSubmit() {
+    this.buttonSubmit.style.display = "";
+  }
+
+  /**
    * Clears all field values.
    * Does not remove all fields!
    */
@@ -956,6 +1141,40 @@ class ZForm {
     for (const field of Object.values(this.fields)) {
       field.reset();
     }
+  }
+
+  /**
+   * Enables the form
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+  }
+
+  /**
+   * Disables the form
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * @returns {boolean} True when form is disabled
+   */
+  isDisabled() {
+    if (this.isSending) return true
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    for (const field of Object.values(this.fields)) {
+      field._updateDisabled();
+    }
+    this.buttonSubmit.disabled = this.isDisabled();
   }
 
 }
@@ -976,25 +1195,34 @@ class ZForm {
 
 /**
  * Types to use in an input field. All html default ones, textarea, select and autocomplete are supported.
- * @typedef {"button"|"checkbox"|"color"|"date"|"datetime-local"|"email"|"file"|"hidden"|"image"|"month"|"number"|"password"|"radio"|"range"|"reset"|"search"|"submit"|"tel"|"text"|"time"|"url"|"week"|"select"|"textarea"|"autocomplete"} InputType
+ * @typedef {"button"|"checkbox"|"color"|"date"|"datetime-local"|"email"|"file"|"hidden"|"image"|"month"|"number"|"password"|"radio"|"range"|"reset"|"search"|"submit"|"tel"|"text"|"time"|"url"|"week"|"select"|"multi-select"|"textarea"|"autocomplete"} InputType
  */
 
 /**
  * All parameters are optional
- * @typedef FormFieldOptions
- * @property {string} name Name to use in the request
- * @property {boolean} required Sets if this field is required to be filled in
- * @property {InputType} type Type of the field
- * @property {string} text Text to show in the label
- * @property {string} hint Small text to show under the input. For example: "We do not share you email" or something.
- * @property {any} default Default value 
- * @property {boolean} autofill Enable browser level autofill for this field.
- * @property {string} placeholder Placeholder to show in the input when nothing is entered
- * @property {FieldWidth} width Width of the field in units
- * @property {object} attributes List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
- * @property {Food} food Food for selects or autocomepletes
- * @property {boolean} compact Sets the compact mode. In compact mode, the label is hidden
- * @property {string} prepend Content to put in front of the input. Units are usally put there
+ * @typedef {object} FormFieldOptions
+ * @property {string} [name] Name to use in the request
+ * @property {boolean} [required] Sets if this field is required to be filled in
+ * @property {InputType} [type] Type of the field
+ * @property {string} [text] Text to show in the label
+ * @property {string} [hint] Small text to show under the input. For example: "We do not share you email" or something.
+ * @property {any} [default] Default value
+ * @property {boolean} [autofill] Enable browser level autofill for this field.
+ * @property {string} [placeholder] Placeholder to show in the input when nothing is entered
+ * @property {FieldWidth} [width] Width of the field in units
+ * @property {object} [attributes] List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
+ * @property {Food} [food] Food for selects or autocomepletes
+ * @property {boolean} [compact] Sets the compact mode. In compact mode, the label is hidden
+ * @property {string} [prepend] Content to put in front of the input. Units are usally put there
+ * @property {any} [value] Initial value of the input. For `type: "button"` this is the button label.
+ * @property {string} [style] Bootstrap button class (e.g. `"btn-primary"`, `"btn-danger"`). Only applies when `type` is `"button"`. Defaults to `"btn-primary"`.
+ * @property {string} [customFileInputText] Placeholder text shown on a `type: "file"` input before a file is chosen. Defaults to `Z.Lang.choose_file`.
+ * @property {Food[]|string} [autocompleteData] Static list of options for `type: "autocomplete"`, or a backend path string that the field queries via `Z.Request.root` for dynamic suggestions.
+ * @property {number} [autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
+ * @property {function} [autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
+ * @property {function} [autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
+ * @property {boolean} [disabled] Does this field start disabled?
+ * @property {boolean} [hidden] Does this field start hidden?
  */
 
 /**
@@ -1023,6 +1251,23 @@ class ZFormField {
     this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
     this.autocompleteTextCB = options.autocompleteTextCB;
     this.autocompleteCB = options.autocompleteCB || null;
+
+    /**
+     * @type {ZForm|null}
+     */
+    this.form = null;
+
+    /**
+     * @private
+     * Was this field disabled manually?
+     */
+    this._isDisabled = false;
+
+    /**
+     * @private
+     * Is this field hidden?
+     */
+    this._isHidden = false;
 
     this.optgroup = null;
 
@@ -1065,6 +1310,46 @@ class ZFormField {
       }
       this.input.classList.add("form-control");
       this.input.appendChild(option);
+    } else if (this.type == "multi-select") {     // --- Multi Select ---
+      // Visible <select> the user picks from; badges below show the
+      // chosen entries and the submitted value is a JSON array.
+      customDiv = document.createElement("div");
+
+      this.input = document.createElement("select");
+      this.input.classList.add("form-control");
+      this.placeholderOption = document.createElement("option");
+      this.placeholderOption.setAttribute("value", "");
+      this.placeholderOption.innerHTML = this.placeholder || "---";
+      this.input.appendChild(this.placeholderOption);
+      customDiv.appendChild(this.input);
+
+      this.badgeContainer = document.createElement("div");
+      this.badgeContainer.classList.add("mt-2");
+      customDiv.appendChild(this.badgeContainer);
+
+      this.foodMap = {};
+      this.optionMap = {};
+      this.selectedValues = [];
+
+      this.input.addEventListener("change", () => {
+        var pick = this.input.value;
+        if (pick === "") return;
+        this.addSelectedValue(pick);
+        this.input.value = "";
+      });
+    } else if (this.type == "checkbox") {         // --- Checkbox ---
+      // Bootstrap form-check layout: the box sits left of its label and
+      // clicking the label toggles it (via the shared for/id). The label
+      // was appended above in the generic flow; move it to the right of
+      // the input here.
+      customDiv = document.createElement("div");
+      customDiv.classList.add("form-check");
+      this.input = document.createElement("input");
+      this.input.setAttribute("type", "checkbox");
+      this.input.classList.add("form-check-input");
+      this.label.classList.add("form-check-label");
+      customDiv.appendChild(this.input);
+      customDiv.appendChild(this.label);
     } else if (this.type == "textarea") {         // --- Textarea ---
       this.input = document.createElement("textarea");
       this.input.classList.add("form-control");
@@ -1226,16 +1511,42 @@ class ZFormField {
     if (options.compact) {
       this.label.classList.add("d-none");
     }
+
+    if (options.disabled) {
+      this.disable();
+    }
+
+    if (options.hidden) {
+      this.hide();
+    }
   }
 
   /**
    * @type {any}
    */
   get value() {
+    if (this.type == "multi-select") {
+      return this.selectedValues.slice();
+    }
+    if (this.type == "checkbox") {
+      return this.input.checked;
+    }
     return this.input.value;
   }
 
   set value(value) {
+    if (this.type == "multi-select") {
+      var arr = Array.isArray(value) ? value : [];
+      this.clearSelectedValues();
+      for (var v of arr) this.addSelectedValue(String(v));
+      return;
+    }
+    if (this.type == "checkbox") {
+      // Accept booleans, 1/0, "1"/"0", "true"/"false", "on".
+      this.input.checked = value === true || value === 1
+        || value === "1" || value === "true" || value === "on";
+      return;
+    }
     if (this.input.type != "file") {
       this.input.value = value;
     } else {
@@ -1245,6 +1556,74 @@ class ZFormField {
         this.fileValue.innerText = value;
       }
     }
+  }
+
+  /**
+   * Adds a value to a multi-select. Creates the removable badge and keeps
+   * the internal selected-list in sync. Duplicates are ignored.
+   * @param {string} value Value to add
+   * @returns {void}
+   */
+  addSelectedValue(value) {
+    if (this.selectedValues.includes(value)) return;
+    this.selectedValues.push(value);
+
+    var option = this.optionMap[value];
+    if (option) {
+      option.hidden = true;
+      this._updateOptgroupVisibility(option.parentElement);
+    }
+
+    var text = this.foodMap[value] !== undefined ? this.foodMap[value] : value;
+    var badge = document.createElement("span");
+    badge.classList.add("badge", "badge-primary", "mr-1", "mb-1", "p-2");
+    badge.style.cursor = "pointer";
+    badge.setAttribute("data-value", value);
+    badge.innerHTML = "&times; " + text;
+    badge.addEventListener("click", () => {
+      // A disabled multi-select must not let badges be removed either.
+      if (this.isDisabled()) return;
+
+      var idx = this.selectedValues.indexOf(value);
+      if (idx >= 0) this.selectedValues.splice(idx, 1);
+      if (option) {
+        option.hidden = false;
+        this._updateOptgroupVisibility(option.parentElement);
+      }
+      badge.remove();
+      this.input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    this.badgeContainer.appendChild(badge);
+  }
+
+  /**
+   * Clears all selected values from a multi-select. Restores every option
+   * (and any collapsed optgroups) back into the dropdown.
+   * @returns {void}
+   */
+  clearSelectedValues() {
+    this.selectedValues = [];
+    this.badgeContainer.innerHTML = "";
+    for (var k in this.optionMap) {
+      this.optionMap[k].hidden = false;
+    }
+    // Optgroups follow their children's visibility — restore any that
+    // were collapsed when all their options were hidden.
+    if (this.input) {
+      var groups = this.input.querySelectorAll("optgroup");
+      for (var i = 0; i < groups.length; i++) groups[i].hidden = false;
+    }
+  }
+
+  /**
+   * Hide an optgroup when every option under it is hidden, show it
+   * otherwise. No-op if `parent` isn't an <optgroup>.
+   * @private
+   */
+  _updateOptgroupVisibility(parent) {
+    if (!parent || parent.tagName !== "OPTGROUP") return;
+    var hasVisible = parent.querySelector("option:not([hidden])") !== null;
+    parent.hidden = !hasVisible;
   }
 
   /**
@@ -1303,8 +1682,43 @@ class ZFormField {
    * @returns {void}
    */
   feedData(food, clear = true) {
-    if (this.type != "select") {
+    if (this.type != "select" && this.type != "multi-select") {
       console.warn("Do not feed select data to non select input!");
+    }
+
+    if (this.type == "multi-select") {
+      if (clear) {
+        this.input.innerHTML = "";
+        this.input.appendChild(this.placeholderOption);
+        this.foodMap = {};
+        this.optionMap = {};
+        this.clearSelectedValues();
+      }
+
+      var currentOptgroup = null;
+      for (var data of food) {
+        if (data.type == "optgroup") {
+          currentOptgroup = document.createElement("optgroup");
+          currentOptgroup.setAttribute("label", data.text);
+          this.input.appendChild(currentOptgroup);
+          continue;
+        }
+
+        var value = data.value ?? data.text;
+        var text = data.text ?? data.value;
+        this.foodMap[value] = text;
+
+        var option = document.createElement("option");
+        option.innerHTML = text;
+        option.setAttribute("value", value);
+        (currentOptgroup || this.input).appendChild(option);
+        this.optionMap[value] = option;
+      }
+
+      if (this.options.value !== undefined) {
+        this.value = this.options.value;
+      }
+      return;
     }
 
     if (clear) {
@@ -1334,7 +1748,7 @@ class ZFormField {
     }
 
     if(this.optgroup != null) this.input.appendChild(this.optgroup);
-    
+
     if (this.options.value !== undefined) {
       this.value = this.options.value;
     }
@@ -1345,11 +1759,33 @@ class ZFormField {
    * @returns {string} The data containing string
    */
   getPostString() {
+    if (this.type == "multi-select") {
+      if (this.value.length === 0) return "";
+      // PHP-native array form: name[]=v1&name[]=v2 -> $_POST[name] is an
+      // actual array. Empty selection is omitted entirely so isset() in
+      // the server-side required rule catches it.
+      var parts = [];
+      for (var v of this.value) {
+        parts.push(this.name + "[]=<#decURI#>" + encodeURIComponent(v));
+      }
+      return parts.join("&");
+    }
+    if (this.type == "checkbox") {
+      // Always submit the state ("1"/"0") so a binary DB column can be
+      // toggled off as well as on. "must be ticked" is a ->checked() rule.
+      return this.name + "=<#decURI#>" + (this.input.checked ? "1" : "0");
+    }
     return this.name + "=<#decURI#>" + encodeURIComponent(this.value);
   }
 
   /**
    * Appends data to a form data object. This form data object can then be used to send the form with multipart/form-data
+   *
+   * Multi-selects emit one `name[]=value` entry per selected item so PHP
+   * parses `$_POST[name]` as a real array. An empty multi-select is
+   * *omitted* from the FormData entirely — `isset($_POST[$name])` is
+   * false, so the existing server-side `->required()` rule catches it.
+   *
    * @param {FormData} data An existing FormData object to append to
    * @returns {void}
    */
@@ -1358,6 +1794,15 @@ class ZFormField {
       if (this.input.files[0]) {
         data.append(this.name, this.input.files[0], this.value);
       }
+    } else if (this.type == "multi-select") {
+      if (this.value.length === 0) return;
+      for (var v of this.value) {
+        data.append(this.name + "[]", "<#decURI#>" + encodeURIComponent(v));
+      }
+    } else if (this.type == "checkbox") {
+      // Always submit the state ("1"/"0") so a binary DB column can be
+      // toggled off as well as on. "must be ticked" is a ->checked() rule.
+      data.set(this.name, "<#decURI#>" + (this.input.checked ? "1" : "0"));
     } else {
       data.set(this.name, "<#decURI#>" + encodeURIComponent(this.value));
     }
@@ -1369,6 +1814,59 @@ class ZFormField {
    * Options for selects and auto completes will persist.
    */
   reset() {
+    if (this.type == "multi-select") {
+      this.value = this.default ?? [];
+      return;
+    }
+    if (this.type == "checkbox") {
+      this.value = this.default ?? false;
+      return;
+    }
     this.input.value = this.default ?? "";
+  }
+
+  /**
+   * Disables the form field
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * Enables the form field
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+  }
+
+  isDisabled() {
+    if (this.form) {
+      if (this.form.isDisabled()) return true;
+    }
+
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    this.input.disabled = this.isDisabled();
+  }
+
+  hide() {
+    this._isHidden = true;
+    if (this.form) this.form._updateLayout();
+  }
+
+  show() {
+    this._isHidden = false;
+    if (this.form) this.form._updateLayout();
+  }
+
+  isHidden() {
+    return this._isHidden;
   }
 }
