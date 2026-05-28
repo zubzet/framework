@@ -205,7 +205,7 @@
                     $scripts["info"] = "docker exec application php index.php info:startup --pwd \"$(pwd)\"";
                 }
 
-                if(!str_contains($scripts["start"], "npm run info")) {
+                if(isset($scripts["start"]) && !str_contains($scripts["start"], "npm run info")) {
                     $scripts["start"] = $scripts["start"] . " && npm run info";
                 }
 
@@ -219,7 +219,7 @@
             $packageJsonStartup->modify(function(array $data): ?array {
                 $scripts = &$data["scripts"] ?? [];
 
-                if(!isset($scripts["startup"])) {
+                if(isset($scripts["start"]) && !isset($scripts["startup"])) {
                     $scripts["startup"] = "npm run start && npm run docker-compose -- up";
                 }
 
