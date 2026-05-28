@@ -123,7 +123,6 @@
                 ]);
             }
 
-
             // file_get_contents('php://input') → request()->input->body replacement
             $phpInputMatcher = new MatchingModifier($this, "php-input-detection");
             $phpInputMatcher->from(["./app"]);
@@ -156,31 +155,26 @@
                 ]);
             }
 
-
             // Add SlowQuery and SlowRequest to ini settings
             $slowSetting = new SettingsIni($this, "slow-settings");
             $slowSetting->addProperty("logger_slow_request_ms", "700");
             $slowSetting->addProperty("logger_slow_query_ms", "300", "slow_query_threshold");
             $slowSetting->save();
 
-
             // Add DebugBar Hide Internal Queries to ini settings
             $hideInternalQueries = new SettingsIni($this, "debugbar-settings");
             $hideInternalQueries->addProperty("debugbar_hide_internal_queries", "true");
             $hideInternalQueries->save();
-
 
             // Add Maintenance Mode to ini settings
             $maintenanceMode = new SettingsIni($this, "maintenance-mode-settings");
             $maintenanceMode->addProperty("maintenance_mode", "off");
             $maintenanceMode->save();
 
-
             // Add config_automated_file to ini settings
             $automatedFile = new SettingsIni($this, "automated-file-settings");
             $automatedFile->addProperty("config_automated_file", "z_config/z_automated_setting.ini");
             $automatedFile->save();
-
 
             // Add the new file into the .gitignore
             $gitignoreAutomatedFile = new FileContent($this, "gitignore-automated-file");
@@ -193,7 +187,6 @@
                 "ZubZet 1.2.0 introduces a new automated settings file (z_config/z_automated_setting.ini) that is meant to be modified by the application itself.",
                 "Please add the file to .gitignore.",
             ]);
-
 
             // Add info startup command in package.json
             $packageJsonInfo = new JsonModifier($this, "package-json-info-startup");
@@ -211,7 +204,6 @@
 
                 return $data;
             });
-
 
             // Add startup command in package.json
             $packageJsonStartup = new JsonModifier($this, "package-json-startup");
@@ -231,7 +223,6 @@
             $phpstormMeta = new RemoveFile($this, "remove-phpstorm-meta");
             $phpstormMeta->from("./.phpstorm.meta.php");
 
-
             // Add VSCode tasks.json
             $vscodeFolder = new Folder($this, "vscode-folder");
             $vscodeFolder->shouldExist([".vscode"]);
@@ -239,7 +230,6 @@
             $tasksJson = new IncludedFile($this, "vscode-tasks");
             $tasksJson->from("tasks.json");
             $tasksJson->to(".vscode");
-
 
             // Add .coverage to .gitignore
             $gitignoreCoverage = new FileContent($this, "gitignore-coverage");
@@ -253,12 +243,10 @@
                 "Please add the file to .gitignore.",
             ]);
 
-
             // Add development_editor ini setting
             $editorSetting = new SettingsIni($this, "editor-setting");
             $editorSetting->addProperty("development_editor", "vscode");
             $editorSetting->save();
-
 
             // Upgrade composer dependencies
             $composer = new ComposerModifier($this, "composer");
