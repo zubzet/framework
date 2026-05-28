@@ -17,6 +17,14 @@ Practical implications:
 - Promotions to `main` happen as a separate PR (`develop` → `main`) when the maintainer is satisfied with the integrated state.
 - CI runs the full PHP matrix (8.0–8.5) on pushes to `develop`, `main`, and version tags. PRs and other branches run an extremes-only smoke (8.0 + 8.5).
 
+!!! note "Release candidates"
+    During a release-candidate phase (for example **v1.2.0-RC1**), allow prerelease stability so
+    Composer can resolve the RC:
+
+    ```bash
+    composer create-project zubzet/zubzet your-folder-name --stability=RC
+    ```
+
 ### Setup
 
 - **Origin** (your fork): `git@github.com:your-username/framework.git`
