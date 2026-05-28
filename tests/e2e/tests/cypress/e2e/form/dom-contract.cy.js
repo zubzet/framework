@@ -24,7 +24,7 @@ function skeleton(el) {
 const EXPECTED = {
     c_text:         'div.col.col-12.col-md-12(label,input.form-control,span.form-text.text-danger)',
     c_textarea:     'div.col.col-12.col-md-12(label,textarea.form-control,span.form-text.text-danger)',
-    c_checkbox:     'div.col.col-12.col-md-12(label,input.form-control,span.form-text.text-danger)',
+    c_checkbox:     'div.col.col-12.col-md-12(div.form-check(input.form-check-input,label.form-check-label),span.form-text.text-danger)',
     c_file:         'div.col.col-12.col-md-12(label,div.custom-file(label.custom-file-label.text-truncate,input.custom-file-input.form-control),span.form-text.text-danger)',
     c_hidden:       'div.col.col-12.col-md-0.d-none(label,input,span.form-text.text-danger)',
     c_prepend:      'div.col.col-12.col-md-12(label,div.input-group(div.input-group-prepend(span.input-group-text),input.form-control),span.form-text.text-danger)',

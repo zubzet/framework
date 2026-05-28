@@ -6,7 +6,7 @@
 
         form.createField({ name: "c_text", type: "text" });
         form.createField({ name: "c_textarea", type: "textarea" });
-        form.createField({ name: "c_checkbox", type: "checkbox" });
+        form.createField({ name: "c_checkbox", type: "checkbox", text: "I accept the terms and conditions" });
         form.createField({ name: "c_file", type: "file" });
         form.createField({ name: "c_hidden", type: "hidden" });
         form.createField({ name: "c_prepend", type: "text", prepend: "@" });

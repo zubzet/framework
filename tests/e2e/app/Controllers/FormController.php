@@ -58,6 +58,29 @@
             return $res->render("form/domContract");
         }
 
+        // Checkbox fixture: value (checked) semantics and the ->checked()
+        // "must be ticked" rule.
+        public function action_validationCheckbox(Request $req, Response $res) {
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("terms"))
+                        ->checked(),
+                ]);
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                return $res->success([
+                    "agree"      => $req->getPost("agree"),
+                    "subscribed" => $req->getPost("subscribed"),
+                    "terms"      => $req->getPost("terms"),
+                ]);
+            }
+
+            return $res->render("form/validationCheckbox");
+        }
+
         // Probe for the integer() and exists() validation rules. The existing
         // form-fixture controllers don't exercise these. Validation runs on
         // every request (no GET-vs-POST split), and the result is emitted as
