@@ -22,6 +22,25 @@
             return $res->render("form/interactions");
         }
 
+        // Fixture for the form-ergonomics feature set: enable/disable,
+        // show/hide, getValues/setValues, auto-disable-on-submit, plus the
+        // _updateLayout rebuild (addCustomHTML/addSeperator survival, row
+        // state, listener survival). No validation rules — submission always
+        // succeeds so the auto-disable window can be observed.
+        public function action_ergonomics(Request $req, Response $res) {
+            if($req->hasFormData()) {
+                $req->validateForm([
+                    (new FormField("field_a")),
+                    (new FormField("watched")),
+                    (new FormField("field_half")),
+                ]);
+
+                return $res->success();
+            }
+
+            return $res->render("form/ergonomics");
+        }
+
         // Probe for the integer() and exists() validation rules. The existing
         // form-fixture controllers don't exercise these. Validation runs on
         // every request (no GET-vs-POST split), and the result is emitted as

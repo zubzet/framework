@@ -465,6 +465,18 @@ class ZCED { //Create, edit, delete
       this.items[this.items.length - 1].dom.classList.remove("mb-1");
     }
   }
+
+  /**
+   * Compatibility stubs so a CED participates in ZForm's per-field
+   * iterations (addField visibility skip, _updateDisabled, getValues,
+   * setValues, reset). CEDs don't currently support being hidden or
+   * disabled as a unit — these are no-ops that keep the form-level
+   * machinery from throwing when iterating mixed fields.
+   */
+  isHidden() { return false; }
+  isDisabled() { return false; }
+  _updateDisabled() { /* no-op */ }
+  reset() { /* no-op */ }
 }
 
 /**
@@ -693,12 +705,14 @@ class ZForm {
    * @param {boolean} [options.hidehints] Suppress the inline hint banner (saved / unsaved / error). Defaults to `false` (hints are shown).
    * @param {boolean} [options.sendOnSubmitClick] If `false`, the built-in submit button no longer calls `send()` automatically — the caller is responsible for triggering submission. Defaults to `true`.
    * @param {string} [options.customEndpoint] Override the URL `send()` posts to. By default the form posts back to the current action.
+   * @param {boolean} [options.collectOnly] Client-only mode: the submit button never posts to the backend. Instead it hands the collected values (`getValues()`) to `saveHook`. Defaults to `false`.
+   * @param {function} [options.inputHook] Called with `getValues()` on every field change (typing, selecting, etc). Lets the form be consumed live without a submit.
    */
   constructor(options = {
-    doReload: true, 
-    dom: null, 
-    saveHook: null, 
-    formErrorHook:null, 
+    doReload: true,
+    dom: null,
+    saveHook: null,
+    formErrorHook:null,
     hidehints: false,
     sendOnSubmitClick: true,
     customEndpoint: null
@@ -712,6 +726,16 @@ class ZForm {
     this.formErrorHook = options.formErrorHook;
     this.sendOnSubmitClick = "sendOnSubmitClick" in options ? options.sendOnSubmitClick : true;
     this.customEndpoint = options.customEndpoint || null;
+    this.collectOnly = options.collectOnly || false;
+    this.inputHook = options.inputHook || null;
+
+    /**
+     * Client-only metadata carried alongside the form values. Keys passed
+     * to setValues() that don't match a field land here and are returned by
+     * getValues(), but are never submitted to the backend — handy for an id
+     * or other context attached to the record being edited.
+     */
+    this.meta = {};
 
     this.hidehints = options.hidehints;
 
@@ -728,12 +752,30 @@ class ZForm {
     this.dom.appendChild(this.inputSpace);
 
     this.buttonSubmit = this.createActionButton(Z.Lang.submit, "btn-primary", () => {
+      if(this.collectOnly) {
+        if(this.saveHook) this.saveHook(this.getValues());
+        return;
+      }
       if(this.sendOnSubmitClick) this.send(this.customEndpoint);
     });
 
     this.currentRowLength = 12;
     this.currentRow = null;
     this.rows = [];
+
+    /**
+     * @private
+     * Ordered record of every top-level item added to the form (fields,
+     * custom HTML, separators, empty spacers). _updateLayout() iterates
+     * this list to rebuild the layout from scratch without dropping any
+     * non-field content.
+     */
+    this.items = [];
+
+    /**
+     * @private
+     */
+    this._isDisabled = false;
 
     if (options.dom) document.getElementById(options.dom).appendChild(this.dom);
   }
@@ -769,13 +811,60 @@ class ZForm {
   }
 
   /**
-   * Adds custom html to the current part of the Form
+   * Returns an object of the form's values: every (non-CED) field's value,
+   * merged with any client-only `meta` carried via setValues(). CEDs are
+   * skipped — they have no scalar value and round-trip through
+   * getFormData / getPostString instead.
+   * @returns {{[fieldName: string]: any}}
+   */
+  getValues() {
+    return {
+      ...this.meta,
+      ...Object.fromEntries(
+        Object.entries(this.fields)
+          .filter(([, field]) => field.type !== "CED")
+          .map(([fieldName, field]) => [fieldName, field.value])
+      )
+    };
+  }
+
+  /**
+   * Fills a form with a data object. Keys matching a field set that field's
+   * value; keys matching no field are kept in `this.meta` (client-only,
+   * never submitted) so values like an id can ride along. CED keys are
+   * skipped.
+   * @param {{[fieldName: string]: any}} data
+   * @param {Object} options
+   * @param {boolean} [options.resetUnknown] Reset fields which values are not in data?
+   */
+  setValues(data, options = {}) {
+    if (options.resetUnknown) {
+      this.reset();
+    }
+
+    for (const fieldName in data) {
+      const field = this.fields[fieldName];
+      if (field) {
+        if (field.type === "CED") continue;
+        field.value = data[fieldName];
+      } else {
+        this.meta[fieldName] = data[fieldName];
+      }
+    }
+  }
+
+  /**
+   * Adds custom html to the current part of the Form. Breaks the current
+   * row so any field added afterwards starts on a fresh row below.
    * @returns {void}
    */
   addCustomHTML(html) {
     var node = document.createElement("div");
     node.innerHTML = html;
+    this.items.push({type: "html", node: node});
     this.inputSpace.appendChild(node);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
@@ -788,6 +877,7 @@ class ZForm {
     if (this.lastSendAt && now - this.lastSendAt < 300) return;
     this.lastSendAt = now;
     this.isSending = true;
+    this._updateDisabled();
 
     var data = this.getFormData();
 
@@ -839,6 +929,7 @@ class ZForm {
 
     }).always(() => {
       this.isSending = false;
+      this._updateDisabled();
     });
   }
 
@@ -849,15 +940,31 @@ class ZForm {
    */
   addField(field) {
     if (field.type == "CED") this.doReload = true;
+    field.form = this;
 
     this.fields[field.name] = field;
-    var showUnsavedHint = () => {
+    var onFieldChange = () => {
       this.hint("alert-warning", Z.Lang.unsaved);
+      if (this.inputHook) this.inputHook(this.getValues());
     };
-    field.on('input', showUnsavedHint);
-    field.on('change', showUnsavedHint);
+    field.on('input', onFieldChange);
+    field.on('change', onFieldChange);
     bsCustomFileInput.init();
 
+    this.items.push({type: "field", field: field});
+
+    if (field.isHidden()) return;
+
+    this._appendFieldToLayout(field);
+  }
+
+  /**
+   * Appends a single visible field to the live layout, creating a new
+   * row/group when the current row would overflow. Shared by addField()
+   * (initial build) and _updateLayout() (rebuild on visibility change).
+   * @private
+   */
+  _appendFieldToLayout(field) {
     if (field.width + this.currentRowLength > 12) {
       var group = document.createElement("div");
       group.classList.add("form-group");
@@ -872,6 +979,35 @@ class ZForm {
       this.currentRow.appendChild(field.dom);
     }
     this.currentRowLength += field.width;
+  }
+
+  /**
+   * Rebuilds the whole form layout. Should be executed when visibility of fields changes.
+   * It is not used when fields are added because it could potentially break existing userspace code, that handles field visibility.
+   *
+   * Replays this.items in insertion order so addCustomHTML / addSeperator /
+   * createEmpty nodes survive the rebuild — wiping inputSpace would drop
+   * them otherwise. Also resets the instance row state so a subsequent
+   * createField() lands in the right place.
+   * @private
+   */
+  _updateLayout() {
+    this.inputSpace.innerHTML = "";
+    this.currentRow = null;
+    this.currentRowLength = 12;
+
+    for (const item of this.items) {
+      if (item.type === "field") {
+        if (item.field.isHidden()) continue;
+        this._appendFieldToLayout(item.field);
+      } else {
+        // Custom HTML, separators, and empty spacers are re-attached as-is
+        // and break the current row so following fields start fresh.
+        this.inputSpace.appendChild(item.node);
+        this.currentRow = null;
+        this.currentRowLength = 12;
+      }
+    }
   }
 
   /**
@@ -911,7 +1047,7 @@ class ZForm {
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
-    var field = new ZFormField(options);
+    const field = new ZFormField(options);
     this.addField(field);
     return field;
   }
@@ -924,15 +1060,23 @@ class ZForm {
   createEmpty(size = 12) {
     var div = document.createElement("div");
     div.classList.add("col-0", "col-md-" + size);
+    this.items.push({type: "empty", node: div});
     this.inputSpace.appendChild(div);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
-   * Adds an <hr> tag at the end of the generated form
+   * Adds an <hr> tag at the end of the generated form. Breaks the current
+   * row so any field added afterwards starts on a fresh row below.
    * @returns {void}
    */
   addSeperator() {
-    this.inputSpace.appendChild(document.createElement("hr"));
+    var node = document.createElement("hr");
+    this.items.push({type: "separator", node: node});
+    this.inputSpace.appendChild(node);
+    this.currentRow = null;
+    this.currentRowLength = 12;
   }
 
   /**
@@ -973,6 +1117,23 @@ class ZForm {
   }
 
   /**
+   * Hides the built-in submit button. Useful for collectOnly / live forms
+   * that are consumed via inputHook and don't need a submit.
+   * @returns {void}
+   */
+  hideSubmit() {
+    this.buttonSubmit.style.display = "none";
+  }
+
+  /**
+   * Shows the built-in submit button again.
+   * @returns {void}
+   */
+  showSubmit() {
+    this.buttonSubmit.style.display = "";
+  }
+
+  /**
    * Clears all field values.
    * Does not remove all fields!
    */
@@ -980,6 +1141,40 @@ class ZForm {
     for (const field of Object.values(this.fields)) {
       field.reset();
     }
+  }
+
+  /**
+   * Enables the form
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+  }
+
+  /**
+   * Disables the form
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * @returns {boolean} True when form is disabled
+   */
+  isDisabled() {
+    if (this.isSending) return true
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    for (const field of Object.values(this.fields)) {
+      field._updateDisabled();
+    }
+    this.buttonSubmit.disabled = this.isDisabled();
   }
 
 }
@@ -1026,6 +1221,8 @@ class ZForm {
  * @property {number} [autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
  * @property {function} [autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
  * @property {function} [autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
+ * @property {boolean} [disabled] Does this field start disabled?
+ * @property {boolean} [hidden] Does this field start hidden?
  */
 
 /**
@@ -1054,6 +1251,23 @@ class ZFormField {
     this.autocompleteMinCharacters = options.autocompleteMinCharacters || 2;
     this.autocompleteTextCB = options.autocompleteTextCB;
     this.autocompleteCB = options.autocompleteCB || null;
+
+    /**
+     * @type {ZForm|null}
+     */
+    this.form = null;
+
+    /**
+     * @private
+     * Was this field disabled manually?
+     */
+    this._isDisabled = false;
+
+    /**
+     * @private
+     * Is this field hidden?
+     */
+    this._isHidden = false;
 
     this.optgroup = null;
 
@@ -1284,6 +1498,14 @@ class ZFormField {
     if (options.compact) {
       this.label.classList.add("d-none");
     }
+
+    if (options.disabled) {
+      this.disable();
+    }
+
+    if (options.hidden) {
+      this.hide();
+    }
   }
 
   /**
@@ -1337,10 +1559,8 @@ class ZFormField {
     badge.setAttribute("data-value", value);
     badge.innerHTML = "&times; " + text;
     badge.addEventListener("click", () => {
-      // Honor PR 143's field.disable() — a disabled multi-select must not
-      // let badges be removed either. typeof-guarded so this still works
-      // pre-PR-143.
-      if (typeof this.isDisabled === "function" && this.isDisabled()) return;
+      // A disabled multi-select must not let badges be removed either.
+      if (this.isDisabled()) return;
 
       var idx = this.selectedValues.indexOf(value);
       if (idx >= 0) this.selectedValues.splice(idx, 1);
@@ -1568,5 +1788,50 @@ class ZFormField {
       return;
     }
     this.input.value = this.default ?? "";
+  }
+
+  /**
+   * Disables the form field
+   */
+  disable() {
+    this._isDisabled = true;
+    this._updateDisabled();
+  }
+
+  /**
+   * Enables the form field
+   */
+  enable() {
+    this._isDisabled = false;
+    this._updateDisabled();
+  }
+
+  isDisabled() {
+    if (this.form) {
+      if (this.form.isDisabled()) return true;
+    }
+
+    return this._isDisabled;
+  }
+
+  /**
+   * @private
+   */
+  _updateDisabled() {
+    this.input.disabled = this.isDisabled();
+  }
+
+  hide() {
+    this._isHidden = true;
+    if (this.form) this.form._updateLayout();
+  }
+
+  show() {
+    this._isHidden = false;
+    if (this.form) this.form._updateLayout();
+  }
+
+  isHidden() {
+    return this._isHidden;
   }
 }
