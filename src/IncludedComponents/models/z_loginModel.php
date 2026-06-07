@@ -5,7 +5,7 @@
 
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Database\IsInternalModel;
-    use ZubZet\Utilities\PasswordHash\PasswordHash;
+    use ZubZet\Framework\Authentication\PasswordHash\Password;
     use ZubZet\Framework\Authentication\Permission\User;
 
     /**
@@ -142,36 +142,95 @@
          * Updates the password of an user
          * @param User $user The object of the user
          * @param string $password The raw user password
-         * @deprecated
+         * @internal Replaced by the User API (@see User::updatePassword()) for external use
          */
         public function updatePassword(User $user, string $password): void {
             $user->clearSessions();
 
-            $password = PasswordHash::create(
-                $password,
-                "sha512",
-                "0.9",
-            );
-
             $sql = "UPDATE `z_user`
-                    SET `password`=?, `salt`=?
-                    WHERE `id`=?";
+                    SET
+                        `password` = ?,
+                        `password_scheme` = ?,
+                        `last_password_rehash_at` = CURRENT_TIMESTAMP(),
+                        `salt` = NULL
+                    WHERE `id` = ?";
 
             $this->exec(
                 $sql, "ssi",
-                $password->hash,
-                $password->salt,
+                Password::hash($password),
+                Password::NATIVE,
                 $user->id(),
             );
         }
 
-        public function checkPassword(string $password, string $hash, string $salt): bool {
-            return PasswordHash::checkWithoutUpdate(
-                $password,
-                $hash,
-                $salt,
-                "sha512",
-                "0.9",
+        /**
+         * Pure verification of a plaintext against a stored credential. Does NOT
+         * upgrade the stored hash — use {@see User::verifyPassword()} for the login path.
+         * @param string $password The plaintext password
+         * @param string $hash The stored `password` value
+         * @param ?string $salt The stored `salt` (legacy/onion rows need it; native ignores it)
+         * @param ?string $scheme The stored `password_scheme`; inferred from the salt when null
+         * @deprecated Use {@see \ZubZet\Framework\Authentication\PasswordHash\Password::verify()} instead.
+         */
+        public function checkPassword(string $password, string $hash, ?string $salt = null, ?string $scheme = null): bool {
+            // Older callers pass (password, hash, salt) with no scheme; infer it from the salt.
+            if(is_null($scheme)) {
+                $scheme = empty($salt) ? Password::NATIVE : Password::LEGACY;
+            }
+            return Password::verify($password, $hash, $scheme, $salt)->isCorrect();
+        }
+
+        /**
+         * Persist a freshly-upgraded native hash for a user, clearing the now
+         * obsolete salt. This is the plain DB write behind the rehash-on-login /
+         * onion-peel path; the verify-and-decide logic lives in
+         * {@see User::verifyPassword()}.
+         * @param User $user The user whose stored hash is being upgraded
+         * @param string $hash The new native Argon2id hash to store
+         */
+        public function upgradeStoredHash(User $user, string $hash): void {
+            $sql = "UPDATE `z_user`
+                    SET
+                        `password` = ?,
+                        `password_scheme` = ?,
+                        `last_password_rehash_at` = CURRENT_TIMESTAMP(),
+                        `salt` = NULL
+                    WHERE `id` = ?";
+            $this->exec($sql, "ssi", $hash, Password::NATIVE, $user->id());
+        }
+
+        /**
+         * Every `legacy` user row that still carries a hash to onion-wrap.
+         * Passwordless rows (i.e. SSO / invite) also default to `legacy` but have nothing
+         * to wrap, so they are excluded.
+         *
+         * @return array[] Rows of `id` and `password`
+         */
+        public function getLegacyPasswords(): array {
+            $sql = "SELECT `id`, `password`
+                    FROM `z_user`
+                    WHERE `password_scheme` = ?
+                    AND `password` IS NOT NULL
+                    AND `password` <> ''";
+            return $this->exec($sql, "s", Password::LEGACY)->resultToArray();
+        }
+
+        /**
+         * Onion-wraps a user's stored legacy hash in place, marking the row `onion`
+         * for at-rest protection of dormant accounts. The salt column is untouched.
+         * @param int $userId The id of the user
+         * @param string $legacyHash The stored legacy SHA-512 hash to wrap
+         */
+        public function onionWrapPassword(int $userId, string $legacyHash): void {
+            $sql = "UPDATE `z_user`
+                    SET `password` = ?, `password_scheme` = ?
+                    WHERE `id` = ?";
+            $this->exec(
+                $sql,
+                "ssi",
+                Password::onionWrap($legacyHash),
+                Password::ONION,
+                $userId,
             );
         }
 

@@ -7,6 +7,7 @@ use ZubZet\Framework\Authentication\AuthenticationObject;
 use DateTime;
 use ZubZet\Framework\Authentication\HandleTrait;
 use ZubZet\Framework\Authentication\Organization;
+use ZubZet\Framework\Authentication\PasswordHash\Password;
 use ZubZet\Framework\Authentication\RetrievalTrait;
 
 class User extends AuthenticationObject {
@@ -151,6 +152,36 @@ class User extends AuthenticationObject {
     public function updatePassword(string $password): void {
         model('z_login')->updatePassword($this, $password);
         $this->clearFields();
+    }
+
+    /**
+     * Verify a plaintext password against this user's stored credential and, on
+     * a correct match, transparently upgrade the stored hash when it is
+     * stale (rehash-on-login / onion peel). Self-healing.
+     *
+     * This is the password-check entry point for logging a user in.
+     *
+     * @param string $password The plaintext password to check
+     * @return bool Whether the password matched
+     */
+    public function verifyPassword(string $password): bool {
+        $result = Password::verify(
+            $password,
+            $this->getField("password") ?? "",
+            $this->getField("password_scheme"),
+            $this->getField("salt"),
+        );
+
+        if(!$result->isCorrect()) return false;
+
+        if($result->isUpgradeNeeded()) {
+            model('z_login')->upgradeStoredHash(
+                $this,
+                $result->upgradePassword(),
+            );
+        }
+
+        return true;
     }
 
     public function updateOrganization(?Organization $organization): void {

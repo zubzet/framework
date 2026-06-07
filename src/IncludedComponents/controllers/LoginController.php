@@ -21,82 +21,74 @@
          * @param Response $res The response object
          */
         public function action_index($req, $res) {
+            $loginModel = $req->getModel("z_login", $req->getZRoot());
 
-            //Check if user has entert information
-            if ($req->getPost("name", false) !== false) {
-
-                //Find an user
-                $user = $req->getModel("z_login", $req->getZRoot())->getUserByLogin($req->getPost("name"));
-                
-                //Username not found
-                if ($user === false) {
-                    $res->error("Username or password is wrong");
-                }
-                
-                if ($user["verified"] == NULL) {
-                    $link = $req->getRootFolder() . "login/verify";
-                    $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
-                }
-                
-                //Max login tries
-                if ($req->getModel("z_login", $req->getZRoot())->countLoginTriesByTimeSpan($user["id"], date('Y-m-d H:i:s', strtotime('-'.$req->getBooterSettings("maxLoginTriesTimespan")))) > $req->getBooterSettings("maxLoginTriesPerTimespan")) {
-
-                    /* SECURITY EMAIL */
-                    if ($req->getModel("z_login")->sendTooManyLoginsEmailByUserId($user["id"])) {
-                        
-                        $ip = $req->ip();
-
-                        if (filter_var($ip, FILTER_VALIDATE_IP) /*&& !in_array($ip, ["127.0.0.1", "::1"])*/) {
-                            
-                            $res->sendEmailToUser(
-                                $user["id"],
-                                [
-                                    "DE_Formal" => "Sicherheitsmeldung",
-                                    "en" => "Security alert"
-                                ],
-                                "email_too_many_logins.php",
-                                [
-                                    "user" => $user,
-                                    "date" => date("Y-m-d H:i:s"),
-                                    "ip" => $ip
-                                ]
-                            );
-
-                        }
-
-                    }
-
-                    $req->getModel("z_login", $req->getZRoot())->addTooManyLoginsEmailByUserId($user["id"]);
-
-                    //Log
-                    logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
-                        "userId" => $user["id"]
-                    ]);
-
-                    $res->error("Too many login tries. Try again later.");
-                }
-
-                //Check the password
-                if ($req->getModel("z_login")->checkPassword(
-                    $req->getPost("password"),
-                    $user["password"],
-                    $user["salt"],
-                )) {
-                    $res->loginAs($user["id"]);
-                    $res->success();
-                } else {
-                    //Add login try
-                    $req->getModel("z_login", $req->getZRoot())->newLoginTry($user["id"]);
-                    $res->error("Username or password is wrong");
-                }
-
-            } else {
-                //else the user wants the form to login
-                $res->render("login.php", [
+            // No credentials submitted yet: render the login form.
+            if($req->getPost("name", false) === false) {
+                return $res->render("login.php", [
                     "title" => "Login ",
-                    "noLayout" => $req->getGet("noLayout", false)
+                    "noLayout" => $req->getGet("noLayout", false),
                 ], "layout/min_layout.php");
             }
+
+            // Look the account up by the submitted login (its email).
+            $user = User::byEmail($req->getPost("name"));
+
+            // Unknown account: reuse the wrong-password message so the response
+            // can't be used to probe which emails are registered.
+            if(is_null($user)) {
+                return $res->error("Username or password is wrong");
+            }
+
+            // The account exists but was never activated.
+            if(is_null($user->verified())) {
+                $link = $req->getRootFolder() . "login/verify";
+                return $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
+            }
+
+            // Too many recent attempts: warn the owner and block this try.
+            $timespanStart = date('Y-m-d H:i:s', strtotime('-' . $req->getBooterSettings("maxLoginTriesTimespan")));
+            $recentTries = $loginModel->countLoginTriesByTimeSpan($user->id(), $timespanStart);
+            $maxTries = $req->getBooterSettings("maxLoginTriesPerTimespan");
+            if($recentTries > $maxTries) {
+
+                // Warn the owner once per window, and only for a valid client IP.
+                $clientIp = filter_var($req->ip(), FILTER_VALIDATE_IP);
+                if($clientIp && $loginModel->sendTooManyLoginsEmailByUserId($user->id())) {
+                    $res->sendEmailToUser(
+                        $user->id(),
+                        [
+                            "DE_Formal" => "Sicherheitsmeldung",
+                            "en" => "Security alert",
+                        ],
+                        "email_too_many_logins.php",
+                        [
+                            "user" => $user->getAll(),
+                            "date" => date("Y-m-d H:i:s"),
+                            "ip" => $clientIp,
+                        ],
+                    );
+                }
+
+                $loginModel->addTooManyLoginsEmailByUserId($user->id());
+
+                logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
+                    "userId" => $user->id(),
+                ]);
+
+                return $res->error("Too many login tries. Try again later.");
+            }
+
+            // Wrong password: record the attempt so it counts toward the rate limit.
+            if(!$user->verifyPassword($req->getPost("password"))) {
+                $loginModel->newLoginTry($user->id());
+                return $res->error("Username or password is wrong");
+            }
+
+            // Correct. verifyPassword() has already self-healed the stored hash if
+            // it was stale, so all that is left is to start the session.
+            $res->loginAs($user->id());
+            return $res->success();
         }
 
         /**
