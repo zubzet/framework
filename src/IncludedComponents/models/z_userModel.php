@@ -69,11 +69,14 @@
          * @return int The id of the new created user
          */
         function add($email, $passwordString = null, $verified = null) {
+            // A code-created user is never `legacy` (that default only serves
+            // pre-migration rows). Set the scheme NULL here; updatePassword()
+            // promotes it to `native` below when a password is given.
             if($verified === null) {
-                $query = "INSERT INTO `z_user`(`email`) VALUES (?)";
+                $query = "INSERT INTO `z_user`(`email`, `password_scheme`) VALUES (?, NULL)";
                 $this->exec($query, "s", $email);
             } else {
-                $query = "INSERT INTO `z_user`(`email`, `verified`) VALUES (?, ?)";
+                $query = "INSERT INTO `z_user`(`email`, `verified`, `password_scheme`) VALUES (?, ?, NULL)";
                 $this->exec($query, "ss", $email, $verified);
             }
             $insertId = $this->getInsertId();

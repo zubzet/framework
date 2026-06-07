@@ -12,7 +12,7 @@ For Git workflow and commit conventions, see **[docs/contributing/how-to-contrib
 # Bring up the dockerized e2e stack
 cd tests/e2e && npm run start
 
-# Run the full e2e suite (~3 min, 300+ tests)
+# Run the full e2e suite (~6 min, 590+ tests)
 npm run tests
 
 # Run one spec
