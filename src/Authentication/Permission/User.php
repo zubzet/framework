@@ -185,8 +185,7 @@ class User extends AuthenticationObject {
      */
     public function remove(): void {
         // Setting permission changed to true to indicate permissions need to be reloaded
-        global $permissionChanged;
-        $permissionChanged = true;
+        self::$permissionChanged = true;
 
         model("z_permission")->removeUser($this);
         $this->clearFields();
@@ -215,8 +214,7 @@ class User extends AuthenticationObject {
      */
     public function rolesAdd(Role ...$roles): void {
         // Setting permission changed to true to indicate permissions need to be reloaded
-        global $permissionChanged;
-        $permissionChanged = true;
+        self::$permissionChanged = true;
 
         // Add roles to user in the database
         model("z_permission")->addRolesGroupsToUser($this, ...$roles);
@@ -234,8 +232,7 @@ class User extends AuthenticationObject {
      */
     public function groupsAdd(Group ...$groups): void {
         // Setting permission changed to true to indicate permissions need to be reloaded
-        global $permissionChanged;
-        $permissionChanged = true;
+        self::$permissionChanged = true;
 
         // Add groups to user in the database
         model("z_permission")->addRolesGroupsToUser($this, ...$groups);
@@ -253,8 +250,7 @@ class User extends AuthenticationObject {
      */
     public function rolesRemove(Role ...$roles): void {
         // Setting permission changed to true to indicate permissions need to be reloaded
-        global $permissionChanged;
-        $permissionChanged = true;
+        self::$permissionChanged = true;
 
         // Remove roles from user in the database
         model("z_permission")->removeRolesGroupsFromUser($this, ...$roles);
@@ -272,8 +268,7 @@ class User extends AuthenticationObject {
      */
     public function groupsRemove(Group ...$groups): void {
         // Setting permission changed to true to indicate permissions need to be reloaded
-        global $permissionChanged;
-        $permissionChanged = true;
+        self::$permissionChanged = true;
 
         // Remove groups from user in the database
         model("z_permission")->removeRolesGroupsFromUser($this, ...$groups);
@@ -363,9 +358,7 @@ class User extends AuthenticationObject {
      * @return string[] Array of permissions
      */
     public function getUserPermissions(): array {
-        global $permissionChanged;
-
-        if(is_null($this->getField("user-permissions")) || $permissionChanged) $this->refreshPermissions();
+        if(is_null($this->getField("user-permissions")) || self::$permissionChanged) $this->refreshPermissions();
 
         return $this->getField("user-permissions");
     }
@@ -376,9 +369,7 @@ class User extends AuthenticationObject {
      * @return string[] Array of permissions
      */
     public function getPermissions(): array {
-        global $permissionChanged;
-
-        if(is_null($this->getField("permissions")) || $permissionChanged) $this->refreshAllPermissions();
+        if(is_null($this->getField("permissions")) || self::$permissionChanged) $this->refreshAllPermissions();
 
         return $this->getField("permissions");
     }
