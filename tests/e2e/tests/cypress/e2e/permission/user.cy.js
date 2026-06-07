@@ -260,6 +260,7 @@ describe('Permission System - User', () => {
             expect(output.createdUserGet).to.deep.equal(output.createdUserDirect);
             expect(output.passwordIsNull).to.equal(true);
             expect(output.saltIsNull).to.equal(true);
+            expect(output.schemeIsNull).to.equal(true);
         });
     });
 
