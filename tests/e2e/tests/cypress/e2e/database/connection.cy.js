@@ -2,9 +2,9 @@
 // Sections mirror the controller; each describe owns one method.
 //
 // Coverage target: every reachable line in Connection.php. The single
-// branch we cannot reach (assertConnection's heartbeat-fails-then-
-// reconnect path on Connection.php:118-122) requires MySQL fault
-// injection and is documented as out of scope.
+// branch we cannot reach (assertConnection's ping-fails-then-reconnect
+// path, where pingConnection() returns false and connect() runs) requires
+// MySQL fault injection and is documented as out of scope.
 
 describe('Database/Connection', () => {
     before(() => cy.dbSeed());
@@ -61,6 +61,18 @@ describe('Database/Connection', () => {
                 expect(res.body.first).to.eq(true);
                 expect(res.body.second).to.eq(true);
                 expect(res.body.lastHeartbeatStable, 'second call did NOT update lastHeartbeat').to.eq(true);
+            });
+        });
+
+        // Regression: with lazy-loaded connections a Connection can exist
+        // before its socket is opened. heartbeat() must not touch the
+        // uninitialized $conn (which fataled with a typed-property Error);
+        // it now returns false without throwing. This pins backward
+        // compatibility for worker keep-alive loops on future upgrades.
+        it('does not fatal before the lazy connection is opened (returns not-alive)', () => {
+            cy.request('/ConnectionProbe/heartbeatBeforeConnect').then((res) => {
+                expect(res.body.threw, 'heartbeat() must not throw before the connection is opened').to.eq(false);
+                expect(res.body.alive).to.eq(false);
             });
         });
     });
