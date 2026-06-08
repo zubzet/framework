@@ -139,8 +139,7 @@ class Role extends AuthenticationObject {
      * @return void
      */
     public function remove(): void {
-        global $permissionChanged;
-        $permissionChanged = true;
+        self::$permissionChanged = true;
         model("z_permission")->removeRoleGroup($this);
 
         $this->clearFields();
@@ -182,12 +181,9 @@ class Role extends AuthenticationObject {
      * @return string[] The permissions associated with this role
      */
     public function getPermissions(): array {
-        // Check if permissions data is changed.
-        // This is necessary to ensure that any updates to permissions are reflected
-        global $permissionChanged;
-
         // Refresh permissions if they are null or if there has been a change
-        if(is_null($this->getField("permissions")) || $permissionChanged) $this->refreshPermissions();
+        // anywhere (see AuthenticationObject::$permissionChanged)
+        if(is_null($this->getField("permissions")) || self::$permissionChanged) $this->refreshPermissions();
 
         return $this->getField("permissions");
     }
