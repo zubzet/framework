@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0198c89edcdfeaca0bd72795c271b73c",
+    "content-hash": "556464788056ae54929c52dbb05d3b3c",
     "packages": [
         {
             "name": "cakephp/core",
@@ -2616,45 +2616,6 @@
                 }
             ],
             "time": "2025-11-17T20:03:58+00:00"
-        },
-        {
-            "name": "zubzet/password-hash-utilities",
-            "version": "1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/zubzet/password-hash-utilities.git",
-                "reference": "eb0bdabf3cd8814a75327334afc9bb312749bde5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/zubzet/password-hash-utilities/zipball/eb0bdabf3cd8814a75327334afc9bb312749bde5",
-                "reference": "eb0bdabf3cd8814a75327334afc9bb312749bde5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.0"
-            },
-            "type": "li",
-            "autoload": {
-                "psr-4": {
-                    "ZubZet\\Utilities\\PasswordHash\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "GPL-3.0-or-later"
-            ],
-            "authors": [
-                {
-                    "name": "Alexander Zierhut",
-                    "email": "alex@zierhut-it.de"
-                }
-            ],
-            "support": {
-                "issues": "https://github.com/zubzet/password-hash-utilities/issues",
-                "source": "https://github.com/zubzet/password-hash-utilities/tree/1.0.0"
-            },
-            "time": "2022-04-17T20:50:04+00:00"
         }
     ],
     "packages-dev": [],

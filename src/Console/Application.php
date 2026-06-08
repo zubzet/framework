@@ -2,19 +2,19 @@
 
     namespace ZubZet\Framework\Console;
 
-    use Symfony\Component\Console\Application as ConsoleApplication;
-    use ZubZet\Framework\Database\Migration\Commands\Migrate;
-    use ZubZet\Framework\Database\Migration\Commands\Seed;
-    use ZubZet\Framework\Database\Migration\Commands\Status;
-    use ZubZet\Framework\Database\Migration\Commands\Sync;
-    use ZubZet\Framework\Database\Migration\Commands\UnlockMigration;
     use ZubZet\Framework\Support\Commands\Startup;
+    use ZubZet\Framework\Database\Migration\Commands\Seed;
+    use ZubZet\Framework\Database\Migration\Commands\Sync;
+    use ZubZet\Framework\Database\Migration\Commands\Status;
+    use ZubZet\Framework\Database\Migration\Commands\Migrate;
+    use ZubZet\Framework\Authentication\Commands\HashingAlgorithmMigration;
+    use Symfony\Component\Console\Application as ConsoleApplication;
+    use ZubZet\Framework\Database\Migration\Commands\UnlockMigration;
     use ZubZet\Framework\Testing\Coverage\Commands\Stop as CoverageStop;
     use ZubZet\Framework\Testing\Coverage\Commands\Start as CoverageStart;
 
     class Application {
         public static function bootstrap(\z_framework $booter): ConsoleApplication {
-            // TODO: Automatically load commands from a commands directory
             $automaticallyLoadedCommands =  [];
 
             $console = new ConsoleApplication("ZubZet CLI");
@@ -27,6 +27,7 @@
                     new Sync(),
                     new Seed(),
                     new UnlockMigration(),
+                    new HashingAlgorithmMigration(),
                     new Startup(),
                     new CoverageStart(),
                     new CoverageStop(),

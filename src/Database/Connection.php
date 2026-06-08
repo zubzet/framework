@@ -110,15 +110,11 @@
                 return;
             }
 
-            // Try a heartbeat to see if the connection is still alive
-            $connectionAlive = false;
-
-            try {
-                $connectionAlive = $this->heartbeat(waitForTimeout: false);
-            } catch(\Exception) {} finally {
-                if(!$connectionAlive) {
-                    $this->connect();
-                }
+            // The connection may have gone stale while idle; verify it with a
+            // ping and reconnect if it no longer responds.
+            $this->lastHeartbeat = time();
+            if(!$this->pingConnection()) {
+                $this->connect();
             }
         }
 
@@ -306,8 +302,18 @@
         }
 
         /**
-         * Run a very lightweight query to keep the connection alive
-         * @return bool Was the heartbeat successful
+         * Run a very lightweight query to keep the connection alive.
+         *
+         * @deprecated since 1.2.0 The connection now self-heals on use via
+         *     assertConnection(), so a manual keep-alive loop is no longer
+         *     necessary. Simply remove your heartbeat() calls and let queries
+         *     transparently (re)connect as needed. Kept for backward
+         *     compatibility with existing worker loops.
+         *
+         * @param bool $waitForTimeout Only ping if no heartbeat happened within the timeout window
+         * @param int $timeoutBuffer Seconds subtracted from the timeout before a ping is forced
+         * @return bool Whether a live connection responded. False when no
+         *     connection has been opened yet (lazy loading) or the ping failed.
          */
         public function heartbeat($waitForTimeout = true, $timeoutBuffer = 30): bool {
             if($waitForTimeout && isset($this->lastHeartbeat)) {
@@ -317,7 +323,26 @@
                     return true;
                 }
             }
+
+            // Connections are opened lazily on first use, so there may be
+            // nothing to keep alive yet. Report the connection as not-alive
+            // instead of fatally reading the uninitialized mysqli handle; this
+            // lets callers decide to (re)connect on their own terms. Before
+            // lazy loading this branch was unreachable because the connection
+            // was always opened in the constructor.
+            if(!isset($this->conn)) return false;
+
             $this->lastHeartbeat = time();
+            return $this->pingConnection();
+        }
+
+        /**
+         * Sends a lightweight query to check whether an already-established
+         * connection is still responding. Assumes a connection has been opened.
+         *
+         * @return bool True if the server answered, false if the connection is dead
+         */
+        private function pingConnection(): bool {
             // mysqli::ping() is deprecated since PHP 8.4 (the reconnect
             // feature was removed in 8.2, leaving ping redundant). A
             // lightweight SELECT 1 round-trips the server identically and

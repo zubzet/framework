@@ -26,11 +26,7 @@
         }
 
         private function icons(): array {
-            // Aggregate of every Font Awesome class observed across our
-            // customer codebases (selbststaendigkeit-de, torch-dashboard,
-            // fubble, bautalents, customer-portal) plus the framework's own
-            // admin layout. Each entry is [prefix, name]. Order is fixed so
-            // the rendered grid is byte-stable across runs.
+            // Aggregate of every Font Awesome class observed across multiple codebases
             return [
                 // FA4-style names (use bare "fa", resolved through v4-shims)
                 ["fa", "address-book"],

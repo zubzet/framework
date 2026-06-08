@@ -4,6 +4,19 @@ namespace ZubZet\Framework\Authentication;
 
 class AuthenticationObject {
 
+    /**
+     * Process-wide flag indicating that permission-related data has changed.
+     *
+     * Declared once on the base class (and never redeclared in the trait or
+     * subclasses) so that User, Role and Group all share a single storage slot.
+     * When true, cached permissions are reloaded on each access, regardless of
+     * which authentication object triggered the change.
+     *
+     * @var bool
+     */
+    protected static bool $permissionChanged = false;
+
+
     /** @var int The ID of the authentication object */
     private ?int $id = null;
 
