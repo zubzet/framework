@@ -155,5 +155,6 @@ nav:
         - Emails: guides/email
     - Contributing:
         - How To Contribute: contributing/how-to-contribute
+        - How To Release: contributing/how-to-release
         - Agents:
             - Working With Agents: contributing/agents/working-with-agents
