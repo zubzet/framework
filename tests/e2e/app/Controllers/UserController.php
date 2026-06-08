@@ -91,18 +91,37 @@ class UserController extends z_controller {
 
     public function action_updatePassword(Request $req, Response $res): void {
         $user = User::byId(119);
-        $isOldPasswordCorrect = $req->getModel("z_login")->checkPassword("password", $user->getField("password"), $user->getField("salt"));
+
+        $isOldPasswordCorrect = $req->getModel("z_login")->checkPassword(
+            "password",
+            $user->getField("password"),
+            $user->getField("salt"),
+            $user->getField("password_scheme"),
+        );
 
         $user->updatePassword("newpassword");
 
-        $user = User::byId(119); // Reload user to get updated password hash
-        $isOldPasswordCorrectAfterUpdate = $req->getModel("z_login")->checkPassword("password", $user->getField("password"), $user->getField("salt"));
-        $isNewPasswordCorrect = $req->getModel("z_login")->checkPassword("newpassword", $user->getField("password"), $user->getField("salt"));
+        // Reload user to get updated password hash
+        $user = User::byId(119);
+
+        $isOldPasswordCorrectAfterUpdate = $req->getModel("z_login")->checkPassword(
+            "password",
+            $user->getField("password"),
+            $user->getField("salt"),
+            $user->getField("password_scheme"),
+        );
+
+        $isNewPasswordCorrect = $req->getModel("z_login")->checkPassword(
+            "newpassword",
+            $user->getField("password"),
+            $user->getField("salt"),
+            $user->getField("password_scheme"),
+        );
 
         echo(json_encode([
             "isOldPasswordCorrect" => $isOldPasswordCorrect,
             "isOldPasswordCorrectAfterUpdate" => $isOldPasswordCorrectAfterUpdate,
-            "isNewPasswordCorrect" => $isNewPasswordCorrect
+            "isNewPasswordCorrect" => $isNewPasswordCorrect,
         ]));
     }
 
@@ -116,7 +135,7 @@ class UserController extends z_controller {
 
         echo(json_encode([
             "beforeVerified" => $beforeVerified,
-            "afterVerified" => $afterVerified
+            "afterVerified" => $afterVerified,
         ]));
     }
 
@@ -131,7 +150,7 @@ class UserController extends z_controller {
 
         echo(json_encode([
             "beforeVerified" => $beforeVerified,
-            "afterVerified" => $afterVerified
+            "afterVerified" => $afterVerified,
         ]));
     }
 
@@ -142,7 +161,7 @@ class UserController extends z_controller {
 
         echo(json_encode([
             "isVerifiedNow" => $isVerifiedNow,
-            "isVerifiedPast" => $isVerifiedPast
+            "isVerifiedPast" => $isVerifiedPast,
         ]));
     }
 
@@ -155,7 +174,7 @@ class UserController extends z_controller {
         echo(json_encode([
             "isVerifiedNow" => $isVerifiedNow,
             "isVerifiedPast" => $isVerifiedPast,
-            "isVerifiedFuture" => $isVerifiedFuture
+            "isVerifiedFuture" => $isVerifiedFuture,
         ]));
     }
 
@@ -186,12 +205,12 @@ class UserController extends z_controller {
         $user = User::byId($user->id());
         $createdUserGet = $this->getUser($user, false, false);
 
-        $passwordWorking = $req->getModel("z_login")->checkPassword("password123", $user->getField("password"), $user->getField("salt"));
+        $passwordWorking = $req->getModel("z_login")->checkPassword("password123", $user->getField("password"), $user->getField("salt"), $user->getField("password_scheme"));
 
         echo(json_encode([
             "createdUserDirect" => $createdUserDirect,
             "createdUserGet" => $createdUserGet,
-            "passwordWorking" => $passwordWorking
+            "passwordWorking" => $passwordWorking,
         ]));
     }
 
@@ -207,6 +226,7 @@ class UserController extends z_controller {
             "createdUserGet" => $createdUserGet,
             "passwordIsNull" => $user->getField("password") === null,
             "saltIsNull" => $user->getField("salt") === null,
+            "schemeIsNull" => $user->getField("password_scheme") === null,
         ]));
     }
 

@@ -17,7 +17,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 
 `src/` subdirectories at a glance:
 
-- `Authentication/` — `User`, `Session`, `Permission/`, role and group handling
+- `Authentication/` — `User`, `Session`, `Permission/`, `PasswordHash/` (native Argon2id, self-describing schemes, rehash-on-login), role and group handling
 - `Bootstrap/` — `Configuration` trait that parses `z_settings.ini`
 - `Core/` — Foundation traits (`CanRetrieveModel`, `CanRetrieveBooterSettings`, `Constants`, `FunctionConflictResolution`)
 - `Database/` — `Connection`, prepared-statement `Interaction`, migration commands
@@ -108,7 +108,7 @@ cd tests/e2e
 # Bring up the docker stack (~2 min first time)
 npm run start
 
-# Run the full suite headless (~3 min, 300+ tests)
+# Run the full suite headless (~6 min, 590+ tests)
 npm run tests
 
 # Run one spec

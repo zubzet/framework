@@ -117,6 +117,11 @@
 
         /**
          * Runs a very lightweight query to keep the connection alive.
+         *
+         * @deprecated since 1.2.0 Connections self-heal on use via the database
+         *     layer's assertConnection(); manual keep-alive loops are no longer
+         *     necessary. Remove your heartbeat() calls.
+         *
          * @param bool $waitForTimeout If set to true, only ping if no other query has been made within the timeout period
          * @return void
          */

@@ -85,18 +85,37 @@
             $password = $req->getGet("password", "");
 
             $row = db()->exec(
-                "SELECT `password`, `salt` FROM `z_user` WHERE `id` = ?",
+                "SELECT `password`, `salt`, `password_scheme` FROM `z_user` WHERE `id` = ?",
                 "i",
                 $userId
             )->resultToLine();
 
             $ok = !empty($row) && (bool)$req->getModel("z_login")->checkPassword(
-                $password, $row['password'], $row['salt']
+                $password, $row['password'], $row['salt'], $row['password_scheme']
             );
 
             echo json_encode([
                 'found' => !empty($row),
                 'ok'    => $ok,
+            ]);
+        }
+
+        /**
+         * The stored password_scheme for a user (legacy|onion|native|null).
+         * GET /auth-probe/scheme/<userId>
+         */
+        public function action_scheme(Request $req, Response $res): void {
+            $userId = (int)$req->getParameters(0, 1);
+
+            $row = db()->exec(
+                "SELECT `password_scheme` FROM `z_user` WHERE `id` = ?",
+                "i",
+                $userId
+            )->resultToLine();
+
+            echo json_encode([
+                'found'  => !empty($row),
+                'scheme' => $row['password_scheme'] ?? null,
             ]);
         }
     }

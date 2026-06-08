@@ -27,4 +27,7 @@ These todos should be as temporary as possible:
 1. Added `Role::setPermissionsByRole(Role $role)` to replace a role's permissions with another role's permissions in one call (removes current, copies source).
 1. `User::add()` now accepts `null` for the `$password` parameter, allowing users to be created without a password (e.g. invite or SSO flows where the credential is set later via `updatePassword()`).
 1. Deprecate getZControllers in RequestResponseHandler
+1. Password hashing now uses native Argon2id and the `zubzet/password-hash-utilities` dependency has been removed. Existing hashes still verify through a legacy path and upgrade themselves to Argon2id on the next successful login. See the [Password Handling docs](docs/core-features/password-handling.md).
+1. Added `password_scheme` and `last_password_rehash_at` columns to `z_user`; existing password rows are marked `legacy`. **Migrator note:** the schema migration runs automatically. Optionally run `php index.php auth:migrate-hashing` to bring dormant legacy rows onto Argon2id before their next login.
+1. Added `User::verifyPassword()` (self-healing login check) plus the `Password` and `Verification` API for hashing and verifying outside a `User`. **Migrator note:** `z_loginModel::checkPassword()` is deprecated in favor of these; the existing 3-argument call still works.
 1. Deprecate `<#decb64#>`

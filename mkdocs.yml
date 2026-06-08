@@ -110,6 +110,7 @@ nav:
         - Views: core-features/views
         - Layouts: core-features/layouts
         - Permission System: core-features/permission-system
+        - Password Handling: core-features/password-handling
         - Localization: core-features/localization
         - Configuration: core-features/configuration
         - REST API: core-features/rest-api
