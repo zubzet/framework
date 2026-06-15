@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Rendering\Renderers;
 
     use eftec\bladeone\BladeOne;
+    use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Rendering\Renderer;
 
     /** Renders `*.blade.php` views via eftec/bladeone. */
@@ -14,6 +15,8 @@
         public function __construct(array $templatePaths, string $compileDir) {
             $this->templatePaths = $templatePaths;
             $this->blade = new BladeOne($this->templatePaths, $compileDir, BladeOne::MODE_AUTO);
+
+            $this->registerAuthorization();
         }
 
         public function supports(string $viewPath): bool {
@@ -35,6 +38,29 @@
                 return str_replace([DIRECTORY_SEPARATOR, '/'], '.', $relative);
             }
             throw new \RuntimeException("BladeOne template '$viewPath' is not under any registered template path.");
+        }
+
+        private function registerAuthorization(): void {
+            $this->blade->setCanFunction(function($permission): bool {
+                return user()->checkPermission($permission);
+            });
+
+            $this->blade->setAnyFunction(function(...$permissions): bool {
+                if(!user()->isLoggedIn) return false;
+
+                $user = User::byId(user()->userId);
+
+                return $user->hasAccessAnyOf($permissions);
+            });
+
+            if(!user()->isLoggedIn) {
+                $this->blade->setAuth(null, null, []);
+                return;
+            }
+
+            $user = User::byId(user()->userId);
+
+            $this->blade->setAuth(user()->userId, null, $user->getPermissions());
         }
 
     }

@@ -22,6 +22,10 @@
             ]);
         }
 
+        public function action_test2(\Request $req, \Response $res) {
+            $res->render("dashboard/test2.blade.php", []);
+        }
+
     }
 
 ?>
