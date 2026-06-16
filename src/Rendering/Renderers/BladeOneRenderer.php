@@ -58,9 +58,7 @@
                 return;
             }
 
-            $user = User::byId(user()->userId);
-
-            $this->blade->setAuth(user()->userId, null, $user->getPermissions());
+            $this->blade->setAuth(user()->userId, null, []);
         }
 
     }
