@@ -50,7 +50,7 @@
         }
 
         public function setExceptionBehavior(?int $state = null): void {
-            $this->registerWhoopsHandler();
+            WhoopsHandler::initialize();
 
             if(!is_null($state)) {
                 $this->showErrors = $state;
@@ -111,17 +111,13 @@
                 }
 
                 $whoopsHandler = StaticCache::getOrNull("handler", "whoops");
-                if(!is_null($whoopsHandler) && !empty($whoopsHandler->run->getHandlers())) {
+                if(!is_null($whoopsHandler)) {
                     $whoopsHandler->run->handleException($e);
                     return;
                 }
 
                 throw $e;
             });
-        }
-
-        private function registerWhoopsHandler(): void {
-            StaticCache::set("handler", "whoops", new WhoopsHandler);
         }
 
     }
