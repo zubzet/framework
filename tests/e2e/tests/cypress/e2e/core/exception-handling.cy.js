@@ -51,3 +51,21 @@ describe('Exception Handling (showErrors=0)', () => {
         });
     });
 });
+
+describe("Exception Handling Prod", () => {
+
+    before(() => {
+        cy.saveConfigBackup();
+        cy.setConfigSetting('execution_type', 'prod');
+    });
+
+    after(() => {
+        cy.restoreConfigBackup();
+    });
+
+    it("should not call Whoops handlers in production mode", () => {
+        cy.visit("/exception/whoops");
+        cy.contains("This is a test exception to check if Whoops is disabled in production mode.").should("be.visible");
+    });
+
+});
