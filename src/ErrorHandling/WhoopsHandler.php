@@ -2,7 +2,7 @@
 
     namespace ZubZet\Framework\ErrorHandling;
 
-    use ZubZet\Framework\ErrorHandling\GenericException\NotInstantiatedException;
+    use ZubZet\Framework\Support\StaticCache;
 
     use Whoops\Run;
     use Whoops\Handler\PrettyPageHandler;
@@ -20,9 +20,12 @@
             '_GET', '_POST', '_COOKIE', '_SESSION', '_SERVER', '_ENV',
         ];
 
-        public function __construct() {
+        public static function initialize() {
             if(config("execution_type", default: "prod") !== "test") return;
+            StaticCache::set("handler", "whoops", new WhoopsHandler);
+        }
 
+        public function __construct() {
             $this->run = new Run();
 
             $handler = new PrettyPageHandler();
