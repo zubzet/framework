@@ -6,7 +6,7 @@
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Rendering\Renderer;
     use ZubZet\Framework\Rendering\ViewNotFoundException;
-    use ZubZet\Framework\Rendering\Renderers\BladeOneRenderer;
+    use ZubZet\Framework\Rendering\Renderers\BladeOne\BladeOneRenderer;
     use ZubZet\Framework\Support\FileCache;
     use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 

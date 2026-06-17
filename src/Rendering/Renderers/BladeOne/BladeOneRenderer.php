@@ -1,8 +1,7 @@
 <?php
 
-    namespace ZubZet\Framework\Rendering\Renderers;
+    namespace ZubZet\Framework\Rendering\Renderers\BladeOne;
 
-    use eftec\bladeone\BladeOne;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Rendering\Renderer;
 
@@ -10,11 +9,11 @@
     class BladeOneRenderer implements Renderer {
 
         private array $templatePaths;
-        private BladeOne $blade;
+        private ZubZetBladeOne $blade;
 
         public function __construct(array $templatePaths, string $compileDir) {
             $this->templatePaths = $templatePaths;
-            $this->blade = new BladeOne($this->templatePaths, $compileDir, BladeOne::MODE_AUTO);
+            $this->blade = new ZubZetBladeOne($this->templatePaths, $compileDir, ZubZetBladeOne::MODE_AUTO);
 
             $this->registerAuthorization();
         }
@@ -27,7 +26,7 @@
             return $this->blade->run($this->resolveViewName($viewPath), $opt);
         }
 
-        public function blade(): BladeOne {
+        public function blade(): ZubZetBladeOne {
             return $this->blade;
         }
 
