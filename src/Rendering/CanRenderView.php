@@ -88,51 +88,19 @@
             $viewPath = self::resolvePath($document);
             $layoutPath = self::resolvePath($layout);
 
-            //Set default parameter values
-            $opt["response"] = $this;
-            $opt["request"] = $this->booter->req;
-            $opt["root"] = $this->booter->rootFolder;
-            $opt["host"] = $this->booter->host;
-            $opt["absRoot"] = $this->booter->host.$this->booter->rootFolder;
+            // Request-stable globals + helper closures shared by every view.
+            // Injected into $opt for PHP views and share()d onto Blade renderers
+            // so partials and components see the same context as top-level views.
+            $globals = $this->viewGlobals();
+            $opt = array_merge($opt, $globals);
 
             if (!isset($opt["title"])) $opt["title"] = $this->getBooterSettings("pageName");
 
-            //logged in user information
-            $opt["user"] = $this->booter->user;
-
-            include_once zubzet()->z_framework_root."IncludedComponents/views/layout/layout_essentials.php";
-            $opt["layout_essentials_body"] = function($opt) {
-                essentialsBody($opt);
-            };
-            $opt["layout_essentials_head"] = function($opt, $customBootstrap = false) {
-                essentialsHead($opt, $customBootstrap);
-            };
-
-            $opt["generateResourceLink"] = function($url, $root = true) {
-                $v = $this->getBooterSettings("assetVersion");
-                echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
-            };
-
-            $opt["echo"] = function($val) {
-                echo nl2br(htmlspecialchars($val));
-            };
-
-            // Issue #145: Blade-compatible escape (no strip_tags) + component invoker
-            // that lets any view render a Blade component.
-            $opt["e"] = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $opt["component"] = function(string $name, array $data = [], ?callable $slot = null) {
-                foreach($this->renderers as $r) {
-                    if($r instanceof BladeOneRenderer) {
-                        if($slot !== null) {
-                            ob_start();
-                            $slot();
-                            $data["slot"] = ob_get_clean();
-                        }
-                        return $r->blade()->run($name, $data);
-                    }
+            foreach($this->renderers as $renderer) {
+                if($renderer instanceof BladeOneRenderer) {
+                    $renderer->blade()->share($globals);
                 }
-                return "";
-            };
+            }
 
             // Optional log view
             try {
@@ -174,6 +142,54 @@
             ob_end_clean();
 
             echo $rendered;
+        }
+
+        /**
+         * Request-stable globals and helper closures available to every view.
+         * Injected into $opt for PHP views and share()d onto Blade renderers so
+         * partials and components see them too. Per-view data ("title" and any
+         * caller-supplied values) is intentionally excluded.
+         */
+        private function viewGlobals(): array {
+            include_once zubzet()->z_framework_root."IncludedComponents/views/layout/layout_essentials.php";
+
+            return [
+                "response" => $this,
+                "request" => $this->booter->req,
+                "root" => $this->booter->rootFolder,
+                "host" => $this->booter->host,
+                "absRoot" => $this->booter->host.$this->booter->rootFolder,
+                "user" => $this->booter->user,
+                "layout_essentials_body" => function($opt) {
+                    essentialsBody($opt);
+                },
+                "layout_essentials_head" => function($opt, $customBootstrap = false) {
+                    essentialsHead($opt, $customBootstrap);
+                },
+                "generateResourceLink" => function($url, $root = true) {
+                    $v = $this->getBooterSettings("assetVersion");
+                    echo (($root ? $this->booter->rootFolder : "") . $url . "?v=" . (($v == "dev") ? time() : $v));
+                },
+                "echo" => function($val) {
+                    echo nl2br(htmlspecialchars($val));
+                },
+                // Issue #145: Blade-compatible escape (no strip_tags) + component invoker
+                // that lets any view render a Blade component.
+                "e" => fn($v) => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                "component" => function(string $name, array $data = [], ?callable $slot = null) {
+                    foreach($this->renderers as $r) {
+                        if($r instanceof BladeOneRenderer) {
+                            if($slot !== null) {
+                                ob_start();
+                                $slot();
+                                $data["slot"] = ob_get_clean();
+                            }
+                            return $r->blade()->run($name, $data);
+                        }
+                    }
+                    return "";
+                },
+            ];
         }
 
         /** Wrap a renderer-produced body string in the configured layout. */
