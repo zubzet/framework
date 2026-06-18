@@ -238,7 +238,7 @@ describe('Migration System - Import', () => {
         const file = "2025-10-01_MigrationImport.sql";
 
         cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${zubzetMigrationPath}/${file}`);
-        cy.exec('docker exec application php index.php db:migrate --enforce-external-timeline', { failOnNonZeroExit: false }).then((result) => {
+        cy.exec('docker exec application php index.php db:migrate --enforce-external-timeline -f false', { failOnNonZeroExit: false }).then((result) => {
             expect(result.stdout).to.include("Warning: The following migrations were skipped:\n- MigrationImport.sql\nAborting import due to skipped migrations.");
         });
 
