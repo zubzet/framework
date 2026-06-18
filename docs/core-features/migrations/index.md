@@ -63,10 +63,10 @@ Filters the import to only include local project migrations.
 > **Usage:** `db:migrate --exclude-external`
 
 
-* **`force`** | **`-f`**  
+* **`force`** | **`-f`** `[true|false]`  
 Bypasses the integrity check for skipped migrations.
-> **Details:** Normally, the process aborts if an older migration is detected as missing. This flag overrides that safety mechanism to run all pending migrations.  
-> **Usage:** `db:migrate -f`
+> **Details:** Enabled by default, so the process runs all pending migrations even if an older migration is detected as missing. Omitting the option or passing it without a value (`-f` / `--force`) keeps it enabled. Pass a falsy value (e.g. `--force false`, `--force=false` or `-f false`) to restore the strict behavior, which aborts the import when a skipped migration is detected.  
+> **Usage:** `db:migrate --force false`
 
 
 * **`enforce-external-timeline`**  
