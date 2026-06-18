@@ -40,8 +40,9 @@
             $this->addOption(
                 "force",
                 "f",
-                InputOption::VALUE_NONE,
-                "Ignore if any migrations were skipped and proceed with the import",
+                InputOption::VALUE_OPTIONAL,
+                "Ignore if any migrations were skipped and proceed with the import. Enabled by default; pass --force=false to disable",
+                true,
             );
 
             $this->addOption(
@@ -68,7 +69,15 @@
             model("z_migration")->ensureMigrationTablesExist();
 
             $dryMode = $in->getOption("dry");
-            $force = $in->getOption("force");
+
+            // Force is enabled by default. Omitting the option or passing it
+            // without a value enables it; only an explicit falsy value (e.g.
+            // --force=false) disables it.
+            $forceOption = $in->getOption("force");
+            $force = is_string($forceOption)
+                ? filter_var($forceOption, FILTER_VALIDATE_BOOLEAN)
+                : true;
+
             $excludeExternal = $in->getOption("exclude-external");
             $enforceExternalTimeline = $in->getOption("enforce-external-timeline");
 

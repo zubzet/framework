@@ -28,11 +28,13 @@
                 'driver' => "mysqli",
             ]);
 
-            // Used to map enum types to string to avoid issues
+            // Used to map enum and vector types to string to avoid issues.
+            // Vector is not properly supported, it is just treated as a string.
             // Method getDatabasePlatform does not exist below Doctrine DBAL 4.x
-            if(method_exists($connection, 'getDatabasePlatform') &&
-            !$connection->getDatabasePlatform()->hasDoctrineTypeMappingFor('enum')) {
-                $connection->getDatabasePlatform()->registerDoctrineTypeMapping('enum', "string");
+            if(method_exists($connection, 'getDatabasePlatform')) {
+                $platform = $connection->getDatabasePlatform();
+                $platform->hasDoctrineTypeMappingFor('enum') || $platform->registerDoctrineTypeMapping('enum', "string");
+                $platform->hasDoctrineTypeMappingFor('vector') || $platform->registerDoctrineTypeMapping('vector', "string");
             }
 
             return $connection;
