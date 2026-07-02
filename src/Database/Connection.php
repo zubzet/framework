@@ -20,6 +20,26 @@
         use Interaction;
         use CanCheckpoint;
 
+        /**
+         * MySQL/MariaDB error codes that are safe to retry: the server has
+         * already rolled the offending statement back, so re-running it does
+         * not risk double-applying it. These are the transient contention
+         * errors typical of busy single-node and cluster (Galera) setups.
+         */
+        private const RETRYABLE_ERROR_CODES = [
+            1213, // Deadlock found when trying to get lock
+            1205, // Lock wait timeout exceeded
+        ];
+
+        /** SQLSTATE values that are safe to retry (e.g. Galera certification conflicts). */
+        private const RETRYABLE_SQL_STATES = [
+            "40001", // Serialization failure
+        ];
+
+        /** Randomized backoff bounds (microseconds) slept between retry attempts. */
+        private const RETRY_BACKOFF_MIN_US = 10_000;
+        private const RETRY_BACKOFF_MAX_US = 50_000;
+
         public QueryBuilderConnection $queryBuilderConnection;
         private \mysqli $conn;
         private \mysqli_stmt $stmt;
@@ -28,6 +48,7 @@
         public int $lastConnect;
         public int $lastHeartbeat;
         public int $connectTimeout;
+        public int $maxRetries;
 
         private ?string $host;
         private ?string $password;
@@ -47,6 +68,15 @@
                 throw new \InvalidArgumentException("Config key 'db_connection_timeout' must be numeric, got: '$timeout'");
             }
             $this->connectTimeout = (int) $timeout;
+
+            // Number of extra attempts made when a query fails with a transient,
+            // cluster-related error (deadlock, lock-wait timeout, Galera
+            // serialization conflict). 0 disables retries entirely.
+            $maxRetries = config("db_max_retries", default: 3);
+            if(!is_numeric($maxRetries)) {
+                throw new \InvalidArgumentException("Config key 'db_max_retries' must be numeric, got: '$maxRetries'");
+            }
+            $this->maxRetries = max(0, (int) $maxRetries);
 
             $this->host = config("dbhost");
             $this->user = config("dbusername");
@@ -203,16 +233,40 @@
             }
 
             $queryStart = microtime(true);
-            try {
-                $executionResult = $this->stmt->execute();
-            } catch(\mysqli_sql_exception $e) {
-                throw new \Exception("SQL Execution Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+            // Transient cluster errors (deadlocks, lock-wait timeouts, Galera
+            // serialization conflicts) are safe to retry: the server has
+            // already discarded the statement and every exec() runs as its own
+            // auto-committed unit. The prepared statement stays valid across
+            // attempts, so we simply re-execute it after a small randomized
+            // backoff. Tunable via the db_max_retries config key.
+            $attempt = 0;
+            while(true) {
+                try {
+                    $executionResult = $this->stmt->execute();
+                } catch(\mysqli_sql_exception $e) {
+                    // PHP 8.1+ default reporting throws here.
+                    if($this->shouldRetry($attempt, $e->getCode(), $this->sqlStateOf($e))) {
+                        $attempt++;
+                        usleep(random_int(self::RETRY_BACKOFF_MIN_US, self::RETRY_BACKOFF_MAX_US));
+                        continue;
+                    }
+                    throw new \Exception("SQL Execution Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
+                }
+
+                // PHP 8.0 (non-STRICT reporting) returns false and sets errno
+                // instead of throwing; route it through the same retry logic.
+                if(false === $executionResult) {
+                    if($this->shouldRetry($attempt, $this->stmt->errno, $this->stmt->sqlstate)) {
+                        $attempt++;
+                        usleep(random_int(self::RETRY_BACKOFF_MIN_US, self::RETRY_BACKOFF_MAX_US));
+                        continue;
+                    }
+                    throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
+                }
+
+                break;
             }
             $queryDuration = (microtime(true) - $queryStart) * 1000;
-
-            if(false === $executionResult) {
-                throw new \Exception("SQL Execution Error: " . $this->stmt->error . "\nQuery: " . $query);
-            }
 
             $this->insertId = $this->conn->insert_id;
 
@@ -252,6 +306,36 @@
             }
 
             return $this;
+        }
+
+        /**
+         * Whether a just-failed query should be retried: there must be retry
+         * budget left and the error must be a transient, cluster-related one.
+         */
+        private function shouldRetry(int $attempt, int $errorCode, ?string $sqlState): bool {
+            return $attempt < $this->maxRetries && $this->isRetryable($errorCode, $sqlState);
+        }
+
+        /**
+         * Classifies an error as retryable. Retries are limited to transient
+         * contention errors where the server already discarded the statement,
+         * making a re-run safe. Pure decision, no side effects.
+         */
+        private function isRetryable(int $errorCode, ?string $sqlState): bool {
+            if(in_array($errorCode, self::RETRYABLE_ERROR_CODES, true)) return true;
+            if(!is_null($sqlState) && in_array($sqlState, self::RETRYABLE_SQL_STATES, true)) return true;
+            return false;
+        }
+
+        /**
+         * Reads the SQLSTATE from a mysqli exception. mysqli_sql_exception::getSqlState()
+         * only exists on PHP 8.1+, so on 8.0 we fall back to the statement handle,
+         * which still carries the SQLSTATE of the last error.
+         */
+        private function sqlStateOf(\mysqli_sql_exception $e): ?string {
+            if(method_exists($e, "getSqlState")) return $e->getSqlState();
+            if(isset($this->stmt)) return $this->stmt->sqlstate;
+            return $this->conn->sqlstate ?? null;
         }
 
         public function executeMultiQuery(string $query, bool $throwOnFailure = true): bool {
