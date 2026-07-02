@@ -1,0 +1,37 @@
+--- a/src/Blade.php	2026-07-02 13:53:06.184525942 +0200
++++ b/src/Blade.php	2026-07-02 13:53:06.188525965 +0200
+@@ -33,8 +33,8 @@
+     public ComponentRenderer $componentRenderer;
+     public TemplateInheritanceRenderer $templateRenderer;
+ 
+-    public readonly string $viewPath;
+-    public readonly string $cachePath;
++    public string $viewPath;
++    public string $cachePath;
+ 
+     protected int $mode = self::MODE_PRODUCTION;
+     protected array $anonymousComponentPaths = [];
+@@ -183,10 +183,10 @@
+          * in the file to trigger recompilation.
+          */
+         if ($this->mode === self::MODE_TESTING) {
+-            return hash('xxh64', file_get_contents($path));
++            return hash('sha1', file_get_contents($path));
+         }
+ 
+-        return hash('xxh64', $path . filemtime($path));
++        return hash('sha1', $path . filemtime($path));
+     }
+ 
+     public function render(string $view, array $data = []): View
+--- a/src/Slot.php	2026-07-02 13:53:06.186525954 +0200
++++ b/src/Slot.php	2026-07-02 13:53:06.190525977 +0200
+@@ -13,7 +13,7 @@
+ {
+     public function __construct(
+         private string $slot,
+-        public readonly Attributes $attributes
++        public Attributes $attributes
+     ) {
+     }
+ 

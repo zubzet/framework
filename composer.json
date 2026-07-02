@@ -20,7 +20,8 @@
         "php-debugbar/php-debugbar": "^1.23.6",
         "components/jquery": "3.5.*",
         "components/bootstrap": "4.6.*",
-        "components/font-awesome": "6.5.*"
+        "components/font-awesome": "6.5.*",
+        "soysudhanshu/katana": "^0.1.0"
     },
     "autoload": {
         "files": [

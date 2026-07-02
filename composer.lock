@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "556464788056ae54929c52dbb05d3b3c",
+    "content-hash": "948d3a91be93ca1163d752db3769fcb1",
     "packages": [
         {
             "name": "cakephp/core",
@@ -1818,6 +1818,46 @@
                 }
             ],
             "time": "2020-09-28T06:39:44+00:00"
+        },
+        {
+            "name": "soysudhanshu/katana",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/soysudhanshu/katana.git",
+                "reference": "941ee0505d2538e4d76a236a859df4d0c1e12c29"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/soysudhanshu/katana/zipball/941ee0505d2538e4d76a236a859df4d0c1e12c29",
+                "reference": "941ee0505d2538e4d76a236a859df4d0c1e12c29",
+                "shasum": ""
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.2",
+                "phpunit/phpunit": "^11.2",
+                "symfony/var-dumper": "^7.1"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Blade\\": "src/",
+                    "Tests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Stadalone version of laravel Blade",
+            "support": {
+                "issues": "https://github.com/soysudhanshu/katana/issues",
+                "source": "https://github.com/soysudhanshu/katana/tree/0.1.0"
+            },
+            "time": "2026-06-24T13:39:16+00:00"
         },
         {
             "name": "symfony/console",

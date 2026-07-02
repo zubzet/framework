@@ -1,0 +1,30 @@
+<h2>
+    Add User
+</h2>
+
+<div id="create-user-form"></div>
+
+<script>
+    var form = Z.Forms.create({
+        dom: "create-user-form",
+        doReload: true,
+    });
+
+    form.createField({
+        name: "email",
+        type: "email",
+        text: "Email",
+        placeholder: "name@example.com"
+    });
+
+    form.createField({
+        name: "password",
+        type: "password",
+        required: true,
+        text: "Password",
+        placeholder: "******",
+    });
+
+    $("label").addClass("mb-0");
+</script>
+

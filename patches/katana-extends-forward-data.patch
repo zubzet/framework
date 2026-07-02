@@ -1,0 +1,44 @@
+--- a/src/Blade.php	2026-07-02 16:37:14.539189592 +0200
++++ b/src/Blade.php	2026-07-02 16:36:20.358903302 +0200
+@@ -207,7 +207,17 @@
+         $template_renderer = $this->templateRenderer;
+         $__env = $this;
+ 
+-        include $this->getCachedViewPath($this->compile($viewPath));
++        // PROTOTYPE PATCH (katana#53): make the current render data available to the
++        // template-inheritance renderer so @extends can pass it to the parent layout.
++        // Save/restore so nested renders (components, includes) do not clobber it.
++        $previousContextData = $template_renderer->getContextData();
++        $template_renderer->withContextData($data);
++
++        try {
++            include $this->getCachedViewPath($this->compile($viewPath));
++        } finally {
++            $template_renderer->withContextData($previousContextData);
++        }
+     }
+ 
+     public function viewExists(string $name): bool
+--- a/src/TemplateInheritanceRenderer.php	2026-07-02 16:37:14.896191482 +0200
++++ b/src/TemplateInheritanceRenderer.php	2026-07-02 16:36:14.207870880 +0200
+@@ -11,6 +11,11 @@
+     protected ?array $tempContextData = null;
+     protected array $rendered = [];
+ 
++    /** PROTOTYPE PATCH (katana#53): data of the current render, forwarded to the parent layout. */
++    protected array $contextData = [];
++    public function withContextData(array $data): void { $this->contextData = $data; }
++    public function getContextData(): array { return $this->contextData; }
++
+     public function __construct(protected Blade $blade) {}
+ 
+     public function extends(string $template): void
+@@ -107,7 +112,7 @@
+ 
+         $this->renderingParentLayout = true;
+ 
+-        echo $this->blade->render($this->template);
++        echo $this->blade->render($this->template, $this->contextData);
+     }
+ 
+     public function include(string $template, array $data = [])

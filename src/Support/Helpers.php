@@ -16,8 +16,9 @@
 
         function e(?string $value): ?string {
             if(is_null($value)) return null;
-            $value = strip_tags($value);
-            return htmlspecialchars($value);
+            // Keep the historical strip_tags() behaviour, then delegate the escaping
+            // to the render engine so framework and Katana output escape identically.
+            return \Blade\e(strip_tags($value));
         }
 
         function makeSlug($str) {
