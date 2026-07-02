@@ -20,10 +20,14 @@
         public static function resolvePath(string $document, bool $throwOnError = false): string {
             $document = rtrim($document);
 
-            // Ensure an extension is present. This might possibly be changed in the future due to different
-            // template types that will be offered, including a plan to offer a rendered template
-            if(!str_ends_with($document, ".php")) {
-                $document .= ".php";
+            // Since 1.3.0 views are Katana .blade.php documents. Normalise any legacy
+            // ".php" reference (or an extension-less name) to the ".blade.php" form.
+            if(str_ends_with($document, ".blade.php")) {
+                // already normalised
+            } elseif(str_ends_with($document, ".php")) {
+                $document = substr($document, 0, -strlen(".php")) . ".blade.php";
+            } else {
+                $document .= ".blade.php";
             }
 
             // Look for the view in the user space, don't readd the location if it is already present
@@ -48,7 +52,7 @@
 
             // Handle when no view was found
             if(!$throwOnError) {
-                return zubzet()->z_framework_root."IncludedComponents/views/500.php";
+                return zubzet()->z_framework_root."IncludedComponents/views/500.blade.php";
             }
 
             throw new ViewNotFoundException("View file for '$document' not found. Is the path correct?");
@@ -109,14 +113,7 @@
                 // Do not log this render to avoid having to require a database
             }
 
-            DebugBarBridge::collectTemplate($document, $data, "php", $layout);
-
-            //Load the document
-            $view = include($viewPath);
-
-            //Load the layout
-            $layout_url = $layout;
-            $layout = include($layoutPath);
+            DebugBarBridge::collectTemplate($document, $data, "blade", $layout);
 
             $opt["generateResourceLink"] = function($url, $root = true) {
                 $v = $this->getBooterSettings("assetVersion");
@@ -127,16 +124,34 @@
                 echo nl2br(htmlspecialchars($val));
             };
 
-            //Makes $body and $head optional
-            if(!isset($view["body"])) $view["body"] = function(){};
-            if(!isset($view["head"])) $view["head"] = function(){};
+            // Render through Katana. The layout is injected externally (chosen per
+            // request / HandlesDefaultLayout), so the view stays layout-agnostic and is
+            // composed into the chosen layout by the adapter.
+            echo self::katana()->render(
+                realpath($viewPath),
+                realpath($layoutPath),
+                self::viewRootOf($layoutPath),
+                ["opt" => $opt],
+            );
+        }
 
-            ob_start();
-            $layout["layout"]($opt, $view["body"], $view["head"]);
-            $rendered = ob_get_contents();
-            ob_end_clean();
+        private static ?KatanaRenderer $katanaRenderer = null;
 
-            echo $rendered;
+        /** Lazily-built Katana adapter with a per-project compiled-view cache. */
+        private static function katana(): KatanaRenderer {
+            return self::$katanaRenderer ??= new KatanaRenderer(
+                sys_get_temp_dir() . "/zubzet_views_" . substr(md5(zubzet()->z_framework_root), 0, 12),
+            );
+        }
+
+        /** The view root ($layoutPath lives under) — userspace overrides, else framework. */
+        private static function viewRootOf(string $layoutPath): string {
+            $userspace = realpath(zubzet()->z_views);
+            $layoutReal = realpath($layoutPath);
+            if($userspace && $layoutReal && str_starts_with($layoutReal, $userspace)) {
+                return $userspace;
+            }
+            return realpath(zubzet()->z_framework_root . "IncludedComponents/views");
         }
 
     }
