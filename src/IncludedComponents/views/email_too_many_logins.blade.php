@@ -1,4 +1,9 @@
-<?php return [ "head" => function() {}, "body" => function($opt) { ?>	
+@section("head")
+
+@endsection
+
+@section("body")
+	
     <p>
         Someone has tried multiple times to login into 
         your account with a wrong password. If that was 
@@ -12,4 +17,4 @@
     <p>
         IP Address: <?= $opt["ip"]; ?>
     </p>
-<?php }]; ?>
+@endsection

@@ -1,17 +1,13 @@
-<?php 
-/**
- * The register view
- */
-
-return ["head" => function($opt) { ?>
+@section("head")
 	<link rel="stylesheet" href="<?php echo $opt["root"]; ?>assets/css/loadCircle.css">
 	<style>
 		.login-error {
 			color: red;
 		}
 	</style>
-<?php }, "body" => function($opt) { ?>
+@endsection
 
+@section("body")
 	<div style="max-width: 1000px; margin: auto">
 		<h2>Sign up</h2>
 		<form onSubmit="return false;">
@@ -51,4 +47,4 @@ return ["head" => function($opt) { ?>
 		}
 	</script>
 	
-<?php }]; ?>
+@endsection

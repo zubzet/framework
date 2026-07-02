@@ -1,10 +1,4 @@
-<?php 
-/**
- * The password reset view
- */
-
-return ["head" => function($opt) { ?>
-
+@section("head")
     <link rel="stylesheet" href="<?php echo $opt["root"]; ?>assets/css/loadCircle.css">
 
     <style>
@@ -17,9 +11,9 @@ return ["head" => function($opt) { ?>
             margin: 0;
         }
     </style>
+@endsection
 
-<?php }, "body" => function($opt) { ?>
-
+@section("body")
 	<div style="max-width: 1000px; margin: auto">
         <form action="" method="post" id="form">
             <div class="form-icons">
@@ -83,5 +77,4 @@ return ["head" => function($opt) { ?>
         });
         */
     </script>
-
-<?php }]; ?>
+@endsection

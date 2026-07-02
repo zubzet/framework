@@ -1,4 +1,3 @@
-<?php return ["layout" => function($opt, $body, $head) {?>
 <!doctype html>
 <html class="no-js" lang="en">
     <head>
@@ -9,7 +8,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <?php $opt["layout_essentials_head"]($opt); ?>
-        <?php $head($opt); ?>
+        @yield("head")
 
         <style>
             .wrapper {
@@ -176,7 +175,7 @@
                     </div>
                 </div>
                 <div class="content<?= ($opt["wideContent"] ?? false) ? "-fluid" : "" ?> pb-2 pt-2 col-lg-9 col-xl-10">
-                    <?php $body($opt); ?>
+                    @yield("body")
                 </div>
             </div>
         </div>
@@ -214,4 +213,3 @@
         </script>
     </body>
 </html>
-<?php }]; ?>

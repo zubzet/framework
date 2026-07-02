@@ -1,17 +1,13 @@
-<?php 
-/**
- * View for mail verification feedback
- */
-
-return ["head" => function($opt) { ?>
+@section("head")
 	<link rel="stylesheet" href="<?php echo $opt["root"]; ?>assets/css/loadCircle.css">
 	<style>
 		.login-error {
 			color: red;
 		}
 	</style>
-<?php }, "body" => function($opt) { ?>
+@endsection
 
+@section("body")
   <div style="max-width: 1000px; margin: auto; margin-top: 25vh">
     <?php if ($opt["success"]) { ?>
         <div>Your email was verified! You now can log in!</div>
@@ -30,4 +26,4 @@ return ["head" => function($opt) { ?>
     <?php } ?>
 		<a href="<?php echo $opt["root"].$opt["login"]; ?>" class="btn btn-primary">To the login</a>
 	</div>
-<?php }]; ?>
+@endsection

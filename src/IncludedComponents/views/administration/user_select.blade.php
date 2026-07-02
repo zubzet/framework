@@ -1,11 +1,9 @@
-<?php 
-/**
- * The user select view. Only accessible with permission
- */
+@section("head")
+ <!-- File header -->
+@endsection
 
-return ["head" => function($opt) { ?> <!-- File header -->
-
-<?php }, "body" => function($opt) { ?> <!-- File body -->	
+@section("body")
+ <!-- File body -->	
     <h2>Edit User</h2>
 
     <div class="list-group">
@@ -23,5 +21,4 @@ return ["head" => function($opt) { ?> <!-- File header -->
         </a>
       <?php } ?>
     </div>
-
-<?php }];?>
+@endsection

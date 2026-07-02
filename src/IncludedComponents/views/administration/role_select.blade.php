@@ -1,11 +1,9 @@
-<?php 
-/**
- * The view to create or select a role to edit. Only accessible with permission
- */
+@section("head")
+ <!-- File header -->
+@endsection
 
-return ["head" => function($opt) { ?> <!-- File header -->
-
-<?php }, "body" => function($opt) { ?> <!-- File body -->	
+@section("body")
+ <!-- File body -->	
 
     <script>
         $(function() {
@@ -28,5 +26,4 @@ return ["head" => function($opt) { ?> <!-- File header -->
     </div>
 
     <button data-test="role-create" class="btn btn-primary mt-2" id="create-group">Create role</button>
-
-<?php }]; ?>
+@endsection

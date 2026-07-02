@@ -1,9 +1,4 @@
-<?php 
-/**
- * The 500 Error view
- */
-
-return [ "head" => function($opt) { ?>
+@section("head")
     <style>
 
     * {
@@ -109,8 +104,9 @@ return [ "head" => function($opt) { ?>
     }
 
     </style>
+@endsection
 
-<?php }, "body" => function($opt) { ?>
+@section("body")
 	<div id="notfound">
 		<div class="notfound">
 			<div class="notfound-404">
@@ -132,4 +128,4 @@ This templates was made by Colorlib (https://colorlib.com)
 :)
 
 -->
-<?php }]; ?>
+@endsection

@@ -1,9 +1,4 @@
-<?php 
-/**
- * The 403 Error view
- */
-
-return [ "head" => function($opt) { ?>
+@section("head")
     <style>
 
     * {
@@ -109,16 +104,17 @@ return [ "head" => function($opt) { ?>
     }
 
     </style>
+@endsection
 
-  <?php }, "body" => function($opt) { ?>
-    <div id="notfound">
-      <div class="notfound">
-        <div class="notfound-404">
-          <h3>Oops! Page not for you</h3>
-          <h1><span>4</span><span>0</span><span>3</span></h1>
-        </div>
-        <h2>
-        It seems like you don't have the permissions to visit this page!<br><br><br>
+@section("body")
+	<div id="notfound">
+		<div class="notfound">
+			<div class="notfound-404">
+				<h3>Oops! Page not found</h3>
+				<h1><span>4</span><span>0</span><span>4</span></h1>
+			</div>
+			<h2>
+        The page you requested couldn't be found!<br><br><br>
         <a href="<?php echo $opt["root"]; ?>">Take me back to my Website</a>
       </h2>
 		</div>
@@ -132,4 +128,4 @@ This templates was made by Colorlib (https://colorlib.com)
 :)
 
 -->
-<?php }]; ?>
+@endsection

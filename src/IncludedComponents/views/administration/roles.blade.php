@@ -1,11 +1,9 @@
-<?php 
-/**
- * The role editor view. Only accessible with permission
- */
+@section("head")
+ <!-- File header -->
+@endsection
 
-return ["head" => function($opt) { ?> <!-- File header -->
-
-<?php }, "body" => function($opt) { ?> <!-- File body -->	
+@section("body")
+ <!-- File body -->	
 
     <script>
         $(function() {
@@ -39,5 +37,4 @@ return ["head" => function($opt) { ?> <!-- File header -->
     <h2>Roles</h2>
 
     <div id="form"></div>
-
-<?php }]; ?>
+@endsection

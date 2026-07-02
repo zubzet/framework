@@ -1,10 +1,4 @@
-<?php 
-/**
- * The forgot password view
- */
-
-return ["head" => function($opt) { ?>
-
+@section("head")
     <link rel="stylesheet" href="<?php echo $opt["root"]; ?>assets/css/loadCircle.css">
 
 	<style>
@@ -12,7 +6,9 @@ return ["head" => function($opt) { ?>
 			color: red;
 		}
 	</style>
-<?php }, "body" => function($opt) { ?>
+@endsection
+
+@section("body")
 		<div style="max-width: 1000px; margin: auto">
 			<form onSubmit="return false;">
 
@@ -52,5 +48,4 @@ return ["head" => function($opt) { ?>
 			$("#loading").hide();
         }
     </script>
-
-<?php }]; ?>
+@endsection
