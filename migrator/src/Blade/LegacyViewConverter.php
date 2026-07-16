@@ -6,18 +6,27 @@
      * Converts a legacy ZubZet view/layout (the "return type" syntax) into a
      * Katana .blade.php document, as part of the 1.3.0 upgrade.
      *
-     * Views:
-     *   return ["head" => function($opt){ ?>...<?php }, "body" => function($opt){ ?>...<?php }];
-     *     - body only            -> the raw body content (straight PHP/HTML, no wrapper)
-     *     - head (+ body)        -> @section('head')...@endsection [+ @section('body')...]
+     * Views become template-inheritance children. The old "body" closure turns
+     * into @section("content"), an optional "head" closure into @section("head"),
+     * and the file @extends the layout picked at render time:
      *
-     * Layouts:
-     *   return ["layout" => function($opt, $body, $head){ ?>... $body($opt) ... $head($opt) ...<?php }];
-     *     - calls to the $body / $head closure params become @yield('body') / @yield('head');
-     *       everything else (including the $opt["layout_essentials_*"] calls) stays raw PHP.
+     *     @extends($layout)
+     *     @section("head") ... @endsection
+     *     @section("content") ... @endsection
      *
-     * Literal Blade-significant sequences ({{, {!!, {{--) in template text are escaped
-     * with Blade's own escape syntax (@{{ ...) so Katana passes them through unchanged.
+     * $layout is supplied as render data (the dotted view name of the chosen layout,
+     * e.g. "layout.default_layout" or "rendering.mail_layout"), so the same view works
+     * whether the layout is the default, chosen per request, passed explicitly, or
+     * lives outside the layout/ directory.
+     *
+     * Layouts become the parents: the $body($opt) / $head($opt) closure calls turn
+     * into @yield("content") / @yield("head"); everything else (including the
+     * $opt["layout_essentials_*"] calls) stays raw PHP and is dedented to column 0.
+     *
+     * Raw PHP (<?php ?> and <?= ?>) is preserved verbatim; Katana keeps it out of
+     * the Blade compiler. Literal Blade markers ({{, {!!, {{--) are escaped, but
+     * only where they appear in template HTML: inside raw PHP Katana already leaves
+     * them untouched, so escaping there would emit a stray "@".
      *
      * Extraction is tokenizer-based (token_get_all) so it is robust against braces,
      * open/close-tag boundaries and nested control structures inside the closures.
@@ -41,105 +50,107 @@
         public static function convertFile(string $source): string {
             return self::isLayout($source)
                 ? self::convertLayout($source)
-                : self::convert($source);
+                : self::convertView($source);
         }
 
-        /** Convert a legacy view (head/body sections). */
-        public static function convert(string $source, bool $neutralize = true): string {
-            $parsed = self::extractSections($source);
-            $sections = $parsed["sections"];
-            $order = $parsed["order"];
+        /** A legacy view -> an @extends child with head/content sections. */
+        public static function convertView(string $source): string {
+            $sections = self::extractSections($source)["sections"];
 
-            $neut = fn(string $s): string => $neutralize ? self::neutralizeBladeTokens($s) : $s;
-
-            // body-only -> straight content, dedented to column 0 (no wrapping section).
-            if ($order === ["body"] || $order === []) {
-                return self::dedent(ltrim($neut($sections["body"] ?? ""), "\n"));
+            $out = "@extends(\$layout)\n";
+            if(array_key_exists("head", $sections)) {
+                $out .= "\n@section(\"head\")\n" . self::section($sections["head"]) . "\n@endsection\n";
             }
-
-            // head (+ body) and any additional keys -> sections. The content keeps its
-            // original indentation so it stays nested under the @section directive.
-            $out = "";
-            $keys = array_values(array_unique(array_merge(["head", "body"], $order)));
-            foreach ($keys as $key) {
-                if (!array_key_exists($key, $sections)) continue;
-                $content = trim($neut($sections[$key]), "\n");
-                $out .= "@section(\"$key\")\n" . $content . "\n@endsection\n\n";
-            }
-            return rtrim($out) . "\n";
+            $out .= "\n@section(\"content\")\n" . self::section($sections["body"] ?? "") . "\n@endsection\n";
+            return $out;
         }
 
-        /** Convert a legacy layout (yields for the body/head closure params). */
-        public static function convertLayout(string $source, bool $neutralize = true): string {
+        /** A legacy layout -> the parent template with @yield placeholders. */
+        public static function convertLayout(string $source): string {
             [$params, $body] = self::extractClosure($source, "layout");
             // positional convention: function($opt, $body, $head)
-            $bodyVar = $params[1] ?? null;
-            $headVar = $params[2] ?? null;
+            $body = self::yieldCall($body, $params[1] ?? null, "content");
+            $body = self::yieldCall($body, $params[2] ?? null, "head");
 
-            if ($neutralize) $body = self::neutralizeBladeTokens($body);
+            // A layout has no @section wrapper, so dedent it back to column 0.
+            return self::neutralize(self::dedent(ltrim($body, "\n")));
+        }
 
-            $yield = function(string $tpl, ?string $var, string $section): string {
-                if (!$var) return $tpl;
-                $v = preg_quote($var, '/');
-                // Match an echo/statement tag whose sole payload is a call to the closure
-                // param, e.g. the short-echo form, the "echo" form, or a bare statement form.
-                $pat = '/<\?(?:=|php)\s*(?:echo\s+)?\\' . '$' . $v . '\s*\([^)]*\)\s*;?\s*\?>/';
-                return preg_replace($pat, "@yield(\"$section\")", $tpl);
-            };
-            $body = $yield($body, $bodyVar, "body");
-            $body = $yield($body, $headVar, "head");
-
-            return self::dedent(ltrim($body, "\n"));
+        /** Section body: keep its indentation (it nests under @section), trim blank edges. */
+        private static function section(string $content): string {
+            return self::neutralize(trim($content, "\n"));
         }
 
         /**
-         * Remove one level of leading indentation (the wrapper closure's indent) so the
-         * migrated document sits at column 0. Relative indentation is preserved. A first
-         * line left inline with the closing ?> tag has a smaller indent than the block and
-         * is treated as an outlier so it does not shrink the common indent to remove.
+         * Replace a call to a layout closure param (`<?= $body($opt) ?>`, the "echo"
+         * form or a bare statement form) with the matching @yield.
+         */
+        private static function yieldCall(string $tpl, ?string $var, string $section): string {
+            if(!$var) return $tpl;
+            $v = preg_quote($var, '/');
+            $pat = '/<\?(?:=|php)\s*(?:echo\s+)?\\' . '$' . $v . '\s*\([^)]*\)\s*;?\s*\?>/';
+            return preg_replace($pat, "@yield(\"$section\")", $tpl);
+        }
+
+        /**
+         * Escape literal Blade markers so Katana emits them verbatim, but only in
+         * template HTML (T_INLINE_HTML). Markers inside raw PHP are already safe.
+         *   {{-- .. --}}  -> wrapped in @verbatim (the @{{-- escape does not work
+         *                    because comments are stripped before echo-escaping)
+         *   {!! .. !!}    -> @{!! .. !!}
+         *   {{ .. }}      -> @{{ .. }}
+         */
+        public static function neutralize(string $tpl): string {
+            $out = "";
+            foreach(token_get_all($tpl) as $t) {
+                if(is_array($t) && $t[0] === T_INLINE_HTML) {
+                    $out .= self::escapeMarkers($t[1]);
+                } else {
+                    $out .= is_array($t) ? $t[1] : $t;
+                }
+            }
+            return $out;
+        }
+
+        private static function escapeMarkers(string $html): string {
+            $html = preg_replace('/\{\{--.*?--\}\}/s', '@verbatim$0@endverbatim', $html);
+            $html = str_replace('{!!', '@{!!', $html);
+            $html = preg_replace('/(?<!@)\{\{(?!--)/', '@{{', $html);
+            return $html;
+        }
+
+        /**
+         * Remove the common leading indentation (the wrapper closure's indent) so a
+         * dedented document sits at column 0. A first line left inline with the
+         * opening ?> tag has a smaller indent than the block and is treated as an
+         * outlier so it does not shrink the common indent to remove.
          */
         private static function dedent(string $content): string {
             $lines = explode("\n", $content);
 
             $indents = [];
-            foreach ($lines as $i => $line) {
-                if (trim($line) === "") continue;
+            foreach($lines as $i => $line) {
+                if(trim($line) === "") continue;
                 preg_match('/^[ \t]*/', $line, $m);
                 $indents[$i] = strlen($m[0]);
             }
-            if (empty($indents)) return $content;
+            if(empty($indents)) return $content;
 
-            // Drop an inline first line (smaller indent than the rest) from the calculation.
-            if (array_key_first($indents) === 0 && count($indents) > 1) {
+            if(array_key_first($indents) === 0 && count($indents) > 1) {
                 $rest = $indents;
                 unset($rest[0]);
-                if ($indents[0] < min($rest)) unset($indents[0]);
+                if($indents[0] < min($rest)) unset($indents[0]);
             }
 
             $common = min($indents);
-            if ($common === 0) return $content;
+            if($common === 0) return $content;
 
             return implode("\n", array_map(function(string $line) use ($common): string {
                 $j = 0;
                 $len = strlen($line);
-                while ($j < $common && $j < $len && ($line[$j] === " " || $line[$j] === "\t")) $j++;
+                while($j < $common && $j < $len && ($line[$j] === " " || $line[$j] === "\t")) $j++;
                 return substr($line, $j);
             }, $lines));
-        }
-
-        /**
-         * Neutralise literal Blade tokens so Katana emits them verbatim.
-         *   {{-- .. --}}  -> wrapped in @verbatim (the @{{-- escape does not work
-         *                    because comments are stripped before echo-escaping)
-         *   {!! .. !!}    -> @{!! .. !!}   (Blade raw-echo escape)
-         *   {{ .. }}      -> @{{ .. }}     (Blade echo escape)
-         * Raw <?php ?> still executes inside @verbatim, so wrapping is output-preserving.
-         */
-        public static function neutralizeBladeTokens(string $tpl): string {
-            $tpl = preg_replace('/\{\{--.*?--\}\}/s', '@verbatim$0@endverbatim', $tpl);
-            $tpl = str_replace('{!!', '@{!!', $tpl);
-            $tpl = preg_replace('/(?<!@)\{\{(?!--)/', '@{{', $tpl);
-            return $tpl;
         }
 
         /** @return array{sections: array<string,string>, order: string[]} */
@@ -148,58 +159,58 @@
             $n = count($tokens);
 
             $i = 0;
-            for (; $i < $n; $i++) {
-                if (is_array($tokens[$i]) && $tokens[$i][0] === T_RETURN) { $i++; break; }
+            for(; $i < $n; $i++) {
+                if(is_array($tokens[$i]) && $tokens[$i][0] === T_RETURN) { $i++; break; }
             }
-            for (; $i < $n; $i++) {
+            for(; $i < $n; $i++) {
                 $t = $tokens[$i];
-                if ($t === '[' || (is_array($t) && $t[0] === T_ARRAY)) break;
+                if($t === '[' || (is_array($t) && $t[0] === T_ARRAY)) break;
             }
-            if ($i >= $n) {
+            if($i >= $n) {
                 throw new \RuntimeException("no top-level return[...] found");
             }
-            if ($tokens[$i] === '[') { $i++; }
+            if($tokens[$i] === '[') { $i++; }
             else { throw new \RuntimeException("only short-array return[...] views are supported"); }
 
             $sections = [];
             $order = [];
 
-            while ($i < $n) {
-                for (; $i < $n; $i++) {
+            while($i < $n) {
+                for(; $i < $n; $i++) {
                     $t = $tokens[$i];
-                    if ($t === ']') break 2;
-                    if ($t === ',') continue;
-                    if (is_array($t) && in_array($t[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) continue;
+                    if($t === ']') break 2;
+                    if($t === ',') continue;
+                    if(is_array($t) && in_array($t[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) continue;
                     break;
                 }
-                if ($i >= $n || $tokens[$i] === ']') break;
+                if($i >= $n || $tokens[$i] === ']') break;
 
-                if (!(is_array($tokens[$i]) && $tokens[$i][0] === T_CONSTANT_ENCAPSED_STRING)) {
+                if(!(is_array($tokens[$i]) && $tokens[$i][0] === T_CONSTANT_ENCAPSED_STRING)) {
                     throw new \RuntimeException("expected a section key string, got: " . self::describe($tokens[$i]));
                 }
                 $key = trim($tokens[$i][1], "\"'");
                 $i++;
 
-                for (; $i < $n; $i++) {
-                    if (is_array($tokens[$i]) && $tokens[$i][0] === T_DOUBLE_ARROW) { $i++; break; }
+                for(; $i < $n; $i++) {
+                    if(is_array($tokens[$i]) && $tokens[$i][0] === T_DOUBLE_ARROW) { $i++; break; }
                 }
-                for (; $i < $n; $i++) {
-                    if (is_array($tokens[$i]) && ($tokens[$i][0] === T_FUNCTION || $tokens[$i][0] === T_FN)) break;
+                for(; $i < $n; $i++) {
+                    if(is_array($tokens[$i]) && ($tokens[$i][0] === T_FUNCTION || $tokens[$i][0] === T_FN)) break;
                 }
                 $depthParen = 0; $sawParams = false;
-                for (; $i < $n; $i++) {
+                for(; $i < $n; $i++) {
                     $t = $tokens[$i];
-                    if ($t === '(') { $depthParen++; $sawParams = true; }
-                    elseif ($t === ')') { $depthParen--; }
-                    elseif ($t === '{' && $depthParen === 0 && $sawParams) break;
+                    if($t === '(') { $depthParen++; $sawParams = true; }
+                    elseif($t === ')') { $depthParen--; }
+                    elseif($t === '{' && $depthParen === 0 && $sawParams) break;
                 }
                 $i++; // into body
                 $bodyTokens = []; $depth = 0;
-                for (; $i < $n; $i++) {
+                for(; $i < $n; $i++) {
                     $t = $tokens[$i];
-                    if ($t === '{') { $depth++; }
-                    elseif ($t === '}') {
-                        if ($depth === 0) { $i++; break; }
+                    if($t === '{') { $depth++; }
+                    elseif($t === '}') {
+                        if($depth === 0) { $i++; break; }
                         $depth--;
                     }
                     $bodyTokens[] = $t;
@@ -217,27 +228,27 @@
             $tokens = token_get_all($source);
             $n = count($tokens);
             $i = 0;
-            for (; $i < $n; $i++) if (is_array($tokens[$i]) && $tokens[$i][0] === T_RETURN) { $i++; break; }
-            for (; $i < $n; $i++) if ($tokens[$i] === '[') { $i++; break; }
-            for (; $i < $n; $i++) {
+            for(; $i < $n; $i++) if(is_array($tokens[$i]) && $tokens[$i][0] === T_RETURN) { $i++; break; }
+            for(; $i < $n; $i++) if($tokens[$i] === '[') { $i++; break; }
+            for(; $i < $n; $i++) {
                 $t = $tokens[$i];
-                if (is_array($t) && $t[0] === T_CONSTANT_ENCAPSED_STRING && trim($t[1], "\"'") === $key) break;
+                if(is_array($t) && $t[0] === T_CONSTANT_ENCAPSED_STRING && trim($t[1], "\"'") === $key) break;
             }
-            for (; $i < $n; $i++) if (is_array($tokens[$i]) && ($tokens[$i][0] === T_FUNCTION || $tokens[$i][0] === T_FN)) break;
+            for(; $i < $n; $i++) if(is_array($tokens[$i]) && ($tokens[$i][0] === T_FUNCTION || $tokens[$i][0] === T_FN)) break;
             $params = []; $depthParen = 0; $sawParams = false; $inParams = false;
-            for (; $i < $n; $i++) {
+            for(; $i < $n; $i++) {
                 $t = $tokens[$i];
-                if ($t === '(') { $depthParen++; $sawParams = true; $inParams = ($depthParen === 1); continue; }
-                if ($t === ')') { $depthParen--; if ($depthParen === 0) $inParams = false; continue; }
-                if ($inParams && is_array($t) && $t[0] === T_VARIABLE) $params[] = ltrim($t[1], '$');
-                if ($t === '{' && $depthParen === 0 && $sawParams) break;
+                if($t === '(') { $depthParen++; $sawParams = true; $inParams = ($depthParen === 1); continue; }
+                if($t === ')') { $depthParen--; if($depthParen === 0) $inParams = false; continue; }
+                if($inParams && is_array($t) && $t[0] === T_VARIABLE) $params[] = ltrim($t[1], '$');
+                if($t === '{' && $depthParen === 0 && $sawParams) break;
             }
             $i++; // into body
             $bodyTokens = []; $depth = 0;
-            for (; $i < $n; $i++) {
+            for(; $i < $n; $i++) {
                 $t = $tokens[$i];
-                if ($t === '{') $depth++;
-                elseif ($t === '}') { if ($depth === 0) break; $depth--; }
+                if($t === '{') $depth++;
+                elseif($t === '}') { if($depth === 0) break; $depth--; }
                 $bodyTokens[] = $t;
             }
             return [$params, self::detokenizeTemplate($bodyTokens)];
@@ -245,29 +256,29 @@
 
         /** Reconstruct template text from closure-body tokens, stripping the wrapping tags. */
         private static function detokenizeTemplate(array $bodyTokens): string {
-            while ($bodyTokens && is_array($bodyTokens[0]) && $bodyTokens[0][0] === T_WHITESPACE) {
+            while($bodyTokens && is_array($bodyTokens[0]) && $bodyTokens[0][0] === T_WHITESPACE) {
                 array_shift($bodyTokens);
             }
-            if ($bodyTokens && is_array($bodyTokens[0]) && $bodyTokens[0][0] === T_CLOSE_TAG) {
+            if($bodyTokens && is_array($bodyTokens[0]) && $bodyTokens[0][0] === T_CLOSE_TAG) {
                 array_shift($bodyTokens);
             }
-            while ($bodyTokens && is_array($bodyTokens[count($bodyTokens) - 1]) && $bodyTokens[count($bodyTokens) - 1][0] === T_WHITESPACE) {
+            while($bodyTokens && is_array($bodyTokens[count($bodyTokens) - 1]) && $bodyTokens[count($bodyTokens) - 1][0] === T_WHITESPACE) {
                 array_pop($bodyTokens);
             }
-            if ($bodyTokens && is_array($bodyTokens[count($bodyTokens) - 1])
+            if($bodyTokens && is_array($bodyTokens[count($bodyTokens) - 1])
                 && in_array($bodyTokens[count($bodyTokens) - 1][0], [T_OPEN_TAG, T_OPEN_TAG_WITH_ECHO], true)) {
                 array_pop($bodyTokens);
             }
 
             $out = "";
-            foreach ($bodyTokens as $t) {
+            foreach($bodyTokens as $t) {
                 $out .= is_array($t) ? $t[1] : $t;
             }
             return $out;
         }
 
         private static function describe($t): string {
-            if (is_array($t)) return token_name($t[0]) . "(" . trim($t[1]) . ")";
+            if(is_array($t)) return token_name($t[0]) . "(" . trim($t[1]) . ")";
             return "'$t'";
         }
     }
