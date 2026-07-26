@@ -9,7 +9,7 @@
 
     class V1_3_0 extends BaseVersion implements VersionInterface {
 
-        public string $stability = ReleaseState::Development;
+        public string $stability = ReleaseState::Alpha;
 
         public function upgrade(): bool {
             // ZubZet 1.3.0 replaces the return-type view renderer with the Katana
