@@ -99,13 +99,13 @@
          * anonymous-component path), so a layout carries no raw essentials PHP.
          * The components sit under the framework's own "zubzet" component namespace
          * so an app component cannot shadow them by accident.
-         *   $opt["layout_essentials_head"]($opt) -> <x-zubzet.head :opt="$opt"/>
-         *   $opt["layout_essentials_body"]($opt) -> <x-zubzet.body :opt="$opt"/>
+         *   $opt["layout_essentials_head"]($opt) -> <x-zubzet::head :opt="$opt"/>
+         *   $opt["layout_essentials_body"]($opt) -> <x-zubzet::body :opt="$opt"/>
          */
         private static function essentialsTags(string $tpl): string {
             return preg_replace_callback(
                 '/<\?(?:php|=)\s*(?:echo\s+)?\$opt\[["\']layout_essentials_(head|body)["\']\]\s*\(\s*\$opt\s*\)\s*;?\s*\?>/',
-                fn($m) => "<x-zubzet.{$m[1]} :opt=\"\$opt\"/>",
+                fn($m) => "<x-zubzet::{$m[1]} :opt=\"\$opt\"/>",
                 $tpl,
             );
         }
