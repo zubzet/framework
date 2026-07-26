@@ -3,6 +3,7 @@
     namespace ZubZet\Tooling\Version;
 
     use ZubZet\Tooling\Modifiers\ComposerModifier;
+    use ZubZet\Tooling\Modifiers\SettingsIni;
     use ZubZet\Tooling\Modifiers\ViewMigration;
     use ZubZet\Tooling\ReleaseState;
     use ZubZet\Tooling\Version\BaseVersion;
@@ -17,6 +18,11 @@
             $views = new ViewMigration($this, "blade-view-migration");
             $views->from(["./app/Views"]);
             $views->migrate();
+
+            // Add the health endpoint toggle to ini settings
+            $healthEndpoint = new SettingsIni($this, "health-endpoint-settings");
+            $healthEndpoint->addProperty("health_endpoint_enabled", "true");
+            $healthEndpoint->save();
 
             // Upgrade composer dependencies (pulls in the Katana-backed framework).
             $composer = new ComposerModifier($this, "composer");
