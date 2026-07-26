@@ -15,7 +15,7 @@
 
     class V1_2_0 extends BaseVersion implements VersionInterface {
 
-        public string $stability = ReleaseState::ReleaseCandidate;
+        public string $stability = ReleaseState::Stable;
 
         public function upgrade(): bool {
             // All deprecated logging functions and tables
