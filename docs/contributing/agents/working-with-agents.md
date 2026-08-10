@@ -10,6 +10,7 @@ This page is for AI coding agents (Claude Code, Cursor, Codex, Aider, etc.) and 
 | `src/IncludedComponents/` | Bundled controllers, models, views, routes, and migrations the framework ships |
 | `docs/` | MkDocs-rendered documentation (this site) |
 | `tests/e2e/` | Cypress end-to-end test suite running the dockerized app |
+| `tests/e2e/modules/` | The two sample modules (`guestbook`, `theme`) permanently installed in the e2e app |
 | `mkdocs.yml` | Docs site nav and theme config |
 | `composer.json` | PHP 8.0–8.5 support, autoload, dependencies |
 
@@ -19,6 +20,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 
 - `Authentication/` — `User`, `Session`, `Permission/`, `PasswordHash/` (native Argon2id, self-describing schemes, rehash-on-login), role and group handling
 - `Bootstrap/` — `Configuration` trait that parses `z_settings.ini`
+- `Console/` — CLI application bootstrap, `run` action bridge, `ActionDiscovery` and `CommandDiscovery`
 - `Core/` — Foundation traits (`CanRetrieveModel`, `CanRetrieveBooterSettings`, `Constants`, `FunctionConflictResolution`)
 - `Database/` — `Connection`, prepared-statement `Interaction`, migration commands
 - `ErrorHandling/` — `ExceptionBehavior`, `WhoopsHandler`, `BehaviorOption`, `DebugBar/` (bridge, collectors, traits)
@@ -27,6 +29,8 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 - `Maintenance/` — Standalone maintenance gate (see [Maintenance Mode](../../core-features/maintenance.md))
 - `Message/` — `Request`, `Response`, `Input/State`
 - `QueryBuilder/` — CakePHP query-builder adapter
+- `Registry/` — Central resolver for convention lookups + module discovery (see below)
+- `Resources/` — Asset proxy: ordered `Mount` chain, bundled Composer packages
 - `Routing/` — `Router` trait, FastRoute integration, `Route` builder
 - `Support/` — Global helpers, dynamic attributes, function-conflict resolution
 - `Testing/` — Coverage commands
@@ -62,7 +66,7 @@ A few inter-phase dependencies that are not obvious:
 
 ## Routing & MVC
 
-ZubZet uses convention-based routing with FastRoute as an opt-in override. The path `["dashboard", "stats"]` maps to `DashboardController->action_stats($req, $res)`. Default action is `action_index`; missing methods fall to `action_fallback`. See [MVC](../../core-features/mvc.md), [Controllers and Actions](../../core-features/controllers-and-actions.md), and [Routing](../../core-features/routing.md).
+ZubZet uses convention-based routing with FastRoute as an opt-in override. The path `["dashboard", "stats"]` maps to `DashboardController->action_stats($req, $res)`. Default action is `action_index`; missing methods fall to `action_fallback`. Controller and model files resolve through the Registry (see below): flat lookup first, then recursively into subdirectories by bare name, across userspace, modules, and framework roots. Model dot notation (`getModel("reports.Stats")`) addresses an exact sub-path and never falls back to the recursive index. See [MVC](../../core-features/mvc.md), [Controllers and Actions](../../core-features/controllers-and-actions.md), and [Routing](../../core-features/routing.md).
 
 A view is a Blade template that extends a layout and defines head/content sections:
 
@@ -80,13 +84,36 @@ A view is a Blade template that extends a layout and defines head/content sectio
 
 Rendered via `$res->render("path/to/view", $vars, "layout/…")` or the `view()` global helper.
 
+## Registry & modules
+
+`src/Registry/` is the single resolver for everything the framework loads by convention
+(controllers, models, views, routes, commands, migrations, seeds, assets). The API is three static
+calls on `Registry`: `paths($kind)` (ordered roots), `files($kind)` (every file across roots), and
+`find($kind, $name)` (locate one file). Precedence everywhere: userspace, then modules in order,
+then framework. Asset-proxy mounts follow the same order (modules before the framework layers);
+the application's webroot needs no mount because the web server serves it before PHP runs.
+
+`find()` memoizes per request in `StaticCache` and probes each root flat first; the recursive
+per-root index (`RootIndex`) only runs for bare names after a flat miss, shallowest match first.
+Do not add new `file_exists`/`glob` lookups at call sites: route them through the Registry.
+
+Module discovery lives in `Registry\Modules`: installed Composer packages of type `zubzet-module`,
+ordered by the `modules` ini key (comma-separated package names), unlisted ones after in Composer
+installed order, individually deactivatable via `modules_disabled`. Convention console commands
+(`app/Commands/`, userspace and modules) are discovered by `Console\CommandDiscovery` and added in
+reverse precedence order because Symfony resolves command-name collisions last-add-wins: the
+userspace registration lands last and wins. The sample modules are
+`tests/e2e/modules/{guestbook,theme}`, exercised by the specs in
+`tests/e2e/tests/cypress/e2e/modules/`. User-facing docs: [Modules](../../advanced-features/modules.md);
+internals and rationale: [Module System Architecture](../module-system-architecture.md).
+
 ## Render engine (Katana)
 
 Views render through [Katana](https://github.com/katanaphp/blade), a standalone Blade compiler. It is Blade only, with no closure fallback. The user-facing reference is [Views](../../core-features/views.md).
 
 The only Katana-specific glue is `src/Rendering/Katana/`:
 
-- `Engine.php` is the adapter. It registers the two view roots as an ordered finder chain (userspace `z_views` first, then framework `IncludedComponents/views`), so a name resolves userspace-overrides-then-framework and `@extends` / `@include` / components all resolve across both roots. It builds a fresh `Blade` per render so `@section` state cannot leak between renders, registers the framework essentials under the `zubzet` component namespace (`<x-zubzet::head/>` and `<x-zubzet::body/>`, which an app component can neither shadow nor be shadowed by), and hands the layout name over as the `$layout` render datum.
+- `Engine.php` is the adapter. It registers the view roots from `Registry::paths("views")` as an ordered finder chain (userspace `z_views` first, then module view roots in module order, then framework `IncludedComponents/views`), so a name resolves by precedence and `@extends` / `@include` / components all resolve across every root. It builds a fresh `Blade` per render so `@section` state cannot leak between renders, registers the framework essentials under the `zubzet` component namespace (`<x-zubzet::head/>` and `<x-zubzet::body/>`, which an app component can neither shadow nor be shadowed by), and hands the layout name over as the `$layout` render datum.
 - `Hooks.php` binds request-scoped directives, currently `@auth` and `@guest`. The argument is a framework permission (dotted, wildcard aware), and `@guest` is the negation. This is where future framework directives go.
 
 `src/Rendering/CanRenderView.php` builds the `$opt` contract, logs the render and feeds the debug bar, then renders through the engine. A missing view or layout is caught (`BladeException`) and re-rendered as the framework 500 page in the guaranteed `layout/min_layout`. View names resolve by name (a legacy `.php` or `.blade.php` extension is stripped; dot and slash notation both work), and the compiled-view cache directory is keyed on the installed engine reference so an engine upgrade starts from a clean cache. `e()` (in `src/Support/Helpers.php`) delegates to `\Blade\e()`, so it escapes identically to `{{ }}`.
@@ -120,8 +147,11 @@ cd tests/e2e
 # Bring up the docker stack (~2 min first time)
 npm run start
 
-# Run the full suite headless (~6 min, 590+ tests)
+# Run the full suite headless (~9 min, 760+ tests)
 npm run tests
+
+# Just the module-system group
+npm run tests -- --spec 'tests/cypress/e2e/modules/**/*.cy.js'
 
 # Run one spec
 npm run tests -- --spec 'tests/cypress/e2e/core/maintenance.cy.js'
@@ -186,6 +216,7 @@ Call sites that feed the bar:
 | `Connection::exec` | `DebugBarBridge::collectQuery(...)` | `QueryCollector` |
 | `CanRenderView::render` | `DebugBarBridge::collectTemplate(...)` | `TemplateCollector` |
 | `LoggerFactory::getOrCreateLogger` | `DebugBarBridge::collectLogger(...)` | `MonologCollector` (a Monolog handler) |
+| `Registry::find` / `Registry::files` | `DebugBarBridge::collectResolution(...)` | `ResolutionCollector` (lookup provenance: userspace / module / framework) |
 
 Internal-query filtering uses source tagging: models that mark themselves with the `IsInternalModel` trait set `isInternalModel = true`, and `Connection::exec` records the calling model on the connection before the query runs. `QueryCollector::addQuery` then drops queries from internal models when `debugbar_hide_internal_queries = true` (default). Direct `db()->exec(...)` calls have no calling model and are always shown.
 
@@ -207,7 +238,12 @@ docker exec application php index.php <command>
 | `db:status` | Show migration status |
 | `db:unlock-migration` | Release a stuck migration lock |
 | `info:startup` | Print framework startup banner (no side effects — safe in tests) |
+| `module:setup` | Append-only merge of missing module ini defaults into the app ini |
 | `testing:coverage:start` / `:stop` | Bracket a coverage session |
+
+Convention commands from `app/Commands/` (userspace and modules) appear next to these in `list`;
+each is a global class named like its file, extending the Symfony `Command` class. On a
+command-name collision the userspace copy wins, then modules in order, then the framework.
 
 See [Console Commands](../../core-features/console-commands.md) for full flags.
 
@@ -231,7 +267,7 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 
 ## Migrations
 
-Framework migrations live in `src/IncludedComponents/database/Migration/` and ship with the framework. Project migrations live in `app/Database/migrations`. See [Migrations](../../core-features/migrations/index.md) for the file/filename conventions and CLI commands.
+Framework migrations live in `src/IncludedComponents/database/Migration/` and ship with the framework. Project migrations live in `app/Database/migrations`; module migrations join the run as part of the external set (like the framework's). Executed state is keyed on the basename, so `db:migrate`/`db:sync` abort on duplicate basenames anywhere in the assembled set: prefix module migration filenames with the module name. See [Migrations](../../core-features/migrations/index.md) for the file/filename conventions and CLI commands.
 
 **Bundled migrations must be idempotent.** They may already be partially applied on consumer projects (manual schema work, partial sync state, replays after a recovery) and re-running must not fail. Concretely:
 
@@ -249,3 +285,5 @@ The `z_version` table prevents re-execution under normal flow, but the rule stil
 - **Multiple PHP versions in CI.** Don't rely on a feature available only in PHP 8.4+ without checking the matrix.
 - **`config()` is unavailable before bootstrap.** Anything called from `MaintenanceHandler::gate()` must already have configuration loaded; anything earlier must read INI directly.
 - **Cypress flake.** Re-run a failing suite once before opening an issue, try to fix the flakiness if possible.
+- **The sample modules are part of the e2e app.** `tests/e2e/modules/{guestbook,theme}` are installed on every run; a red `modules/` spec usually means a Registry or precedence regression, not a spec problem. Never "fix" one by renaming sample files to dodge a collision.
+- **Convention classes are global.** Controllers, models, and commands from userspace and modules share one global class namespace; the first include wins and `class_exists` guards prevent redeclaration fatals. Name module classes with a module prefix unless shadowing is intended.

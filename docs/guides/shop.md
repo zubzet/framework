@@ -1,7 +1,7 @@
 # Shop Application
-In the [last guide](library), we explored how to enhance your website's security by implementing roles and permissions to restrict user access effectively.
+In the [last guide](library.md), we explored how to enhance your website's security by implementing roles and permissions to restrict user access effectively.
 
-In this guide, we’ll focus on handling backend requests in your application. Using a Shop example, we will demonstrate how to implement functionality for removing data from the database, triggered by a delete button on the page. This will provide you with the foundation for managing interactive actions securely and efficiently.
+In this guide, we’ll focus on handling [backend requests](../frontend-integration/backend-requests.md) in your application. Using a Shop example, we will demonstrate how to implement functionality for removing data from the database, triggered by a delete button on the page. This will provide you with the foundation for managing interactive actions securely and efficiently.
 
 ### Resources
 <details>
@@ -425,7 +425,7 @@ We then delete the product by calling the `deleteProduct` method in the `ShopMod
 ?>
 ```
 
-Finally, we send a response back to the frontend. The framework provides several response methods, such as:  
+Finally, we send a response back to the frontend. The framework provides several [response methods](../api/classes/ZubZet-Framework-Message-Response.html), such as:  
 
 - `$res->success()`  Indicates the request was successful.
 - `$res->error()` Indicates the request failed.
@@ -457,7 +457,7 @@ In this case, since the request is successful, we use `$res->success()` and retu
 ?>
 ```
 
-This ensures a clear response is sent to the frontend, confirming whether the deletion was successful, and prevents unnecessary processing after the response. For additional response options, refer to the [REST API documentation](../core-features/rest-api).
+This ensures a clear response is sent to the frontend, confirming whether the deletion was successful, and prevents unnecessary processing after the response. For additional response options, refer to the [REST API documentation](../core-features/rest-api.md).
 
 ## Why Set `active = 0` Instead of Deleting the Product from the Database?
 The `deleteProduct` function in our `ShopModel` is implemented as follows:

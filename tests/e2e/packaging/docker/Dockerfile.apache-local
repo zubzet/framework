@@ -9,5 +9,10 @@ RUN usermod -u "${USER_UID}" www-data \
  && groupmod -g "${USER_UID}" www-data \
  && chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
 
+# Trust the e2e cluster's CA like production trusts a public authority:
+# db_ssl = true then verifies with no further configuration.
+COPY tls/ca.crt /usr/local/share/ca-certificates/zubzet-e2e-ca.crt
+RUN update-ca-certificates
+
 WORKDIR /var/www/html
 USER www-data

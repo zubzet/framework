@@ -104,6 +104,27 @@ describe('DebugBar', () => {
         });
     });
 
+    describe('ResolutionCollector', () => {
+        it('labels a userspace controller and model resolution', () => {
+            cy.visit("/Core/modelselectline");
+            pageHtml().should('include', '"resolutions"');
+            pageHtml().should('include', 'controllers: CoreController');
+            pageHtml().should('include', 'userspace');
+        });
+
+        it('labels a module resolution with the package name', () => {
+            cy.visit("/Guestbook/index");
+            pageHtml().should('include', 'controllers: GuestbookController');
+            pageHtml().should('include', 'module:zubzet\\/example-guestbook');
+        });
+
+        it('labels loaded route files with their origin', () => {
+            cy.visit("/Core/render");
+            pageHtml().should('include', 'routes: DefaultRoutes.php');
+            pageHtml().should('include', 'framework');
+        });
+    });
+
     describe('Gating', () => {
         // The bar must NEVER render outside execution_type=test - leaking SQL, params,
         // log context and traceIds into a prod page is a privacy/security regression.

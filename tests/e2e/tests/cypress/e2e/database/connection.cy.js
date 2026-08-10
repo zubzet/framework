@@ -158,6 +158,124 @@ describe('Database/Connection', () => {
         });
     });
 
+    // The Galera nodes serve an encrypted transport with a certificate from
+    // the suite's own CA, trusted by the application image's system store
+    // (Dockerfile.apache-local) the way production trusts a public issuer.
+    // These cases prove db_ssl actually changes the transport, and that the
+    // certificate is really verified.
+    describe('TLS', () => {
+        it('connects in plaintext unless configured otherwise', () => {
+            cy.request('/ConnectionProbe/tlsTransport').then((res) => {
+                expect(res.body.cipher, 'Ssl_cipher').to.eq('');
+                expect(res.body.version, 'Ssl_version').to.eq('');
+            });
+        });
+
+        it('encrypts and verifies with db_ssl = true alone (system trust store)', () => {
+            cy.request('/ConnectionProbe/tlsVerified').then((res) => {
+                expect(res.body.connected, res.body.error).to.eq(true);
+                expect(res.body.cipher, 'Ssl_cipher').to.not.eq('');
+                expect(res.body.version, 'Ssl_version').to.match(/^TLSv1\.[23]$/);
+            });
+        });
+
+        // Without this one the case above would prove nothing: mysqli
+        // accepts any certificate when it is given no authority, so an
+        // implementation that never resolves one would pass just as happily.
+        it('refuses an endpoint the certificate does not name', () => {
+            cy.request('/ConnectionProbe/tlsWrongHost').then((res) => {
+                expect(res.body.connected, 'connected despite a certificate for another host').to.eq(false);
+                expect(res.body.error, 'a verification failure').to.match(/certificate|SSL/i);
+            });
+        });
+
+        it('rejects a host:port dbhost with a pointer to dbport', () => {
+            cy.request('/ConnectionProbe/tlsHostWithPort').then((res) => {
+                expect(res.body.connected).to.eq(false);
+                expect(res.body.error).to.match(/dbport/);
+            });
+        });
+
+        // The production setting: the cluster rejects every unencrypted
+        // client, so an application that fails to negotiate TLS cannot work.
+        describe('against a cluster that requires encrypted transport', () => {
+            const NODES = ['galera1', 'galera2', 'galera3'];
+
+            // Applies to new connections only, so requests in flight are
+            // unaffected.
+            const requireSecureTransport = (value) => {
+                NODES.forEach((node) => {
+                    cy.exec(
+                        `docker exec ${node} mariadb -uroot -proot_password ` +
+                        `-e "SET GLOBAL require_secure_transport = ${value}"`,
+                        { timeout: 15000 }
+                    );
+                });
+            };
+
+            before(() => {
+                cy.saveConfigBackup();
+                cy.setConfigSetting('db_ssl', 'true');
+                // The pool ignores the transport, so a worker's pooled
+                // plaintext connection would survive the db_ssl flip; fresh
+                // connections make every request negotiate TLS.
+                cy.setConfigSetting('db_persistent', 'false');
+                requireSecureTransport('ON');
+            });
+
+            after(() => {
+                requireSecureTransport('OFF');
+                cy.restoreConfigBackup();
+            });
+
+            it('serves requests over the encrypted transport', () => {
+                cy.request('/ConnectionProbe/tlsTransport').then((res) => {
+                    expect(res.body.cipher, 'Ssl_cipher').to.not.eq('');
+                    expect(res.body.version, 'Ssl_version').to.match(/^TLSv1\.[23]$/);
+                });
+            });
+
+            // switchUser() re-opens the connection, so this covers every
+            // later (re)connect, including the failover one, carrying TLS.
+            it('carries TLS through a reconnect', () => {
+                cy.request('/ConnectionProbe/switchUser').then((res) => {
+                    expect(res.body.during).to.match(/^root@/);
+                    expect(res.body.after).to.match(/^app@/);
+                });
+            });
+
+            it('runs migrations over the encrypted transport', () => {
+                // Migration commands connect through Doctrine DBAL, a
+                // separate connection that must carry the same settings.
+                // Reporting the lock status at all means that connection was
+                // established; without TLS it dies in the driver instead.
+                // db:status exits non-zero whenever the lock is open, so the
+                // output is what is asserted on, not the exit code.
+                cy.exec('docker exec application php index.php db:status', {
+                    timeout: 60000,
+                    failOnNonZeroExit: false,
+                }).then(({ stdout, stderr }) => {
+                    expect(stdout, `db:status did not reach the database: ${stderr}`)
+                        .to.match(/Migration Lock Status/);
+                });
+            });
+        });
+    });
+
+    describe('db_persistent', () => {
+        it('reuses the worker connection instead of handshaking again', () => {
+            cy.request('/ConnectionProbe/persistentReuse').then((res) => {
+                const [first, second] = res.body.persistent;
+                expect(second, 'second connection reused the first session').to.eq(first);
+
+                // Same probe without the setting: proof the reuse above comes
+                // from db_persistent and not from how the probe connects.
+                const [freshFirst, freshSecond] = res.body.fresh;
+                expect(freshSecond, 'fresh connections are separate sessions').to.not.eq(freshFirst);
+            });
+        });
+    });
+
     // Keeps the test-helper at 100% - every other ConnectionProbe action
     // routes a throwing closure through catchThrowableMessage, leaving
     // the no-throw branch unexercised without this probe.

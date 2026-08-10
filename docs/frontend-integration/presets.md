@@ -1,5 +1,5 @@
 # Z Preset: Login and Register
-The default JavaScript API of this framework (which is included in all views using a properly setup layout) contains presets for some core functionality of a web page.
+The default JavaScript API of this framework, the bundled Z.js script (which is included in all [views](../core-features/views.md) using a properly setup [layout](../core-features/layouts.md)), contains presets for some core functionality of a web page.
 
 For these two examples it is important that the default loginController is used.
 ## Creating a login

@@ -1,7 +1,7 @@
 # Layout Guide
-In the [previous guide](todo), we explored how to create and manage forms effectively.
+In the [previous guide](todo.md), we explored how to create and manage forms effectively.
 
-In this guide, we'll focus on using **layouts**, a powerful feature in the ZubZet framework. Layouts help you structure your application by organizing your website into distinct sections, such as a **Main Page** and an **Admin Panel**, ensuring a consistent look and feel across multiple pages.
+In this guide, we'll focus on using **[layouts](../core-features/layouts.md)**, a powerful feature in the ZubZet framework. Layouts help you structure your application by organizing your website into distinct sections, such as a **Main Page** and an **Admin Panel**, ensuring a consistent look and feel across multiple pages.
 
 ### Resources
 <details>
@@ -40,7 +40,7 @@ view
 To start working with permissions, we first need the basic structure of our application. This guide provides pre-built files in the [Resources](#resources) section, including templates for controllers and views. Using these resources ensures an organized setup and allows us to focus on implementing functionality and layouts.
 
 ## Creating a Layout
-Layouts in the ZubZet framework are defined as Blade templates within the `z_views` folder. A layout is just the page's HTML shell with `@yield` placeholders where the view's sections are inserted.
+Layouts in the ZubZet framework are defined as [Blade templates](../core-features/views.md) within the `z_views` folder. A layout is just the page's HTML shell with `@yield` placeholders where the view's sections are inserted.
 
 You can add your HTML and framework-related logic within this structure.  
 For instance:
@@ -111,4 +111,4 @@ The framework's default layout, located at `z_views/layout/default_layout.blade.
 ## Next Guide
 In the next guide, we will learn how to send emails and configure our SMTP server.
 
-[Email](email)
+[Email](email.md)

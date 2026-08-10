@@ -1,5 +1,5 @@
 # Using Z.Request
-The default JavaScript API of this framework does have a function to send asynchronous requests to the server and get data back.
+The default JavaScript API of this framework does have a function to send asynchronous requests to the server and get data back. `Z.Request` is part of Z.js, the framework's bundled frontend script, which is included automatically in every properly set up [layout](../core-features/layouts.md).
 ## Front-end
 ```js
 $(".delete-employee").click(function() {
@@ -15,7 +15,7 @@ $(".delete-employee").click(function() {
     });
 });
 ```
-`Z.Request.action` takes three parameters. The first one is the identifier of the action as string. The second is a object containing post parameters. The third is a callback which only parameter is the REST response of the server.
+`Z.Request.action` takes three parameters. The first one is the identifier of the action as string. The second is a object containing post parameters. The third is a callback which only parameter is the [REST response](../core-features/rest-api.md) of the server.
 ## Back-end
 ```php
 public function action_list(Request $req, Response $res) {
@@ -30,4 +30,4 @@ public function action_list(Request $req, Response $res) {
     return $res->render("employee/list");
 }
 ```
-`$req->isAction()` detects if this Request was initiated by an async action call with a specified identifier. Note that these actions are not the same as the ones in the controller. They work a level higher. `$res->generateRest` will create a parsable answer for the client.
+[`$req->isAction()`](../api/classes/ZubZet-Framework-Message-Request.html#method_isAction) detects if this Request was initiated by an async action call with a specified identifier. Note that these actions are not the same as the ones in the controller. They work a level higher. [`$res->generateRest`](../api/classes/ZubZet-Framework-Message-Response.html#method_generateRest) will create a parsable answer for the client.

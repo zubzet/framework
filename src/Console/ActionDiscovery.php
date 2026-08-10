@@ -24,6 +24,11 @@
             foreach((new \DirectoryIterator($directory)) as $file) {
                 if("php" !== $file->getExtension()) continue;
 
+                // A same-named class from an earlier root (userspace shadowing
+                // a module) is already declared; including this copy would be
+                // a fatal redeclaration. First loaded wins, like the Router.
+                if(class_exists($file->getBasename(".php"), false)) continue;
+
                 // Find the class of the file
                 $classesBefore = get_declared_classes();
                 include_once $file->getPathname();

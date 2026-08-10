@@ -18,7 +18,7 @@ By centralizing these processes, the system provides several key advantages:
 
 ## Available Commands
 
-The following commands are integrated into the ZubZet CLI to manage your database lifecycle efficiently.
+The following commands are integrated into the [ZubZet CLI](../console-commands.md) to manage your database lifecycle efficiently.
 
 ### Import
 
@@ -128,7 +128,7 @@ The Migration system supports **two different file formats**, which can be mixed
     For advanced logic, ZubZet supports **PHP-based migrations**. These files allow you to use the Schema QueryBuilder and conditional logic.
 
     **Class Structure:**  
-    Every PHP migration must extend the base `Migration` class and implement the `execute()` method.
+    Every PHP migration must extend the base [`Migration`](../../api/classes/ZubZet-Framework-Database-Migration-Migration.html) class and implement the `execute()` method.
 
     ```php
     use ZubZet\Framework\Database\Migration\Migration;
@@ -319,7 +319,7 @@ The Seed system supports **two different file formats**, which can be mixed free
 
 - **PHP Seed Files (`.php`)**
 
-    For complex data generation or dynamic logic, ZubZet supports **PHP-based seed files**. These files must extend the base `Seed` class.
+    For complex data generation or dynamic logic, ZubZet supports **PHP-based seed files**. These files must extend the base [`Seed`](../../api/classes/ZubZet-Framework-Database-Migration-Seed.html) class.
 
     **Class Structure:**  
     Each seed class must implement a `run()` method where all database operations are defined.
@@ -344,9 +344,9 @@ The Seed system supports **two different file formats**, which can be mixed free
 
 
     **QueryBuilder Usage:**  
-    PHP seed files utilize **CakePHP\Database** for building queries.
+    PHP seed files utilize **[CakePHP\Database](https://book.cakephp.org/4.x/orm/query-builder.html)** for building queries.
 
-    For more detailed information about the Query Builder, see: [QueryBuilder](/docs/core-features/query-builder/)
+    For more detailed information about the Query Builder, see: [QueryBuilder](../query-builder/index.md)
 
     **Registering Queries**  
     To ensure reliable execution, every query **must be explicitly registered** within the system.

@@ -6,11 +6,13 @@
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Registry\Registry;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Migrate extends Command {
 
         use DatabaseConnection;
+        use Traits\ChecksDuplicateBasenames;
 
         protected function configure(): void {
             $this->setName("db:migrate");
@@ -97,14 +99,24 @@
 
             $zubzetMigrations = model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false);
 
+            $moduleMigrations = [];
+            foreach(Registry::moduleRoots("migrations") as $moduleRoot) {
+                $moduleMigrations = array_merge($moduleMigrations, model("z_migration")->getFiles($moduleRoot, false));
+            }
+
+            // "External" = not authored in this app: framework + module migrations.
+            $externalMigrations = array_merge($moduleMigrations, $zubzetMigrations);
+
             $fileMigrationsRaw = model("z_migration")->getFiles("./app/Database/migrations");
 
             if(!$excludeExternal) {
                 $fileMigrationsRaw = array_merge(
                     $fileMigrationsRaw,
-                    $zubzetMigrations
+                    $externalMigrations
                 );
             }
+
+            if($this->rejectDuplicateBasenames($fileMigrationsRaw, $out)) return 1;
 
             $fileMigrations = model("z_migration")->sortMigrations($fileMigrationsRaw);
 
@@ -122,8 +134,8 @@
                     // Only check files older than the last executed migration
                     if($fileMigration->date > $lastDbMigration->date) continue;
 
-                    $isZubZetMigration = in_array($fileMigration->filename, $zubzetMigrations);
-                    if($isZubZetMigration && !$enforceExternalTimeline) continue;
+                    $isExternalMigration = in_array($fileMigration->filename, $externalMigrations);
+                    if($isExternalMigration && !$enforceExternalTimeline) continue;
 
                     // If it exists in DB, it's fine
                     if(isset($dbLookup[$fileMigration->name])) continue;

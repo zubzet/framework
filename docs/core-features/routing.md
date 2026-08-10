@@ -1,6 +1,6 @@
 # Routing in ZubZet
 
-Since version **1.0.0**, ZubZet not only includes the internal routing system ([controller-based actions](/docs/core-features/controllers-and-actions)) but also provides a route definition system.  
+Since version **1.0.0**, ZubZet not only includes the internal routing system ([controller-based actions](controllers-and-actions.md)) but also provides a route definition system.  
 The routing definition system is powered by [FastRoute](https://github.com/nikic/FastRoute). *(ZubZet 1.2.0 switched the underlying engine from Slim to FastRoute — your route definitions are unchanged.)*
 
 ---
@@ -30,7 +30,7 @@ Route::{method}({endpoint}, [{ControllerClass}::class, {ControllerAction}]);
 
 ### Explanation
 
-1. **`method`** → One of the supported HTTP methods:
+1. **`method`** → One of the supported [HTTP methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods):
 
     - `any(endpoint, action)` → Match any HTTP method
     - `get(endpoint, action)` → Match `GET` requests
@@ -180,7 +180,7 @@ To access a parameter inside a controller action, you can use:
 $req->getRouteParameter("key");
 ```
 
-If you call `$req->getRouteParameter()` without passing a key, it will return **all route parameters** as an array.
+If you call [`$req->getRouteParameter()`](../api/classes/ZubZet-Framework-Message-Request.html#method_getRouteParameter) without passing a key, it will return **all route parameters** as an array.
 
 ### Example
 

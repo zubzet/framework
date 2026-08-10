@@ -4,13 +4,13 @@ ZubZet now includes significantly enhanced **access control and permission capab
 The system is built to provide a **flexible and extensible authorization workflow**, improved **developer ergonomics**, and full support for **user-based and role-based permissions**.
 
 At its core, the access control system introduces two primary domain objects: **User** and **Role**.
-Permissions can be assigned directly to users or indirectly through roles. All permission checks automatically resolve the **combined permission set**.
+[Permissions](permission-system.md) can be assigned directly to users or indirectly through roles. All permission checks automatically resolve the **combined permission set**.
 
 ---
 
 ## User Object
 
-The `User` object represents an application user and exposes a comprehensive API for retrieval, lifecycle management, and permission handling.
+The [`User`](../api/classes/ZubZet-Framework-Authentication-Permission-User.html) object represents an application user and exposes a comprehensive API for retrieval, lifecycle management, and permission handling.
 
 ### User Retrieval
 
@@ -112,7 +112,7 @@ User attributes can be updated directly on the instance.
     $user->updateEmail(?string $email);
     ```
 
-* Updates the user’s password.
+* Updates the user’s [password](password-handling.md).
 
     ```php
     $user->updatePassword(string $password);
@@ -295,7 +295,7 @@ Permission checks always resolve the **complete permission set**.
 
 ## Role Object
 
-The `Role` object represents a named collection of permissions that can be assigned to users.
+The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html) object represents a named collection of permissions that can be assigned to users.
 
 ### Role Retrieval
 
@@ -459,7 +459,7 @@ The `Role` object represents a named collection of permissions that can be assig
 
 ## Organization Object
 
-The `Organization` object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique) and is soft-deletable like the other authentication objects.
+The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization.html) object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique) and is soft-deletable like the other authentication objects.
 
 ### Organization Retrieval
 
@@ -559,7 +559,7 @@ The `Organization` object represents a group of users. Users can belong to at mo
 
 ## Session Object
 
-The `Session` object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation.
+The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation.
 
 ### Session Retrieval
 

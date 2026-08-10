@@ -2,7 +2,7 @@
 ## URL Parameters
 When using virtual links, parameters as “subfolders” is a great way of transfering values, that are also very readable. See the following link schema as an example of what is meant by parametres within the virtual link: `controller/action/param0/param1/param2/...`
 ### Read the parameters using code
-To read the virtual url parameters use `$req->getParameters`. It works using an offset and a length, but can also use a value to compare against if the length is one.
+To [read the virtual url parameters](../api/classes/ZubZet-Framework-Message-Request.html#method_getParameters) use `$req->getParameters`. It works using an offset and a length, but can also use a value to compare against if the length is one.
 ### Examples
 Example URL:<br>
 `www.yourwebsite.com/{controller}/{action}/a/b/c`
@@ -45,18 +45,23 @@ public function action_employee(Request $req, Response $res) {
 ```
 
 ## GET, POST, COOKIES, FILE as a method
-The framework includes some extra functionality when it comes to the above mentioned features and you should use the framework instead of the traditional way. This is because the framework employes extra filtering and processing methods as well as error handling already for you.
+The framework includes some extra functionality when it comes to the above mentioned features and you should use the framework instead of the traditional way. This is because the framework employes extra filtering and processing methods as well as [error handling](error-handling.md) already for you.
 
 ### Getting POST and GET parameters
-`$req->getGet` and `$req->getPost` are methods to get form parameters. These also enable to set default parameters if some are not set.<br>
+`$req->getGet` and `$req->getPost` are [methods to get form parameters](../api/classes/ZubZet-Framework-Message-Input-CanRetrieveFromInput.html). These also enable to set default parameters if some are not set.<br>
 **Note:** Post parameters get decoded automatically if their values have the special prefix `<#decURI#>`. This decoding allows to transmit special characters.
 
 ### Cookies
 `$req->getCookie` gets a cookie. It has a second parameter to set a default if the cookie is not set.
 
-`$res->setCookie` has the same parameters as the native `setcookie` function of php. It should be used, because in the future may more logic build into the framework that deals with cookies.
+`$res->setCookie` has the [same parameters](https://www.php.net/manual/en/function.setcookie.php) as the native `setcookie` function of php. It should be used, because in the future may more logic build into the framework that deals with cookies.
 
 `$res->unsetCookie` is an advanced method to remove cookies from the client.
 
 ### File
 `$req->getFile` uses `$_FILE` like `$req->getPost` uses `$_POST`.
+
+## See also
+
+- [Aliases and virtual links](../advanced-features/aliases-and-virtual-links.md): shorter or alternative versions of your virtual links
+- [File uploads](../forms/file-uploads.md): validating and processing files received via `$req->getFile`

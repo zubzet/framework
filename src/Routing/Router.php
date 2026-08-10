@@ -7,6 +7,7 @@
     use FastRoute\RouteCollector;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Console\Application;
+    use ZubZet\Framework\Registry\Registry;
     use Symfony\Component\Console\Input\ArgvInput;
 
     trait Router {
@@ -80,12 +81,9 @@
                 // Initialize the Route class with the current collector.
                 Route::init($this, $collector);
 
-                // Retrieve all php files in the routes directory
-                $userRouteFiles = glob($this->routes . "/*.php");
-                $frameworkRouteFiles = glob($this->z_framework_root . "IncludedComponents/routes/*.php");
-
-                // Include each route file to register its routes
-                foreach(array_merge($userRouteFiles, $frameworkRouteFiles) as $file) {
+                // Retrieve all php files from every routes root
+                // (userspace, then modules in order, then framework).
+                foreach(Registry::files("routes") as $file) {
                     require_once $file;
                 }
             });
@@ -113,15 +111,15 @@
             }
 
             try {
-                $controllerFile = null;
-                if (file_exists($this->z_controllers . $controller . ".php")) {
-                    $controllerFile = $this->z_controllers . $controller . ".php";
-                } else if (file_exists($this->z_framework_root . "IncludedComponents/controllers/" . $controller . ".php")) {
-                    $controllerFile = $this->z_framework_root . "IncludedComponents/controllers/" . $controller . ".php";
-                }
+                $controllerFile = Registry::find("controllers", $controller);
 
                 if ($controllerFile !== null) {
-                    include_once($controllerFile);
+                    // Skip the include when the class already exists: a second
+                    // include of a same-named file from another root would be
+                    // a fatal redeclaration; first loaded wins for the request.
+                    if(!class_exists($controller, false)) {
+                        include_once($controllerFile);
+                    }
                 } else {
                     return $this->executePath(["error", "404"]);
                 }

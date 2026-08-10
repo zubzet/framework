@@ -1,7 +1,7 @@
 # Auto form validation and database updates
 This framework has the ability to create automatic generated forms with user feedback. These forms can be validated automatically on the server and if errors occur the feedback is sent back to the user. If no errors occur the data can be used to update a database table.
 ## Front-end
-To create the form on the frontend, use the Z.js library. An example form can be created with this code:
+To create the form on the frontend, use Z.js, the framework's bundled frontend script. It is served through the [asset proxy](../core-features/asset-proxy.md) and included automatically by the framework's default head component, so the global `Z` object is available in every properly set up [layout](../core-features/layouts.md). An example form can be created with this code:
 ```javascript
 var form = Z.Forms.create({dom: "form"});
 
@@ -28,10 +28,10 @@ The form is created with `Z.Forms.create`. The `dom` attribute takes the id of a
 | Attribute   | Description                                                                                                                                                                                                                                                                                                    |
 |-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`      | Corresponds to the name in the post request.                                                                                                                                                                                                                                                                   |
-| `type`      | The input type. Any valid HTML standard type is accepted, as well as `textarea`, `select`, `multi-select`, and `autocomplete`. This attribute does not affect server-side value parsing.                                                                                                                       |
+| `type`      | The input type. Any valid [HTML standard type](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input) is accepted, as well as `textarea`, `select`, `multi-select`, and `autocomplete`. This attribute does not affect server-side value parsing.                                                                                                                       |
 | `text`      | Label text for the input field.                                                                                                                                                                                                                                                                               |
 | `value`     | Default value for the input field. For `multi-select`, pass an array (e.g. `["1","4"]`) or `<?= json_encode([...]) ?>`.                                                                                                                                                                                       |
-| `food`      | Required for `select` and `multi-select` types. It defines the options available and is formatted as an array: `[{value: 1, text: "one"}, {value: 2, text: "two"}, ...]`. This array can be generated via `$controller->makeFood`.                                                                              |
+| `food`      | Required for `select` and `multi-select` types. It defines the options available and is formatted as an array: `[{value: 1, text: "one"}, {value: 2, text: "two"}, ...]`. This array can be generated via [`$controller->makeFood`](../api/classes/ZubZet-Framework-Core-Controller.html#method_makeFood).                                                                              |
 | `required`  | Specifies whether the field is required. When set to `true`, the input must be filled before form submission.                                                                                                                                                                                                  |
 | `width`     | Defines the width of the form element in 1/12 units of the total width. Effective on medium or larger devices. On small devices, the width is always 100%.                                                                                                                                                      |
 | `attributes`| Allows adding additional attributes for the generated input element (e.g., `min`, `max` for number inputs). Example usage: `attributes: {'min': 1, 'max': 10}`.                                                                                                                                                  |
@@ -102,7 +102,7 @@ form.setValues({ first_name: "Ada" });  // set the named fields
 form.setValues(data, { resetUnknown: true }); // reset fields not present in data first
 ```
 
-CED fields are skipped by `getValues` / `setValues`; their data round-trips through the normal submit instead.
+[CED](ced-validation.md) fields are skipped by `getValues` / `setValues`; their data round-trips through the normal submit instead.
 
 Keys passed to `setValues` that don't match any field are kept on `form.meta` and returned by `getValues`, but are never submitted to the backend. This lets a value like an id ride along with the form data:
 
@@ -128,7 +128,7 @@ var form = Z.Forms.create({
 
 ## Back-end
 When the form is submitted, it will send an asynchronous post request to the current action specified by the current users url.
-To check in the action if the current request is from a form, `$req->hasFormData()` can be used. This is example code for handling a form:
+To check in the action if the current request is from a form, [`$req->hasFormData()`](../api/classes/ZubZet-Framework-Message-Request.html#method_hasFormData) can be used. This is example code for handling a form:
 
 ### **Backend validation**
 ```php
@@ -150,11 +150,11 @@ if ($req->hasFormData()) {
 
 `$req->hasFormData()` checks if there is any data in the request.
 
-`$req->validateForm()` validates the values.
+[`$req->validateForm()`](../api/classes/ZubZet-Framework-Form-Validation-CanValidateForm.html#method_validateForm) validates the values.
 As the first parameter it takes an array of fields to validate. To these field, rules can be attached.
 
 `$formResult->hasErrors` returns true or false depended on the validation result of `$req->validateForm()`.
-If the validation fails, `$res->formErrors($formResult->errors)` will return the errors to the frontend, where they will be displayed.
+If the validation fails, [`$res->formErrors($formResult->errors)`](../api/classes/ZubZet-Framework-Message-Response.html#method_formErrors) will return the errors to the frontend, where they will be displayed.
 
 ### **Rules on array values (multi-select)**
 
@@ -176,14 +176,14 @@ $formResult = $req->validateForm([
 
 ### **Saving functions**
 
-Success will exit the current action. So before calling it the data should be processed by a model or `$res->updateDatabase()`.
-Update database will take the result object from the form validation to get the names in the database. If the name in the database column and the post differ, the database name can be set by the second parameter of the `constructor of FormField`.
+Success will exit the current action. So before calling it the data should be processed by a model or [`$res->updateDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_updateDatabase).
+Update database will take the result object from the form validation to get the names in the database. If the name in the database column and the post differ, the database name can be set by the second parameter of the [`constructor of FormField`](../api/classes/ZubZet-Framework-Form-Validation-Field.html#method___construct).
 
-`$res->insertDatabase()` can also be used to process the data. This method will create a dataset in a table given as argument. It works similar to `$res->updateDatabase()`.
+[`$res->insertDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_insertDatabase) can also be used to process the data. This method will create a dataset in a table given as argument. It works similar to `$res->updateDatabase()`.
 
 
 ### **insertOrUpdateDatabase Example**
-`$req->insertOrUpdateDatabase()` Adds a logic to check if the dataset already exists.
+[`$req->insertOrUpdateDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_insertOrUpdateDatabase) Adds a logic to check if the dataset already exists.
 ```php
 public function action_manage(Request $req, Response $res) {
     $req->checkPermission("employee.edit");
@@ -322,7 +322,7 @@ public function action_manage(Request $req, Response $res) {
     - checkbox
 
 ### Checkbox
-The `checkbox` type renders with a Bootstrap `form-check` layout: the box sits to the left of its label, and clicking the label toggles the box. `text` becomes the label.
+The `checkbox` type renders with a [Bootstrap](https://getbootstrap.com/docs/4.6/components/forms/) `form-check` layout: the box sits to the left of its label, and clicking the label toggles the box. `text` becomes the label.
 
 ```js
 form.createField({

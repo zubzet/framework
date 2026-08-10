@@ -1,0 +1,11 @@
+{
+    "name": "zubzet/example-theme",
+    "type": "zubzet-module",
+    "version": "0.1.0",
+
+    "autoload": {
+        "psr-4": {
+            "Module\\Theme\\": "app/"
+        }
+    }
+}

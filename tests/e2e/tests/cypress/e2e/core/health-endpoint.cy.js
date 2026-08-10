@@ -4,11 +4,16 @@ describe('Health Endpoint', () => {
 
     after(() => cy.restoreConfigBackup());
 
+    // "database" is the cluster endpoint (haproxy in front of Galera), so
+    // readiness is probed the way a client experiences it: through the
+    // health endpoint itself.
     const waitForDatabase = (attempt = 0) => {
-        cy.exec('docker exec database healthcheck.sh --connect', {
-            failOnNonZeroExit: false,
-        }).then((result) => {
-            if(result.exitCode === 0) return;
+        cy.request({
+            method: 'GET',
+            url: '/_zubzet/health',
+            failOnStatusCode: false,
+        }).then((res) => {
+            if(res.status === 200) return;
             expect(attempt, 'database did not come back in time').to.be.lessThan(60);
             cy.wait(1000);
             waitForDatabase(attempt + 1);

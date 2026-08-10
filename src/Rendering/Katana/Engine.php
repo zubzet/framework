@@ -5,15 +5,17 @@
     use Blade\View;
     use Blade\Blade;
     use Blade\Config;
+    use ZubZet\Framework\Registry\Registry;
 
     /**
      * Thin adapter around the Katana Blade engine.
      *
-     * The framework's two view roots are registered as an ordered finder chain (userspace
-     * overrides framework), so Katana resolves the entry view by name, its @extends($layout)
-     * chain, @includes and <x-components> (including the framework's own components/ under the
-     * framework root) with the same userspace-then-framework precedence the framework uses
-     * everywhere. A fresh Blade per render keeps @section state from leaking across renders.
+     * The view roots (userspace, installed modules in order, framework) are registered as an
+     * ordered finder chain via the Registry, so Katana resolves the entry view by name, its
+     * @extends($layout) chain, @includes and <x-components> (including the framework's own
+     * components/ under the framework root) with the same userspace-then-modules-then-framework
+     * precedence the framework uses everywhere. A fresh Blade per render keeps @section state
+     * from leaking across renders.
      *
      * Full rationale: docs/contributing/agents/working-with-agents.md (Render engine).
      */
@@ -29,15 +31,12 @@
         public static function render(string $view, string $layout, array $data): View {
             $config = new Config(self::cachePath());
 
-            // Ordered view roots: userspace first, framework second.
-            $viewPaths = [
-                zubzet()->z_views,
-                zubzet()->z_framework_root . "IncludedComponents/views",
-            ];
+            // Ordered view roots: userspace first, then modules, framework last.
+            $viewPaths = Registry::paths("views");
 
-            // Prioritize framework views for testing
+            // Prioritize framework views for testing: move the framework root first.
             if(self::$prioritizeFrameworkViews) {
-                $viewPaths = array_reverse($viewPaths);
+                array_unshift($viewPaths, array_pop($viewPaths));
             }
 
             foreach($viewPaths as $viewPath) {

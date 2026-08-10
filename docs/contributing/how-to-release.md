@@ -5,7 +5,7 @@ version, for example `v1.2.0-RC2`. It assumes push access to `upstream`
 (`zubzet/framework`) and an authenticated [`gh`](https://cli.github.com/) CLI.
 
 For the everyday feature-branch flow and the `develop` / `main` model, see
-[How To Contribute](how-to-contribute).
+[How To Contribute](how-to-contribute.md).
 
 ## Branch & tag model
 
@@ -115,9 +115,11 @@ Know what each push sets off (see `.github/workflows/`):
   workflow file).
 - **`docs.yml`**:
     - push to **`main`** deploys docs to the **`unstable`** channel.
-    - push of a **`v*.*.*` tag** deploys that version's docs **and promotes it to
-      `latest` / default** on the public docs site. This fires for RC tags too, so keep it
-      in mind when tagging a pre-release.
+    - push of any **`v*.*.*` tag** deploys that version's docs and points the
+      **`edge`** alias at it (`edge` = newest tag of any kind, pre-releases included).
+    - only a **stable** tag (no `-RCn` / `-alphaN` suffix) also takes the **`latest`**
+      alias and the site default. Pre-release tags land in the version picker without
+      changing what visitors see by default.
 
 ## Gotchas
 

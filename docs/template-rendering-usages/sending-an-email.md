@@ -1,13 +1,13 @@
 # Sending an email
-To send an email there are two methods in response called `sendEmail()` and `sendEmailToUser()`.
+To [send an email](../guides/email.md) there are two methods in [response](../api/classes/ZubZet-Framework-Message-Response.html) called `sendEmail()` and `sendEmailToUser()`.
 
 `$subject` can be an array to serve subjects for multiple languages.
-`$document` is the path to a view. Any view can be used as a mail. But it is wise to create extra ones, because script stuff won't work. Be careful not to leak data that only the requested account has access to.
+`$document` is the path to a [view](../core-features/views.md). Any view can be used as a mail. But it is wise to create extra ones, because script stuff won't work. Be careful not to leak data that only the requested account has access to.
 `$opt` are parameters to pass into the view. 
 
 This method uses `render()` internally.
 
-For this feature to work a mail address needs to be configured in the [booter settings](../core-features/configuration) and a SMTP service needs to be available. PHP need to be setup correctly too.
+For this feature to work a mail address needs to be configured in the [booter settings](../core-features/configuration.md) and a SMTP service needs to be available. PHP need to be setup correctly too.
 
 Example code for sending a mail:
 ```php

@@ -6,11 +6,13 @@
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Registry\Registry;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Sync extends Command {
 
         use DatabaseConnection;
+        use Traits\ChecksDuplicateBasenames;
 
         protected function configure(): void {
             $this->setName("db:sync");
@@ -129,11 +131,20 @@
             $fileMigrationsRaw = model("z_migration")->getFiles("./app/Database/migrations");
 
             if($includeExternal) {
+                // "External" = not authored in this app: framework + module migrations.
+                $externalMigrations = model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false);
+                foreach(Registry::moduleRoots("migrations") as $moduleRoot) {
+                    $externalMigrations = array_merge($externalMigrations, model("z_migration")->getFiles($moduleRoot, false));
+                }
+
                 $fileMigrationsRaw = array_merge(
                     $fileMigrationsRaw,
-                    model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false)
+                    $externalMigrations
                 );
             }
+
+            if($this->rejectDuplicateBasenames($fileMigrationsRaw, $out)) return 1;
+
             $fileMigrations = model("z_migration")->sortMigrations($fileMigrationsRaw);
 
             $executedNames = array_map(fn($m) => $m->name, $dbMigrations);

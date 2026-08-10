@@ -6,6 +6,7 @@
     use ZubZet\Framework\ErrorHandling\DebugBar\Collectors\QueryCollector;
     use ZubZet\Framework\ErrorHandling\DebugBar\Collectors\MonologCollector;
     use ZubZet\Framework\ErrorHandling\DebugBar\Collectors\TemplateCollector;
+    use ZubZet\Framework\ErrorHandling\DebugBar\Collectors\ResolutionCollector;
 
     use DebugBar\StandardDebugBar;
     use Composer\InstalledVersions;
@@ -27,6 +28,7 @@
             $debugBar->addCollector(new QueryCollector);
             $debugBar->addCollector(new TemplateCollector);
             $debugBar->addCollector(new MonologCollector);
+            $debugBar->addCollector(new ResolutionCollector);
 
             // COnfigure rendering
             $renderer = $debugBar->getJavascriptRenderer();

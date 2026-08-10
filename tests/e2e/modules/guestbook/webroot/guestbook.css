@@ -1,0 +1,6 @@
+/* guestbook-css-marker */
+[data-test="guestbook-entry"] {
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid #4a76a8;
+    margin-bottom: 0.5rem;
+}

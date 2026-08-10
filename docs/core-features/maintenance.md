@@ -9,7 +9,7 @@ A standalone gate that runs immediately after configuration loads, before the lo
 | `enabled`  | Blocked                      | Pass through |
 | `full`     | Blocked                      | Blocked      |
 
-Set this mode in the settings file or as usual using an ENV variable.
+Set this mode in the [settings file](configuration.md) or as usual using an ENV variable.
 
 ```ini
 maintenance_mode = enabled
@@ -18,7 +18,7 @@ maintenance_mode = enabled
 Case-insensitive. Unknown values fall back to `disabled`.
 
 ## Bypass cookie
-In `soft` mode, requests with a `maintenance` cookie pass through. **The value is not validated**, so any value bypasses. Admins can set it via the admin panel. It expires after 24 hours.
+In `soft` mode, requests with a `maintenance` cookie pass through. **The value is not validated**, so any value bypasses. Admins can set it via the [admin panel](../z-admin/usage.md). It expires after 24 hours.
 
 ## CLI behavior
 In `full` mode, CLI commands write `Service Unavailable` to stderr and exit with code `1`. Use this to pause cron jobs alongside HTTP traffic.
@@ -34,4 +34,4 @@ A template is skipped if empty or if it contains `<?php` (the gate uses `file_ge
 The template is only used for HTTP responses. CLI hits always receive the bare `Service Unavailable` string regardless of mode.
 
 ## Admin panel
-`/z/maintenance` shows the current status and exposes a button to set the bypass cookie. Requires the `admin.maintenance` permission. Only reachable in `disabled` or `soft`-with-cookie; in `enabled` or `full` you must edit the INI directly to toggle off.
+`/z/maintenance` shows the current status and exposes a button to set the bypass cookie. Requires the `admin.maintenance` [permission](permission-system.md). Only reachable in `disabled` or `soft`-with-cookie; in `enabled` or `full` you must edit the INI directly to toggle off.

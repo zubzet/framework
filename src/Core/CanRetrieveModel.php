@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Core;
 
     use ZubZet\Framework\Core\Model;
+    use ZubZet\Framework\Registry\Registry;
     use ZubZet\Framework\Support\StaticCache;
 
     trait CanRetrieveModel {
@@ -24,30 +25,42 @@
 
             $model .= "Model";
 
-            // Cache key is the model name with "Model" suffix. Its for caching the model instance
-            // If the model is in a subdirectory, the cache key will be the model name with the subdirectory path.
-            // This is to avoid cache conflicts between models with the same name in different directories.
-            $cacheKey = $model;
-            $path = !is_null($dir) ? $dir : config("z_models");
-            $path .= "$model.php";
+            if(!is_null($dir)) {
+                // Explicit directory override: unchanged legacy behavior.
+                $path = $dir . "$model.php";
+                if(!file_exists($path)) {
+                    $path = config("z_framework_root") . "IncludedComponents/models/" . $model . ".php";
+                }
+                if(!file_exists($path)) {
+                    throw new \Exception("Model: $model does not exist!");
+                }
+            } else {
+                // Userspace -> modules -> framework; dot notation arrives as an
+                // explicit sub-path, so it probes exact locations per root.
+                $path = Registry::find("models", $model);
+                if(is_null($path)) {
+                    throw new \Exception("Model: $model does not exist!");
+                }
+            }
+
+            // Cache key is the resolved file, so equally named models from
+            // different roots can never alias to the wrong instance.
+            $cacheKey = $path;
 
             if(StaticCache::has("model", $cacheKey)) {
                 return StaticCache::get("model", $cacheKey);
             }
 
-            if(file_exists($path)) {
-                require_once $path;
-            } else {
-                $path = config("z_framework_root") . "IncludedComponents/models/" . $model . ".php";
-                if(!file_exists($path)) {
-                    throw new \Exception("Model: $model does not exist!");
-                }
-                require_once $path;
-            }
-
             // Only use the last part of the model name as the class Name
             $model = explode(DIRECTORY_SEPARATOR, $model);
             $model = array_pop($model);
+
+            // Skip the require when the class already exists: a second include
+            // of a same-named file from another root would be a fatal
+            // redeclaration; first loaded wins for the request.
+            if(!class_exists($model, false)) {
+                require_once $path;
+            }
 
             $modelInstance = new $model(db(), zubzet());
             return StaticCache::set("model", $cacheKey, $modelInstance);

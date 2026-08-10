@@ -6,7 +6,7 @@ To optimize developer experience and eliminate redundant boilerplate, **global h
 
 ### `zubzet()`
 
-Returns the main instance of the ZubZet framework.
+Returns the [main instance](../api/classes/ZubZet-Framework-ZubZet.html) of the ZubZet framework.
 
 **Syntax:** `zubzet()`
 
@@ -14,7 +14,7 @@ Returns the main instance of the ZubZet framework.
 
 ### `model()`
 
-Provides direct access to a specific model instance.
+Provides direct access to a specific [model](models.md) instance.
 
 **Syntax:** `model(string $modelName)`
 
@@ -33,7 +33,7 @@ model("Test")->onTest();
 
 ### `request()`
 
-Accesses the instance of the current request.
+Accesses the instance of the [current request](../api/classes/ZubZet-Framework-Message-Request.html).
 
 **Syntax:** `request()`
 
@@ -48,7 +48,7 @@ request()->getPost("POST_PARAMETER");
 
 ### `response()`
 
-Accesses the instance of the current response.
+Accesses the instance of the [current response](../api/classes/ZubZet-Framework-Message-Response.html).
 
 **Syntax:** `response()`
 
@@ -63,7 +63,7 @@ response()->sendEMail($to, $subject, $document);
 
 ### `config()`
 
-Retrieves a configuration value by its key.
+Retrieves a [configuration value](configuration.md) by its key.
 
 **Syntax:** `config(string $key, bool $useDefault = false, mixed $default = null)`
 
@@ -84,7 +84,7 @@ config("db_username");
 
 ### `user()`
 
-Returns the instance of the currently authenticated user.
+Returns the instance of the [currently authenticated user](../api/classes/ZubZet-Framework-Authentication-User.html).
 
 **Syntax:** `user()`
 
@@ -101,7 +101,7 @@ user()->userId;
 
 ### `db()`
 
-Provides the database instance for a specified connection.
+Provides the [database instance](../api/classes/ZubZet-Framework-Database-Connection.html) for a specified connection.
 
 **Syntax:** `db(string $connection = "default")`
 
@@ -126,7 +126,7 @@ Returns a Monolog logger instance for the given channel.
 
 * **$name**: The channel name. Defaults to `"app"` if omitted.
 
-Loggers are created on first use and cached for subsequent calls with the same name. See [Logging](core-features/logging.md) for full configuration details.
+Loggers are created on first use and cached for subsequent calls with the same name. See [Logging](logging.md) for full configuration details.
 
 **Example:**
 
@@ -140,7 +140,7 @@ logger("payments")->warning("Timeout", ["orderId" => $id]);
 
 ### `view()`
 
-Renders a view template directly.
+Renders a [view template](views.md) directly.
 
 **Syntax:** `view(string $document, array $opt = [], array $options = [])`
 
@@ -155,4 +155,20 @@ Renders a view template directly.
 ```php
 view("adminpanel/dashboard");
 
+```
+
+### `e()`
+
+Escapes a string for safe HTML output. It strips tags and then escapes the remaining special characters through the render engine, so its output matches what `{{ }}` produces in a [view](views.md).
+
+**Syntax:** `e(?string $value): ?string`
+
+* **$value**: The string to escape. `null` is passed through unchanged, so optional values can be escaped without an extra check.
+
+Use it whenever a value ends up in HTML outside of a template echo, for example in attributes built in PHP.
+
+**Example:**
+
+```php
+<a title="<?= e($opt["title"]) ?>">
 ```

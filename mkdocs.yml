@@ -7,7 +7,7 @@ site_description: A modular, prototyping speed oriented PHP framework.
 # Repository
 repo_name: zubzet/framework
 repo_url: https://github.com/zubzet/framework
-edit_uri: edit/main/docs/
+edit_uri: edit/develop/docs/
 
 # Copyright
 copyright: ZubZet contributors
@@ -107,8 +107,8 @@ nav:
         - Layouts: core-features/layouts
         - Permission System: core-features/permission-system
         - Password Handling: core-features/password-handling
-        - Localization: core-features/localization
         - Configuration: core-features/configuration
+        - Database Connection: core-features/database-connection
         - REST API: core-features/rest-api
         - Parameter Abstraction: core-features/parameter-abstraction
         - Routing: core-features/routing
@@ -142,6 +142,7 @@ nav:
     - Advanced Features:
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links
         - Commands: advanced-features/commands
+        - Modules: advanced-features/modules
     - API Reference: api/index.html
     - Guides:
         - Guest List: guides/guest-list
@@ -150,8 +151,10 @@ nav:
         - Todo: guides/todo
         - Layouts: guides/layout
         - Emails: guides/email
+        - Building A Module: guides/building-a-module
     - Contributing:
         - How To Contribute: contributing/how-to-contribute
         - How To Release: contributing/how-to-release
+        - Module System Architecture: contributing/module-system-architecture
         - Agents:
             - Working With Agents: contributing/agents/working-with-agents

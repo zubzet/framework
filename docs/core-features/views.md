@@ -1,12 +1,12 @@
 # Getting Started: Views
 
 ## What does a view do?
-A view contains the HTML the user should see, along with the CSS, images and JavaScript that page needs. Views do usually **not** contain a footer, navigation, header or other elements that belong to the overall layout of the page. For this, layouts should be used, as without a layout a view can't be rendered. Read more about layouts [here](layouts).
+A view contains the HTML the user should see, along with the CSS, images and JavaScript that page needs. Views do usually **not** contain a footer, navigation, header or other elements that belong to the overall layout of the page. For this, layouts should be used, as without a layout a view can't be rendered. Read more about layouts [here](layouts.md).
 
 Database access and heavy logic should not be used in the view, as that belongs into other parts of the application.
 
 ## The render engine
-Since v1.3.0 ZubZet renders views with [Katana](https://github.com/katanaphp/blade), a standalone implementation of the [Blade](https://laravel.com/docs/13.x/blade) templating language. A view is a `.blade.php` file placed in your project's `z_views` directory, otherwise it will not be found when called from the render method.
+Since v1.3.0 ZubZet renders views with [Katana](https://github.com/katanaphp/blade), a standalone implementation of the [Blade](https://laravel.com/docs/13.x/blade) templating language. A view is a `.blade.php` file placed in your project's `z_views` directory, otherwise it will not be found when called from the [render method](../api/classes/ZubZet-Framework-Rendering-CanRenderView.html#method_render).
 
 Blade gives you a concise syntax for the things you do in every template: escaping output, loops, conditionals, reusable components and page inheritance. This page covers the parts you reach for day to day, which is most of what you need. For the complete directive reference, the [Laravel Blade documentation](https://laravel.com/docs/13.x/blade) is the final backstop (Katana implements the common Blade set, see [Not available in Katana](#not-available-in-katana)).
 
@@ -22,7 +22,7 @@ A view extends a layout and fills in its content:
     <h1>Hello World</h1>
 @endsection
 ```
-`@extends($layout)` plugs the view into the layout the controller chose. The framework passes the layout name in as `$layout`, so you never hardcode it. `@section("content")` is the main body, and the layout decides where it lands. An optional `@section("head")` adds page specific tags to the document `<head>` (a stylesheet, a meta tag). Read more about how the two fit together in [Layouts](layouts).
+`@extends($layout)` plugs the view into the layout the [controller](controllers-and-actions.md) chose. The framework passes the layout name in as `$layout`, so you never hardcode it. `@section("content")` is the main body, and the layout decides where it lands. An optional `@section("head")` adds page specific tags to the document `<head>` (a stylesheet, a meta tag). Read more about how the two fit together in [Layouts](layouts.md).
 
 ## Passing data
 Whatever you pass to `render` is available in the view, both as a top level variable and inside the `$opt` array:
@@ -42,7 +42,7 @@ public function action_index(Request $req, Response $res) {
     <h1>Hello {{ $name }}</h1>   {{-- or $opt["name"] --}}
 @endsection
 ```
-The framework also injects a set of helpers into `$opt` for every render: `$opt["root"]` (the application's root path), `$opt["host"]`, `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` and `$opt["generateResourceLink"]`. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests)).
+The framework also injects a set of helpers into `$opt` for every render: `$opt["root"]` (the application's root path), `$opt["host"]`, `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` and `$opt["generateResourceLink"]`. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests.md)).
 
 !!! note "View names and the file extension"
     The view above is addressed as `"employee/index"` while the file on disk is `z_views/employee/index.blade.php`. The extension is optional and dot notation works too, so `"employee/index"`, `"employee/index.blade.php"` and `"employee.index"` all resolve to the same file. A view in your project overrides a framework view of the same name.
@@ -54,7 +54,7 @@ The framework also injects a set of helpers into `$opt` for every render: `$opt[
 {{-- this is a comment and is not rendered --}}
 {{ $title ?? "Untitled" }}   {{-- any PHP expression works inside the braces --}}
 ```
-`{{ }}` escapes its output the same way the framework's `e()` helper does, so it is safe for user input by default. Use `{!! !!}` only for HTML you trust.
+`{{ }}` escapes its output the same way the framework's [`e()` helper](global-helper-functions.md#e) does, so it is safe for user input by default. Use `{!! !!}` only for HTML you trust.
 
 ## Conditionals
 ```blade
@@ -152,7 +152,7 @@ ZubZet binds Blade's `@auth` and `@guest` to its own permission system. With no 
     <a href="{{ $opt["root"] }}login">Log in</a>
 @endguest
 ```
-See the [Permission System](permission-system) for how permissions are defined.
+See the [Permission System](permission-system.md) for how permissions are defined.
 
 ## Conditional HTML attributes
 Blade has small helpers for the attributes you toggle most often, so you do not have to write the `<?php echo $x ? "checked" : "" ?>` dance:
@@ -187,7 +187,7 @@ The framework ships its own components under the `zubzet` namespace. The two you
 <x-zubzet::head :opt="$opt"/>   {{-- jQuery, Bootstrap, Font Awesome, Z.js, the debug bar head --}}
 <x-zubzet::body :opt="$opt"/>   {{-- the session watcher and the debug bar body --}}
 ```
-The `zubzet::` namespace keeps these separate from your own components, so an app component named `head` never collides with `<x-zubzet::head/>`. You normally only place them in layouts, see [Layouts](layouts).
+The `zubzet::` namespace keeps these separate from your own components, so an app component named `head` never collides with `<x-zubzet::head/>`. You normally only place them in layouts, see [Layouts](layouts.md).
 
 ## Pushing to the layout with stacks
 A view can push markup into a named stack that the layout renders elsewhere, which is handy for adding a page specific script without a dedicated section:
@@ -206,7 +206,7 @@ A view can push markup into a named stack that the layout renders elsewhere, whi
 ```
 
 ## What changed from the previous engine
-Before v1.3.0 a view was a PHP file that returned an array of `head` and `body` closures, and the layout was chosen from the outside. Now a view is a Blade template that extends a layout. The migrator rewrites this for you (see [Migrating to 1.3.0](../setup/upgrade/1.2.0-to-1.3.0)), and the mapping is:
+Before v1.3.0 a view was a PHP file that returned an array of `head` and `body` closures, and the layout was chosen from the outside. Now a view is a Blade template that extends a layout. The migrator rewrites this for you (see [Migrating to 1.3.0](../setup/upgrade/1.2.0-to-1.3.0.md)), and the mapping is:
 
 | Before (closure array) | Now (Blade) |
 | ---------------------- | ----------- |
@@ -224,6 +224,6 @@ Katana implements the common Blade directives, which is everything on this page.
 ## Learn more
 - [Katana](https://github.com/katanaphp/blade), the render engine ZubZet uses.
 - [Laravel Blade documentation](https://laravel.com/docs/13.x/blade), the full reference for the Blade language.
-- [Layouts](layouts), how views and layouts fit together.
+- [Layouts](layouts.md), how views and layouts fit together.
 
 More examples for views can be found in the framework's `src/IncludedComponents/views` directory.
