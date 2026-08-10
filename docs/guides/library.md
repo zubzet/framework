@@ -1,8 +1,8 @@
 # Library Application
 
-In the [last guide](guest-list), we learned how to set up basic [controllers](../core-features/controllers-and-actions), [models](../core-features/models) and [views](../core-features/views) to display data from the database. We focused on how to structure a project and create a simple output.
+In the [last guide](guest-list.md), we learned how to set up basic [controllers](../core-features/controllers-and-actions.md), [models](../core-features/models.md) and [views](../core-features/views.md) to display data from the database. We focused on how to structure a project and create a simple output.
 
-In this guide, we’ll explore how to add [permissions](../core-features/permission-system) and security to your application. Using a Library example, we will ensure that only authorized users can access specific parts of the application. This will give you a strong foundation in managing user roles and permissions within your projects.
+In this guide, we’ll explore how to add [permissions](../core-features/permission-system.md) and security to your application. Using a Library example, we will ensure that only authorized users can access specific parts of the application. This will give you a strong foundation in managing user roles and permissions within your projects.
 
 
 ### Resources
@@ -74,8 +74,10 @@ INSERT INTO `book` (`title`, `author`, `description`) VALUES
 <details>
     <summary>View</summary>
     list
-    ```html
-    <?php return ["body" => function ($opt) { ?>
+    ```blade
+    @extends($layout)
+
+    @section("content")
         <table>
             <thead>
                 <tr>
@@ -94,7 +96,7 @@ INSERT INTO `book` (`title`, `author`, `description`) VALUES
                 <?php } ?>
             </tbody>
         </table>
-    <?php }]; ?>
+    @endsection
     ```
 </details>
 
@@ -156,8 +158,10 @@ Checking permissions directly in a view can be very useful for controlling the v
 
 In this example, we will check if the user has the `library.delete` permission. If they do, they will see a button to delete a book. Otherwise, a message saying "No permissions" will be displayed.
 
-```php
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -184,7 +188,7 @@ In this example, we will check if the user has the `library.delete` permission. 
             <?php } ?>
         </tbody>
     </table>
-<?php }]; ?>
+@endsection
 ```
 #### Explanation
 
@@ -194,7 +198,7 @@ In this example, we will check if the user has the `library.delete` permission. 
 - **Closing PHP for HTML Rendering**: Inside the `if` condition, we close PHP to render the HTML (e.g., a button for editing the book). If the user lacks the permission, the `else` block displays a message (`No Permissions`).
 
 ## How to create Roles and Permissions
-Now that we understand how to use permissions, it’s essential to know how to create them. Here’s a step-by-step guide using the admin panel provided by the framework:
+Now that we understand how to use permissions, it’s essential to know how to create them. Here’s a step-by-step guide using the [admin panel](../z-admin/usage.md) provided by the framework:
 
 1) **Access the Admin Panel**  
 Open your browser and navigate to the admin panel at `http://localhost:8080/z`.
@@ -202,7 +206,7 @@ Open your browser and navigate to the admin panel at `http://localhost:8080/z`.
 2) **Login In as Admin**  
 Use the default administrator credentials:
 
-- Email: `admin@zierhut-it.de`
+- Email: `admin@zubzet.com`
 - Password: `password`
 
 3) **Create a New Role**  
@@ -234,4 +238,4 @@ This guide highlights how to implement a secure, permission-based access control
 ## Next Guide
 As you can see, we’ve implemented a button that is visible only to users with the `library.delete` permission. However, the button currently has no functionality. In the next guide, we’ll explore how to create backend requests to handle actions triggered from the view, enabling dynamic and secure interactions between the front-end and the back-end.
 
-[Shop](shop)
+[Shop](shop.md)

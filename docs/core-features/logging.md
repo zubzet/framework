@@ -44,7 +44,7 @@ Log levels follow the [Monolog/PSR-3 standard](https://www.php-fig.org/psr/psr-3
 
 ## Writing Log Entries
 
-Use the global `logger()` helper function anywhere in your application.
+Use the global `logger()` [helper function](global-helper-functions.md) anywhere in your application.
 
 ```php
 // Log to the app channel
@@ -73,7 +73,7 @@ The second parameter `$context` is an optional associative array with additional
 
 ## Registering a Custom Logger
 
-If you need full control over a logger — custom handlers, formatters, or processors — you can build a Monolog `Logger` instance manually and register it under a channel name using `LoggerFactory::register()`. Once registered, it is returned by `logger()` like any other channel.
+If you need full control over a logger — [custom handlers, formatters, or processors](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md) — you can build a Monolog `Logger` instance manually and [register it under a channel name](../api/classes/ZubZet-Framework-Logger-LoggerFactory.html#method_register) using `LoggerFactory::register()`. Once registered, it is returned by `logger()` like any other channel.
 
 ```php
 use Monolog\Logger;
@@ -166,7 +166,7 @@ logger_type = stream
 logger_stream_url = php://stderr
 ```
 
-`logger_stream_url` accepts any valid PHP stream URL or file path:
+`logger_stream_url` accepts any valid [PHP stream URL](https://www.php.net/manual/en/wrappers.php) or file path:
 
 ```ini
 logger_stream_url = php://stderr

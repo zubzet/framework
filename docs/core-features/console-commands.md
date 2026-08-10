@@ -5,7 +5,7 @@ Console commands enable automation, debugging, and execution of application logi
 
 ### How to Run a Command
 
-To execute a console command inside the Docker container, first access the container shell:
+To execute a console command inside the [Docker container](../setup/installation.md), first access the container shell:
 
 ```bash
 npm run shell
@@ -34,8 +34,8 @@ Lists all available console commands.
 
 ### run
 
-Executes a controller action directly from the console environment.
-This is useful for running application logic, maintenance tasks, or background operations without an HTTP request.
+Executes a [controller action](controllers-and-actions.md) directly from the console environment.
+This is useful for [running application logic](../advanced-features/commands.md), maintenance tasks, or background operations without an HTTP request.
 
 ### info:startup
 
@@ -73,6 +73,22 @@ php index.php db:seed --skip-migrations
 ```
 
 See [Migrations](migrations/index.md) for the full migration workflow.
+
+### module:setup
+
+Merges missing default settings from installed [modules](../advanced-features/modules.md) into
+`z_config/z_settings.ini`. Append-only and idempotent: existing keys are never touched, and a
+rerun with nothing to merge changes nothing.
+
+```bash
+php index.php module:setup
+```
+
+### Your own commands
+
+Beyond `run`, the application (and every module) can ship dedicated Symfony commands in
+`app/Commands/`; they register automatically and appear in `list`. See
+[Commands](../advanced-features/commands.md) for the file convention and precedence rules.
 
 ### Coverage
 

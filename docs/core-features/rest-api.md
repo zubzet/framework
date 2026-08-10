@@ -1,9 +1,9 @@
 # REST Responses
 ## What is this?
-As the client and the server are completely separated, they need to have a way communicated. It is basically a standardized way of transfering, in our case JSON data, from the server to the client.
+As the [client](../frontend-integration/backend-requests.md) and the server are completely separated, they need to have a way communicated. It is basically a standardized way of transfering, in our case JSON data, from the server to the client.
 
 ## How to use this?
-The REST response pipeline lives in `z_rest.php`, but you'll typically reach for one of the response helpers instead:
+The [REST response pipeline](../api/classes/ZubZet-Framework-Support-Rest.html) lives in `z_rest.php`, but you'll typically reach for one of the response helpers instead:
 
 | Call                      | Purpose                                                                     |
 | ------------------------- | --------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ The REST response pipeline lives in `z_rest.php`, but you'll typically reach for
 | `$res->success`           | Convenience for `generateRest` with `result=success`                        |
 | `$res->json`              | Sends a raw JSON payload (no `meta` wrapper); does not exit                 |
 
-You can also just use generateRest for errors. If the key result is set with the value error, it is automatically converted into a REST Error. The second parameter of generateRest called $die determines if the script exits after generating the REST response. The parameter is optional with a default value of true.
+You can also just use [generateRest](../api/classes/ZubZet-Framework-Message-Response.html#method_generateRest) for errors. If the key result is set with the value error, it is automatically converted into a REST Error. The second parameter of generateRest called $die determines if the script exits after generating the REST response. The parameter is optional with a default value of true.
 
 ## Example Calls
 
@@ -55,7 +55,7 @@ $res->error("MESSAGE");
 ```
 
 ### json
-Use `json` when you need to send a raw JSON payload without the REST `meta` wrapper. It sets `Content-Type: application/json` and echoes `json_encode($data)`. Unlike the other helpers above it does not exit — call `exit` yourself if you need to stop the request here. `JSON_THROW_ON_ERROR` is always applied, so unencodable values raise a `JsonException`.
+Use `json` when you need to [send a raw JSON payload](../api/classes/ZubZet-Framework-Message-Response.html#method_json) without the REST `meta` wrapper. It sets `Content-Type: application/json` and echoes `json_encode($data)`. Unlike the other helpers above it does not exit — call `exit` yourself if you need to stop the request here. `JSON_THROW_ON_ERROR` is always applied, so unencodable values raise a `JsonException`.
 
 ```php
 $res->json([

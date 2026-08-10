@@ -43,3 +43,5 @@ app/Database/seed/TestSeeding.php
 app/Database/seed/Environments/
 app/Routes/RoutingTest.php
 z_automated_setting.ini
+galera-target-node.txt
+tests/flaky-tests.log

@@ -37,7 +37,7 @@ this:
 
 ### Sensitive data masking
 
-Whoops automatically masks request values whose keys look sensitive (containing `pass`, `secret`,
+Whoops automatically [masks request values](../api/classes/ZubZet-Framework-ErrorHandling-WhoopsHandler.html) whose keys look sensitive (containing `pass`, `secret`,
 `token`, `session`, `auth`, `key`, `credential`, …) across `$_GET`, `$_POST`, `$_COOKIE`,
 `$_SESSION`, `$_SERVER`, and `$_ENV`, so credentials are not printed on the error page.
 

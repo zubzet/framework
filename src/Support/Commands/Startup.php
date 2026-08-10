@@ -7,6 +7,7 @@
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Bootstrap\AutomatedSettings;
+    use ZubZet\Framework\Registry\Modules;
     use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
     final class Startup extends Command {
@@ -50,6 +51,12 @@
             $this->infoRow("Environment", $executionType);
             $this->infoRow("PHP Runtime", "v" . PHP_VERSION . "");
             $this->infoRow("Assets", "v{$assetVersion}");
+
+            // One row per installed module, in resolution order, so typo'd
+            // package types or ordering entries are diagnosable in one place.
+            foreach(Modules::packages() as $module) {
+                $this->infoRow("Module", $module);
+            }
             $this->line("<muted>─────────────────────────────────────────────</muted>");
             $this->line();
             $this->line("<muted>run</muted> <label>'npm run stop'</label> <muted>to stop the server</muted>");

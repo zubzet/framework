@@ -18,7 +18,7 @@ By centralizing these processes, the system provides several key advantages:
 
 ## Available Commands
 
-The following commands are integrated into the ZubZet CLI to manage your database lifecycle efficiently.
+The following commands are integrated into the [ZubZet CLI](../console-commands.md) to manage your database lifecycle efficiently.
 
 ### Import
 
@@ -53,7 +53,7 @@ Defines specific environments that should be explicitly skipped during the migra
 
 * **`dry`** | **`-d`**  
 Simulates the migration process without committing any actual changes to the database.
-> **Details:** Highly recommended for verifying exactly which migration files will be applied before executing them on a live system.  
+> **Details:** Highly recommended for verifying exactly which migration files will be applied before executing them on a live system. Migration files are not loaded in dry mode, so their skip, environment, and manual markers are not evaluated — every pending migration is reported as importable.  
 > **Usage:** `db:migrate -d`
 
 
@@ -128,7 +128,7 @@ The Migration system supports **two different file formats**, which can be mixed
     For advanced logic, ZubZet supports **PHP-based migrations**. These files allow you to use the Schema QueryBuilder and conditional logic.
 
     **Class Structure:**  
-    Every PHP migration must extend the base `Migration` class and implement the `execute()` method.
+    Every PHP migration must extend the base [`Migration`](../../api/classes/ZubZet-Framework-Database-Migration-Migration.html) class and implement the `execute()` method.
 
     ```php
     use ZubZet\Framework\Database\Migration\Migration;
@@ -319,7 +319,7 @@ The Seed system supports **two different file formats**, which can be mixed free
 
 - **PHP Seed Files (`.php`)**
 
-    For complex data generation or dynamic logic, ZubZet supports **PHP-based seed files**. These files must extend the base `Seed` class.
+    For complex data generation or dynamic logic, ZubZet supports **PHP-based seed files**. These files must extend the base [`Seed`](../../api/classes/ZubZet-Framework-Database-Migration-Seed.html) class.
 
     **Class Structure:**  
     Each seed class must implement a `run()` method where all database operations are defined.
@@ -344,9 +344,9 @@ The Seed system supports **two different file formats**, which can be mixed free
 
 
     **QueryBuilder Usage:**  
-    PHP seed files utilize **CakePHP\Database** for building queries.
+    PHP seed files utilize **[CakePHP\Database](https://book.cakephp.org/4.x/orm/query-builder.html)** for building queries.
 
-    For more detailed information about the Query Builder, see: [QueryBuilder](/docs/core-features/query-builder/)
+    For more detailed information about the Query Builder, see: [QueryBuilder](../query-builder/index.md)
 
     **Registering Queries**  
     To ensure reliable execution, every query **must be explicitly registered** within the system.
@@ -420,6 +420,7 @@ Defines which environments should be explicitly ignored during the sync.
 
 * **`dry`** | **`d`**  
 Simulates the sync process. It shows which files would be marked as executed without updating the database history.
+> **Details:** Date and version filters still apply, but migration files are not loaded, so environment markers are not evaluated.  
 > **Usage:** `db:sync -d`
 
 

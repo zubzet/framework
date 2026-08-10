@@ -36,6 +36,14 @@ describe('Global references', () => {
         });
     });
 
+    it('view() resolves a Laravel-style dotted name (core.render == core/render)', () => {
+        cy.request('/helper/view_dotted').then((res) => {
+            expect(res.status).to.eq(200);
+            expect(res.body).to.include('Render');
+            expect(res.body).to.include('HelperFunction');
+        });
+    });
+
     // The "not yet been setup" branches in zubzet() and db() are only
     // reachable during framework boot - once any request runs, $instance
     // and $z_db are set for that process. instance_test.php hand-walks

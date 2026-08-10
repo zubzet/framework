@@ -1,11 +1,11 @@
 # Installation
-ZubZet ships as a Composer package. New projects start from the **`zubzet/zubzet`** skeleton, which pulls in the framework and bundles a Docker development stack: Apache + PHP, MariaDB,
+ZubZet ships as a Composer package. New projects start from the [**`zubzet/zubzet`**](https://github.com/zubzet/zubzet) skeleton, which pulls in the framework and bundles a Docker development stack: Apache + PHP, MariaDB,
 phpMyAdmin, and a mail catcher.
 
 ## Prerequisites
-- **Docker** and **Docker Compose**
-- **Composer**
-- **Node.js** and **npm**
+- [**Docker**](https://docs.docker.com/get-started/get-docker/) and [**Docker Compose**](https://docs.docker.com/compose/)
+- [**Composer**](https://getcomposer.org/)
+- [**Node.js**](https://nodejs.org/en) and **npm**
 
 PHP itself is not required on your host as it runs inside the application container.
 

@@ -1,6 +1,6 @@
 # Password Handling
 
-ZubZet hashes passwords with PHP's native **Argon2id**. The framework stores
+ZubZet hashes passwords with PHP's native **[Argon2id](https://www.rfc-editor.org/info/rfc9106/)**. The framework stores
 enough information alongside every hash to verify it, to recognise older hashes,
 and to upgrade them to the current algorithm automatically. Application code
 normally never touches a hash directly: the [`User`](permission-system.md) API
@@ -28,7 +28,7 @@ the three formats can coexist while older accounts upgrade on their own.
 
 | Scheme | `password` holds | `salt` | Notes |
 | ------ | ---------------- | ------ | ----- |
-| `native` | An Argon2id hash from `password_hash()`. | `NULL` | The target format for every account. |
+| `native` | An Argon2id hash from [`password_hash()`](https://www.php.net/manual/en/function.password-hash.php). | `NULL` | The target format for every account. |
 | `legacy` | The hash produced by the framework's previous scheme. | set | Verify only. Upgraded to `native` on the next login. |
 | `onion` | A native Argon2id hash wrapping the legacy value. | set | A dormant account moved onto Argon2id ahead of its next login. Upgraded to `native` when the owner logs in. |
 
@@ -73,14 +73,14 @@ if ($user && $user->verifyPassword($plaintext)) {
 }
 ```
 
-`User::verifyPassword()` returns a boolean and is self healing: on a correct
+[`User::verifyPassword()`](../api/classes/ZubZet-Framework-Authentication-Permission-User.html#method_verifyPassword) returns a boolean and is self healing: on a correct
 login it transparently upgrades a stale stored hash to a current `native` hash
 (see [Self healing upgrades](#self-healing-upgrades)). It is the password check
 used by the framework's own login flow.
 
 ## The hash and verify API
 
-`User` is built on the lower level `ZubZet\Framework\Authentication\PasswordHash\Password`
+`User` is built on the lower level [`ZubZet\Framework\Authentication\PasswordHash\Password`](../api/classes/ZubZet-Framework-Authentication-PasswordHash-Password.html)
 class, which you can use directly when you are not working with a `User` object.
 
 ### Hashing
@@ -105,7 +105,7 @@ if ($result->isCorrect()) {
 }
 ```
 
-`Password::verify()` returns a `Verification` value object rather than a bare
+`Password::verify()` returns a [`Verification`](../api/classes/ZubZet-Framework-Authentication-PasswordHash-Verification.html) value object rather than a bare
 boolean, so a single call can also report whether the stored hash should be
 refreshed:
 
@@ -134,7 +134,7 @@ password. On a successful login, the stored hash is upgraded to a fresh
 - the account is still `legacy` or `onion`, or
 - the account is `native` but was hashed below the current cost.
 
-The second case relies on PHP's `password_needs_rehash()`. When you raise the
+The second case relies on PHP's [`password_needs_rehash()`](https://www.php.net/manual/en/function.password-needs-rehash.php). When you raise the
 Argon2id cost (see below), existing users are migrated one at a time as they log
 in, with no bulk operation and no forced reset.
 
@@ -149,7 +149,7 @@ the next login.
 
 ## Migrating an existing installation
 
-When you upgrade the framework, the schema migration runs automatically and
+When you upgrade the framework, the [schema migration](migrations/index.md) runs automatically and
 marks every existing password row as `legacy`. Those accounts keep working
 unchanged and upgrade themselves to `native` on the next login.
 
@@ -176,7 +176,7 @@ additional transformation step, provided by a dedicated hashing library. That
 scheme served the framework reliably and shipped in production for a long time.
 
 Version 1.2.0 modernises password storage onto PHP's native Argon2id, the
-algorithm recommended by the current OWASP Password Storage guidance. Argon2id
+algorithm recommended by the current [OWASP Password Storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html). Argon2id
 is memory hard and purpose built for password storage, the native PHP functions
 are maintained as part of the language and run in constant time, and every
 stored value embeds its own algorithm, cost, and salt. That self describing

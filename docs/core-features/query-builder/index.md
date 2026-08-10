@@ -1,7 +1,7 @@
 # Query Builder in ZubZet
 
 Since version **1.0.0**, ZubZet includes a built-in **Query Builder**.  
-It is based on [CakePHP\Database](https://book.cakephp.org/4/en/orm/query-builder.html).
+It is based on [CakePHP\Database](https://book.cakephp.org/4.x/orm/query-builder.html).
 
 The Query Builder allows you to build SQL queries programmatically in a safe and structured way, directly from your models.
 
@@ -9,7 +9,7 @@ The Query Builder allows you to build SQL queries programmatically in a safe and
 
 ## How it works
 
-Inside a [model](/docs/core-features/models), you can now use helper methods like `select`, `update`, `delete`, and `insert`.
+Inside a [model](../models.md), you can now use [helper methods](../../api/classes/ZubZet-Framework-QueryBuilder-CanBuildQuery.html) like `select`, `update`, `delete`, and `insert`.
 These methods internally delegate to the CakePHP Query Builder.
 
 Example methods inside a model:
@@ -40,7 +40,7 @@ public function getQueryBuilder() {
 
 ## Executing Queries
 
-Once you have built a query, you can execute it with the `exec` method:
+Once you have built a query, you can execute it with the [`exec`](../../api/classes/ZubZet-Framework-Core-Model.html#method_exec) method:
 ```php
 
 $query = $this->dbSelect(...);
@@ -134,7 +134,7 @@ For more examples, see the [Examples](./examples.md) page.
 
 ## More Information
 
-The Query Builder in ZubZet is built on top of **[CakePHP\Database](https://book.cakephp.org/4/en/orm/query-builder.html)**.
+The Query Builder in ZubZet is built on top of **[CakePHP\Database](https://book.cakephp.org/4.x/orm/query-builder.html)**.
 You can use all features provided by CakePHP’s query builder.
 
 Important:

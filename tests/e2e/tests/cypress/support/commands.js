@@ -108,3 +108,10 @@ Cypress.Commands.add('restoreConfigBackup', () => {
         cy.writeFile(CONFIG_PATH, configBackup);
     }
 });
+// Runs a SQL statement directly on one Galera node (bypassing the database
+// endpoint) and yields its trimmed stdout. For cluster assertions that must
+// observe a specific node, e.g. replication checks.
+Cypress.Commands.add('dbQueryNode', (node, sql) => {
+    const command = `docker exec ${node} mariadb -uroot -proot_password --silent -e "${sql.replace(/"/g, '\\"')}"`;
+    return cy.exec(command, { timeout: 15000 }).then(({ stdout }) => stdout.trim());
+});

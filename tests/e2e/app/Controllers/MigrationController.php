@@ -1,5 +1,7 @@
 <?php
 
+    use ZubZet\Framework\Authentication\Permission\User;
+
     class MigrationController extends z_controller  {
 
 
@@ -28,6 +30,14 @@
         public function action_syncMigrations(Request $req, Response $res) {
             $files = $req->getModel("Migration")->syncMigrations();
             print_r(json_encode($files));
+        }
+
+        // Probe for the dry-run side-effect specs: reports whether the user
+        // created by 2025-10-01_MigrationDrySideEffect.php exists.
+        public function action_checkDryRunUser(Request $req, Response $res) {
+            return $res->json([
+                "exists" => !is_null(User::byEmail("migration_dry_side_effect@cypress.test")),
+            ]);
         }
 
         public function action_checkSeeding(Request $req, Response $res) {

@@ -7,12 +7,26 @@
         "options": {
             "symlink": true
         }
+    }, {
+        "type": "path",
+        "url": "modules/guestbook",
+        "options": {
+            "symlink": true
+        }
+    }, {
+        "type": "path",
+        "url": "modules/theme",
+        "options": {
+            "symlink": true
+        }
     }],
 
     "minimum-stability": "dev",
     "prefer-stable": true,
 
     "require": {
+        "zubzet/example-guestbook": "^0.1",
+        "zubzet/example-theme": "^0.1",
         "zubzet/framework": "*@dev"
     },
 

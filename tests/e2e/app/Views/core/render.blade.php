@@ -1,0 +1,6 @@
+@extends($layout)
+
+@section("content")
+    <h2 data-test="title">Render</h2>
+    <h2 data-test="data"><?= $opt["data"] ?></h2>
+@endsection

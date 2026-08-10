@@ -33,7 +33,7 @@ INSERT INTO `guest` (`first_name`, `last_name`, `email`) VALUES
 
 ## Setting up the Database
 ??? info "What is Migration and what is Seed?"
-    **Migration** refers to the process of modifying a database's structure, such as adding, removing, or altering tables and columns. Migration files document these changes and allow them to be applied automatically across different environments, ensuring the database structure remains consistent and versioned.
+    **[Migration](../core-features/migrations/index.md)** refers to the process of modifying a database's structure, such as adding, removing, or altering tables and columns. Migration files document these changes and allow them to be applied automatically across different environments, ensuring the database structure remains consistent and versioned.
 
     **Seeding** is the process of populating a database with sample or test data. It is commonly used in development and testing environments to provide realistic data for testing or to initialize the database with predefined values for consistency. Seeding is often used alongside migrations to set up the database.
 To define the database structure, go to the `database/migrations` folder. Create a file named `[DATE]_guest.sql`, replacing `[DATE]` with the current date in the format `YYYY-MM-DD`. Then, paste the `CREATE TABLE` statement from the Resources section into the file. 
@@ -49,9 +49,9 @@ While the file names are customizable, it is recommended to follow a clear and c
 
     An **Action** is a specific method within a controller that is responsible for executing a particular task or process in response to a user request. Actions are mapped to URL routes and determine the logic to be performed for a given endpoint, such as processing input data, applying business rules, or initiating a redirect.
 
-    More information can be found [here](../core-features/controllers-and-actions)
+    More information can be found [here](../core-features/controllers-and-actions.md)
 
-To handle all requests, we need to create a [Controller](../core-features/controllers-and-actions).
+To handle all requests, we need to create a [Controller](../core-features/controllers-and-actions.md).
 For this example, create a file named `GuestsController.php` in the `z_controllers` folder.
 The file name, controller name, and action name are flexible but should be chosen for clear, logical understanding and consistency.
 
@@ -64,7 +64,7 @@ The file name, controller name, and action name are flexible but should be chose
 ```
 Every controller follows this structure. It is important that the class name matches the file name and that it extends `z_controller`.
 
-To handle a request, you also need to define a method for the specific [action](../core-features/controllers-and-actions/#default-actions):
+To handle a request, you also need to define a method for the specific [action](../core-features/controllers-and-actions.md#default-actions):
 ```php
 <?php
     class GuestsController extends z_controller {
@@ -82,8 +82,8 @@ To handle a request, you also need to define a method for the specific [action](
 
     The purpose of a **Model** is to separate data management and business logic from other layers, ensuring cleaner, more maintainable code. By centralizing database interactions, models promote reusability, reduce duplication, and enhance security, while allowing controllers to focus on application flow and views on presentation.
 
-    More information can be found [here](../core-features/models)
-To interact with the database where the guests are stored, we need a [Model](../core-features/models).  
+    More information can be found [here](../core-features/models.md)
+To interact with the database where the guests are stored, we need a [Model](../core-features/models.md).  
 For this example, create a file named `GuestsModel.php` in the `z_models` folder.  
 You have flexibility in the naming of the file and model, but it is best to use a clear and logical structure for better understanding.
 
@@ -115,8 +115,8 @@ The function name is up to you, but adhering to meaningful, consistent names is 
 
 ### Explanation
 1. **SQL Query**: Define the SQL query to retrieve the data.  
-2. **Execute Query**: Use the exec function to execute the query.  
-3. **Process Results**: Convert the query results into an array with resultToArray.  
+2. **Execute Query**: Use the [exec](../api/classes/ZubZet-Framework-Core-Model.html#method_exec) function to execute the query.  
+3. **Process Results**: Convert the query results into an array with [resultToArray](../api/classes/ZubZet-Framework-Core-Model.html#method_resultToArray).  
 4. **Return Data**: Return the guest list for further use.
 
 ## Connecting the Controller and Model
@@ -141,15 +141,17 @@ Finally, we need to render a view and pass the guest list to it.
 ??? info "What is a View"
     A **View** is a key part of the MVC (Model-View-Controller) pattern responsible for presenting data to the user. It defines the structure and layout of the user interface, rendering dynamic content based on data provided by the controller. Views focus solely on presentation, avoiding business logic or direct data handling, to ensure a clean separation of concerns.
 
-    More information can be found [here](../core-features/views)
+    More information can be found [here](../core-features/views.md)
 
-To create a [view](../core-features/views), add a folder named `guests` in the `z_views` folder and inside this folder add a file named `guests_list.php`:
-```php
-<?php return ["body" => function ($opt) { ?>
+To create a [view](../core-features/views.md), add a folder named `guests` in the `z_views` folder and inside this folder add a file named `guests_list.blade.php`:
+```blade
+@extends($layout)
 
-<?php }]; ?>
+@section("content")
+
+@endsection
 ```
-All views follow this structure. Between the `?>` and `<?php` tags, you will add your HTML content.  
+All views follow this structure. Inside the `@section("content")` block, you will add your HTML content.  
 The file name should be intuitive and descriptive for easy identification.
 
 In the controller, render the view like this:
@@ -160,7 +162,7 @@ In the controller, render the view like this:
         public function action_list(Request $req, Response $res) {
             $guests = $req->getModel('Guests')->getGuests();
 
-            return $res->render("guests/guests_list.php", [
+            return $res->render("guests/guests_list", [
                 "guests" => $guests
             ]);
         }
@@ -171,14 +173,16 @@ A controller doesn't always need to render a view. It can handle tasks like proc
 
 
 ### Explanation
-- **render**: Use this method to render a view file.
+- **[render](../api/classes/ZubZet-Framework-Rendering-CanRenderView.html#method_render)**: Use this method to render a view file.
 - **Variables**: Pass variables (like the guest list) as the second parameter to make them available in the view.
 
 ## Displaying Guests in the View
 Create an HTML table to display the guests, with columns for `First Name`, `Last Name`, and `Email`:
 
-```php
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -191,11 +195,13 @@ Create an HTML table to display the guests, with columns for `First Name`, `Last
 
         </tbody>
     </table>
-<?php }]; ?>
+@endsection
 ```
 To populate the table with guest data, loop through the `guests` array:
-```php
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -210,11 +216,13 @@ To populate the table with guest data, loop through the `guests` array:
             <?php } ?>
         </tbody>
     </table>
-<?php }]; ?>
+@endsection
 ```
 Now, for each guest, add a row displaying their details:
-```php
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -233,7 +241,7 @@ Now, for each guest, add a row displaying their details:
             <?php } ?>
         </tbody>
     </table>
-<?php }]; ?>
+@endsection
 ```
 The use of `$guest["first_name"]` corresponds to the column names defined in the database. These identifiers map the data retrieved from the database to the respective fields for display in the view.
 
@@ -249,4 +257,4 @@ And to view your result, navigate to `http://localhost:8080/Guests/list` in your
 ## Next Guide
 In the next guide, we’ll take a closer look at how to secure your website using roles and permissions. This is a key step to make sure that only authorized users can access certain features or parts of your application. By setting up roles and assigning specific permissions, you’ll create a solid system to manage access and keep your website both secure and organized.  
 
-[Library](library)
+[Library](library.md)

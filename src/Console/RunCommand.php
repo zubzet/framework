@@ -6,6 +6,7 @@
     use Symfony\Component\Console\Input\InputArgument;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Registry\Registry;
 
     final class RunCommand extends Command {
         protected function configure(): void {
@@ -37,8 +38,13 @@
             $action = strtolower((string) $in->getArgument('action'));
             $parameters = $in->getArgument("parameters") ?? [];
 
-            // Load the underlying data
+            // Load the underlying data: userspace first, then module roots.
+            // "+=" keeps the first occurrence, so userspace shadows modules.
             $actionsByController = ActionDiscovery::find(zubzet()->z_controllers);
+            foreach(Registry::moduleRoots("controllers") as $controllerRoot) {
+                if(!is_dir($controllerRoot)) continue;
+                $actionsByController += ActionDiscovery::find($controllerRoot);
+            }
 
             // Validation: Controller
             $validController = array_key_exists($controller, $actionsByController);

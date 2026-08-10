@@ -7,6 +7,7 @@
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Registry\Registry;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
     use ZubZet\Framework\Database\Migration\Parser\SeedPHP;
     use ZubZet\Framework\Database\Migration\Parser\SeedSQL;
@@ -56,16 +57,20 @@
                 $this->resetDatabase($out);
             }
 
-            $seedRoot = "./app/Database/seed";
-            $seedFiles = model("z_migration")->getFiles($seedRoot);
+            // Seed roots: userspace first, then modules in order (the
+            // framework ships no seeds). Include/exclude selectors are applied
+            // per root, so they stay root-relative in every root.
+            $seedFiles = [];
+            foreach(Registry::paths("seeds") as $index => $seedRoot) {
+                $rootFiles = model("z_migration")->getFiles($seedRoot, 0 === $index);
 
-            // Filter seed files based on include/exclude options
-            $seedFiles = $this->filterSeedFiles(
-                $seedFiles,
-                $seedRoot,
-                $excludedEnvironmentPaths,
-                $includedEnvironmentPaths,
-            );
+                $seedFiles = array_merge($seedFiles, $this->filterSeedFiles(
+                    $rootFiles,
+                    $seedRoot,
+                    $excludedEnvironmentPaths,
+                    $includedEnvironmentPaths,
+                ));
+            }
 
             foreach($seedFiles as $seedFile) {
                 try {

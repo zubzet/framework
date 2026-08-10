@@ -3,7 +3,7 @@
     use ZubZet\Framework\Message\Response;
 
     /**
-     * Exercises the layout resolution chain from HandlesDefaultLayout:
+     * Exercises the layout resolution chain from Resolver\DefaultLayout:
      *   explicit arg > instance default > global default > framework default
      *
      * Each action drives one branch of the resolution and renders directly;

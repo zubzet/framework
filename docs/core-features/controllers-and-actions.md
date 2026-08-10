@@ -1,7 +1,7 @@
 # Getting Started: Controllers and Actions
 
 ## What does a controller do?
-A controller is one part of the MVC pattern. It handles all the logic, but what does that mean? Usually the controller takes in data from one or multiple models as well as user input and does something with it. This could include sorting, searching, calculating and generally making the data ready to display or ready to put into the database in case of a form input for example. 
+A controller is one part of the [MVC pattern](mvc.md). It handles all the logic, but what does that mean? Usually the controller takes in data from one or multiple [models](models.md) as well as user input and does something with it. This could include sorting, searching, calculating and generally making the data ready to display or ready to put into the database in case of a form input for example. 
 
 ## How to get a controller executed?
 Since there are no actual paths, controllers are tightly bound to the requested url. The first part of the URL, that is not part of getting to your project's root directory, determines which Controller will be used. If you call your controller IndexController, it will be executed when no name is given by a reuqest. 
@@ -58,7 +58,7 @@ The following function `action_test` will be executed when requesting the path `
 
         // This action will be executed when requesting the path `{root}/Employee`
         public function action_index(Request $req, Response $res) {
-            return $res->render("employee/index.php");
+            return $res->render("employee/index");
         }
 
         // This action will be executed when requesting the path `{root}/Employee/list`
@@ -79,7 +79,7 @@ The following function `action_test` will be executed when requesting the path `
             }
 
             // Rendering the View with all Employees as Array
-            return $res->render("employee/employee_list.php", [
+            return $res->render("employee/employee_list", [
                 "employees" => $req->getModel("Employee")->getAll()
             ]);
         }
@@ -93,10 +93,18 @@ The following function `action_test` will be executed when requesting the path `
 
             $employee = $req->getModel("Employee")->getById($employeeId);
 
-            return $res->render("employee/employee_view.php", [
+            return $res->render("employee/employee_view", [
                 "employee" => $employee
             ]);
         }
     }
 ?>
 ```
+
+## See also
+
+- [Routing](routing.md): registering explicit route definitions instead of name-based routing
+- [Views](views.md): the templates rendered by `$res->render`
+- [Permission System](permission-system.md): the permissions behind `$req->checkPermission`
+- [Parameter Abstraction](parameter-abstraction.md): reading URL parameters and POST data
+- API reference: [Request](../api/classes/ZubZet-Framework-Message-Request.html) and [Response](../api/classes/ZubZet-Framework-Message-Response.html)

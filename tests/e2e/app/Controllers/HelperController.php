@@ -42,12 +42,58 @@
             ]);
         }
 
+        public function action_view_dotted(Request $req, Response $res) {
+            // Same view as action_view, addressed with Laravel-style dot notation
+            // ("core.render") instead of the slash path ("core/render").
+            view("core.render", [
+                "data" => "HelperFunction",
+            ]);
+        }
+
         /*
          * Pure global helpers from src/Support/Helpers.php.
          * Each action runs the helper against its probe cases and returns a
          * {allPassed, results} JSON via runTests / runTest. Cypress only
          * checks that allPassed is true.
          */
+
+        public function action_function_e(Request $req, Response $res) {
+            // e() keeps its historical contract (null passes through, HTML tags are
+            // stripped) while escaping is delegated to the render engine (\Blade\e),
+            // which unifies e() with Katana's {{ }} output. The last two cases pin
+            // the intentional upgrade that delegation brings: single quotes are now
+            // escaped (ENT_QUOTES, closing an XSS gap in single-quoted attributes on
+            // PHP 8.0) and existing entities are no longer double-encoded.
+            // A list (not an input => expected map) so null and exact strings work.
+            $cases = [
+                // Preserved contract (identical before and after):
+                [null,                        null],                // null check: null in, null out
+                ["plain text 123",            "plain text 123"],    // no tags, no specials: unchanged
+                ["<b>bold</b>",               "bold"],              // strip_tags removes markup
+                ["<script>alert(1)</script>", "alert(1)"],          // scripts stripped, content kept
+                ["a & b",                     "a &amp; b"],         // ampersand escaped
+                ['quote " mark',              "quote &quot; mark"], // double quote escaped
+                ["<em>x & y</em>",            "x &amp; y"],         // strip first, then escape
+                // Intentional escaping upgrade via \Blade\e:
+                ["it's",                      "it&#039;s"],         // single quotes now escaped (ENT_QUOTES)
+                ["a &amp; b",                 "a &amp; b"],         // existing entities not double-encoded
+            ];
+
+            $allPassed = true;
+            $results = [];
+            foreach($cases as [$input, $expected]) {
+                $actual = e($input);
+                $isPassing = $actual === $expected;
+                $results[] = var_export($input, true) . " => " . var_export($actual, true)
+                    . " (expected " . var_export($expected, true) . "): " . ($isPassing ? "PASS" : "FAIL");
+                if(!$isPassing) $allPassed = false;
+            }
+
+            return response()->json([
+                "allPassed" => $allPassed,
+                "results" => $results,
+            ]);
+        }
 
         public function action_function_makeSlug(Request $req, Response $res) {
             return $this->runTests([

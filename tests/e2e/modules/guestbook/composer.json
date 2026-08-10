@@ -1,0 +1,11 @@
+{
+    "name": "zubzet/example-guestbook",
+    "type": "zubzet-module",
+    "version": "0.1.0",
+
+    "autoload": {
+        "psr-4": {
+            "Module\\Guestbook\\": "app/"
+        }
+    }
+}

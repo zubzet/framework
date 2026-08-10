@@ -7,7 +7,9 @@ x-config-z-settings: &config-z-settings
   CONFIG_ROOTDIRECTORY: ""
 
   ## Database
-  CONFIG_DBHOST: database:3306
+  # A bare hostname (no :port), so the TLS spec can enable db_ssl, which
+  # verifies the certificate against this value.
+  CONFIG_DBHOST: database
   CONFIG_DBNAME: app
   CONFIG_DBPASSWORD: app_password
   CONFIG_DBUSERNAME: app
@@ -38,6 +40,22 @@ x-built-application-image: &built-application-image
     database:
       condition: service_healthy
 
+x-galera-node: &galera-node
+  image: mariadb:11.8
+  restart: on-failure
+  environment: &galera-environment
+    MARIADB_ROOT_PASSWORD: root_password
+    TZ: Europe/Berlin
+  # The image's healthcheck.sh cannot be used: its credentials live in the
+  # datadir, which SST replaces with the donor's copy on joiner nodes. This
+  # check also asserts the node is actually part of a synced cluster.
+  healthcheck:
+    test: mariadb -uroot -proot_password --silent -e "SHOW STATUS LIKE 'wsrep_ready'" | grep -q ON
+    interval: 2s
+    timeout: 5s
+    retries: 60
+    start_period: 30s
+
 services:
   # Application
   application:
@@ -47,30 +65,95 @@ services:
       - 8080:80
 
   # Backend Services
+  #
+  # A real three-node Galera cluster, mirroring the production settings
+  # (MariaDB 11.8, mariabackup SST, server-side autocommit retries, enforced
+  # InnoDB, autoinc lock mode 2). The "database" service is an haproxy playing
+  # the production service mesh: the application talks to ONE endpoint and the
+  # proxy routes it to a healthy node, killing sessions on failover. WireGuard
+  # is not reproduced inside the compose network; client TLS is offered via
+  # committed test-only certificates (./tls), and the TLS spec flips
+  # require_secure_transport on for its own duration.
+  #
+  # The stack always bootstraps fresh: `npm run stop` removes the volumes, so
+  # galera1's --wsrep-new-cluster is safe. Never reuse these volumes across a
+  # partial teardown.
   database:
     container_name: database
-    image: mariadb:10.5.22
+    image: haproxy:3.0-alpine
     restart: on-failure
-    environment:
-      MYSQL_DATABASE: app
-      MYSQL_PASSWORD: app_password
-      MARIADB_ROOT_PASSWORD: root_password
-      MYSQL_USER: app
-      TZ: Europe/Berlin
     volumes:
-      - mariadb:/var/lib/mysql
+      - ./haproxy-database.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     healthcheck:
-      test: healthcheck.sh --connect
-      interval: 1s
+      test: nc -z 127.0.0.1 3306
+      interval: 2s
       timeout: 3s
       retries: 30
+      start_period: 5s
+    depends_on:
+      # galera3 transitively waits for galera2, so a healthy proxy implies the
+      # full cluster is up and synced before the application starts.
+      galera1:
+        condition: service_healthy
+      galera3:
+        condition: service_healthy
+
+  galera1:
+    <<: *galera-node
+    container_name: galera1
+    hostname: galera1
+    # Bootstrap the cluster only on first initialization (empty datadir).
+    # On any later start the node must JOIN the running cluster instead;
+    # passing --wsrep-new-cluster then would attempt a split bootstrap.
+    # A cold start of the whole stack with non-empty volumes is not a
+    # supported path (fresh containers cannot rejoin a cluster nobody is
+    # in): the loud hint below names the fix, `npm run stop` then start.
+    command: >
+      sh -c 'if [ ! -d /var/lib/mysql/mysql ];
+      then exec docker-entrypoint.sh mariadbd --wsrep-new-cluster; fi;
+      if [ ! -f /var/lib/mysql/gvwstate.dat ] && grep -q "safe_to_bootstrap: 0" /var/lib/mysql/grastate.dat 2>/dev/null;
+      then echo "E2E GALERA HINT: stale volume without a running cluster; run \"npm run stop\" (removes volumes) and \"npm run start\" fresh." >&2; fi;
+      exec docker-entrypoint.sh mariadbd'
+    environment:
+      <<: *galera-environment
+      MARIADB_DATABASE: app
+      MARIADB_USER: app
+      MARIADB_PASSWORD: app_password
+    volumes:
+      - mariadb1:/var/lib/mysql
+      - ./galera.cnf:/etc/mysql/conf.d/z-galera.cnf:ro
+      - ./tls:/etc/mysql/tls:ro
+
+  galera2:
+    <<: *galera-node
+    container_name: galera2
+    hostname: galera2
+    volumes:
+      - mariadb2:/var/lib/mysql
+      - ./galera.cnf:/etc/mysql/conf.d/z-galera.cnf:ro
+      - ./tls:/etc/mysql/tls:ro
+    depends_on:
+      galera1:
+        condition: service_healthy
+
+  galera3:
+    <<: *galera-node
+    container_name: galera3
+    hostname: galera3
+    volumes:
+      - mariadb3:/var/lib/mysql
+      - ./galera.cnf:/etc/mysql/conf.d/z-galera.cnf:ro
+      - ./tls:/etc/mysql/tls:ro
+    depends_on:
+      galera2:
+        condition: service_healthy
 
   # Management Tools
   database_dashboard:
     image: phpmyadmin:latest
     restart: on-failure
     environment:
-      PMA_HOSTS: database
+      PMA_HOSTS: database,galera1,galera2,galera3
       PMA_USER: app
       PMA_PASSWORD: app_password
       UPLOAD_LIMIT: 10G
@@ -84,5 +167,7 @@ services:
       - 3300:80
 
 volumes:
-  mariadb:
+  mariadb1:
+  mariadb2:
+  mariadb3:
   rabbitmq:

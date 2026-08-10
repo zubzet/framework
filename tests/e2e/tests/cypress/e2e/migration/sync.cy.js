@@ -7,6 +7,7 @@ describe('Migration System - Sync', () => {
             cy.exec(`rm -f ${baseDir}/${file} || true`, { failOnNonZeroExit: false });
         });
         cy.exec(`rm -f ../../../src/IncludedComponents/database/Migration/2025-01-01_Ex_Ex.sql || true`, { failOnNonZeroExit: false });
+        cy.exec(`rm -f ${baseDir}/2025-10-01_MigrationDrySideEffect.php || true`, { failOnNonZeroExit: false });
 
         cy.dbSeed();
 
@@ -26,6 +27,7 @@ describe('Migration System - Sync', () => {
         });
 
         cy.exec(`rm -f ../../../src/IncludedComponents/database/Migration/2025-01-01_Ex_Ex.sql || true`);
+        cy.exec(`rm -f ${baseDir}/2025-10-01_MigrationDrySideEffect.php || true`);
     });
 
     let baseDir = '../app/Database/migrations';
@@ -233,5 +235,32 @@ describe('Migration System - Sync', () => {
         });
 
         cy.exec(`rm -f ${zubzetMigrationPath}/${file} || true`);
+    });
+
+    it("should not execute PHP migrations in a --dry sync", () => {
+        // db:seed imports leftover fixture migrations and aborts on them,
+        // leaving the schema without z_user - clean up before seeding.
+        syncFiles.forEach(({file}) => {
+            cy.exec(`rm -f ${baseDir}/${file} || true`, { failOnNonZeroExit: false });
+        });
+        cy.dbSeed();
+
+        const file = "2025-10-01_MigrationDrySideEffect.php";
+
+        cy.exec(`cp cypress/fixtures/MigrationFiles/${file} ${baseDir}/${file}`);
+        cy.exec('docker exec application php index.php db:sync --dry').then((result) => {
+            expect(result.stdout).to.include(`Synchronizing migration: ./app/Database/migrations/${file}`);
+        });
+
+        cy.request('/migration/checkDryRunUser').then((res) => {
+            expect(res.body.exists, "dry sync must not create the user").to.eq(false);
+        });
+
+        cy.request('/migration/syncMigrations').then((res) => {
+            const versions = JSON.parse(res.body).versions.map(v => v.migration_name);
+            expect(versions).to.not.include(file);
+        });
+
+        cy.exec(`rm -f ${baseDir}/${file} || true`);
     });
 });

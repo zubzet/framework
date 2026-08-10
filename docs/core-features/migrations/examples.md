@@ -346,7 +346,7 @@ public function execute(): void {
 
 ## Column Types Reference
 
-Doctrine DBAL supports the following common column types:
+Doctrine DBAL supports the following [common column types](https://www.doctrine-project.org/projects/doctrine-dbal/en/4.4/reference/types.html):
 
 | Type | Description | Options |
 |------|-------------|---------|

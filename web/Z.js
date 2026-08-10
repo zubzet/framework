@@ -700,6 +700,7 @@ class ZForm {
    * @param {object} options Options
    * @param {boolean} [options.doReload] Should the form reload after submit? This is automatically set to true when using a CED in the form
    * @param {string} [options.dom] Id of a dom element to append this form automatically to
+   * @param {string} [options.name] Action name sent to the backend. Falls back to `dom` when omitted.
    * @param {saveHook} [options.saveHook] Function that is called after saving. It is only called after a success and not when validation errors occour
    * @param {formErrorHook} [options.formErrorHook] Function that is only called on form errors
    * @param {boolean} [options.hidehints] Suppress the inline hint banner (saved / unsaved / error). Defaults to `false` (hints are shown).
@@ -715,12 +716,14 @@ class ZForm {
     formErrorHook:null,
     hidehints: false,
     sendOnSubmitClick: true,
-    customEndpoint: null
+    customEndpoint: null,
+    name: null,
   }) {
     this.fields = {};
     this.options = options;
     this.ceds = [];
 
+    this.formAction = options.name || options.dom || null;
     this.doReload = options.doReload || false;
     this.saveHook = options.saveHook;
     this.formErrorHook = options.formErrorHook;
@@ -883,6 +886,10 @@ class ZForm {
 
     for (var pair of data.entries()) {
       if(this.debug) console.log(pair[0]+ ', ' + pair[1]); 
+    }
+
+    if(this.formAction) {
+        data.set("formAction", this.formAction);
     }
 
     var ajax_options = {

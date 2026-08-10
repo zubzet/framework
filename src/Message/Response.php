@@ -3,16 +3,16 @@
     namespace ZubZet\Framework\Message;
 
     use PHPMailer\PHPMailer\PHPMailer;
-    use ZubZet\Framework\Authentication\Session;
+
     use ZubZet\Framework\Form\Upload;
     use ZubZet\Framework\Support\Rest;
-    use ZubZet\Framework\Rendering\CanRenderView;
-    use ZubZet\Framework\Rendering\HandlesDefaultLayout;
-    use ZubZet\Framework\Form\Validation\Result;
-    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Message\Output\State;
-
+    use ZubZet\Framework\Form\Validation\Result;
+    use ZubZet\Framework\Authentication\Session;
+    use ZubZet\Framework\Rendering\CanRenderView;
+    use ZubZet\Framework\Rendering\Resolver\DefaultLayout;
 
     /**
      * @var object $opt Holds options needed for rendering
@@ -25,7 +25,7 @@
     class Response extends RequestResponseHandler {
 
         use CanRenderView;
-        use HandlesDefaultLayout;
+        use DefaultLayout;
 
         public State $output;
 
@@ -162,13 +162,14 @@
             $layout = str_replace("_layout", "", $layout);
             $layout = "$layout"."_layout";
 
-            if(!file_exists($this->getZViews()."$layout.php")) {
+            // Since 1.3.0 views are .blade.php; probe that so a path-style layout
+            // (e.g. "rendering/mail_layout") is not mistaken for a bare name and
+            // wrongly prefixed with "layout/".
+            if(!file_exists($this->getZViews()."$layout.blade.php")) {
                 if(substr($layout, 0, 7) !== "layout/") {
                     $layout = "layout/$layout";
                 }
             }
-
-            $layout = self::resolvePath($layout, true);
 
             //Overwrite the language
             $lang = strtolower($lang ?? "en");

@@ -22,6 +22,7 @@ describe('Migration System - Import', () => {
         "2005-01-10_2_Syn_File.sql",
 
         "2025-09-30_MigrationPHPImport.sql",
+        "2025-10-01_MigrationDrySideEffect.php",
         "2025-10-01_MigrationEnv.php",
         "2025-10-01_MigrationEnv1.php",
         "2025-10-01_MigrationImport.php",
@@ -136,6 +137,39 @@ describe('Migration System - Import', () => {
         cy.visit({ url: "/migration/checkImport", failOnStatusCode: false });
 
         cy.contains("Table 'app.migration_import' doesn't exist");
+
+        cy.exec(`rm -f ${baseDir}/${file} || true`);
+    });
+
+    it("should not execute PHP migrations in a --dry run", () => {
+        cy.dbSeed();
+
+        const file = "2025-10-01_MigrationDrySideEffect.php";
+
+        cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${baseDir}/${file}`);
+        cy.exec('docker exec application php index.php db:migrate --dry -f').then((result) => {
+            expect(result.stdout).to.include(`Importing migration: ./app/Database/migrations/${file}`);
+        });
+
+        cy.request('/migration/checkDryRunUser').then((res) => {
+            expect(res.body.exists, "dry run must not create the user").to.eq(false);
+        });
+
+        cy.request('/migration/syncMigrations').then((res) => {
+            const versions = JSON.parse(res.body).versions.map(v => v.migration_name);
+            expect(versions).to.not.include(file);
+        });
+
+        cy.exec('docker exec application php index.php db:migrate -f');
+
+        cy.request('/migration/checkDryRunUser').then((res) => {
+            expect(res.body.exists, "real run creates the user").to.eq(true);
+        });
+
+        cy.request('/migration/syncMigrations').then((res) => {
+            const versions = JSON.parse(res.body).versions.map(v => v.migration_name);
+            expect(versions).to.include(file);
+        });
 
         cy.exec(`rm -f ${baseDir}/${file} || true`);
     });

@@ -226,11 +226,15 @@
         }
 
         /**
-         * Checks if the request contains form data. When it contains form data, methods like validateForm() can be used.
+         * Checks if the request contains form data. When a form action is provided, it must match the submitted action.
+         * When it contains form data, methods like validateForm() can be used.
+         * @param string|null $formAction Optional action identifying one form among multiple forms
          * @return bool
          */
-        public function hasFormData(): bool {
-            return isset($this->input->POST["isFormData"]);
+        public function hasFormData(?string $formAction = null): bool {
+            if(!isset($this->input->POST["isFormData"])) return false;
+            if($formAction === null) return true;
+            return ($this->input->POST["formAction"] ?? null) === $formAction;
         }
 
         /**

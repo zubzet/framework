@@ -2,7 +2,7 @@
 The Z-Admin panel is a management panel you can open to edit/create users or roles/permissions.
 
 # Using the Z-Admin panel
-The Z-Admin panel is a control panel all projects using the framework have. It is accessible with the z controller. For example, an URL like this: `localhost/project/z` or `abcde.de/z` or `{yourdomain.tld}/{yourwebsite}/z`. Only logged in accounts with the correct permissions are able to see this section.
+The Z-Admin panel is a control panel all projects using the framework have. It is accessible with the z controller. For example, an URL like this: `localhost/project/z` or `abcde.de/z` or `{yourdomain.tld}/{yourwebsite}/z`. Only logged in accounts with the correct [permissions](../core-features/permission-system.md) are able to see this section.
 
 ## Categories
 It has following categories:
@@ -10,8 +10,8 @@ It has following categories:
 | Category | Function |
 | -------- | -------- |
 | Instance | Simple place to change instance settings|
-| Log / Statistics | View logs and statistics
-| Framework Update | Start updates for the framework |
+| Log / Statistics | View [logs](../core-features/logging.md) and statistics
+| Framework Update | Start [updates for the framework](../setup/how-to-update.md) |
 | Edit User | Form to edit users
 | Add User | Form to add users
 | Roles | User permission managment |
@@ -29,7 +29,7 @@ To be able to use all functions, the following permissions are needed:
 - admin.roles.edit
 - admin.roles.delete
 - admin.log
-- admin.su
+- [admin.su](login-as-another-user.md)
 
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.

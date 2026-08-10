@@ -1,0 +1,47 @@
+# Mirrors the production Galera settings from the declarative infrastructure
+# (nixops hosts/database), adapted to the compose network. Differences vs
+# production are transport-level only and intentional:
+# - WireGuard is not reproduced inside the compose network; client TLS is
+#   (see the ssl_* settings below).
+# - wsrep_sst_auth uses the compose root credentials instead of unix auth.
+
+[galera]
+wsrep_on = ON
+wsrep_provider = /usr/lib/galera/libgalera_smm.so
+wsrep_cluster_name = galera
+wsrep_cluster_address = gcomm://galera1,galera2,galera3
+
+binlog_format = ROW
+default_storage_engine = InnoDB
+enforce_storage_engine = InnoDB
+innodb_autoinc_lock_mode = 2
+innodb_doublewrite = 1
+wsrep_retry_autocommit = 3
+
+wsrep_sst_method = mariabackup
+wsrep_sst_auth = root:root_password
+
+# e2e-only additions (not in the production settings):
+#
+# With round-robin connections, a test may read on a different node
+# immediately after writing on another. sync_wait=1 makes reads wait for the
+# applier queue, giving the suite deterministic read-your-writes across nodes.
+wsrep_sync_wait = 1
+
+# Production keeps the default (ON), which interleaves auto-increment ids by
+# node offset. The suite runs strictly sequential requests, so turning it OFF
+# yields the same dense sequential ids as a single-node setup: the test
+# application and its fixtures stay byte-identical with ordinary user code.
+# Applications must still not assume dense id sequences in production.
+wsrep_auto_increment_control = OFF
+
+[mysqld]
+skip-name-resolve = ON
+
+# Encrypted client transport, as in production; the certificates are
+# committed test-only material (packaging/docker/tls, ~100-year validity).
+# TLS is offered, not required, so the default plaintext path stays
+# covered; the TLS spec flips require_secure_transport on itself.
+ssl_cert = /etc/mysql/tls/server.crt
+ssl_key = /etc/mysql/tls/server.key
+ssl_ca = /etc/mysql/tls/ca.crt

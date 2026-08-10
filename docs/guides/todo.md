@@ -1,7 +1,7 @@
 # Todo Application
-In the [last guide](shop), we explored how to make backend requests and manage them effectively on the server side.
+In the [last guide](shop.md), we explored how to make backend requests and manage them effectively on the server side.
 
-In this guide, we will learn how to create [forms](../forms/auto-form-validation) within our website. Using a simple Todo application as an example, we will demonstrate how to implement functionality to add data to our database using forms.
+In this guide, we will learn how to create [forms](../forms/auto-form-validation.md) within our website. Using a simple Todo application as an example, we will demonstrate how to implement functionality to add data to our database using forms.
 
 ### Resources
 <details>
@@ -111,8 +111,10 @@ INSERT INTO `todo` (`description`) VALUES
 <details>
     <summary>View</summary>
     list
-    ```html
-        <?php return ["body" => function ($opt) { ?>
+    ```blade
+        @extends($layout)
+
+        @section("content")
             <table>
                 <thead>
                     <tr>
@@ -172,7 +174,7 @@ INSERT INTO `todo` (`description`) VALUES
                     });
                 </script>
             <?php } ?>
-        <?php }]; ?>
+        @endsection
     ```
 </details>
 
@@ -188,37 +190,45 @@ With the help of the framework, creating a form is straightforward. This form co
 
 ## Creating a Form in a View
 To create a form in a view using ZubZet's framework, start by defining an HTML `div` element with an `id` attribute to serve as the container for the form:
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <div id="form"></div>
-<?php }]; ?>
+@endsection
 ```
 
 Next, include a JavaScript block within the view. This script block will be used to configure and define the form:
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <div id="form"></div>
     <script>
     </script>
-<?php }]; ?>
+@endsection
 
 ```
 
 To initialize the form, use the `Z.Forms.create` method from the framework's JavaScript API. The `dom` property specifies the container's ID:
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <div id="form"></div>
     <script>
         var form = Z.Forms.create({
             dom: "form",
         });
     </script>
-<?php }]; ?>
+@endsection
 ```
 
 Fields can now be added to the form. For example, to include a text input field for a task description, use the createField method. Define attributes such as `name`, `type`, `text`, and `required` to specify the field's behavior:
-``` html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <div id="form"></div>
     <script>
         var form = Z.Forms.create({
@@ -232,7 +242,7 @@ Fields can now be added to the form. For example, to include a text input field 
             required: true,
         });
     </script>
-<?php }]; ?>
+@endsection
 ```
 ??? info "What does the attributes mean?"
     Each field's attributes serve specific purposes:
@@ -242,7 +252,7 @@ Fields can now be added to the form. For example, to include a text input field 
     - `text`: Displays a label for the field above the input.
     - `required`: Specifies whether the field must be filled before submission.
 
-    There are additional attributes available to customize your fields. You can find the full list [here](../forms/auto-form-validation)
+    There are additional attributes available to customize your fields. You can find the full list [here](../forms/auto-form-validation.md)
 
 ## Handle Form in the backend
 To handle submitted form data, go to your controller which send you the view of the form. Begin by checking for the presence of form data with `$req->hasFormData()`. This function ensures the backend processes only valid form submissions:
@@ -320,7 +330,7 @@ If validation fails, return errors to the frontend using `$res->formErrors()`:
 
 `$formResult->hasErrors()` checks if there is any invalid input. If errors are present, the method return `$res->formErrors($formResult->errors);` sends the errors to the frontend, allowing them to be displayed to the user for correction.
 
-Upon successful validation, use $res->insertDatabase to save the data to a database. Ensure field names in the frontend match database column names:
+Upon successful validation, use [$res->insertDatabase](../api/classes/ZubZet-Framework-Message-Response.html#method_insertDatabase) to save the data to a database. Ensure field names in the frontend match database column names:
 ```php
 <?php
     class TodoController extends z_controller {
@@ -362,4 +372,4 @@ By following these steps, the form can be created, validated, and handled effici
 ## Next Guide
 In the upcoming guide, we will explore how to create and use layouts to organize your website into distinct sections for better structure and maintainability.
 
-[Layouts](layout)
+[Layouts](layout.md)

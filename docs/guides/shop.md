@@ -1,7 +1,7 @@
 # Shop Application
-In the [last guide](library), we explored how to enhance your website's security by implementing roles and permissions to restrict user access effectively.
+In the [last guide](library.md), we explored how to enhance your website's security by implementing roles and permissions to restrict user access effectively.
 
-In this guide, we’ll focus on handling backend requests in your application. Using a Shop example, we will demonstrate how to implement functionality for removing data from the database, triggered by a delete button on the page. This will provide you with the foundation for managing interactive actions securely and efficiently.
+In this guide, we’ll focus on handling [backend requests](../frontend-integration/backend-requests.md) in your application. Using a Shop example, we will demonstrate how to implement functionality for removing data from the database, triggered by a delete button on the page. This will provide you with the foundation for managing interactive actions securely and efficiently.
 
 ### Resources
 <details>
@@ -88,8 +88,10 @@ INSERT INTO `product`(`name`, `price`) VALUES
 <details>
     <summary>View</summary>
     shopping_cart
-    ```html
-    <?php return ["body" => function ($opt) { ?>
+    ```blade
+    @extends($layout)
+
+    @section("content")
         <table>
             <thead>
                 <tr>
@@ -114,7 +116,7 @@ INSERT INTO `product`(`name`, `price`) VALUES
                 <?php } ?>
             </tbody>
         </table>
-    <?php }]; ?>
+    @endsection
     ```
 </details>
 
@@ -127,8 +129,10 @@ The framework includes a robust and fully implemented request system. Backend re
 ## How to send a Backend Request?
 To send a backend request, we need to update our view to handle user actions. Here, we’ll make the delete button functional by adding an event listener to manage button clicks.
 
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -153,7 +157,7 @@ To send a backend request, we need to update our view to handle user actions. He
             <?php } ?>
         </tbody>
     </table>
-<?php }]; ?>
+@endsection
 ```
 
 To send a backend request, we need to update our view to handle user actions. Here, we’ll make the delete button functional by adding an event listener to manage button clicks.
@@ -164,8 +168,10 @@ To send a backend request, we need to update our view to handle user actions. He
     Additionally, there are **IDs**, which are unique identifiers meant to target a single element on a page.
 
 First, assign a class to the delete button so it can be uniquely identified:
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -190,7 +196,7 @@ First, assign a class to the delete button so it can be uniquely identified:
             <?php } ?>
         </tbody>
     </table>
-<?php }]; ?>
+@endsection
 ```
 The `class="delete-product"` ensures that only these buttons are targeted for the delete functionality.
 
@@ -204,8 +210,10 @@ The `class="delete-product"` ensures that only these buttons are targeted for th
 Next, use `jQuery` to add an event listener for the buttons with the `delete-product` class. To enhance security, we ensure the script is only displayed to users who have the appropriate permissions. This prevents unauthorized users from accessing or triggering backend functionality.
 
 
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -238,7 +246,7 @@ Next, use `jQuery` to add an event listener for the buttons with the `delete-pro
             });
         </script>
     <?php } ?>
-<?php }]; ?>
+@endsection
 ```
 
 ??? info "What do EventListeners do?"
@@ -249,8 +257,10 @@ This script attaches a `click()` event listener to all elements with the delete-
 Now we need to get our product-identifier ('id').
 For that we need to save the id`s of the products inside the product-html-element.
 We are doing it like that:
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -283,14 +293,16 @@ We are doing it like that:
             });
         </script>
     <?php } ?>
-<?php }]; ?>
+@endsection
 ```
 
 With the `data-id` attribute, we can embed custom values into our HTML elements. For example, using `var id = $(this).data("id");`, we can retrieve the `id` of the selected product and store it in a variable.
 
 Next, we send the product ID to the backend using the `Z.Request.action` method:
-```html
-<?php return ["body" => function ($opt) { ?>
+```blade
+@extends($layout)
+
+@section("content")
     <table>
         <thead>
             <tr>
@@ -333,7 +345,7 @@ Next, we send the product ID to the backend using the `Z.Request.action` method:
             });
         </script>
     <?php } ?>
-<?php }]; ?>
+@endsection
 ```
 The `Z.Request.action` method sends the request to the backend, with `delete-product` as the identifier to specify the action to perform. The product `ID` is passed as data to identify the item to delete. The response is then handled by checking if the result is `success`. If so, the page reloads to update the table; otherwise, an error message is displayed.
 
@@ -413,7 +425,7 @@ We then delete the product by calling the `deleteProduct` method in the `ShopMod
 ?>
 ```
 
-Finally, we send a response back to the frontend. The framework provides several response methods, such as:  
+Finally, we send a response back to the frontend. The framework provides several [response methods](../api/classes/ZubZet-Framework-Message-Response.html), such as:  
 
 - `$res->success()`  Indicates the request was successful.
 - `$res->error()` Indicates the request failed.
@@ -445,7 +457,7 @@ In this case, since the request is successful, we use `$res->success()` and retu
 ?>
 ```
 
-This ensures a clear response is sent to the frontend, confirming whether the deletion was successful, and prevents unnecessary processing after the response. For additional response options, refer to the [REST API documentation](../core-features/rest-api).
+This ensures a clear response is sent to the frontend, confirming whether the deletion was successful, and prevents unnecessary processing after the response. For additional response options, refer to the [REST API documentation](../core-features/rest-api.md).
 
 ## Why Set `active = 0` Instead of Deleting the Product from the Database?
 The `deleteProduct` function in our `ShopModel` is implemented as follows:

@@ -4,6 +4,24 @@ This is a simple changelog to keep track of things that have changed. It is not 
 ## ToDos
 These todos should be as temporary as possible:
 
+## v1.4.0
+1. Added #183 - Multiple forms in one view: every `ZForm` submission carries a `formAction` taken from the new `name` option (falling back to `dom`), and `$req->hasFormData($formAction)` targets a single form. Argument-less calls keep detecting any submitted form
+1. Added #178 - Health endpoint at `GET /_zubzet/health`: performs an explicit database check and reports plain JSON without error details. Enabled by default, disable via `health_endpoint_enabled = false`
+1. Fixed `--dry` executing PHP migrations in `db:migrate` and `db:sync`. Migration files are no longer loaded during a dry run, so skip and environment markers are not evaluated - every pending migration is reported
+1. Added #80 - Cluster-resilient database connection: `Connection::exec()` retries transient contention errors (deadlock, lock-wait timeout, Galera serialization conflict) and recovers dropped connections, including Galera nodes refusing service as SST/IST donor (`1047`), by reconnecting through the endpoint, re-preparing, and re-running the statement. Tunable via `db_max_retries` (default `3`, `0` disables). **Migrator note:** a statement that previously failed on a dropped connection may now be applied twice in the rare case where the server executed a write but the acknowledgment was lost; single statements only, since every `exec()` auto-commits
+1. Changed - Database connect attempts are bounded by a 5 second timeout and PHP 8.0 connect failures now throw the same exception as PHP 8.1+, instead of leaving a half-initialized connection behind
+1. Added - Encrypted database transport: `db_ssl = true` connects over TLS and verifies the server certificate against the system trust store; a private authority is added to that store or set via `openssl.cafile`. Applies to migrations as well. Documented in [Database Connection](docs/core-features/database-connection.md)
+1. Added - Optional persistent database connections via `db_persistent = true`: the PHP worker keeps the connection open across requests and skips the handshake. Off by default, because a worker then stays on the cluster node it first reached. **Migrator note:** mysqli pools by endpoint and credentials, not by transport, so reload PHP-FPM when changing `db_ssl` with this on
+1. Changed - `dbport` is now honored by the runtime connection, not only by migrations. With `db_ssl` on, `dbhost` must be a plain hostname (the certificate is matched against it, and no certificate names a port); a `host:port` value is rejected with an error pointing to `dbport`
+1. Changed - The e2e suite now runs against a real three-node MariaDB Galera cluster behind a failover proxy, so every test implicitly exercises cluster behavior
+1. Added - Module system: Composer packages of type `zubzet-module` contribute controllers, models, views, routes, console commands, migrations, seeds, and webroot assets, resolved through the new central `Registry` (`src/Registry`) with the precedence userspace, then modules (ordered by the `modules` ini key, then Composer installed order), then framework. Includes the `module:setup` command (append-only merge of missing module ini defaults) and module rows in `info:startup`. See the [Modules docs](docs/advanced-features/modules.md)
+1. Added - Console commands by convention: `app/Commands/` files (application and modules) declare Symfony commands that register next to the framework's; on a command-name collision the application wins, then modules, then the framework
+1. Added - Debug bar "Resolutions" tab: every convention lookup of the request is listed with the root that won it (userspace, module package, or framework) and the resolved file path
+1. Bare controller and model name lookups now resolve recursively into subdirectories after a flat miss, shallowest match first. **Migrator note:** previously unreachable nested files under `app/Controllers` and `app/Models` become routable - delete stale copies you do not want served
+1. The model instance cache is now keyed by the resolved file path. **Migrator note:** two `getModel` calls that aliased one instance via the `dir` parameter now yield separate instances
+1. `db:migrate` and `db:sync` now abort when two migration files share a basename anywhere in the assembled set, userspace subdirectories and framework migrations included (the scan is recursive). **Migrator note:** executed state is keyed on the basename, so one duplicate was previously silently skipped; rename or delete one of the listed files to proceed
+1. The asset proxy no longer serves files with `.php`, `.phtml`, or `.ini` extensions. **Migrator note:** this applies to every mount, including sources registered via `registerWebRootSource`
+
 ## v1.2.0
 1. Added DEV Changelog
 1. Add logging folder to .gitignore

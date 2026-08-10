@@ -6,11 +6,13 @@
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Registry\Registry;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Sync extends Command {
 
         use DatabaseConnection;
+        use Traits\ChecksDuplicateBasenames;
 
         protected function configure(): void {
             $this->setName("db:sync");
@@ -129,11 +131,20 @@
             $fileMigrationsRaw = model("z_migration")->getFiles("./app/Database/migrations");
 
             if($includeExternal) {
+                // "External" = not authored in this app: framework + module migrations.
+                $externalMigrations = model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false);
+                foreach(Registry::moduleRoots("migrations") as $moduleRoot) {
+                    $externalMigrations = array_merge($externalMigrations, model("z_migration")->getFiles($moduleRoot, false));
+                }
+
                 $fileMigrationsRaw = array_merge(
                     $fileMigrationsRaw,
-                    model("z_migration")->getFiles(zubzet()->z_framework_root . "IncludedComponents/database/Migration", false)
+                    $externalMigrations
                 );
             }
+
+            if($this->rejectDuplicateBasenames($fileMigrationsRaw, $out)) return 1;
+
             $fileMigrations = model("z_migration")->sortMigrations($fileMigrationsRaw);
 
             $executedNames = array_map(fn($m) => $m->name, $dbMigrations);
@@ -151,22 +162,6 @@
             try {
 
                 foreach($pendingMigrations as $file) {
-                    $file->extractData();
-
-                    // Check specific environment mismatch
-                    if(!empty($includedEnvironments) && !in_array($file->environment, array_unique([
-                        "default",
-                        ...$includedEnvironments
-                    ]))) {
-                        $out->writeln("<info>Skipping migration (not in included environments): {$file->filename}</info>");
-                        continue;
-                    }
-
-                    if(!empty($excludedEnvironments) && in_array($file->environment, $excludedEnvironments)) {
-                        $out->writeln("<info>Skipping migration (in excluded environments): {$file->filename}</info>");
-                        continue;
-                    }
-
                     // Check start date/version
                     if($startDate) {
                         if($file->date < $startDateObj) {
@@ -196,10 +191,30 @@
                         }
                     }
 
-                    $out->writeln("<info>Synchronizing migration: {$file->filename}</info>");
+                    // Do not load the file in dry mode: extracting data
+                    // from a PHP migration would already run its execute().
+                    if($dryMode) {
+                        $out->writeln("<info>Synchronizing migration: {$file->filename}</info>");
+                        continue;
+                    }
 
-                    // Do not execute in dry mode
-                    if($dryMode) continue;
+                    $file->extractData();
+
+                    // Check specific environment mismatch
+                    if(!empty($includedEnvironments) && !in_array($file->environment, array_unique([
+                        "default",
+                        ...$includedEnvironments
+                    ]))) {
+                        $out->writeln("<info>Skipping migration (not in included environments): {$file->filename}</info>");
+                        continue;
+                    }
+
+                    if(!empty($excludedEnvironments) && in_array($file->environment, $excludedEnvironments)) {
+                        $out->writeln("<info>Skipping migration (in excluded environments): {$file->filename}</info>");
+                        continue;
+                    }
+
+                    $out->writeln("<info>Synchronizing migration: {$file->filename}</info>");
 
                     model("z_migration")->markAsExecuted($file->filename, $file->date->format("Y-m-d"), $file->version);
                 }

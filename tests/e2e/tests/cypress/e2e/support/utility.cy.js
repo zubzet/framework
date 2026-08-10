@@ -4,6 +4,7 @@
 
 describe('Global helpers (src/Support/Helpers.php)', () => {
     const helpers = [
+        'e',
         'makeSlug',
         'uecho',
         'shortenStr',

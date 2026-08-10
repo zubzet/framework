@@ -1,6 +1,7 @@
 <?php
 
     use ZubZet\Framework\Database\Connection;
+    use ZubZet\Framework\Database\Endpoint;
 
     class ConnectionProbeController extends z_controller {
 
@@ -230,8 +231,150 @@
         }
 
         // -------------------------------------------------------------
+        // TLS (src/Database/Endpoint.php). The cluster's certificate comes
+        // from the suite's own CA, which the application image trusts in
+        // its system store (Dockerfile.apache-local) exactly like a public
+        // authority in production, so db_ssl = true needs nothing else.
+        // The settings are overridden per request so the application's own
+        // connection stays usable in the cases that must fail to connect;
+        // the ini-driven path is covered by the spec flipping db_ssl on a
+        // cluster that demands it. The suite runs with db_persistent on,
+        // so connectWith() forces it off: mysqli pools by credentials and
+        // endpoint, not by transport, and a pooled plaintext connection
+        // would be handed to the TLS cases.
+        // -------------------------------------------------------------
+
+        /** How the application's configured connection is talking right now. */
+        public function action_tlsTransport(Request $req, Response $res) {
+            return $res->json($this->transportOf(db()));
+        }
+
+        /** db_ssl = true alone: encrypted, verified via the system store. */
+        public function action_tlsVerified(Request $req, Response $res) {
+            return $this->connectWith(["db_ssl" => true], $res);
+        }
+
+        /**
+         * The endpoint's IP is not a name on the certificate, so this must
+         * be refused. Proof that verification really happens - mysqli given
+         * no authority skips every check and would connect happily.
+         */
+        public function action_tlsWrongHost(Request $req, Response $res) {
+            return $this->connectWith(["db_ssl" => true, "dbhost" => gethostbyname("database")], $res);
+        }
+
+        /** A host:port dbhost cannot be verified; the error must say why. */
+        public function action_tlsHostWithPort(Request $req, Response $res) {
+            return $this->connectWith(["db_ssl" => true, "dbhost" => "database:3306"], $res);
+        }
+
+        // -------------------------------------------------------------
+        // db_persistent: mysqli keeps the connection open in this PHP
+        // worker and hands it to the next request. Two connections opened
+        // one after the other in a single request are the same server
+        // session with it, and two different ones without it. Comparing
+        // within one request keeps this independent of which apache worker
+        // a request happens to land on.
+        // -------------------------------------------------------------
+
+        public function action_persistentReuse(Request $req, Response $res) {
+            return $res->json([
+                "persistent" => $this->twoSessions(true),
+                "fresh" => $this->twoSessions(false),
+            ]);
+        }
+
+        /** Identifies the server session of two consecutive connections. */
+        private function twoSessions(bool $persistent): array {
+            return $this->withSettings(["db_persistent" => $persistent], function() {
+                $sessions = [];
+                for($i = 0; $i < 2; $i++) {
+                    $connection = new Connection();
+                    // Node included because thread ids are per node, so two
+                    // separate sessions can share a number across the cluster.
+                    $session = $connection->exec("SELECT @@hostname AS node, CONNECTION_ID() AS id")->resultToLine();
+                    $sessions[] = $session["node"] . "#" . $session["id"];
+                    $connection->disconnect();
+                }
+                return $sessions;
+            });
+        }
+
+        // -------------------------------------------------------------
         // helpers
         // -------------------------------------------------------------
+
+        /**
+         * Opens a connection under the given settings and reports how it
+         * went. Failures are reported as data, not as a 500, so the spec can
+         * assert on the negative cases too.
+         */
+        private function connectWith(array $settings, Response $res) {
+            // Fresh, non-pooled connections; see the section comment.
+            $settings += ["db_persistent" => false];
+            try {
+                return $res->json($this->withSettings($settings, function() {
+                    // Constructed inside the override so it picks the settings
+                    // up; the socket itself is opened by the first query.
+                    $connection = new Connection();
+                    $transport = $this->transportOf($connection);
+                    $connection->disconnect();
+                    return $transport + ["connected" => true, "error" => null];
+                }));
+            } catch(\Throwable $failure) {
+                return $res->json(["connected" => false, "error" => $failure->getMessage()]);
+            }
+        }
+
+        /** Runs the callback with booter settings temporarily overridden. */
+        private function withSettings(array $settings, \Closure $action) {
+            $restore = [];
+            foreach($settings as $key => $value) {
+                $restore[$key] = isset(zubzet()->{$key}) ? zubzet()->{$key} : null;
+                zubzet()->{$key} = $value;
+            }
+
+            self::resetEndpoint();
+            try {
+                return $action();
+            } finally {
+                foreach($restore as $key => $value) {
+                    zubzet()->{$key} = $value;
+                }
+                self::resetEndpoint();
+            }
+        }
+
+        /**
+         * The framework reads the endpoint once per request (a singleton);
+         * these probes vary it within one request, so the cached instance is
+         * cleared around every override. Test-only reflection, deliberately
+         * not a framework API.
+         *
+         * setStaticPropertyValue() reaches the private property on every
+         * supported version: ReflectionProperty would need setAccessible()
+         * on 8.0, which is deprecated as of 8.5.
+         */
+        private static function resetEndpoint(): void {
+            (new \ReflectionClass(Endpoint::class))->setStaticPropertyValue("instance", null);
+        }
+
+        /**
+         * The transport actually negotiated for this session. Both status
+         * variables are empty on a plaintext connection.
+         */
+        private function transportOf(Connection $connection): array {
+            return [
+                "cipher" => $this->sessionStatus($connection, "Ssl_cipher"),
+                "version" => $this->sessionStatus($connection, "Ssl_version"),
+            ];
+        }
+
+        // SHOW takes no placeholders, so the name is interpolated; it only
+        // ever comes from the two literals above.
+        private function sessionStatus(Connection $connection, string $variable): string {
+            return $connection->exec("SHOW SESSION STATUS LIKE '$variable'")->resultToLine()["Value"];
+        }
 
         private function ensureConnection(): void {
             // heartbeat() / disconnect() / direct $conn access blow up on

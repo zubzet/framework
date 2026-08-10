@@ -1,4 +1,7 @@
 {
+    "cSpell.words": [
+        "katana"
+    ],
     "path-mapper": [
         {
             "match": "/var/www/framework/",

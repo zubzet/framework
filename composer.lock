@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "556464788056ae54929c52dbb05d3b3c",
+    "content-hash": "d7b9c80b44a262d4d2cb9afd65cb424a",
     "packages": [
         {
             "name": "cakephp/core",
@@ -718,6 +718,48 @@
                 }
             ],
             "time": "2025-08-08T12:00:00+00:00"
+        },
+        {
+            "name": "katanaphp/blade",
+            "version": "dev-integration/zubzet",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/katanaphp/blade.git",
+                "reference": "ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/katanaphp/blade/zipball/ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c",
+                "reference": "ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.2",
+                "phpunit/phpunit": "^9",
+                "symfony/var-dumper": "^5"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Blade\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Standalone version of Laravel Blade",
+            "support": {
+                "issues": "https://github.com/katanaphp/blade/issues",
+                "source": "https://github.com/katanaphp/blade/tree/integration/zubzet"
+            },
+            "time": "2026-07-26T18:13:11+00:00"
         },
         {
             "name": "league/mime-type-detection",
@@ -2621,7 +2663,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "katanaphp/blade": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

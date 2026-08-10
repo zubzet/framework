@@ -20,5 +20,9 @@
             self::collect("monolog", "addLogger", func_get_args());
         }
 
+        public static function collectResolution(string $kind, string $name, string $origin, string $path): void {
+            self::collect("resolutions", "addResolution", func_get_args());
+        }
+
     }
 ?>
