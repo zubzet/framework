@@ -156,6 +156,18 @@
                                     Groups
                                 </a>
                             <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.organizations.list")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-organizations" href="<?= $opt["root"]; ?>z/organizations">
+                                    <i class="fa fa-fw fa-building"></i>
+                                    Organizations
+                                </a>
+                            <?php } ?>
+                            <?php if($opt["user"]->checkPermission("admin.organizations.create")) { ?>
+                                <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-add-organization" href="<?= $opt["root"]; ?>z/add_organization">
+                                    <i class="fa fa-fw fa-plus-circle"></i>
+                                    Add Organization
+                                </a>
+                            <?php } ?>
                         </div>
 
                         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">

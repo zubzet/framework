@@ -28,6 +28,13 @@
             placeholder: "******",
         });
 
+        form.createField({
+            name: "organization",
+            type: "select",
+            text: "Organization",
+            food: <?= $opt["organizations"]; ?>,
+        });
+
         $("label").addClass("mb-0");
     </script>
 @endsection

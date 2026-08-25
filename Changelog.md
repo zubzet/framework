@@ -5,6 +5,7 @@ This is a simple changelog to keep track of things that have changed. It is not 
 These todos should be as temporary as possible:
 
 ## v1.4.0
+1. Added organization management to the Z-Admin panel: create organizations with an optional permission group, list and edit them, and assign users to one
 1. Added #183 - Multiple forms in one view: every `ZForm` submission carries a `formAction` taken from the new `name` option (falling back to `dom`), and `$req->hasFormData($formAction)` targets a single form. Argument-less calls keep detecting any submitted form
 1. Added #178 - Health endpoint at `GET /_zubzet/health`: performs an explicit database check and reports plain JSON without error details. Enabled by default, disable via `health_endpoint_enabled = false`
 1. Fixed `--dry` executing PHP migrations in `db:migrate` and `db:sync`. Migration files are no longer loaded during a dry run, so skip and environment markers are not evaluated - every pending migration is reported

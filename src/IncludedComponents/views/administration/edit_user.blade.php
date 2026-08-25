@@ -8,6 +8,14 @@
 
             var inputEmail = form.createField({name: "email", type: "email", text: "Email", value: "<?php echo $opt["email"]; ?>"});
 
+            form.createField({
+                name: "organization",
+                type: "select",
+                text: "Organization",
+                food: <?= $opt["organizations"]; ?>,
+                value: <?=  json_encode($opt["organizationId"] ?? ""); ?>,
+            });
+
             form.addSeperator();
 
             var ced = form.createCED({

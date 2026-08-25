@@ -20,6 +20,8 @@ describe('Z-Admin Panel', () => {
         cy.query("btn-edit-user").should("exist");
         cy.query("btn-add-user").should("exist");
         cy.query("btn-roles").should("exist");
+        cy.query("btn-organizations").should("exist");
+        cy.query("btn-add-organization").should("exist");
 
         // Dashboard cards (in the content area) link into each admin section
         cy.query("dash-database").should("have.attr", "href").and("match", /\/z\/database$/);
@@ -28,6 +30,8 @@ describe('Z-Admin Panel', () => {
         cy.query("dash-add-user").should("have.attr", "href").and("match", /\/z\/add_user$/);
         cy.query("dash-roles").should("have.attr", "href").and("match", /\/z\/roles$/);
         cy.query("dash-groups").should("have.attr", "href").and("match", /\/z\/groups$/);
+        cy.query("dash-organizations").should("have.attr", "href").and("match", /\/z\/organizations$/);
+        cy.query("dash-add-organization").should("have.attr", "href").and("match", /\/z\/add_organization$/);
         cy.query("dash-back").should("have.attr", "href").and("match", /\/$/);
         cy.query("dash-logout").should("have.attr", "href").and("match", /\/login\/logout$/);
     });
@@ -474,6 +478,186 @@ describe('Z-Admin Panel', () => {
             }).then((res) => {
                 expect(res.status).to.eq(403);
             });
+        });
+    });
+
+    // ZController::action_add_organization and ZController::action_organizations,
+    // plus the organization select both user forms gained. Every fixture used
+    // here is seeded in app/Database/seed/ZAdmin.sql, so the tests do not
+    // depend on each other's order.
+    describe('Organizations (admin)', () => {
+        beforeEach(() => cy.loginAs("admin"));
+
+        // hasFormData() requires the isFormData flag (set by Z.Forms).
+        function postForm(url, body) {
+            return cy.request({
+                method: 'POST',
+                url: url,
+                form: true,
+                failOnStatusCode: false,
+                body: { isFormData: 1, ...body },
+            }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
+        }
+
+        it('creates an organization without a group', () => {
+            postForm('/z/add_organization', { name: 'zadmin_PostCreatedOrganization' }).then((out) => {
+                expect(out.result).to.eq('success');
+            });
+
+            cy.visit('/z/organizations');
+            cy.contains('.list-group-item', 'zadmin_PostCreatedOrganization').click();
+
+            cy.form('name').should('have.value', 'zadmin_PostCreatedOrganization');
+            cy.query('organization-group').should('not.exist');
+        });
+
+        it('creates an organization with its permission group from the form', () => {
+            cy.intercept('POST', '/z/add_organization').as('addOrganization');
+
+            cy.visit('/z/add_organization');
+            cy.form('name').type('zadmin_FormCreatedOrganization');
+            cy.form('create_group').check();
+            cy.get('.btn.btn-primary').last().click();
+            cy.wait('@addOrganization', { timeout: 30000 });
+
+            // The group carries the organization name plus the "_Group" suffix
+            // and is linked to the organization, so it shows on both pages.
+            cy.visit('/z/groups');
+            cy.contains('.list-group-item', 'zadmin_FormCreatedOrganization_Group').should('exist');
+
+            cy.visit('/z/organizations');
+            cy.contains('.list-group-item', 'zadmin_FormCreatedOrganization').click();
+            cy.query('organization-group').should('contain', 'zadmin_FormCreatedOrganization_Group');
+        });
+
+        it('rejects create_group when a group of that name already exists', () => {
+            // Group 246 is seeded as "zadmin_OrganizationDetail_Group", which is
+            // exactly the name this organization would ask for.
+            postForm('/z/add_organization', { name: 'zadmin_OrganizationDetail', create_group: '1' }).then((out) => {
+                expect(out.result).to.eq('formErrors');
+                expect(out.formErrors).to.deep.include({ name: 'create_group', type: 'unique' });
+            });
+        });
+
+        it('rejects a name shorter than three characters', () => {
+            postForm('/z/add_organization', { name: 'ab' }).then((out) => {
+                expect(out.result).to.eq('formErrors');
+                expect(out.formErrors).to.deep.include({ name: 'name', type: 'length', info: [3, 249] });
+            });
+        });
+
+        it('rejects a missing name', () => {
+            postForm('/z/add_organization', { name: '' }).then((out) => {
+                expect(out.result).to.eq('formErrors');
+                expect(out.formErrors).to.deep.include({ name: 'name', type: 'required' });
+            });
+        });
+
+        it('shows the group and the members of an organization on its detail page', () => {
+            cy.visit('/z/organizations');
+            cy.query('organization-create').should('have.attr', 'href').and('match', /\/z\/add_organization$/);
+            cy.query('organization-562').should('exist').and('contain', 'zadmin_OrganizationDetail');
+            cy.query('organization-562').click();
+
+            cy.form('name').should('have.value', 'zadmin_OrganizationDetail');
+            cy.query('organization-group').should('contain', 'zadmin_OrganizationDetail_Group');
+            cy.query('organization-user-560').should('contain', 'zpanel_organizationMember@cypress.test');
+        });
+
+        it('renames an organization', () => {
+            postForm('/z/organizations/560', { name: 'zadmin_OrganizationRenamed' }).then((out) => {
+                expect(out.result).to.eq('success');
+            });
+
+            cy.visit('/z/organizations/560');
+            cy.form('name').should('have.value', 'zadmin_OrganizationRenamed');
+        });
+
+        it('deactivates an organization and removes it from the list', () => {
+            cy.visit('/z/organizations');
+            cy.query('organization-561').should('exist');
+
+            cy.request({
+                method: 'POST',
+                url: '/z/organizations/561',
+                form: true,
+                body: { action: 'delete' },
+            }).then((res) => {
+                const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+                expect(body.result).to.eq('success');
+            });
+
+            cy.visit('/z/organizations');
+            cy.query('organization-561').should('not.exist');
+            // Untouched organization 562 still shows - proves the filter is targeted.
+            cy.query('organization-562').should('exist');
+        });
+
+        it('reports an unknown organization instead of rendering the detail page', () => {
+            cy.request('/z/organizations/999999').then((res) => {
+                const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+                expect(body.result).to.eq('error');
+            });
+        });
+
+        it('creates a user in the selected organization', () => {
+            postForm('/z/add_user', {
+                email: 'zpanel_organizationNewUser@cypress.test',
+                password: 'goodpass',
+                organization: '563',
+            }).then((out) => {
+                expect(out.result).to.eq('success');
+            });
+
+            cy.visit('/z/organizations/563');
+            cy.contains('.list-group-item', 'zpanel_organizationNewUser@cypress.test').should('exist');
+        });
+
+        it('assigns an organization to a user and adds them to its group', () => {
+            // User 561 is seeded without an organization; 563 is backed by group 247.
+            postForm('/z/edit_user/561', {
+                email: 'zpanel_organizationAssignTarget@cypress.test',
+                organization: '563',
+            }).then((out) => {
+                expect(out.result).to.eq('success');
+            });
+
+            cy.visit('/z/edit_user/561');
+            cy.form('organization').should('have.value', '563');
+            // The group membership rides in the roles CED, which lists z_user_role.
+            cy.get('select[name=role] option[value="247"]:selected').should('exist');
+        });
+
+        it('unassigns an organization and removes the user from its group', () => {
+            // User 562 is seeded into organization 563 and its group 247.
+            postForm('/z/edit_user/562', {
+                email: 'zpanel_organizationUnassignTarget@cypress.test',
+                organization: '',
+            }).then((out) => {
+                expect(out.result).to.eq('success');
+            });
+
+            cy.visit('/z/edit_user/562');
+            cy.form('organization').should('have.value', '');
+            cy.get('select[name=role] option[value="247"]:selected').should('not.exist');
+        });
+
+        it('rejects an organization that does not exist', () => {
+            postForm('/z/edit_user/561', {
+                email: 'zpanel_organizationAssignTarget@cypress.test',
+                organization: '999999',
+            }).then((out) => {
+                expect(out.result).to.eq('formErrors');
+                expect(out.formErrors).to.deep.include({ name: 'organization', type: 'exist' });
+            });
+        });
+
+        it('denies the organization pages to users without the permissions', () => {
+            cy.loginAs("customer");
+
+            cy.sendRequest('/z/organizations');
+            cy.sendRequest('/z/organizations/562');
+            cy.sendRequest('/z/add_organization');
         });
     });
 
