@@ -48,11 +48,14 @@
             $req->checkPermission("admin.user.add");
 
             if(!$req->hasFormData()) {
-                return $res->render("administration/add_user.php");
+                return $res->render("administration/add_user.php", [
+                    "organizations" => $this->makeFood($this->getOrganizations($req), "id", "name"),
+                ]);
             }
 
             $formResult = $req->validateForm([
                 (new FormField("email"))->unique("z_user", "email"),
+                (new FormField("organization"))->exists("z_organization", "id"),
             ]);
 
             $email = $req->getPost("email");
@@ -65,7 +68,7 @@
             }
 
             try {
-                $req->getModel("z_user", $res->getZRoot())->add(
+                $userId = $req->getModel("z_user", $res->getZRoot())->add(
                     empty($email) ? null : $email,
                     $req->getPost("password"),
                     date("Y-m-d H:i:s"),
@@ -74,6 +77,8 @@
                 $formResult->addCustomError("password", "filter");
                 return $res->formErrors($formResult->errors);
             }
+
+            $this->applyOrganization($userId, $req->getPost("organization"));
 
             return $res->success();
         }
@@ -115,8 +120,12 @@
             $roles = $req->getModel("z_general")->getTableWhere("z_role", "*", "active = 1 AND (is_group = 0 OR id IN (SELECT role FROM z_user_role WHERE active = 1 AND user = ?))", "i", [$userId]);
 
             if($req->hasFormData()) {
+                $organizationField = (new FormField("organization"))->exists("z_organization", "id");
+                $organizationField->noSave = true;
+
                 $formResult = $req->validateForm([
                     (new FormField("email"))->unique("z_user", "email", "id", $userId),
+                    $organizationField,
                 ]);
 
                 $subformResult = $req->validateCED("roles", [
@@ -140,6 +149,10 @@
                 $res->doCED("z_user_permission", $subPermissionForm, ["user" => $userId]);
                 $res->updateDatabase("z_user", "id", "i", $userId, $formResult);
 
+                // After the roles CED, so the group membership it maintains is
+                // the last word on which group the organization contributes.
+                $this->applyOrganization($userId, $req->getPost("organization"));
+
                 logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
                     "userId" => $userId,
                     "email" => $email,
@@ -153,6 +166,8 @@
                 "roles" => $this->makeFood($roles, "id", "name"),
                 "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
                 "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
+                "organizations" => $this->makeFood($this->getOrganizations($req), "id", "name"),
+                "organizationId" => $user["organizationId"],
                 "result" => "success",
                 "email" => $user["email"],
                 "userId" => $userId,
@@ -313,6 +328,79 @@
             ]);
         }
 
+        // Action for creating an organization, optionally backed by a group
+        public function action_add_organization(Request $req, Response $res) {
+            $req->checkPermission("admin.organizations.create");
+
+            if(!$req->hasFormData()) {
+                return $res->render("administration/add_organization.php");
+            }
+
+            $formResult = $req->validateForm([
+                (new FormField("name"))->required()->length(3, 249),
+            ]);
+
+            if($formResult->hasErrors) {
+                return $res->formErrors($formResult->errors);
+            }
+
+            $name = $req->getPost("name");
+            $createGroup = "1" == $req->getPost("create_group");
+            $groupName = $name . "_Group";
+
+            if($createGroup && !db()->checkIfUnique("z_role", "name", $groupName)) {
+                $formResult->addCustomError("create_group", "unique");
+                return $res->formErrors($formResult->errors);
+            }
+
+            Organization::add($name, $createGroup, $groupName);
+
+            return $res->success();
+        }
+
+        // Action for the organization configuration page
+        public function action_organizations(Request $req, Response $res) {
+            $req->checkPermission("admin.organizations.list");
+
+            $organizationId = $req->getParameters(0, 1);
+
+            if(empty($organizationId) && $organizationId !== "0") {
+                return $res->render("administration/organization_select.php", [
+                    "organizations" => $this->getOrganizations($req),
+                ]);
+            }
+
+            $req->checkPermission("admin.organizations.edit");
+            $organization = Organization::byId($organizationId);
+
+            if(is_null($organization)) return $res->error("Organization not found");
+
+            if($req->isAction("delete")) {
+                $req->checkPermission("admin.organizations.delete");
+                $organization->remove();
+                return $res->success();
+            }
+
+            if($req->hasFormData()) {
+                $formResult = $req->validateForm([
+                    (new FormField("name"))->required()->length(3, 249),
+                ]);
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                $organization->updateName($req->getPost("name"));
+                return $res->success();
+            }
+
+            return $res->render("administration/organizations.php", [
+                "name" => $organization->getField("name"),
+                "group" => $organization->getGroup(),
+                "users" => $organization->getUsers(),
+            ]);
+        }
+
         public function action_database(Request $req, Response $res) {
             $req->checkPermission("admin.database");
 
@@ -350,6 +438,21 @@
                 "paginationLast" => max(1, $page - 1),
                 "totalPages" => $table["totalPages"],
             ]);
+        }
+
+        private function getOrganizations(Request $req): array {
+            return $req->getModel("z_general")->getTableWhere("z_organization", "*", "active = ?", "i", [1]);
+        }
+
+        private function applyOrganization(int|string $userId, ?string $organizationId): void {
+            $user = User::byId($userId);
+            if(is_null($user)) return;
+
+            $organization = empty($organizationId) ? null : Organization::byId($organizationId);
+
+            if($user->organization()?->id() === $organization?->id()) return;
+
+            $user->updateOrganization($organization);
         }
     }
 
