@@ -677,7 +677,7 @@ describe('Z-Admin Panel', () => {
 
             cy.form('name').should('have.value', 'zadmin_OrganizationDetail');
             cy.query('organization-group').should('contain', 'zadmin_OrganizationDetail_Group');
-            cy.query('organization-user-950').should('contain', 'zadmin_organizationMember@cypress.test');
+            cy.query('organization-user-950').should('contain', 'zpanel_organizationMember@cypress.test');
         });
 
         it('renames an organization', () => {
@@ -718,7 +718,7 @@ describe('Z-Admin Panel', () => {
 
         it('creates a user in the selected organization', () => {
             postForm('/z/add_user', {
-                email: 'zadmin_organizationNewUser@cypress.test',
+                email: 'zpanel_organizationNewUser@cypress.test',
                 password: 'goodpass',
                 organization: '953',
             }).then((out) => {
@@ -726,13 +726,13 @@ describe('Z-Admin Panel', () => {
             });
 
             cy.visit('/z/organizations/953');
-            cy.contains('.list-group-item', 'zadmin_organizationNewUser@cypress.test').should('exist');
+            cy.contains('.list-group-item', 'zpanel_organizationNewUser@cypress.test').should('exist');
         });
 
         it('assigns an organization to a user and adds them to its group', () => {
             // User 951 is seeded without an organization; 953 is backed by group 951.
             postForm('/z/edit_user/951', {
-                email: 'zadmin_organizationAssignTarget@cypress.test',
+                email: 'zpanel_organizationAssignTarget@cypress.test',
                 organization: '953',
             }).then((out) => {
                 expect(out.result).to.eq('success');
@@ -747,7 +747,7 @@ describe('Z-Admin Panel', () => {
         it('unassigns an organization and removes the user from its group', () => {
             // User 952 is seeded into organization 953 and its group 951.
             postForm('/z/edit_user/952', {
-                email: 'zadmin_organizationUnassignTarget@cypress.test',
+                email: 'zpanel_organizationUnassignTarget@cypress.test',
                 organization: '',
             }).then((out) => {
                 expect(out.result).to.eq('success');
@@ -760,7 +760,7 @@ describe('Z-Admin Panel', () => {
 
         it('rejects an organization that does not exist', () => {
             postForm('/z/edit_user/951', {
-                email: 'zadmin_organizationAssignTarget@cypress.test',
+                email: 'zpanel_organizationAssignTarget@cypress.test',
                 organization: '999999',
             }).then((out) => {
                 expect(out.result).to.eq('formErrors');
