@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "395aebce0c2595d8ad34a8646a334c24",
+    "content-hash": "f5c9e268bde09b354babda801c8a8138",
     "packages": [
         {
             "name": "cakephp/core",
@@ -347,16 +347,16 @@
         },
         {
             "name": "components/jquery",
-            "version": "3.5.1",
+            "version": "v3.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components/jquery.git",
-                "reference": "b33e8f0f9a1cb2ae390cf05d766a900b53d2125b"
+                "reference": "8edc7785239bb8c2ad2b83302b856a1d61de60e7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components/jquery/zipball/b33e8f0f9a1cb2ae390cf05d766a900b53d2125b",
-                "reference": "b33e8f0f9a1cb2ae390cf05d766a900b53d2125b",
+                "url": "https://api.github.com/repos/components/jquery/zipball/8edc7785239bb8c2ad2b83302b856a1d61de60e7",
+                "reference": "8edc7785239bb8c2ad2b83302b856a1d61de60e7",
                 "shasum": ""
             },
             "type": "component",
@@ -392,7 +392,7 @@
                 "source": "https://github.com/jquery/jquery",
                 "wiki": "http://docs.jquery.com/"
             },
-            "time": "2020-05-05T13:21:02+00:00"
+            "time": "2023-09-22T01:43:46+00:00"
         },
         {
             "name": "doctrine/dbal",
@@ -721,16 +721,16 @@
         },
         {
             "name": "katanaphp/blade",
-            "version": "dev-integration/zubzet",
+            "version": "0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/katanaphp/blade.git",
-                "reference": "ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c"
+                "reference": "f441e130702b0639b8d10097fa18d110d543809c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/katanaphp/blade/zipball/ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c",
-                "reference": "ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c",
+                "url": "https://api.github.com/repos/katanaphp/blade/zipball/f441e130702b0639b8d10097fa18d110d543809c",
+                "reference": "f441e130702b0639b8d10097fa18d110d543809c",
                 "shasum": ""
             },
             "require": {
@@ -757,9 +757,9 @@
             "description": "Standalone version of Laravel Blade",
             "support": {
                 "issues": "https://github.com/katanaphp/blade/issues",
-                "source": "https://github.com/katanaphp/blade/tree/integration/zubzet"
+                "source": "https://github.com/katanaphp/blade/tree/0.2.0"
             },
-            "time": "2026-07-26T18:13:11+00:00"
+            "time": "2026-08-03T17:01:54+00:00"
         },
         {
             "name": "league/mime-type-detection",
@@ -2664,13 +2664,11 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "katanaphp/blade": 20
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.0 <8.6",
+        "php": ">=8.0.2 <8.6",
         "composer-runtime-api": "^2.1"
     },
     "platform-dev": {},
