@@ -39,6 +39,9 @@
                 // explicitly in Console\Application; only userspace and
                 // modules contribute by convention.
                 new Kind("commands", "z_commands", null, "app/Commands", null),
+                // Background tasks are declared by applications and modules;
+                // the framework ships none of its own.
+                new Kind("tasks", "z_tasks", null, "app/Tasks", null),
                 new Kind("migrations", null, "./app/Database/migrations", "app/Database/migrations", "IncludedComponents/database/Migration", [".sql", ".php"]),
                 new Kind("seeds", null, "./app/Database/seed", "app/Database/seed", null, [".sql", ".php"]),
                 // Assets: only moduleRoots() is consumed; the AssetProxy keeps its
