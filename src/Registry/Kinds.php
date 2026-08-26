@@ -33,6 +33,8 @@
                 // Views are consumed as directory roots only; the render engine
                 // does the per-name lookup through its finder chain.
                 new Kind("views", "z_views", null, "app/Views", "IncludedComponents/views"),
+                // Symfony catalogue files
+                new Kind("translations", "translations", null, "app/Translations", "IncludedComponents/translations", [".json"], deepFind: false),
                 // deepFiles=false: keeps the historical flat glob("*.php") semantics.
                 new Kind("routes", "routes", null, "app/Routes", "IncludedComponents/routes", deepFiles: false),
                 // Framework commands are namespaced classes registered

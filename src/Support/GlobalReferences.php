@@ -13,6 +13,7 @@
         use ZubZet\Framework\Authentication\User;
         use ZubZet\Framework\Database\Connection;
         use ZubZet\Framework\Logger\LoggerFactory;
+        use ZubZet\Framework\Translation\Translation;
         use ZubZet\Framework\Core\FunctionConflictResolution;
         use ZubZet\Framework\ErrorHandling\GenericException\NotInstantiatedException;
 
@@ -149,6 +150,21 @@
         FunctionConflictResolution::requireAndThen("logger", function() {
             function logger(?string $name = null): Logger {
                 return LoggerFactory::getOrCreateLogger($name ?? Logger::APP);
+            }
+        });
+
+        FunctionConflictResolution::requireAndThen("t", function() {
+            /**
+             * Translates a message id. An id no catalogue defines is returned unchanged.
+             *
+             * @param string $id Message id, e.g. "dashboard.welcome"
+             * @param array $parameters Placeholder values, spelled the way the catalogue spells them
+             * @param string|null $domain Catalogue domain, "messages" when omitted
+             * @param string|null $locale Locale override, the active locale when omitted
+             * @return string The translated message
+             */
+            function t(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
+                return Translation::translate($id, $parameters, $domain, $locale);
             }
         });
 

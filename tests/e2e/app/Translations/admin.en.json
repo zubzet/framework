@@ -1,0 +1,8 @@
+{
+    "welcome": "Welcome!",
+    "dashboard": {
+        "welcome": "Welcome to the Dashboard",
+        "greeting": "Good to see you, %name%! You last signed in on %date%.",
+        "messages": "{0}No new messages|{1}One new message|]1,Inf[ %count% new messages"
+    }
+}
