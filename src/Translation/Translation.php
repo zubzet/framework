@@ -2,15 +2,13 @@
 
     namespace ZubZet\Framework\Translation;
 
-use Symfony\Component\Translation\Loader\CsvFileLoader;
-use Symfony\Component\Translation\Loader\IniFileLoader;
-use ZubZet\Framework\Registry\Registry;
+    use ZubZet\Framework\Registry\Registry;
     use ZubZet\Framework\Support\StaticCache;
     use Symfony\Component\Translation\Translator;
+    use Symfony\Component\Translation\Loader\IniFileLoader;
+    use Symfony\Component\Translation\Loader\CsvFileLoader;
+    use Symfony\Component\Translation\Loader\PhpFileLoader;
     use Symfony\Component\Translation\Loader\JsonFileLoader;
-use Symfony\Component\Translation\Loader\PhpFileLoader;
-use Symfony\Component\Translation\Loader\XliffFileLoader;
-use Symfony\Component\Translation\Loader\YamlFileLoader;
 
     class Translation {
 
@@ -18,8 +16,6 @@ use Symfony\Component\Translation\Loader\YamlFileLoader;
 
         private array $fileLoader = [
             "json" => JsonFileLoader::class,
-            "yaml" => YamlFileLoader::class,
-            "xlf" => XliffFileLoader::class,
             "php" => PhpFileLoader::class,
             "csv" => CsvFileLoader::class,
             "ini" => IniFileLoader::class,
