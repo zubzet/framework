@@ -153,7 +153,7 @@
             }
         });
 
-        FunctionConflictResolution::requireAndThen("t", function() {
+        FunctionConflictResolution::requireAndThen("__", function() {
             /**
              * Translates a message id. An id no catalogue defines is returned unchanged.
              *
@@ -163,7 +163,7 @@
              * @param string|null $locale Locale override, the active locale when omitted
              * @return string The translated message
              */
-            function t(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
+            function __(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
                 return Translation::translate($id, $parameters, $domain, $locale);
             }
         });
