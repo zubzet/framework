@@ -10,7 +10,7 @@
     /**
      * @codeCoverageIgnore Runs before measurement begins; coverage cannot record this.
      */
-    final class Start extends Command {
+    final class Start extends CoverageCommand {
 
         protected function configure(): void {
             $this->setName('testing:coverage:start');
@@ -18,6 +18,10 @@
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
+            if(!Collector::hasCoverageLibrary()) {
+                return $this->missingCoverageLibrary($out);
+            }
+
             if(Collector::isActive()) {
                 $out->writeln("<error>Coverage collection is already active.</error>");
                 $out->writeln("End the current session with <info>testing:coverage:stop</info> before starting a new one.");

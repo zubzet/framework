@@ -21,6 +21,7 @@ These todos should be as temporary as possible:
 1. The model instance cache is now keyed by the resolved file path. **Migrator note:** two `getModel` calls that aliased one instance via the `dir` parameter now yield separate instances
 1. `db:migrate` and `db:sync` now abort when two migration files share a basename anywhere in the assembled set, userspace subdirectories and framework migrations included (the scan is recursive). **Migrator note:** executed state is keyed on the basename, so one duplicate was previously silently skipped; rename or delete one of the listed files to proceed
 1. The asset proxy no longer serves files with `.php`, `.phtml`, or `.ini` extensions. **Migrator note:** this applies to every mount, including sources registered via `registerWebRootSource`
+1. Changed - `phpunit/php-code-coverage` moved from `require` to `require-dev`; the `testing:coverage:*` commands now check for it via the Composer runtime API and fail with an installation hint when it is missing. **Migrator note:** Composer never installs a dependency's dev requirements, so apps using the coverage commands must require the library themselves: `composer require --dev "phpunit/php-code-coverage:9.*"` (the framework declares a conflict with other majors, so an unversioned require also resolves to 9.x)
 
 ## v1.2.0
 1. Added DEV Changelog
