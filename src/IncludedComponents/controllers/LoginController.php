@@ -29,8 +29,8 @@
          * @param Response $res The response object
          */
         public function action_index($req, $res) {
-            // No credentials submitted yet: render the login form.
-            if($req->getPost("name", false) === false) {
+            // Only the Z.Request call, which carries the csrf token, submits credentials: render the login form.
+            if(!$req->isAction("login")) {
                 return $res->render("login.php", [
                     "title" => "Login ",
                     "noLayout" => $req->getGet("noLayout", false),

@@ -18,12 +18,12 @@ describe('auth:migrate-hashing command', () => {
     const authenticates = (id) =>
         cy.request(`/AuthProbe/checkPassword/${id}?password=${PASSWORD}`).then((r) => JSON.parse(r.body).ok);
     const login = (email) =>
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/login',
             form: true,
             failOnStatusCode: false,
-            body: { name: email, password: PASSWORD },
+            body: { action: 'login', _zReq: 1, name: email, password: PASSWORD },
         });
 
     before(() => cy.dbSeed());
