@@ -9,5 +9,9 @@
         if(config("health_endpoint_enabled", default: true)) {
             Route::get('/health', [ZubZetController::class, 'health']);
         }
+
+        if(config("task_endpoint_enabled", default: true)) {
+            Route::get('/task/{id:\d+}', [ZubZetController::class, 'task']);
+        }
     });
 ?>

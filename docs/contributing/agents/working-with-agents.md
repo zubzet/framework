@@ -33,6 +33,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 - `Resources/` — Asset proxy: ordered `Mount` chain, bundled Composer packages
 - `Routing/` — `Router` trait, FastRoute integration, `Route` builder
 - `Support/` — Global helpers, dynamic attributes, function-conflict resolution
+- `Tasks/` — Background task system: `Tasks` facade, `Task` base class, worker pool, `queue:work`
 - `Testing/` — Coverage commands
 
 ## Bootstrap order
@@ -240,6 +241,7 @@ docker exec application php index.php <command>
 | `db:unlock-migration` | Release a stuck migration lock |
 | `info:startup` | Print framework startup banner (no side effects — safe in tests) |
 | `module:setup` | Append-only merge of missing module ini defaults into the app ini |
+| `queue:work` | Run queued background tasks (`--workers=N` supervises a pool) |
 | `testing:coverage:start` / `:stop` | Bracket a coverage session |
 
 Convention commands from `app/Commands/` (userspace and modules) appear next to these in `list`;

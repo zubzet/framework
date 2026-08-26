@@ -141,6 +141,7 @@ nav:
         - Sending Mails: template-rendering-usages/sending-an-email
     - Advanced Features:
         - Aliases And Virtual Links: advanced-features/aliases-and-virtual-links
+        - Background Tasks: advanced-features/background-tasks
         - Commands: advanced-features/commands
         - Modules: advanced-features/modules
     - API Reference: api/index.html
