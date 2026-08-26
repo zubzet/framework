@@ -12,7 +12,7 @@
     /**
      * @codeCoverageIgnore Runs after measurement ends; coverage cannot record this.
      */
-    final class Stop extends Command {
+    final class Stop extends CoverageCommand {
 
         protected function configure(): void {
             $this->setName('testing:coverage:stop');
@@ -23,6 +23,10 @@
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
             $isCli = $in->getOption('cli');
+
+            if(!Collector::hasCoverageLibrary()) {
+                return $this->missingCoverageLibrary($out);
+            }
 
             if(!Collector::isActive()) {
                 $out->writeln("<error>No active coverage collection session.</error>");
