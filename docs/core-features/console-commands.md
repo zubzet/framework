@@ -90,6 +90,17 @@ Beyond `run`, the application (and every module) can ship dedicated Symfony comm
 `app/Commands/`; they register automatically and appear in `list`. See
 [Commands](../advanced-features/commands.md) for the file convention and precedence rules.
 
+### Background tasks
+
+Run the queued background tasks an application dispatches:
+
+```bash
+php index.php queue:work --workers=4
+```
+
+See [Background Tasks](../advanced-features/background-tasks.md) for the task
+API, the worker options, and how to deploy the workers.
+
 ### Coverage
 
 Collect a runtime code-coverage report:
