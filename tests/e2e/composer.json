@@ -30,6 +30,10 @@
         "zubzet/framework": "*@dev"
     },
 
+    "require-dev": {
+        "phpunit/php-code-coverage": "9.*"
+    },
+
     "config": {
         "sort-packages": true
     }

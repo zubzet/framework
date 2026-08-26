@@ -92,6 +92,16 @@ Beyond `run`, the application (and every module) can ship dedicated Symfony comm
 
 ### Coverage
 
+Coverage is a development feature: the underlying `phpunit/php-code-coverage` library is a
+development dependency of ZubZet and is not installed with your application by default.
+Install it before using the coverage commands:
+
+```bash
+composer require --dev "phpunit/php-code-coverage:9.*"
+```
+
+Without it, the coverage commands fail with an error explaining this requirement.
+
 Collect a runtime code-coverage report:
 
 ```bash
