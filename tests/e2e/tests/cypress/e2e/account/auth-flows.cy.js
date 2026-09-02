@@ -228,12 +228,14 @@ describe('Auth flows', () => {
             cy.setConfigSetting('maxLoginTriesPerTimespan', '2');
             clearMailhog();
 
-            const submit = (password) => cy.request({
+            const submit = (password) => cy.zRequest({
                 method: 'POST',
                 url: '/login',
                 form: true,
                 failOnStatusCode: false,
                 body: {
+                    action: 'login',
+                    _zReq: 1,
                     name: 'auth_ratelimit@cypress.test',
                     password,
                 },

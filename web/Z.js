@@ -41,6 +41,38 @@ Z = {
    * Holds everything related to communicating with the backend
    */
   Request: {
+    /** Read a cookie value by name, or null if absent. */
+    _cookie(name) {
+      const prefix = name + '=';
+      for(const part of document.cookie.split(';')) {
+        const cookie = part.trim();
+        if(!cookie.startsWith(prefix)) continue;
+        return decodeURIComponent(cookie.slice(prefix.length));
+      }
+      return null;
+    },
+    /**
+     * Reads the CSRF token the server issued for this host.
+     *
+     * Z.Request and Z.Forms attach it themselves, so this is only needed for
+     * requests built by hand. Send it back as an `X-CSRF-Token` header,
+     * otherwise a non-GET request carrying a Z marker is answered with 403.
+     * @returns {?string} The token, or null if no cookie has been issued yet
+     */
+    csrfToken() {
+      return Z.Request._cookie('z_csrf');
+    },
+    /** Headers attached to every Z request — currently just CSRF. */
+    _csrfHeaders() {
+      const token = Z.Request.csrfToken();
+
+      if(token) {
+        return {'X-CSRF-Token': token};
+      }
+
+      return {};
+    },
+
     /**
      * Triggers a subaction on the current action from which this view was launched
      * @param {string} action Name of the subaction. Can be checked in the backend with $req->isAction("blub")
@@ -50,7 +82,8 @@ Z = {
     action(action, data, handler) {
       $.ajax({
         method: "POST",
-        data: Object.assign(data, {action: action})
+        data: Object.assign(data, {action: action, _zReq: 1}),
+        headers: this._csrfHeaders(),
       }).done((data) => {
         var dat = null;
         try {
@@ -72,9 +105,10 @@ Z = {
     root(action, subaction, data, handler = null, async = true, parse = true, additionalParameters = {}) {
       $.ajax({
         method: "POST",
-        data: Object.assign(data, {action: subaction}),
+        data: Object.assign(data, {action: subaction, _zReq: 1}),
         url: Z.Request.rootPath + action,
         async: async,
+        headers: this._csrfHeaders(),
         ...additionalParameters
       }).done((data) => {
         if(parse) {
@@ -898,7 +932,8 @@ class ZForm {
       cache: false,
       contentType: false,
       data: data,
-      processData: false
+      processData: false,
+      headers: Z.Request._csrfHeaders(),
     };
 
     if(customUrl != null) ajax_options.url = customUrl;

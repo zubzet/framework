@@ -146,7 +146,7 @@ describe('Z-Admin Panel', () => {
 
         function postAdd(body) {
             // hasFormData() requires the isFormData flag (set by Z.Forms).
-            return cy.request({
+            return cy.zRequest({
                 method: 'POST',
                 url: '/z/add_user',
                 form: true,
@@ -200,7 +200,7 @@ describe('Z-Admin Panel', () => {
 
         function postEdit(userId, body) {
             // hasFormData() requires the isFormData flag (set by Z.Forms).
-            return cy.request({
+            return cy.zRequest({
                 method: 'POST',
                 url: `/z/edit_user/${userId}`,
                 form: true,
@@ -307,11 +307,11 @@ describe('Z-Admin Panel', () => {
             cy.visit('/z/roles');
             cy.query(`role-${roleId}`).should('exist');
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: `/z/roles/${roleId}`,
                 form: true,
-                body: { action: 'delete' },
+                body: { action: 'delete', _zReq: 1 },
             }).then((delRes) => {
                 const delBody = typeof delRes.body === 'string' ? JSON.parse(delRes.body) : delRes.body;
                 expect(delBody.result).to.eq('success');
@@ -323,12 +323,12 @@ describe('Z-Admin Panel', () => {
 
         it('denies delete to users without admin.roles.delete', () => {
             cy.loginAs("customer");
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/z/roles/100',
                 form: true,
                 failOnStatusCode: false,
-                body: { action: 'delete' },
+                body: { action: 'delete', _zReq: 1 },
             }).then((res) => {
                 expect(res.status).to.eq(403);
             });

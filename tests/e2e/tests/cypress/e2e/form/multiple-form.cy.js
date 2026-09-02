@@ -104,7 +104,7 @@ describe('Multiple Forms', () => {
     });
 
     describe('hasFormData() matching rules', () => {
-        const probe = (body) => cy.request({
+        const probe = (body) => cy.zRequest({
             method: 'POST',
             url: '/MultipleForm/probe',
             form: true,
