@@ -1,6 +1,5 @@
 {
     "language": {
-        "default": "Default",
-        "preferred": "Preferred"
+        "message": "Message"
     }
 }
