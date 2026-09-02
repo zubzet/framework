@@ -1,5 +1,6 @@
 {
     "language": {
-        "default": "Standard"
+        "default": "Standard",
+        "preferred": "Bevorzugt"
     }
 }
