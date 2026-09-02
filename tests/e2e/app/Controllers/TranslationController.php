@@ -20,6 +20,11 @@
         public function action_defined_locale(Request $req, Response $res) {
             echo __("language.message", locale: "de");
         }
+
+        public function action_fallback_locale(Request $req, Response $res) {
+            echo __("language.message", locale: "fr");
+        }
+
     }
 
 ?>

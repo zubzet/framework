@@ -38,5 +38,10 @@
     "locale_en": {
         "name": "locale-en@zierhut-it.de",
         "token": "user_locale_en"
+    },
+
+    "locale_undefined": {
+        "name": "locale-undefined@zierhut-it.de",
+        "token": "user_locale_undefined"
     }
 }

@@ -50,4 +50,15 @@ describe('Translation - Locale Resolution', () => {
         cy.contains("Nachricht");
     });
 
+    it("should use the default locale when no user preference is set", () => {
+        cy.loginAs('locale_undefined');
+        cy.visit('/translation/message');
+        cy.contains("Nachricht");
+    });
+
+    it("should use the fallback locale when no translation is available in the user's preferred language", () => {
+        cy.visit('/translation/fallback-locale');
+        cy.contains("Message");
+    });
+
 });
