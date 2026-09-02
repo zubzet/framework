@@ -84,11 +84,7 @@
         public static function locale(): string {
             return self::userLocale()
                 ?? self::negotiatedLocale()
-                ?? self::defaultLocale();
-        }
-
-        public static function defaultLocale(): string {
-            return config("default_locale", default: "en");
+                ?? self::fallbackLocales()[0];
         }
 
         public static function fallbackLocales(): array {

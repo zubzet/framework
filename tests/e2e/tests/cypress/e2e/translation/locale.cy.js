@@ -50,12 +50,6 @@ describe('Translation - Locale Resolution', () => {
         cy.contains("Nachricht");
     });
 
-    it("should use the default locale when no user preference is set", () => {
-        cy.loginAs('locale_undefined');
-        cy.visit('/translation/message');
-        cy.contains("Nachricht");
-    });
-
     it("should use the fallback locale when no translation is available in the user's preferred language", () => {
         cy.visit('/translation/fallback-locale');
         cy.contains("Message");
@@ -84,6 +78,53 @@ describe('Translation - Locale Resolution', () => {
             cy.visit(`/translation/loader/${loader}`);
             cy.contains(`${loader}-Nachricht`);
         });
+    });
+
+    describe('with no user language preference', () => {
+
+        const visitWith = (acceptLanguage) => {
+            cy.loginAs('locale_undefined');
+            cy.visit('/translation/message', {
+                headers: {
+                    'Accept-Language': acceptLanguage
+                }
+            });
+        };
+
+        it("should use the requested language when it has a catalogue", () => {
+            visitWith('de');
+            cy.contains("Nachricht");
+
+            visitWith('en');
+            cy.contains("Message");
+        });
+
+        it("should prefer the entry with the highest quality", () => {
+            visitWith('en;q=0.3, de;q=0.9');
+            cy.contains("Nachricht");
+
+            visitWith('de;q=0.3, en;q=0.9');
+            cy.contains("Message");
+        });
+
+        it("should skip requested languages that have no catalogue", () => {
+            visitWith('fr, it, de');
+            cy.contains("Nachricht");
+        });
+
+        it("should match a region against the catalogue's base language", () => {
+            visitWith('de-CH');
+            cy.contains("Nachricht");
+        });
+
+        // Last resort is fallback_locales[0]. "fr" is configured as the second
+        // fallback and has no catalogue, so landing on English proves the first
+        // entry is taken rather than just any of them.
+        it("should use the first fallback locale when no requested language has a catalogue", () => {
+            visitWith('fr, it');
+            cy.contains("Message");
+        });
+
     });
 
 });
