@@ -32,13 +32,26 @@
         public function __construct(bool $enforce = false) {
             $this->ensureToken();
 
-            // Otherwise scoped to Z.Forms (`isFormData`) and Z.Request
-            // (`_zReq`) so raw forms in application code keep working.
-            $this->verify(
-                $enforce
+            // Only verify if the request is a Z.js request or the caller explicitly asks for it.
+            $shouldVerify = $enforce
                 || isset(request()->input->POST['isFormData'])
-                || isset(request()->input->POST['_zReq'])
-            );
+                || isset(request()->input->POST['_zReq']);
+
+            if(!$shouldVerify) return;
+
+            // Safe methods do not require a CSRF token
+            $method = strtoupper(request()->input->SERVER['REQUEST_METHOD'] ?? 'GET');
+            if(in_array($method, self::SAFE, true)) return;
+
+            $cookie = request()->getCookie(self::COOKIE) ?? '';
+            $header = request()->input->SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+
+            if($cookie === '' || $header === '' || !hash_equals($cookie, $header)) {
+                http_response_code(403);
+                header('Content-Type: application/json');
+                response()->generateRestError(403, 'csrf token mismatch');
+                return;
+            }
         }
 
         private function ensureToken(): string {
@@ -56,7 +69,7 @@
                 'expires' => time() + self::LIFETIME,
                 'path' => '/',
                 'secure' => $secure,
-                'httponly' => false, // JS must read it
+                'httponly' => false,
                 'samesite' => 'Lax',
             ]);
 
@@ -65,22 +78,5 @@
             request()->input->COOKIE[self::COOKIE] = $token;
 
             return $token;
-        }
-
-        private function verify(bool $required): void {
-            $method = strtoupper(request()->input->SERVER['REQUEST_METHOD'] ?? 'GET');
-            if(\in_array($method, self::SAFE, true)) return;
-
-            if(!$required) return;
-
-            $cookie = request()->getCookie(self::COOKIE) ?? '';
-            $header = request()->input->SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-
-            if($cookie === '' || $header === '' || !hash_equals($cookie, $header)) {
-                http_response_code(403);
-                header('Content-Type: application/json');
-                response()->generateRestError(403, 'csrf token mismatch');
-                return;
-            }
         }
     }
