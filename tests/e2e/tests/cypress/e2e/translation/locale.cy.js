@@ -61,4 +61,21 @@ describe('Translation - Locale Resolution', () => {
         cy.contains("Message");
     });
 
+    describe('with a chain of fallback locales', () => {
+
+        before(() => {
+            cy.saveConfigBackup();
+            // Chain of fallback
+            cy.setConfigSetting('fallback_locales', 'fr, it, de');
+        });
+
+        after(() => cy.restoreConfigBackup());
+
+        it("should walk the fallback chain until a locale has a catalogue", () => {
+            cy.visit('/translation/fallback-locale');
+            cy.contains("Nachricht");
+        });
+
+    });
+
 });
