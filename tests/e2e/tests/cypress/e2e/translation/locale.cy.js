@@ -30,4 +30,24 @@ describe('Translation - Locale Resolution', () => {
         cy.contains("TestNachricht");
     });
 
+    it("should replace parameters in the translation string", () => {
+        cy.loginAs('locale_en');
+        cy.visit('/translation/param-message');
+        cy.contains("ParamMessage:First:Second");
+
+        cy.loginAs('locale_de');
+        cy.visit('/translation/param-message');
+        cy.contains("ParamNachricht:First:Second");
+    });
+
+    it("should use the defined locale", () => {
+        cy.loginAs('locale_en');
+        cy.visit('/translation/defined-locale');
+        cy.contains("Nachricht");
+
+        cy.loginAs('locale_de');
+        cy.visit('/translation/defined-locale');
+        cy.contains("Nachricht");
+    });
+
 });

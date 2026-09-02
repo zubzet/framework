@@ -1,5 +1,6 @@
 {
     "language": {
-        "message": "Nachricht"
+        "message": "Nachricht",
+        "param_message": "ParamNachricht:{first_param}:{second_param}"
     }
 }
