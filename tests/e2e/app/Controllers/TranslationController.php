@@ -25,6 +25,11 @@
             echo __("language.message", locale: "fr");
         }
 
+        public function action_loader(Request $req, Response $res) {
+            $format = $req->getUrlParts()[2];
+            echo __("language.message", domain: "{$format}_loader");
+        }
+
     }
 
 ?>

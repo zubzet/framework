@@ -75,7 +75,15 @@ describe('Translation - Locale Resolution', () => {
             cy.visit('/translation/fallback-locale');
             cy.contains("Nachricht");
         });
+    });
 
+    it("should use the different loaders", () => {
+        cy.loginAs('locale_de');
+
+        ["php", "csv", "ini"].forEach((loader) => {
+            cy.visit(`/translation/loader/${loader}`);
+            cy.contains(`${loader}-Nachricht`);
+        });
     });
 
 });
