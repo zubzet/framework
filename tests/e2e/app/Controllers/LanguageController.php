@@ -1,8 +1,13 @@
 <?php
 
+    use ZubZet\Framework\Translation\Translation;
+
     class LanguageController extends z_controller {
 
         public function action_index(\Request $req, \Response $res) {
+            echo "Locale: " . Translation::locale();
+
+            echo("<br><br><br>");
             echo __("dashboard.welcome", domain: "admin");
             echo("<br><br><br>");
             echo __("welcome", domain: "admin");

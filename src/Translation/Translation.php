@@ -12,36 +12,12 @@
 
     class Translation {
 
-        public Translator $translator;
-
-        private array $fileLoader = [
+        private const LOADERS = [
             "json" => JsonFileLoader::class,
             "php" => PhpFileLoader::class,
             "csv" => CsvFileLoader::class,
             "ini" => IniFileLoader::class,
         ];
-
-        private function __construct() {
-            $this->translator = new Translator(self::locale());
-
-            // Fallback locales are read in order for messages the active locale does not define.
-            $this->translator->setFallbackLocales(self::fallbackLocales());
-
-            // Load supported file formats for translation catalogues.
-            foreach($this->fileLoader as $format => $loader) {
-                $this->translator->addLoader($format, new $loader());
-            }
-
-            // Load every translation-file
-            foreach(self::catalogues() as $catalogue) {
-                $this->translator->addResource(
-                    $catalogue["format"],
-                    $catalogue["path"],
-                    $catalogue["locale"],
-                    $catalogue["domain"],
-                );
-            }
-        }
 
         public static function translate(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
             return self::translator()->trans($id, $parameters, $domain, $locale);
@@ -51,7 +27,27 @@
         public static function translator(): Translator {
             $translator = StaticCache::getOrNull("translation", "translator");
             if(is_null($translator)) {
-                $translator = StaticCache::set("translation", "translator", (new self())->translator);
+                $translator = StaticCache::set("translation", "translator", self::build());
+            }
+
+            return $translator;
+        }
+
+        private static function build(): Translator {
+            $translator = new Translator(self::locale());
+            $translator->setFallbackLocales(self::fallbackLocales());
+
+            foreach(self::LOADERS as $format => $loader) {
+                $translator->addLoader($format, new $loader());
+            }
+
+            foreach(self::catalogues() as $catalogue) {
+                $translator->addResource(
+                    $catalogue["format"],
+                    $catalogue["path"],
+                    $catalogue["locale"],
+                    $catalogue["domain"],
+                );
             }
 
             return $translator;
@@ -73,30 +69,77 @@
 
                 $format = array_pop($segments);
                 $locale = array_pop($segments);
-                $domain = implode(".", $segments);
 
                 $catalogues[] = [
                     "format" => $format,
                     "path" => $path,
                     "locale" => $locale,
-                    "domain" => $domain,
+                    "domain" => implode(".", $segments),
                 ];
             }
 
             return StaticCache::set("translation", "catalogues", $catalogues);
         }
 
-        // Read in order for messages the active locale does not define.
+        public static function locale(): string {
+            return self::userLocale()
+                ?? self::negotiatedLocale()
+                ?? self::fallbackLocales()[0];
+        }
+
         public static function fallbackLocales(): array {
             $fallbacks = config("fallback_locales", default: "en");
 
             return array_map("trim", explode(",", $fallbacks));
         }
 
+        private static function userLocale(): ?string {
+            $locale = user()?->fields["language_code"] ?? null;
 
-        // TODO: Replace with user-identified locale, or browser-identified locale.
-        public static function locale(): string {
-            return "en";
+            if(is_null($locale)) return null;
+
+            return $locale;
+        }
+
+        // The best Accept-Language entry that a catalogue actually covers.
+        private static function negotiatedLocale(): ?string {
+
+            // Catalogues spell "de_DE" the Symfony way, headers spell it "de-DE". Indexing
+            // by the comparable spelling normalizes once instead of once per comparison,
+            // and the keys drop the duplicates a locale with several domains produces.
+            $available = [];
+            foreach(array_column(self::catalogues(), "locale") as $locale) {
+                $clean = strtolower(str_replace("_", "-", $locale));
+                $available[$clean] = $locale;
+            }
+
+            foreach(self::acceptedLocales() as $requested) {
+                foreach($available as $candidate => $locale) {
+                    if($requested === $candidate || str_starts_with($requested, "$candidate-")) return $locale;
+                }
+            }
+
+            return null;
+        }
+
+        private static function acceptedLocales(): array {
+            $header = request()->acceptLanguage();
+            if(is_null($header)) return [];
+
+            $accepted = [];
+            foreach(explode(",", $header) as $entry) {
+                [$locale, $quality] = array_pad(explode(";q=", trim($entry), 2), 2, "1");
+
+                // "*" accepts anything, which says nothing about which catalogue to pick.
+                if("" === $locale || "*" === $locale) continue;
+
+                $accepted[] = ["locale" => strtolower($locale), "quality" => (float) $quality];
+            }
+
+            // usort is stable as of PHP 8.0, so equal qualities keep the order the client sent.
+            usort($accepted, fn($a, $b) => $b["quality"] <=> $a["quality"]);
+
+            return array_column($accepted, "locale");
         }
 
     }

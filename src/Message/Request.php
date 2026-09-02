@@ -95,6 +95,10 @@
             return $this->input->SERVER['HTTP_USER_AGENT'] ?? null;
         }
 
+        public function acceptLanguage(): ?string {
+            return $this->input->SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
+        }
+
         public function getExecutionTime(): ?float {
             if(!isset($this->input->SERVER["REQUEST_TIME_FLOAT"])) return null;
             return microtime(true) - $this->input->SERVER["REQUEST_TIME_FLOAT"];
