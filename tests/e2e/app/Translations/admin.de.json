@@ -1,8 +1,0 @@
-{
-    "welcome": "Willkommen!",
-    "dashboard": {
-        "welcome": "Willkommen im Dashboard",
-        "greeting": "Schön dich zu sehen, %name%! Dein letzter Login war am %date%.",
-        "messages": "{0}Keine neuen Nachrichten|{1}Eine neue Nachricht|]1,Inf[ %count% neue Nachrichten"
-    }
-}

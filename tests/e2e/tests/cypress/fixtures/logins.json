@@ -28,5 +28,15 @@
     "customer_new": {
         "name": "customer-new@zierhut-it.de",
         "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa05"
+    },
+
+    "locale_de": {
+        "name": "locale-de@zierhut-it.de",
+        "token": "user_locale_de"
+    },
+
+    "locale_en": {
+        "name": "locale-en@zierhut-it.de",
+        "token": "user_locale_en"
     }
 }
