@@ -25,6 +25,17 @@
             echo __("language.message", locale: "fr");
         }
 
+        // The app catalogue redefines form.unsaved and nothing else, so the
+        // neighbouring keys have to keep coming from the framework catalogue.
+        public function action_catalogue_override(Request $req, Response $res) {
+            echo implode("\n", [
+                __("form.unsaved"),
+                __("form.saved"),
+                __("form.error_required"),
+                __("language.message"),
+            ]);
+        }
+
         public function action_loader(Request $req, Response $res) {
             $format = $req->getUrlParts()[2];
             echo __("language.message", domain: "{$format}_loader");

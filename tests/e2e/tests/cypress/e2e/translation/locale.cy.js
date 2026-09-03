@@ -127,4 +127,43 @@ describe('Translation - Locale Resolution', () => {
 
     });
 
+    // app/Translations/messages.de.json redefines form.unsaved, a key the framework
+    // catalogue (src/IncludedComponents/translations/messages.de.json) also carries.
+    describe('when the app redefines a key of a framework catalogue', () => {
+
+        it("should replace only the redefined key", () => {
+            cy.loginAs('locale_de');
+            cy.visit('/translation/catalogue-override');
+
+            cy.contains("AppUngespeichert");
+            cy.get('body').should('not.contain.text', "Es gibt ungespeicherte Änderungen");
+        });
+
+        it("should keep the rest of the framework catalogue", () => {
+            cy.loginAs('locale_de');
+            cy.visit('/translation/catalogue-override');
+
+            cy.contains("Gespeichert!");
+            cy.contains("Bitte dieses Feld ausfüllen");
+        });
+
+        it("should keep the app's own keys in the same domain", () => {
+            cy.loginAs('locale_de');
+            cy.visit('/translation/catalogue-override');
+
+            cy.contains("Nachricht");
+        });
+
+        // Only the German app catalogue redefines the key, so English has to stay
+        // entirely with the framework.
+        it("should leave the locales the app does not redefine untouched", () => {
+            cy.loginAs('locale_en');
+            cy.visit('/translation/catalogue-override');
+
+            cy.contains("There are unsaved changes");
+            cy.contains("Saved!");
+            cy.contains("Please fill in this field");
+        });
+    });
+
 });
