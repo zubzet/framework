@@ -153,7 +153,7 @@
             }
         });
 
-        FunctionConflictResolution::requireAndThen("__", function() {
+        FunctionConflictResolution::optionalAndThen("__", function() {
             /**
              * Translates a message id. An id no catalogue defines is returned unchanged.
              *

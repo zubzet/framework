@@ -43,5 +43,10 @@
     "locale_undefined": {
         "name": "locale-undefined@zierhut-it.de",
         "token": "user_locale_undefined"
+    },
+
+    "locale_uncovered": {
+        "name": "locale-uncovered@zierhut-it.de",
+        "token": "user_locale_uncovered"
     }
 }

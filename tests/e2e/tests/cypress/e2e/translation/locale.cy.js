@@ -20,6 +20,22 @@ describe('Translation - Locale Resolution', () => {
         cy.contains("Message");
     });
 
+    it("should prefer the user's language over the Accept-Language header", () => {
+        cy.loginAs('locale_de');
+        cy.visit('/translation/message', { headers: { 'Accept-Language': 'en' } });
+        cy.contains("Nachricht");
+
+        cy.loginAs('locale_en');
+        cy.visit('/translation/message', { headers: { 'Accept-Language': 'de' } });
+        cy.contains("Message");
+    });
+
+    it("should fall back when the user's language has no catalogue", () => {
+        cy.loginAs('locale_uncovered');
+        cy.visit('/translation/message', { headers: { 'Accept-Language': 'de' } });
+        cy.contains("Message");
+    });
+
     it("should use the specified domain when a domain is specified", () => {
         cy.loginAs('locale_en');
         cy.visit('/translation/domain-message');
