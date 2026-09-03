@@ -20,37 +20,29 @@
         ];
 
         public static function translate(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
-            return self::translator()->trans($id, $parameters, $domain, $locale);
-        }
-
-        // Symfony translator, built once per request.
-        public static function translator(): Translator {
             $translator = StaticCache::getOrNull("translation", "translator");
+
             if(is_null($translator)) {
-                $translator = StaticCache::set("translation", "translator", self::build());
+                $translator = new Translator(self::locale());
+                $translator->setFallbackLocales(self::fallbackLocales());
+
+                foreach(self::LOADERS as $format => $loader) {
+                    $translator->addLoader($format, new $loader());
+                }
+
+                foreach(self::catalogues() as $catalogue) {
+                    $translator->addResource(
+                        $catalogue["format"],
+                        $catalogue["path"],
+                        $catalogue["locale"],
+                        $catalogue["domain"],
+                    );
+                }
+
+                StaticCache::set("translation", "translator", $translator);
             }
 
-            return $translator;
-        }
-
-        private static function build(): Translator {
-            $translator = new Translator(self::locale());
-            $translator->setFallbackLocales(self::fallbackLocales());
-
-            foreach(self::LOADERS as $format => $loader) {
-                $translator->addLoader($format, new $loader());
-            }
-
-            foreach(self::catalogues() as $catalogue) {
-                $translator->addResource(
-                    $catalogue["format"],
-                    $catalogue["path"],
-                    $catalogue["locale"],
-                    $catalogue["domain"],
-                );
-            }
-
-            return $translator;
+            return $translator->trans($id, $parameters, $domain, $locale);
         }
 
         // Every catalogue file, in the order the translator loads them.
@@ -82,8 +74,12 @@
         }
 
         public static function locale(): string {
-            return self::userLocale()
-                ?? self::negotiatedLocale()
+            $userBcp47 = user()?->fields["locale_bcp_47"] ?? null;
+            if(!is_null($userBcp47)) return $userBcp47;
+
+
+
+            return self::negotiatedLocale()
                 ?? self::fallbackLocales()[0];
         }
 
@@ -91,14 +87,6 @@
             $fallbacks = config("fallback_locales", default: "en");
 
             return array_map("trim", explode(",", $fallbacks));
-        }
-
-        private static function userLocale(): ?string {
-            $locale = user()?->fields["locale_bcp_47"] ?? null;
-
-            if(is_null($locale)) return null;
-
-            return $locale;
         }
 
         // The best Accept-Language entry that a catalogue actually covers.
