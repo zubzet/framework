@@ -92,33 +92,20 @@
         // The best Accept-Language entry that a catalogue actually covers.
         private static function negotiatedLocale(): ?string {
 
-            // Catalogues spell "de_DE" the Symfony way, headers spell it "de-DE". Indexing
-            // by the comparable spelling normalizes once instead of once per comparison,
-            // and the keys drop the duplicates a locale with several domains produces.
-            $available = [];
-            foreach(array_column(self::catalogues(), "locale") as $locale) {
-                $clean = strtolower(str_replace("_", "-", $locale));
-                $available[$clean] = $locale;
-            }
+            // A locale with several domains brings its catalogue along more than once,
+            // and the lookup below is capped at a hundred entries.
+            $available = array_values(array_unique(array_column(self::catalogues(), "locale")));
 
             foreach(self::acceptedLocales() as $requested) {
-                if(isset($available[$requested])) return $available[$requested];
 
-                // No catalogue spells the request exactly, so fall back to a base language
-                // it extends - the longest one, so "de-CH-1901" prefers "de-CH" over "de".
-                // Comparing lengths rather than taking the first hit keeps the choice
-                // independent of the order the catalogues were discovered in.
-                $match = null;
-                $matched = 0;
-                foreach($available as $candidate => $locale) {
-                    if(!str_starts_with($requested, "$candidate-")) continue;
-                    if(strlen($candidate) <= $matched) continue;
-
-                    $match = $locale;
-                    $matched = strlen($candidate);
-                }
-
-                if(!is_null($match)) return $match;
+                // RFC 4647 lookup truncates the request from the right until it reaches a
+                // catalogue, so "de-CH-1901" prefers "de_CH" over "de" on its own. It sees
+                // past the spelling difference between the header and the Symfony
+                // catalogue, ignores case along the way, and answers in the catalogue's own
+                // spelling. A miss is an empty string, and a tag too long for intl is null;
+                // either way the next entry deserves its turn.
+                $match = \Locale::lookup($available, $requested);
+                if(!is_null($match) && "" !== $match) return $match;
             }
 
             return null;
@@ -135,7 +122,7 @@
                 // "*" accepts anything, which says nothing about which catalogue to pick.
                 if("" === $locale || "*" === $locale) continue;
 
-                $accepted[] = ["locale" => strtolower($locale), "quality" => (float) $quality];
+                $accepted[] = ["locale" => $locale, "quality" => (float) $quality];
             }
 
             // usort is stable as of PHP 8.0, so equal qualities keep the order the client sent.
