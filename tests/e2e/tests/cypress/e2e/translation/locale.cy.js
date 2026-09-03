@@ -128,9 +128,22 @@ describe('Translation - Locale Resolution', () => {
             cy.contains("Nachricht");
         });
 
+        // de_CH has a catalogue of its own, de_AT has not.
         it("should match a region against the catalogue's base language", () => {
-            visitWith('de-CH');
+            visitWith('de-AT');
             cy.contains("Nachricht");
+        });
+
+        it("should prefer the catalogue that spells the region exactly", () => {
+            visitWith('de-CH');
+            cy.contains("CH-Meldung");
+        });
+
+        // Both "de" and "de_CH" are prefixes of the request; the longer one wins, and
+        // which of them the catalogue scan happens to reach first must not matter.
+        it("should prefer the most specific catalogue when several could match", () => {
+            visitWith('de-CH-1901');
+            cy.contains("CH-Meldung");
         });
 
         // Last resort is fallback_locales[0]. "fr" is configured as the second
@@ -160,7 +173,7 @@ describe('Translation - Locale Resolution', () => {
             cy.visit('/translation/catalogue-override');
 
             cy.contains("Gespeichert!");
-            cy.contains("Bitte dieses Feld ausfüllen");
+            cy.contains("Bitte füllen Sie dieses Feld aus");
         });
 
         it("should keep the app's own keys in the same domain", () => {

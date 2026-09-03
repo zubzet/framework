@@ -114,9 +114,23 @@
             }
 
             foreach(self::acceptedLocales() as $requested) {
+                if(isset($available[$requested])) return $available[$requested];
+
+                // No catalogue spells the request exactly, so fall back to a base language
+                // it extends - the longest one, so "de-CH-1901" prefers "de-CH" over "de".
+                // Comparing lengths rather than taking the first hit keeps the choice
+                // independent of the order the catalogues were discovered in.
+                $match = null;
+                $matched = 0;
                 foreach($available as $candidate => $locale) {
-                    if($requested === $candidate || str_starts_with($requested, "$candidate-")) return $locale;
+                    if(!str_starts_with($requested, "$candidate-")) continue;
+                    if(strlen($candidate) <= $matched) continue;
+
+                    $match = $locale;
+                    $matched = strlen($candidate);
                 }
+
+                if(!is_null($match)) return $match;
             }
 
             return null;
