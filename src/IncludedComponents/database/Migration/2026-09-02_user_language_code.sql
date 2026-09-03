@@ -1,2 +1,0 @@
-ALTER TABLE `z_user`
-    ADD COLUMN IF NOT EXISTS `language_code` VARCHAR(32) NULL DEFAULT NULL AFTER `languageId`;

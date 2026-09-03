@@ -94,7 +94,7 @@
         }
 
         private static function userLocale(): ?string {
-            $locale = user()?->fields["language_code"] ?? null;
+            $locale = user()?->fields["locale_bcp_47"] ?? null;
 
             if(is_null($locale)) return null;
 
