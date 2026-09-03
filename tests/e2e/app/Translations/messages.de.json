@@ -4,6 +4,7 @@
         "param_message": "ParamNachricht:{first_param}:{second_param}"
     },
     "form": {
-        "unsaved": "AppUngespeichert"
+        "unsaved": "AppUngespeichert",
+        "error_unique": "Schon vergeben: \" ' & </script>"
     }
 }

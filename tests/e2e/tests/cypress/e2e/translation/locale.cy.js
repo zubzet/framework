@@ -166,4 +166,18 @@ describe('Translation - Locale Resolution', () => {
         });
     });
 
+    describe('when a catalogue value carries javascript syntax', () => {
+
+        const hostile = 'Schon vergeben: " \' & </script>';
+
+        beforeEach(() => {
+            cy.loginAs('locale_de');
+            cy.visit('/translation/lang');
+        });
+
+        it("should hand the value to Z.Lang unchanged", () => {
+            cy.window().its('Z.Lang.error_unique').should('equal', hostile);
+        });
+    });
+
 });
