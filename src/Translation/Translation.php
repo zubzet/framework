@@ -12,6 +12,7 @@
 
     class Translation {
 
+        // symfony supported translation loaders
         private const LOADERS = [
             "json" => JsonFileLoader::class,
             "php" => PhpFileLoader::class,
@@ -73,64 +74,30 @@
             return StaticCache::set("translation", "catalogues", $catalogues);
         }
 
+        // The preferred locale from the user in bcp47 format
         public static function locale(): string {
+            // User locale
             $userBcp47 = user()?->fields["locale_bcp_47"] ?? null;
             if(!is_null($userBcp47)) return $userBcp47;
 
+            // Available locales from the loaded catalogues
+            $available = array_values(array_unique(array_column(self::catalogues(), "locale")));
 
+            // The best Accept-Language entry that a catalogue actually covers.
+            foreach(request()->acceptLanguage() as $requested) {
+                // Match the requested locale against the available locales, using the best-fit algorithm.
+                $match = \Locale::lookup($available, $requested);
+                if(!empty($match)) return $match;
+            }
 
-            return self::negotiatedLocale()
-                ?? self::fallbackLocales()[0];
+            // Otherwise return the first fallback locale
+            return self::fallbackLocales()[0];
         }
 
         public static function fallbackLocales(): array {
             $fallbacks = config("fallback_locales", default: "en");
-
             return array_map("trim", explode(",", $fallbacks));
         }
-
-        // The best Accept-Language entry that a catalogue actually covers.
-        private static function negotiatedLocale(): ?string {
-
-            // A locale with several domains brings its catalogue along more than once,
-            // and the lookup below is capped at a hundred entries.
-            $available = array_values(array_unique(array_column(self::catalogues(), "locale")));
-
-            foreach(self::acceptedLocales() as $requested) {
-
-                // RFC 4647 lookup truncates the request from the right until it reaches a
-                // catalogue, so "de-CH-1901" prefers "de_CH" over "de" on its own. It sees
-                // past the spelling difference between the header and the Symfony
-                // catalogue, ignores case along the way, and answers in the catalogue's own
-                // spelling. A miss is an empty string, and a tag too long for intl is null;
-                // either way the next entry deserves its turn.
-                $match = \Locale::lookup($available, $requested);
-                if(!is_null($match) && "" !== $match) return $match;
-            }
-
-            return null;
-        }
-
-        private static function acceptedLocales(): array {
-            $header = request()->acceptLanguage();
-            if(is_null($header)) return [];
-
-            $accepted = [];
-            foreach(explode(",", $header) as $entry) {
-                [$locale, $quality] = array_pad(explode(";q=", trim($entry), 2), 2, "1");
-
-                // "*" accepts anything, which says nothing about which catalogue to pick.
-                if("" === $locale || "*" === $locale) continue;
-
-                $accepted[] = ["locale" => $locale, "quality" => (float) $quality];
-            }
-
-            // usort is stable as of PHP 8.0, so equal qualities keep the order the client sent.
-            usort($accepted, fn($a, $b) => $b["quality"] <=> $a["quality"]);
-
-            return array_column($accepted, "locale");
-        }
-
     }
 
 ?>

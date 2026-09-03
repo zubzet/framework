@@ -95,8 +95,48 @@
             return $this->input->SERVER['HTTP_USER_AGENT'] ?? null;
         }
 
-        public function acceptLanguage(): ?string {
-            return $this->input->SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
+        public function acceptLanguage(): array {
+            $header = $this->input->SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
+            if(is_null($header)) return [];
+
+            // Split the header into individual language entries.
+            $entries = explode(",", $header);
+
+            $accepted = [];
+
+            foreach($entries as $entry) {
+                // Split locale from optional parameters such as q=0.9.
+                $parts = array_map("trim", explode(";", $entry));
+
+                $locale = array_shift($parts);
+                $quality = 1.0;
+
+                // Ignore empty entries and the wildcard, since neither identifies a specific locale.
+                if("" === $locale || "*" === $locale) continue;
+
+                // Read the optional quality value; omitted q values default to 1.0.
+                foreach($parts as $parameter) {
+                    // Match a q parameter (case-insensitive), allowing optional whitespace around "="
+                    // and a value between 0 and 1 with up to three decimal places.
+                    if(preg_match('/^q\s*=\s*([01](?:\.\d{0,3})?)$/i', $parameter, $match)) {
+                        $quality = (float) $match[1];
+                        break;
+                    }
+                }
+
+                // q=0 explicitly means that the locale is not acceptable.
+                if(0.0 === $quality) continue;
+
+                $accepted[] = [
+                    "locale" => $locale,
+                    "quality" => $quality,
+                ];
+            }
+
+            // Sort by descending quality while preserving the original order for equal values.
+            usort($accepted, fn($a, $b) => $b["quality"] <=> $a["quality"]);
+
+            return array_column($accepted, "locale");
         }
 
         public function getExecutionTime(): ?float {
