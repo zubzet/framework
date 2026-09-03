@@ -1,0 +1,15 @@
+{
+    "form": {
+        "unsaved": "Es gibt ungespeicherte Änderungen",
+        "saved": "Gespeichert!",
+        "submit": "Absenden",
+        "choose_file": "Datei auswählen",
+        "error_filter": "Diese Eingabe hat nicht das richtige Format!",
+        "error_length": "Diese Eingabe ist zu lang oder zu kurz. Sie muss zwischen [0] und [1] Zeichen haben.",
+        "error_required": "Bitte dieses Feld ausfüllen",
+        "error_unique": "Das gibt es bereits!",
+        "error_exist": "Das gibt es nicht!",
+        "error_range": "Die Zahl ist zu groß oder zu klein. Sie muss zwischen [0] und [1] liegen.",
+        "error_file_to_big": "Diese Datei ist zu groß."
+    }
+}

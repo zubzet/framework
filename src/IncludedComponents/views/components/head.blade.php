@@ -23,6 +23,19 @@
     Z.Request.rootPath = "<?= $opt["root"]; ?>";
     Z.Request.rootHost = "<?= $opt["request"]->getRoot(); ?>";
     Z.Request.absRoot = "<?= $opt["absRoot"]; ?>";
+
+    Z.Lang.unsaved = "<i class='fas fa-pen text-dark'></i> <?= __("form.unsaved") ?>";
+    Z.Lang.submit = "<i class='fas fa-check'></i> <?= __("form.submit") ?>";
+    Z.Lang.saved = "<i class='fas fa-check text-dark'></i> <?= __("form.saved") ?>";
+    Z.Lang.choose_file = "<?= __("form.choose_file") ?>";
+    Z.Lang.error_filter = "<?= __("form.error_filter") ?>";
+    Z.Lang.error_length = "<?= __("form.error_length") ?>";
+    Z.Lang.error_required = "<?= __("form.error_required") ?>";
+    Z.Lang.error_unique = "<?= __("form.error_unique") ?>";
+    Z.Lang.error_exist = "<?= __("form.error_exist") ?>";
+    Z.Lang.error_range = "<?= __("form.error_range") ?>";
+    Z.Lang.error_file_to_big = "<?= __("form.error_file_to_big") ?>";
+
 </script>
 
 <meta charset="utf-8"/>
