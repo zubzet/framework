@@ -11,5 +11,89 @@
         "error_exist": "This does not exist!",
         "error_range": "The number is too large to too small. It must be between [0] and [1].",
         "error_file_to_big": "This file is too large."
+    },
+    "admin": {
+        "nav": {
+            "application": "Application",
+            "users_and_roles": "Users and Roles",
+            "other": "Other",
+            "database": "Database",
+            "maintenance": "Maintenance",
+            "edit_user": "Edit User",
+            "add_user": "Add User",
+            "roles": "Roles",
+            "groups": "Groups",
+            "back": "Go back",
+            "logout": "Logout"
+        },
+        "dashboard": {
+            "title": "Dashboard"
+        },
+        "add_user": {
+            "title": "Add User",
+            "email": "Email",
+            "password": "Password"
+        },
+        "edit_user": {
+            "title": "Edit user",
+            "email": "Email",
+            "roles": "Roles",
+            "role": "Role",
+            "login_as": "Login as",
+            "permissions": "User-Level Permissions",
+            "permission": "Permission"
+        },
+        "user_select": {
+            "title": "Edit User",
+            "no_email": "No email"
+        },
+        "groups": {
+            "title": "Groups",
+            "empty": "No groups found."
+        },
+        "roles": {
+            "title": "Roles",
+            "name": "Name",
+            "permissions": "Permissions",
+            "permission": "Permission",
+            "create": "Create role",
+            "create_confirm": "Do you really want to create a new role?",
+            "delete": "Delete role",
+            "delete_confirm": "Do you really want to delete this role?"
+        },
+        "maintenance": {
+            "title": "Maintenance Mode",
+            "state": "Currently Active",
+            "state_maintenance": "Maintenance",
+            "state_normal": "Normal",
+            "mode": "Current Mode",
+            "browser": "Your Browser Status",
+            "can_bypass": "Can Bypass",
+            "cannot_bypass": "Cannot Bypass",
+            "bypass": "Bypass Cookie",
+            "bypass_set": "(Already set)",
+            "bypass_failed": "Failed to set bypass cookie"
+        },
+        "database": {
+            "tables_total": "Amount Of Tables",
+            "rows_approx": "Approx. Amount Of Rows",
+            "table": "Table",
+            "rows": "Rows",
+            "created": "Created",
+            "updated": "Updated",
+            "details": "Details",
+            "open": "Open",
+            "open_table": "Open table",
+            "back": "Back",
+            "export": "Export",
+            "rows_total": "Amount Of Rows",
+            "columns_total": "Amount Of Columns",
+            "sorted_by": "Sorted By",
+            "first": "First",
+            "previous": "Previous",
+            "next": "Next",
+            "last": "Last",
+            "empty": "There are no rows in {table}."
+        }
     }
 }

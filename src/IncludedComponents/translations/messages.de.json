@@ -11,5 +11,89 @@
         "error_exist": "Das gibt es nicht!",
         "error_range": "Die Zahl ist zu groß oder zu klein. Sie muss zwischen [0] und [1] liegen.",
         "error_file_to_big": "Diese Datei ist zu groß."
+    },
+    "admin": {
+        "nav": {
+            "application": "Anwendung",
+            "users_and_roles": "Benutzer und Rollen",
+            "other": "Sonstiges",
+            "database": "Datenbank",
+            "maintenance": "Wartung",
+            "edit_user": "Benutzer bearbeiten",
+            "add_user": "Benutzer anlegen",
+            "roles": "Rollen",
+            "groups": "Gruppen",
+            "back": "Zurück",
+            "logout": "Abmelden"
+        },
+        "dashboard": {
+            "title": "Dashboard"
+        },
+        "add_user": {
+            "title": "Benutzer anlegen",
+            "email": "E-Mail",
+            "password": "Passwort"
+        },
+        "edit_user": {
+            "title": "Benutzer bearbeiten",
+            "email": "E-Mail",
+            "roles": "Rollen",
+            "role": "Rolle",
+            "login_as": "Anmelden als",
+            "permissions": "Benutzerspezifische Berechtigungen",
+            "permission": "Berechtigung"
+        },
+        "user_select": {
+            "title": "Benutzer bearbeiten",
+            "no_email": "Keine E-Mail"
+        },
+        "groups": {
+            "title": "Gruppen",
+            "empty": "Keine Gruppen gefunden."
+        },
+        "roles": {
+            "title": "Rollen",
+            "name": "Name",
+            "permissions": "Berechtigungen",
+            "permission": "Berechtigung",
+            "create": "Rolle erstellen",
+            "create_confirm": "Soll wirklich eine neue Rolle erstellt werden?",
+            "delete": "Rolle löschen",
+            "delete_confirm": "Soll diese Rolle wirklich gelöscht werden?"
+        },
+        "maintenance": {
+            "title": "Wartungsmodus",
+            "state": "Aktuell aktiv",
+            "state_maintenance": "Wartung",
+            "state_normal": "Normal",
+            "mode": "Aktueller Modus",
+            "browser": "Status Ihres Browsers",
+            "can_bypass": "Kann umgehen",
+            "cannot_bypass": "Kann nicht umgehen",
+            "bypass": "Bypass-Cookie",
+            "bypass_set": "(Bereits gesetzt)",
+            "bypass_failed": "Bypass-Cookie konnte nicht gesetzt werden"
+        },
+        "database": {
+            "tables_total": "Anzahl Tabellen",
+            "rows_approx": "Ungefähre Anzahl Zeilen",
+            "table": "Tabelle",
+            "rows": "Zeilen",
+            "created": "Erstellt",
+            "updated": "Aktualisiert",
+            "details": "Details",
+            "open": "Öffnen",
+            "open_table": "Tabelle öffnen",
+            "back": "Zurück",
+            "export": "Exportieren",
+            "rows_total": "Anzahl Zeilen",
+            "columns_total": "Anzahl Spalten",
+            "sorted_by": "Sortiert nach",
+            "first": "Erste",
+            "previous": "Vorherige",
+            "next": "Nächste",
+            "last": "Letzte",
+            "empty": "In {table} gibt es keine Zeilen."
+        }
     }
 }
