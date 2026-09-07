@@ -21,6 +21,9 @@ describe('Authentication - Session', () => {
                 userIdExec: 400,
                 extendedSeconds: null,
                 created: '2025-01-01 12:00:00',
+                name: null,
+                isPermanent: false,
+                isApiKey: false,
             },
             {
                 id: 401,
@@ -29,6 +32,9 @@ describe('Authentication - Session', () => {
                 userIdExec: 401,
                 extendedSeconds: null,
                 created: '2025-01-01 12:00:00',
+                name: null,
+                isPermanent: false,
+                isApiKey: false,
             },
         ];
 
@@ -60,6 +66,9 @@ describe('Authentication - Session', () => {
                 userIdExec: 402,
                 extendedSeconds: 300,
                 created: '2025-01-01 12:00:00',
+                name: null,
+                isPermanent: false,
+                isApiKey: false,
             });
         });
     });
@@ -78,6 +87,9 @@ describe('Authentication - Session', () => {
                 userIdExec: 420,
                 extendedSeconds: null,
                 created: output.created,
+                name: null,
+                isPermanent: false,
+                isApiKey: false,
             });
         });
     });
@@ -115,6 +127,17 @@ describe('Authentication - Session', () => {
             expect(output.token).to.be.a('string').and.have.length(40);
         });
     });
+
+    it('should store the name passed as the third argument (add with name)', () => {
+        requestJson('/session/addWithName').then((output) => {
+            expect(output.userId).to.equal(434);
+            expect(output.name).to.equal('Named session');
+            // A named session is still an ordinary, expiring login
+            expect(output.isApiKey).to.be.false;
+            expect(output.isPermanent).to.be.false;
+        });
+    });
+
 
     /**
      * Interactions
@@ -181,6 +204,120 @@ describe('Authentication - Session', () => {
             expect(output).to.deep.equal({
                 isExpired: false,
             });
+        });
+    });
+
+
+    /**
+     * API Keys
+     */
+
+    it('should return every session, only api keys, or only logins (byUser filter)', () => {
+        requestJson('/session/apiKeyFilter').then((output) => {
+            // 433 is a revoked api key and must not show up anywhere
+            expect(output.all).to.have.members([430, 431, 432]);
+            expect(output.apiKeys).to.have.members([431, 432]);
+            expect(output.logins).to.have.members([430]);
+        });
+    });
+
+    it('should set name, permanent and api key flags through the session object', () => {
+        requestJson('/session/apiKeyManage').then((output) => {
+            expect(output.before).to.deep.equal({
+                name: null,
+                isPermanent: false,
+                isApiKey: false,
+            });
+
+            const expected = {
+                name: 'Renamed key',
+                isPermanent: true,
+                isApiKey: true,
+            };
+
+            // Refreshed in place and read back from the database
+            expect(output.after).to.deep.equal(expected);
+            expect(output.stored).to.deep.equal(expected);
+        });
+    });
+
+    it('should remove the name of a session when null is passed (setName)', () => {
+        requestJson('/session/apiKeyClearName').then((output) => {
+            expect(output).to.deep.equal({
+                before: 'Temporary name',
+                after: null,
+            });
+        });
+    });
+
+    it('should never expire a permanent session and expire it again once the flag is dropped', () => {
+        requestJson('/session/apiKeyPermanentExpiry').then((output) => {
+            // Created in the year 2000 without extension - only the flag keeps it alive
+            expect(output.permanent).to.deep.equal({
+                isExpired: false,
+                expiresAt: null,
+            });
+
+            expect(output.temporary.isExpired).to.be.true;
+            expect(output.temporary.expiresAt).to.be.a('string');
+        });
+    });
+
+    it('should authenticate a request that carries a permanent api key as cookie', () => {
+        // Session 436, user 433: created in the year 2000, permanent api key
+        cy.session('auth_apikey_433', () => {
+            cy.setCookie('z_login_token', '0433a00000000000000000000000000000000000');
+        });
+        requestJson('/session/whoami').then((output) => {
+            expect(output.isLoggedIn).to.be.true;
+            expect(output.userId).to.equal(433);
+        });
+    });
+
+
+    /**
+     * Session Naming from the User Agent
+     */
+
+    const CHROME_ON_WINDOWS = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+    function login(userAgent) {
+        return cy.request({
+            method: 'POST',
+            url: '/login',
+            form: true,
+            body: {
+                name: 'session_login_name@cypress.test',
+                password: 'password',
+            },
+            headers: { 'user-agent': userAgent },
+        }).then((res) => {
+            expect(res.body).to.include('success');
+            // The login left a cookie behind; the auth flow tests set their own
+            cy.clearCookie('z_login_token');
+        });
+    }
+
+    it('should name a login session after the user agent it was started from', () => {
+        login(CHROME_ON_WINDOWS);
+
+        requestJson('/session/loginSessionNames').then((output) => {
+            expect(output.names).to.deep.equal([CHROME_ON_WINDOWS]);
+        });
+    });
+
+    it('should cut an overlong user agent to what the column takes', () => {
+        // The header is client controlled and `name` holds 255 characters, so an
+        // oversized one must not break the login.
+        const overlong = 'Mozilla/5.0 ' + 'A'.repeat(500);
+        login(overlong);
+
+        requestJson('/session/loginSessionNames').then((output) => {
+            // byUser has no ORDER BY, so pick the row out instead of taking the last
+            const stored = output.names.filter((name) => name.startsWith('Mozilla/5.0 A'));
+            expect(stored).to.have.length(1);
+            expect(stored[0]).to.have.length(255);
+            expect(overlong.startsWith(stored[0])).to.be.true;
         });
     });
 

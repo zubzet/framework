@@ -34,15 +34,20 @@
         /**
          * Retrieve all active sessions of a user by its id
          * @param User $user The user object
+         * @param ?bool $isApiKey Null returns every session, true only api keys, false only logins
          * @return array of session objects
          * @internal
          */
-        public function getSessionsByUserId(User $user): array {
+        public function getSessionsByUserId(User $user, ?bool $isApiKey = null): array {
             $sql = "SELECT *
                     FROM `z_logintoken`
                     WHERE `userId` = ?
                     AND `active` = 1";
-            return $this->exec($sql, "i", $user->id())->resultToArray();
+
+            if(is_null($isApiKey)) return $this->exec($sql, "i", $user->id())->resultToArray();
+
+            $sql .= " AND `is_apikey` = ?";
+            return $this->exec($sql, "ii", $user->id(), (int) $isApiKey)->resultToArray();
         }
 
         /**
@@ -71,6 +76,45 @@
                     WHERE `token` = ?
                     AND `active` = 1";
             $this->exec($sql, "is", $seconds, $session->token());
+        }
+
+        /**
+         * Names a session, or drops its name when null is passed
+         * @param Session $session The session to name
+         * @param ?string $name The name of the session
+         * @internal
+         */
+        public function setSessionName(Session $session, ?string $name): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `name` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "si", $name, $session->id());
+        }
+
+        /**
+         * Exempts a session from the regular lifetime, or subjects it to it again
+         * @param Session $session The session to flag
+         * @param bool $isPermanent Whether the session never expires
+         * @internal
+         */
+        public function setSessionPermanent(Session $session, bool $isPermanent): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `is_permanent` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "ii", (int) $isPermanent, $session->id());
+        }
+
+        /**
+         * Classifies a session as an api key or as an interactive login
+         * @param Session $session The session to flag
+         * @param bool $isApiKey Whether the session is an api key
+         * @internal
+         */
+        public function setSessionApiKey(Session $session, bool $isApiKey): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `is_apikey` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "ii", (int) $isApiKey, $session->id());
         }
 
         /**
@@ -117,12 +161,13 @@
          * Creates a login token for a user
          * @param int $userId Id of the user
          * @param int $exec_userId Id of the executing user
+         * @param ?string $name An optional name for the session
          * @return Session The resulting session
          */
-        function createLoginToken(int $userId, int $exec_userId): Session {
+        function createLoginToken(int $userId, int $exec_userId, ?string $name = null): Session {
             $token = bin2hex(random_bytes(20));
-            $sql = "INSERT INTO `z_logintoken`(`userId`, `userId_exec`, `token`) VALUES (?, ?, ?)";
-            $this->exec($sql, "iis", $userId, $exec_userId, $token);
+            $sql = "INSERT INTO `z_logintoken`(`userId`, `userId_exec`, `token`, `name`) VALUES (?, ?, ?, ?)";
+            $this->exec($sql, "iiss", $userId, $exec_userId, $token, $name);
             return Session::byToken($token);
         }
 
