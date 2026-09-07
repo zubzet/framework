@@ -1,0 +1,2 @@
+ALTER TABLE `z_user`
+    ADD COLUMN IF NOT EXISTS `locale_bcp_47` VARCHAR(32) NULL DEFAULT NULL AFTER `languageId`;

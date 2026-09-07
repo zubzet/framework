@@ -110,66 +110,66 @@
                     <div id="navbar" class="collapse show">
                         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
                             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-                            Application
+                            <?= e(__("admin.nav.application")) ?>
                         </h1>
                         <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.database")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-database" href="<?= $opt["root"]; ?>z/database">
                                     <i class="fa fa-fw fa-database"></i>
-                                    Database
+                                    <?= e(__("admin.nav.database")) ?>
                                 </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.maintenance")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-maintenance" href="<?= $opt["root"]; ?>z/maintenance">
                                     <i class="fa fa-fw fa-wrench"></i>
-                                    Maintenance
+                                    <?= e(__("admin.nav.maintenance")) ?>
                                 </a>
                             <?php } ?>
                         </div>
 
                         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
                             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-                            Users and Roles
+                            <?= e(__("admin.nav.users_and_roles")) ?>
                         </h1>
                         <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-edit-user" href="<?= $opt["root"]; ?>z/edit_user">
                                     <i class="fa fa-fw fa-user-edit"></i>
-                                    Edit User
+                                    <?= e(__("admin.nav.edit_user")) ?>
                                 </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.user.add")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-add-user" href="<?= $opt["root"]; ?>z/add_user">
                                     <i class="fa fa-fw fa-user-plus"></i>
-                                    Add User
+                                    <?= e(__("admin.nav.add_user")) ?>
                                 </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.roles.list")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-roles" href="<?= $opt["root"]; ?>z/roles">
                                     <i class="fa fa-fw fa-user-tag"></i>
-                                    Roles
+                                    <?= e(__("admin.nav.roles")) ?>
                                 </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.groups.list")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-groups" href="<?= $opt["root"]; ?>z/groups">
                                     <i class="fa fa-fw fa-user-friends"></i>
-                                    Groups
+                                    <?= e(__("admin.nav.groups")) ?>
                                 </a>
                             <?php } ?>
                         </div>
 
                         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
                             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-                            Other
+                            <?= e(__("admin.nav.other")) ?>
                         </h1>
                         <div class="list-group mb-1">
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>">
                                 <i class="fa fa-fw fa-arrow-left"></i>
-                                Go back
+                                <?= e(__("admin.nav.back")) ?>
                             </a>
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>login/logout">
                                 <i class="fa fa-fw fa-sign-out-alt"></i>
-                                Logout
+                                <?= e(__("admin.nav.logout")) ?>
                             </a>
                         </div>
                     </div>

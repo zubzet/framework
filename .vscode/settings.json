@@ -2,6 +2,38 @@
     "cSpell.words": [
         "katana"
     ],
+    // i18n Ally, wired to the symfony/translation catalogues. The __() call
+    // syntax it scans for lives in .vscode/i18n-ally-custom-framework.yml.
+    "i18n-ally.enabledFrameworks": [
+        "custom"
+    ],
+    // The framework's own catalogue, plus the e2e app's, which is what the
+    // app/Translations of a userspace application looks like.
+    "i18n-ally.localesPaths": [
+        "src/IncludedComponents/translations",
+        "tests/e2e/app/Translations"
+    ],
+    // Symfony names a catalogue {domain}.{locale}.{format} and treats the
+    // domain the way i18n Ally treats a namespace, defaulting to "messages":
+    // __("form.submit") is the "form.submit" id of messages.{locale}.json.
+    "i18n-ally.pathMatcher": "{namespace}.{locale}.{ext}",
+    "i18n-ally.namespace": true,
+    "i18n-ally.defaultNamespace": "messages",
+    // Translation::LOADERS minus csv, which i18n Ally has no parser for.
+    "i18n-ally.enabledParsers": [
+        "json",
+        "php",
+        "ini"
+    ],
+    // Catalogues nest their ids ("form": { "submit": … }) and are written with
+    // four spaces, matching the ones already in the repo.
+    "i18n-ally.keystyle": "nested",
+    "i18n-ally.indent": 4,
+    // Symfony spells a regional locale "de_DE"; BCP-47 normalization would
+    // rewrite that to "de-DE" when creating a catalogue file.
+    "i18n-ally.languageTagSystem": "none",
+    // fallback_locales defaults to "en", so English is the complete catalogue.
+    "i18n-ally.sourceLanguage": "en",
     "path-mapper": [
         {
             "match": "/var/www/framework/",

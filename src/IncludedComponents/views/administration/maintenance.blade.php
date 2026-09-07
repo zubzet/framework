@@ -1,17 +1,17 @@
 @extends($layout)
 
 @section("content")
-    <h2 data-test="maintenance-heading">Maintenance Mode</h2>
+    <h2 data-test="maintenance-heading"><?= e(__("admin.maintenance.title")) ?></h2>
 
     <div class="row text-center">
         <div class="col-12 col-lg-4">
             <div class="card mb-3 mt-3 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <small class="text-muted d-block">
-                        Currently Active
+                        <?= e(__("admin.maintenance.state")) ?>
                     </small>
                     <strong class="text-primary" data-test="maintenance-status">
-                        <?= $opt["isActive"] ? "Maintenance" : "Normal" ?>
+                        <?= e($opt["isActive"] ? __("admin.maintenance.state_maintenance") : __("admin.maintenance.state_normal")) ?>
                     </strong>
                 </div>
             </div>
@@ -20,7 +20,7 @@
             <div class="card mb-3 mt-3 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <small class="text-muted d-block">
-                        Current Mode
+                        <?= e(__("admin.maintenance.mode")) ?>
                     </small>
                     <strong data-test="maintenance-mode">
                         <?= e($opt["mode"]); ?>
@@ -32,10 +32,10 @@
             <div class="card mb-3 mt-3 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <small class="text-muted d-block">
-                        Your Browser Status
+                        <?= e(__("admin.maintenance.browser")) ?>
                     </small>
                     <strong data-test="maintenance-browser">
-                        <?= $opt["browserCanBypass"] ? "Can Bypass" : "Cannot Bypass"; ?>
+                        <?= e($opt["browserCanBypass"] ? __("admin.maintenance.can_bypass") : __("admin.maintenance.cannot_bypass")) ?>
                     </strong>
                 </div>
             </div>
@@ -45,8 +45,8 @@
     <div class="my-3 d-flex justify-content-center">
         <button class="btn btn-primary border mx-3 shadow-sm" data-test="btn-bypass-maintenance" id="bypass-maintenance" <?= $opt["browserCanBypass"] ? "disabled" : "" ?>>
             <i class="fas fa-shield-alt mr-2"></i>
-            Bypass Cookie
-            <?= $opt["browserCanBypass"] ? "(Already set)" : "" ?>
+            <?= e(__("admin.maintenance.bypass")) ?>
+            <?= $opt["browserCanBypass"] ? e(__("admin.maintenance.bypass_set")) : "" ?>
         </button>
     </div>
 
@@ -57,7 +57,7 @@
                     location.reload();
                     return;
                 }
-                alert("Failed to set bypass cookie");
+                alert(<?= json_encode(__("admin.maintenance.bypass_failed")) ?>);
             });
         });
     </script>

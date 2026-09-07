@@ -16,6 +16,7 @@
                 "z_views" => "app/Views/",
                 "z_commands" => "app/Commands/",
                 "routes" => "app/Routes/",
+                "translations" => "app/Translations/",
                 "config_file" => "z_config/z_settings.ini",
                 "config_automated_file" => "z_config/z_automated_setting.ini",
                 "z_framework_root" => $frameworkRoot,

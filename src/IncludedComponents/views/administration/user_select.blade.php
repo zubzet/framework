@@ -6,7 +6,7 @@
 
 @section("content")
  <!-- File body -->	
-    <h2>Edit User</h2>
+    <h2><?= e(__("admin.user_select.title")) ?></h2>
 
     <div class="list-group">
       <?php foreach($opt["users"] as $user) { ?>
@@ -16,7 +16,7 @@
           </small>
 
           <?php if(is_null($user["email"])) { ?>
-            <i>No email</i>
+            <i><?= e(__("admin.user_select.no_email")) ?></i>
           <?php } else { ?>
             <?= e($user["email"]); ?>
           <?php } ?>

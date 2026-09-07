@@ -2,11 +2,11 @@
 
 @section("content")
     <div class="content">
-        <h2 class="mb-3">Dashboard</h2>
+        <h2 class="mb-3"><?= e(__("admin.dashboard.title")) ?></h2>
 
         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-            Application
+            <?= e(__("admin.nav.application")) ?>
         </h2>
         <div class="row">
             <?php if($opt["user"]->checkPermission("admin.database")) { ?>
@@ -31,7 +31,7 @@
 
         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-            Users and Roles
+            <?= e(__("admin.nav.users_and_roles")) ?>
         </h2>
         <div class="row">
             <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
@@ -74,7 +74,7 @@
 
         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-            Other
+            <?= e(__("admin.nav.other")) ?>
         </h2>
         <div class="row">
             <div class="col-12 col-sm-6 col-md-3 mb-3">

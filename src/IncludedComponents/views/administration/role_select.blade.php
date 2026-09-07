@@ -10,7 +10,7 @@
     <script>
         $(function() {
             $("#create-group").click(() => {
-                if (confirm("Do you really want to create a new role?")) {
+                if (confirm(<?= json_encode(__("admin.roles.create_confirm")) ?>)) {
                     Z.Request.action("create", {}, function(response) {
                         window.location.href = "<?php echo $opt["root"]. "z/roles/" ?>" + response.roleId;
                     });
@@ -19,7 +19,7 @@
         });
     </script>
 
-    <h2>Roles</h2>
+    <h2><?= e(__("admin.roles.title")) ?></h2>
 
     <div class="list-group">
       <?php foreach($opt["roles"] as $role) { ?>
@@ -27,5 +27,5 @@
       <?php } ?>
     </div>
 
-    <button data-test="role-create" class="btn btn-primary mt-2" id="create-group">Create role</button>
+    <button data-test="role-create" class="btn btn-primary mt-2" id="create-group"><?= e(__("admin.roles.create")) ?></button>
 @endsection

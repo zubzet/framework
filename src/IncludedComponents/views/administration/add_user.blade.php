@@ -2,7 +2,7 @@
 
 @section("content")
     <h2>
-        Add User
+        <?= e(__("admin.add_user.title")) ?>
     </h2>
 
     <div id="create-user-form"></div>
@@ -16,7 +16,7 @@
         form.createField({
             name: "email",
             type: "email",
-            text: "Email",
+            text: <?= json_encode(__("admin.add_user.email")) ?>,
             placeholder: "name@example.com"
         });
 
@@ -24,7 +24,7 @@
             name: "password",
             type: "password",
             required: true,
-            text: "Password",
+            text: <?= json_encode(__("admin.add_user.password")) ?>,
             placeholder: "******",
         });
 
