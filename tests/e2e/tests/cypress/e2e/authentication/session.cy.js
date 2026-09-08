@@ -25,6 +25,8 @@ describe('Authentication - Session', () => {
                 extendedSeconds: null,
                 created: '2025-01-01 12:00:00',
                 name: null,
+                device: null,
+                reason: null,
                 isPermanent: false,
             },
             {
@@ -35,6 +37,8 @@ describe('Authentication - Session', () => {
                 extendedSeconds: null,
                 created: '2025-01-01 12:00:00',
                 name: null,
+                device: null,
+                reason: null,
                 isPermanent: false,
             },
         ];
@@ -68,6 +72,8 @@ describe('Authentication - Session', () => {
                 extendedSeconds: 300,
                 created: '2025-01-01 12:00:00',
                 name: null,
+                device: null,
+                reason: null,
                 isPermanent: false,
             });
         });
@@ -88,6 +94,8 @@ describe('Authentication - Session', () => {
                 extendedSeconds: null,
                 created: output.created,
                 name: null,
+                device: null,
+                reason: null,
                 isPermanent: false,
             });
         });
@@ -220,6 +228,34 @@ describe('Authentication - Session', () => {
     });
 
 
+    it('should record name, reason, device and the creating address (add)', () => {
+        requestJson('/session/sessionOrigin').then((output) => {
+            expect(output.name).to.equal('Named');
+            expect(output.reason).to.equal('Support request #42');
+            // Taken from the request that created the session, not passed in
+            expect(output.device).to.equal(output.requestAgent);
+            expect(output.ipCreation).to.be.a('string').and.not.be.empty;
+            // Never used yet, so there is no last address
+            expect(output.ipLast).to.be.null;
+        });
+    });
+
+    it('should update the last address when a session is used from a new one', () => {
+        // Session 439 is seeded with 203.0.113.7, which cypress is not
+        cy.session('ip_last_439', () => {
+            cy.setCookie('z_login_token', '0439a00000000000000000000000000000000000');
+        });
+        requestJson('/session/whoami').then((who) => {
+            expect(who.isLoggedIn).to.be.true;
+
+            requestJson('/session/sessionIpLast').then((output) => {
+                expect(output.ipLast).to.not.equal('203.0.113.7');
+                expect(output.ipLast).to.equal(output.requestIp);
+            });
+        });
+    });
+
+
     /**
      * API Keys
      */
@@ -261,6 +297,7 @@ describe('Authentication - Session', () => {
             expect(output.class).to.equal('APIKey');
             expect(output.userId).to.equal(437);
             expect(output.name).to.equal('Deployment pipeline');
+            expect(output.reason).to.equal('CI needs read access');
             expect(output.token).to.match(TOKEN_FORMAT);
             // A fresh key expires like a login until it is made permanent
             expect(output.isPermanent).to.be.false;
@@ -344,23 +381,31 @@ describe('Authentication - Session', () => {
         });
     }
 
-    it('should name a login session after the user agent it was started from', () => {
+    it('should record the user agent as the device, leaving the name unset', () => {
         login(CHROME_ON_WINDOWS);
 
         requestJson('/session/loginSessionNames').then((output) => {
-            expect(output.names).to.deep.equal([CHROME_ON_WINDOWS]);
+            expect(output).to.have.length(1);
+            expect(output[0].device).to.equal(CHROME_ON_WINDOWS);
+            // The user agent is the device, not the name - a name is chosen, not sniffed
+            expect(output[0].name).to.be.null;
+            expect(output[0].reason).to.be.null;
+            // loginAs() records where the session was created from
+            expect(output[0].ipCreation).to.be.a('string').and.not.be.empty;
         });
     });
 
     it('should cut an overlong user agent to what the column takes', () => {
-        // The header is client controlled and `name` holds 255 characters, so an
+        // The header is client controlled and `device` holds 255 characters, so an
         // oversized one must not break the login.
         const overlong = 'Mozilla/5.0 ' + 'A'.repeat(500);
         login(overlong);
 
         requestJson('/session/loginSessionNames').then((output) => {
             // byUser has no ORDER BY, so pick the row out instead of taking the last
-            const stored = output.names.filter((name) => name.startsWith('Mozilla/5.0 A'));
+            const stored = output
+                .map((session) => session.device)
+                .filter((device) => device.startsWith('Mozilla/5.0 A'));
             expect(stored).to.have.length(1);
             expect(stored[0]).to.have.length(255);
             expect(overlong.startsWith(stored[0])).to.be.true;

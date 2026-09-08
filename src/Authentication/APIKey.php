@@ -14,7 +14,7 @@
             "zr.is_apikey" => 1
         ];
 
-        public static function add(User $user, ?string $name = null): APIKey {
-            return model("z_login")->createLoginToken($user->id(), $user->id(), $name, isApiKey: true);
+        public static function add(User $user, ?string $name = null, ?string $reason = null): APIKey {
+            return model("z_login")->createLoginToken($user->id(), $user->id(), $name, $reason, isApiKey: true);
         }
     }

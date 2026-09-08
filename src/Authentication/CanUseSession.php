@@ -21,6 +21,10 @@
             $this->setField("userId", $data["userId"]);
             $this->setField("userId_exec", $data["userId_exec"]);
             $this->setField("name", $data["name"]);
+            $this->setField("device", $data["device"]);
+            $this->setField("reason", $data["reason"]);
+            $this->setField("ip_creation", $data["ip_creation"]);
+            $this->setField("ip_last", $data["ip_last"]);
             $this->setField("is_permanent", $data["is_permanent"]);
             $this->setField("is_apikey", $data["is_apikey"]);
             $this->setField("extended_seconds", $data["extended_seconds"]);
@@ -147,6 +151,34 @@
 
         public function name(): ?string {
             return $this->getField("name");
+        }
+
+        /**
+         * The user agent the session was started from, or null when none was sent
+         */
+        public function device(): ?string {
+            return $this->getField("device");
+        }
+
+        /**
+         * Why the session was created, e.g. an impersonation, or null
+         */
+        public function reason(): ?string {
+            return $this->getField("reason");
+        }
+
+        /**
+         * The address the session was created from, or null when it was not known
+         */
+        public function ipCreation(): ?string {
+            return $this->getField("ip_creation");
+        }
+
+        /**
+         * The address the session was last used from, or null while it is unused
+         */
+        public function ipLast(): ?string {
+            return $this->getField("ip_last");
         }
 
         public function isPermanent(): bool {

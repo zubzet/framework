@@ -157,3 +157,16 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
 INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
 -- created in the year 2000 without extension, so it is expired until the flag revives it
 (438, '0438a00000000000000000000000000000000000', 438, 438, NULL, 0, 0, NULL, '2000-01-01 12:00:00', 1);
+
+
+/*
+    Device, reason and the addresses a session is used from
+*/
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+-- origin: Session::add() records reason, device and ip_creation at runtime
+(439, 'session_origin@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `device`, `reason`, `ip_creation`, `ip_last`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
+-- ip_last starts stale, the authenticated request carrying this cookie corrects it
+(439, '0439a00000000000000000000000000000000000', 439, 439, NULL, NULL, NULL, '203.0.113.7', '203.0.113.7', 0, 0, NULL, NOW(), 1);

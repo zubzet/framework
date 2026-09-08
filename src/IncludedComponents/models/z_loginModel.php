@@ -148,18 +148,60 @@
 
         /**
          * Creates a login token for a user
+         *
+         * The device and the creating address are taken from the current request,
+         * so every path that hands out a token records them the same way.
+         *
          * @param int $userId Id of the user
          * @param int $exec_userId Id of the executing user
          * @param ?string $name An optional name for the session
+         * @param ?string $reason Why the session was created, e.g. an impersonation
          * @param bool $isApiKey Whether the token is an api key rather than a login
          * @return Session|APIKey The resulting session, an APIKey when flagged as one
          */
-        function createLoginToken(int $userId, int $exec_userId, ?string $name = null, bool $isApiKey = false): Session|APIKey {
+        function createLoginToken(
+            int $userId,
+            int $exec_userId,
+            ?string $name = null,
+            ?string $reason = null,
+            bool $isApiKey = false,
+        ): Session|APIKey {
             $token = "zub-".bin2hex(random_bytes(32));
-            $sql = "INSERT INTO `z_logintoken`(`userId`, `userId_exec`, `token`, `name`, `is_apikey`)
-                    VALUES (?, ?, ?, ?, ?)";
-            $this->exec($sql, "iissi", $userId, $exec_userId, $token, $name, (int) $isApiKey);
+
+            // The user agent is client controlled, so it is cut to what the column takes
+            $userAgent = request()->userAgent();
+            $device = is_null($userAgent) ? null : mb_substr($userAgent, 0, 255);
+
+            $sql = "INSERT INTO `z_logintoken`
+                        (`userId`, `userId_exec`, `token`, `name`, `device`, `reason`, `ip_creation`, `is_apikey`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $this->exec(
+                $sql, "iisssssi",
+                $userId, $exec_userId, $token,
+                $name, $device, $reason, request()->ip(),
+                (int) $isApiKey,
+            );
+
             return Session::byToken($token);
+        }
+
+        /**
+         * Records the address a session was last used from, when it changed
+         *
+         * Called on every authenticated request, so it only writes on a change.
+         *
+         * @param Session|APIKey $session The session that authenticated the request
+         * @internal
+         */
+        public function recordSessionIp(Session|APIKey $session): void {
+            $ip = request()->ip();
+
+            if(is_null($ip) || $ip === $session->ipLast()) return;
+
+            $sql = "UPDATE `z_logintoken`
+                    SET `ip_last` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "si", $ip, $session->id());
         }
 
         /**

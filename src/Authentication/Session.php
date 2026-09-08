@@ -14,9 +14,9 @@ class Session extends AuthenticationObject {
         "zr.is_apikey" => 0
     ];
 
-    public static function add(User $user, ?User $userExec = null, ?string $name = null): Session {
+    public static function add(User $user, ?User $userExec = null, ?string $name = null, ?string $reason = null): Session {
         if(is_null($userExec)) $userExec = $user;
 
-        return model("z_login")->createLoginToken($user->id(), $userExec->id(), $name);
+        return model("z_login")->createLoginToken($user->id(), $userExec->id(), $name, $reason);
     }
 }

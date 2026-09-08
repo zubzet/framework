@@ -266,17 +266,14 @@
          * Logs the current user in as someone else
          * @param int $userId ID of the user to sudo into
          * @param ?int $user_exec ID of the executing user
-         * @param ?string $name Name of the session, by default the user agent it was started from
+         * @param ?string $name An optional name for the session
+         * @param ?string $reason Why the session was created, e.g. why an admin impersonates
          */
-        public function loginAs(int $userId, ?int $user_exec = null, ?string $name = null) {
+        public function loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null) {
             if($user_exec === null) $user_exec = $userId;
 
-            // The user agent names the session unless the caller names it. It is
-            // client controlled, so it is cut to what the column takes.
-            $userAgent = $this->booter->req->userAgent();
-            if(is_null($name) && !is_null($userAgent)) $name = mb_substr($userAgent, 0, 255);
-
-            $session = model("z_login", $this->booter->z_framework_root)->createLoginToken($userId, $user_exec, $name);
+            $session = model("z_login", $this->booter->z_framework_root)
+                ->createLoginToken($userId, $user_exec, $name, $reason);
 
             $this->setCookie(
                 "z_login_token",

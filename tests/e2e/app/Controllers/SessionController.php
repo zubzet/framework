@@ -182,6 +182,36 @@ class SessionController extends z_controller {
 
 
     /**
+     * A session records why it was created and where from, both taken at
+     * creation time. User 439 has no seeded session, so this one is fresh.
+     */
+    public function action_sessionOrigin(Request $req, Response $res): void {
+        $session = Session::add(User::byId(439), name: 'Named', reason: 'Support request #42');
+
+        echo(json_encode([
+            'name'        => $session->name(),
+            'reason'      => $session->reason(),
+            'device'      => $session->device(),
+            'ipCreation'  => $session->ipCreation(),
+            'ipLast'      => $session->ipLast(),
+            'requestIp'   => $req->ip(),
+            'requestAgent'=> $req->userAgent(),
+        ]));
+    }
+
+    /**
+     * Session 439 is seeded with a stale ip_last, which the authenticated
+     * request that carries its cookie has to correct.
+     */
+    public function action_sessionIpLast(Request $req, Response $res): void {
+        echo(json_encode([
+            'ipLast'    => Session::byId(439)->ipLast(),
+            'requestIp' => $req->ip(),
+        ]));
+    }
+
+
+    /**
      *
      * @var API Keys
      *
@@ -231,12 +261,13 @@ class SessionController extends z_controller {
     }
 
     public function action_apiKeyAdd(Request $req, Response $res): void {
-        $apiKey = APIKey::add(User::byId(437), name: 'Deployment pipeline');
+        $apiKey = APIKey::add(User::byId(437), name: 'Deployment pipeline', reason: 'CI needs read access');
 
         echo(json_encode(array_merge([
             'class'  => $this->className($apiKey),
             'userId' => (int) $apiKey->userId(),
             'token'  => $apiKey->token(),
+            'reason' => $apiKey->reason(),
         ], $this->getNameAndPermanence($apiKey))));
     }
 
@@ -300,12 +331,16 @@ class SessionController extends z_controller {
      * login-naming test, so cypress can see what loginAs() stored.
      */
     public function action_loginSessionNames(Request $req, Response $res): void {
-        echo(json_encode([
-            'names' => array_map(
-                fn(Session|APIKey $session) => $session->name(),
-                Session::byUser(User::byId(436)),
-            ),
-        ]));
+        echo(json_encode(array_map(
+            fn(Session|APIKey $session) => [
+                'name'       => $session->name(),
+                'device'     => $session->device(),
+                'reason'     => $session->reason(),
+                'ipCreation' => $session->ipCreation(),
+                'ipLast'     => $session->ipLast(),
+            ],
+            array_values(Session::byUser(User::byId(436))),
+        )));
     }
 
 
@@ -328,6 +363,22 @@ class SessionController extends z_controller {
             'isLoggedIn' => $user->isLoggedIn,
             'userId'     => $user->userId,
             'execUserId' => $user->execUserId,
+        ]));
+    }
+
+    /**
+     * The session behind the current cookie, so cypress can read back what a
+     * login path stored on it.
+     */
+    public function action_currentSession(Request $req, Response $res): void {
+        $user = $req->booter->user;
+        $session = $user->isLoggedIn ? Session::byToken($user->getSessionToken()) : null;
+
+        echo(json_encode([
+            'found'  => !is_null($session),
+            'reason' => $session?->reason(),
+            'name'   => $session?->name(),
+            'device' => $session?->device(),
         ]));
     }
 
@@ -389,6 +440,8 @@ class SessionController extends z_controller {
             'userId'         => (int) $session->userId(),
             'userIdExec'     => (int) $session->userIdExec(),
             'name'           => $session->name(),
+            'device'         => $session->device(),
+            'reason'         => $session->reason(),
             'isPermanent'    => $session->isPermanent(),
             'extendedSeconds'=> is_null($session->extendedSeconds()) ? null : (int) $session->extendedSeconds(),
             'created'        => $session->created(),
