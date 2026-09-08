@@ -142,7 +142,11 @@
             $userId = $req->getParameters(0, 1);
             if(empty($userId) && $userId !== '0') return;
 
-            $res->loginAs($userId, $req->getRequestingUser()->execUserId);
+            // The admin may state a reason; the column takes 255 characters
+            $reason = trim((string) $req->getGet("reason", ""));
+            if(empty($reason)) $reason = "z-admin impersonation";
+
+            $res->loginAs($userId, $req->getRequestingUser()->execUserId, reason: mb_substr($reason, 0, 255));
             return $res->rerouteUrl();
         }
 

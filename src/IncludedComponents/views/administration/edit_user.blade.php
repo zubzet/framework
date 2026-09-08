@@ -21,7 +21,15 @@
             });
 
             form.createActionButton("Login as", "btn-secondary", function() {
-                window.location.href = "<?php echo $opt["root"] . "z/login_as/" . $opt["userId"] ?>";
+                // A reason is optional; cancelling the prompt still logs in
+                var reason = window.prompt("Why are you logging in as this user? (optional)");
+
+                var url = "<?php echo $opt["root"] . "z/login_as/" . $opt["userId"] ?>";
+                if(reason !== null && reason.trim() !== "") {
+                    url += "?reason=" + encodeURIComponent(reason.trim());
+                }
+
+                window.location.href = url;
             });
 
             form.addSeperator();
