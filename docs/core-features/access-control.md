@@ -8,6 +8,36 @@ At its core, the access control system introduces two primary domain objects: **
 
 ---
 
+## UUIDs
+
+Every user, role, group, organization, session and API key carries a **UUID** next to its numeric ID,
+stored in the `uuid` column as an RFC 4122 string. It is the identifier meant to leave the
+application: URLs, REST payloads and anything handed to a third party. Unlike the sequential ID, it
+does not reveal how many records exist and cannot be guessed by counting up. The numeric ID stays the
+internal key used for foreign keys and joins.
+
+Every object that can be retrieved by ID can also be retrieved by UUID:
+
+```php
+User::byUuid(string $uuid): ?User
+Role::byUuids(string ...$uuids): array
+```
+
+The UUID of the authenticated user is available without a lookup:
+
+```php
+user()->uuid;
+```
+
+A [session](#session-object) or [API key](#api-keys) has a UUID as well, and it is the only one of
+its identifiers that is safe to hand out: the token authenticates whoever presents it, so it belongs
+in a cookie or an `Authorization` header and nowhere else. Use the UUID to name a session in a "your
+active sessions" list or to address one for renaming or invalidation. Like `byId()`, `byUuid()` is
+scoped to the class it is called on - `Session::byUuid()` does not find an API key and
+`APIKey::byUuid()` does not find a login.
+
+---
+
 ## User Object
 
 The [`User`](../api/classes/ZubZet-Framework-Authentication-Permission-User.html) object represents an application user and exposes a comprehensive API for retrieval, lifecycle management, and permission handling.
@@ -70,6 +100,18 @@ All retrieval methods are **public static** and return fully hydrated `User` obj
 
     ```php
     User::byIds(int ...$ids): array
+    ```
+
+* Returns a user by its [UUID](#uuids) or `null` if not found.
+
+    ```php
+    User::byUuid(string $uuid): ?User
+    ```
+
+* Returns all users matching the given UUIDs.
+
+    ```php
+    User::byUuids(string ...$uuids): array
     ```
 
 ---
@@ -272,6 +314,12 @@ Permission checks always resolve the **complete permission set**.
     $user->id(): int|string|null
     ```
 
+* Returns the user's [UUID](#uuids).
+
+    ```php
+    $user->uuid(): string
+    ```
+
 * Returns all roles assigned to the user.
 
     ```php
@@ -339,6 +387,18 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
     ```php
     Role::byIds(int ...$ids): array
+    ```
+
+* Returns a role by its [UUID](#uuids) or `null` if not found.
+
+    ```php
+    Role::byUuid(string $uuid): ?Role
+    ```
+
+* Returns all roles matching the given UUIDs.
+
+    ```php
+    Role::byUuids(string ...$uuids): array
     ```
 
 ---
@@ -494,6 +554,18 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     Organization::byIds(int ...$ids): array
     ```
 
+* Returns an organization by its [UUID](#uuids), or `null` if not found or inactive.
+
+    ```php
+    Organization::byUuid(string $uuid): ?Organization
+    ```
+
+* Returns all organizations matching the given UUIDs.
+
+    ```php
+    Organization::byUuids(string ...$uuids): array
+    ```
+
 ---
 
 ### Creating an Organization
@@ -587,6 +659,18 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
     Session::byIds(int ...$ids): array
     ```
 
+* Returns a login by its [UUID](#uuids), or `null` if the UUID belongs to an api key. This is the identifier to use when a session has to be addressed from outside the application - the token must not leave the client.
+
+    ```php
+    Session::byUuid(string $uuid): ?Session
+    ```
+
+* Returns all logins matching the given UUIDs.
+
+    ```php
+    Session::byUuids(string ...$uuids): array
+    ```
+
 * Returns all logins.
 
     ```php
@@ -636,7 +720,10 @@ Session::byUser($user); // the user's logins
 
 Every retriever is scoped to the class it is called on: `Session::byId()` does
 not find an api key and `APIKey::byId()` does not find a login, the same way
-[`Role`](#role-object) and `Group` split the `z_role` table.
+[`Role`](#role-object) and `Group` split the `z_role` table. The same holds for
+`APIKey::byUuid()` and `APIKey::byUuids()`, which are the safe way to address a
+key from outside the application - unlike the token, a [UUID](#uuids) grants
+nothing to whoever reads it.
 
 `byToken()` is the one exception. It resolves both kinds whichever class it is
 called on - returning an `APIKey` for a key and a plain `Session` for a login -

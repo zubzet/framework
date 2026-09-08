@@ -317,6 +317,15 @@ class User extends AuthenticationObject {
         return $this->getField('email');
     }
 
+    /**
+     * Get the user's uuid
+     * 
+     * @return string The uuid of the user
+     */
+    public function uuid(): string {
+        return $this->getField('uuid');
+    }
+
     public function organization(): ?Organization {
         // Use a separate marker so a null result (user has no org) is cached too,
         // not just hits - otherwise every call would re-resolve `organizationId`.
