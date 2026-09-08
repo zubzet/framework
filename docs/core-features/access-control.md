@@ -597,10 +597,10 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
 
 ### Creating a Session
 
-* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`. The optional `$name` labels the session, which is what a "your active sessions" list shows.
+* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`. The optional `$name` labels the session, which is what a "your active sessions" list shows, and `$reason` records why it was created.
 
     ```php
-    Session::add(User $user, ?User $userExec = null, ?string $name = null): Session
+    Session::add(User $user, ?User $userExec = null, ?string $name = null, ?string $reason = null): Session
     ```
 
 * Names the session, or removes its name when `null` is passed.
@@ -609,7 +609,7 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
     $session->setName(?string $name): void
     ```
 
-* Sessions started through the login flow name themselves after the user agent of the request that created them, cut to the 255 characters the column holds. A client that sends no user agent produces an unnamed session. Pass a name to [`$res->loginAs()`](../z-admin/login-as-another-user.md) to override this.
+* Every session records the request that created it, without the caller doing anything: `device` holds the user agent (cut to the 255 characters the column takes, `null` when none was sent) and `ip_creation` the address it was created from. A name is never derived from either - it stays `null` until someone chooses one.
 
 ---
 
@@ -646,7 +646,7 @@ having to know which kind the token is.
 * Creates an api key for a user. The name is what keeps keys apart in a list, so it is worth passing.
 
     ```php
-    APIKey::add(User $user, ?string $name = null): APIKey
+    APIKey::add(User $user, ?string $name = null, ?string $reason = null): APIKey
     ```
 
 Everything else a key needs it already has as a session: it is named through
@@ -733,6 +733,30 @@ Everything else a key needs it already has as a session: it is named through
 
     ```php
     $session->name(): ?string
+    ```
+
+* Returns the user agent the session was started from, or `null` if none was sent.
+
+    ```php
+    $session->device(): ?string
+    ```
+
+* Returns why the session was created, or `null` if no reason was given.
+
+    ```php
+    $session->reason(): ?string
+    ```
+
+* Returns the address the session was created from, or `null` if none could be determined.
+
+    ```php
+    $session->ipCreation(): ?string
+    ```
+
+* Returns the address the session was last used from, or `null` while it has not been used. It is rewritten on the first authenticated request that arrives from a different address, so a session that never moves is never written to.
+
+    ```php
+    $session->ipLast(): ?string
     ```
 
 * Returns whether the session is exempt from the login timeout.
