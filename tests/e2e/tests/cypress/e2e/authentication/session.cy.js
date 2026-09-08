@@ -7,6 +7,9 @@ describe('Authentication - Session', () => {
         return cy.request(path).then((res) => JSON.parse(res.body));
     }
 
+    // Issued tokens are a `zub-` prefix plus 32 random bytes in hex
+    const TOKEN_FORMAT = /^zub-[0-9a-f]{64}$/;
+
 
     /**
      * Getters
@@ -23,7 +26,6 @@ describe('Authentication - Session', () => {
                 created: '2025-01-01 12:00:00',
                 name: null,
                 isPermanent: false,
-                isApiKey: false,
             },
             {
                 id: 401,
@@ -34,7 +36,6 @@ describe('Authentication - Session', () => {
                 created: '2025-01-01 12:00:00',
                 name: null,
                 isPermanent: false,
-                isApiKey: false,
             },
         ];
 
@@ -68,7 +69,6 @@ describe('Authentication - Session', () => {
                 created: '2025-01-01 12:00:00',
                 name: null,
                 isPermanent: false,
-                isApiKey: false,
             });
         });
     });
@@ -89,7 +89,6 @@ describe('Authentication - Session', () => {
                 created: output.created,
                 name: null,
                 isPermanent: false,
-                isApiKey: false,
             });
         });
     });
@@ -116,7 +115,7 @@ describe('Authentication - Session', () => {
             expect(output.userId).to.equal(421);
             expect(output.userIdExec).to.equal(421);
             expect(output.extendedSeconds).to.be.null;
-            expect(output.token).to.be.a('string').and.have.length(40);
+            expect(output.token).to.match(TOKEN_FORMAT);
         });
     });
 
@@ -124,7 +123,7 @@ describe('Authentication - Session', () => {
         requestJson('/session/addWithExec').then((output) => {
             expect(output.userId).to.equal(422);
             expect(output.userIdExec).to.equal(423);
-            expect(output.token).to.be.a('string').and.have.length(40);
+            expect(output.token).to.match(TOKEN_FORMAT);
         });
     });
 
@@ -132,9 +131,6 @@ describe('Authentication - Session', () => {
         requestJson('/session/addWithName').then((output) => {
             expect(output.userId).to.equal(434);
             expect(output.name).to.equal('Named session');
-            // A named session is still an ordinary, expiring login
-            expect(output.isApiKey).to.be.false;
-            expect(output.isPermanent).to.be.false;
         });
     });
 
@@ -208,31 +204,79 @@ describe('Authentication - Session', () => {
     });
 
 
+    it('should make an ordinary login permanent, reviving an expired session', () => {
+        requestJson('/session/sessionPermanent').then((output) => {
+            // Session 438 is a login created in the year 2000, without extension
+            expect(output.before.isPermanent).to.be.false;
+            expect(output.before.isExpired).to.be.true;
+            expect(output.before.expiresAt).to.be.a('string');
+
+            expect(output.after).to.deep.equal({
+                isExpired: false,
+                expiresAt: null,
+                isPermanent: true,
+            });
+        });
+    });
+
+
     /**
      * API Keys
      */
 
-    it('should return every session, only api keys, or only logins (byUser filter)', () => {
-        requestJson('/session/apiKeyFilter').then((output) => {
+    it('should list logins and api keys of a user separately (byUser)', () => {
+        requestJson('/session/apiKeyByUser').then((output) => {
             // 433 is a revoked api key and must not show up anywhere
-            expect(output.all).to.have.members([430, 431, 432]);
-            expect(output.apiKeys).to.have.members([431, 432]);
             expect(output.logins).to.have.members([430]);
+            expect(output.apiKeys).to.have.members([431, 432]);
         });
     });
 
-    it('should set name, permanent and api key flags through the session object', () => {
+    it('should find a session only through the class of its kind (byId)', () => {
+        requestJson('/session/apiKeyById').then((output) => {
+            expect(output).to.deep.equal({
+                sessionOnLogin: 'Session',
+                sessionOnKey: null,
+                apiKeyOnKey: 'APIKey',
+                apiKeyOnLogin: null,
+            });
+        });
+    });
+
+    it('should build the class matching the row a token belongs to (byToken)', () => {
+        requestJson('/session/apiKeyByToken').then((output) => {
+            expect(output).to.deep.equal({
+                // The row picks the class, not the class that was asked. Both
+                // resolve both kinds, which is what authentication needs.
+                sessionOnLogin: 'Session',
+                sessionOnKey: 'APIKey',
+                apiKeyOnLogin: 'Session',
+                apiKeyOnKey: 'APIKey',
+            });
+        });
+    });
+
+    it('should create a named api key (add)', () => {
+        requestJson('/session/apiKeyAdd').then((output) => {
+            expect(output.class).to.equal('APIKey');
+            expect(output.userId).to.equal(437);
+            expect(output.name).to.equal('Deployment pipeline');
+            expect(output.token).to.match(TOKEN_FORMAT);
+            // A fresh key expires like a login until it is made permanent
+            expect(output.isPermanent).to.be.false;
+        });
+    });
+
+    it('should set name and permanence through the api key object', () => {
         requestJson('/session/apiKeyManage').then((output) => {
             expect(output.before).to.deep.equal({
                 name: null,
                 isPermanent: false,
-                isApiKey: false,
             });
 
             const expected = {
                 name: 'Renamed key',
                 isPermanent: true,
-                isApiKey: true,
             };
 
             // Refreshed in place and read back from the database
@@ -241,7 +285,7 @@ describe('Authentication - Session', () => {
         });
     });
 
-    it('should remove the name of a session when null is passed (setName)', () => {
+    it('should remove the name of an api key when null is passed (setName)', () => {
         requestJson('/session/apiKeyClearName').then((output) => {
             expect(output).to.deep.equal({
                 before: 'Temporary name',
@@ -250,16 +294,18 @@ describe('Authentication - Session', () => {
         });
     });
 
-    it('should never expire a permanent session and expire it again once the flag is dropped', () => {
+    it('should never expire a permanent api key and expire it again once the flag is dropped', () => {
         requestJson('/session/apiKeyPermanentExpiry').then((output) => {
             // Created in the year 2000 without extension - only the flag keeps it alive
             expect(output.permanent).to.deep.equal({
                 isExpired: false,
                 expiresAt: null,
+                isPermanent: true,
             });
 
             expect(output.temporary.isExpired).to.be.true;
             expect(output.temporary.expiresAt).to.be.a('string');
+            expect(output.temporary.isPermanent).to.be.false;
         });
     });
 

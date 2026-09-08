@@ -1,5 +1,6 @@
 <?php
 
+use ZubZet\Framework\Authentication\APIKey;
 use ZubZet\Framework\Authentication\Session;
 use ZubZet\Framework\Authentication\Permission\User;
 
@@ -162,83 +163,134 @@ class SessionController extends z_controller {
 
 
     /**
+     * Session 438 is an ordinary login created in the year 2000, so it is
+     * expired until the permanent flag revives it.
+     */
+    public function action_sessionPermanent(Request $req, Response $res): void {
+        $session = Session::byId(438);
+
+        $before = $this->getExpiry($session);
+
+        $session->setPermanent(true);
+        $session->refresh();
+
+        echo(json_encode([
+            'before' => $before,
+            'after'  => $this->getExpiry($session),
+        ]));
+    }
+
+
+    /**
      *
-     * @var Session API Keys
+     * @var API Keys
      *
      */
 
     /**
-     * User 430 owns one login, two api keys and one revoked api key.
-     * Every filter value is asked for in one request.
+     * User 430 owns one login, two api keys and one revoked api key. Each
+     * class lists its own kind only.
      */
-    public function action_apiKeyFilter(Request $req, Response $res): void {
+    public function action_apiKeyByUser(Request $req, Response $res): void {
         $user = User::byId(430);
 
         echo(json_encode([
-            'all'     => $this->sessionIds(Session::byUser($user)),
-            'apiKeys' => $this->sessionIds(Session::byUser($user, true)),
-            'logins'  => $this->sessionIds(Session::byUser($user, false)),
+            'logins'  => $this->sessionIds(Session::byUser($user)),
+            'apiKeys' => $this->sessionIds(APIKey::byUser($user)),
         ]));
     }
 
     /**
-     * Turns session 434 into a named, permanent api key and reads the result
-     * back both from the refreshed object and from a second lookup.
+     * Session 430 is a login, session 431 an api key. Looking one up through
+     * the other class finds nothing.
+     */
+    public function action_apiKeyById(Request $req, Response $res): void {
+        echo(json_encode([
+            'sessionOnLogin' => $this->className(Session::byId(430)),
+            'sessionOnKey'   => $this->className(Session::byId(431)),
+            'apiKeyOnKey'    => $this->className(APIKey::byId(431)),
+            'apiKeyOnLogin'  => $this->className(APIKey::byId(430)),
+        ]));
+    }
+
+    /**
+     * A token says nothing about its kind, so the row picks the class. This is
+     * shared through CanUseSession, so both classes resolve both kinds - which
+     * is what keeps an api key out of the login timeout when it authenticates.
+     */
+    public function action_apiKeyByToken(Request $req, Response $res): void {
+        $login  = '0430a00000000000000000000000000000000000';
+        $apiKey = '0430b00000000000000000000000000000000000';
+
+        echo(json_encode([
+            'sessionOnLogin' => $this->className(Session::byToken($login)),
+            'sessionOnKey'   => $this->className(Session::byToken($apiKey)),
+            'apiKeyOnLogin'  => $this->className(APIKey::byToken($login)),
+            'apiKeyOnKey'    => $this->className(APIKey::byToken($apiKey)),
+        ]));
+    }
+
+    public function action_apiKeyAdd(Request $req, Response $res): void {
+        $apiKey = APIKey::add(User::byId(437), name: 'Deployment pipeline');
+
+        echo(json_encode(array_merge([
+            'class'  => $this->className($apiKey),
+            'userId' => (int) $apiKey->userId(),
+            'token'  => $apiKey->token(),
+        ], $this->getNameAndPermanence($apiKey))));
+    }
+
+    /**
+     * Api key 434 starts out unnamed and expiring. Both are changed through the
+     * object and read back from the refreshed object and a second lookup.
      */
     public function action_apiKeyManage(Request $req, Response $res): void {
-        $session = Session::byId(434);
+        $apiKey = APIKey::byId(434);
 
-        $before = $this->getApiKeyFields($session);
+        $before = $this->getNameAndPermanence($apiKey);
 
-        $session->setName('Renamed key');
-        $session->setPermanent(true);
-        $session->setApiKey(true);
-        $session->refresh();
+        $apiKey->setName('Renamed key');
+        $apiKey->setPermanent(true);
+        $apiKey->refresh();
 
         echo(json_encode([
             'before' => $before,
-            'after'  => $this->getApiKeyFields($session),
-            'stored' => $this->getApiKeyFields(Session::byId(434)),
+            'after'  => $this->getNameAndPermanence($apiKey),
+            'stored' => $this->getNameAndPermanence(APIKey::byId(434)),
         ]));
     }
 
     /**
-     * Session 435 was created in the year 2000 without an extension, so only
+     * Api key 435 was created in the year 2000 without an extension, so only
      * the permanent flag keeps it alive. Dropping the flag expires it again.
      */
     public function action_apiKeyPermanentExpiry(Request $req, Response $res): void {
-        $session = Session::byId(435);
+        $apiKey = APIKey::byId(435);
 
-        $permanent = [
-            'isExpired' => $session->isExpired(),
-            'expiresAt' => $session->expiresAt(),
-        ];
+        $permanent = $this->getExpiry($apiKey);
 
-        $session->setPermanent(false);
-        $session->refresh();
+        $apiKey->setPermanent(false);
+        $apiKey->refresh();
 
         echo(json_encode([
             'permanent' => $permanent,
-            'temporary' => [
-                'isExpired' => $session->isExpired(),
-                'expiresAt' => $session->expiresAt(),
-            ],
+            'temporary' => $this->getExpiry($apiKey),
         ]));
     }
 
     /**
-     * Session 437 is seeded with a name; passing null is the way back to an
-     * unnamed session.
+     * Api key 437 is seeded with a name; passing null is the way back to an
+     * unnamed key.
      */
     public function action_apiKeyClearName(Request $req, Response $res): void {
-        $session = Session::byId(437);
-        $before = $session->name();
+        $apiKey = APIKey::byId(437);
+        $before = $apiKey->name();
 
-        $session->setName(null);
+        $apiKey->setName(null);
 
         echo(json_encode([
             'before' => $before,
-            'after'  => Session::byId(437)->name(),
+            'after'  => APIKey::byId(437)->name(),
         ]));
     }
 
@@ -250,7 +302,7 @@ class SessionController extends z_controller {
     public function action_loginSessionNames(Request $req, Response $res): void {
         echo(json_encode([
             'names' => array_map(
-                fn(Session $session) => $session->name(),
+                fn(Session|APIKey $session) => $session->name(),
                 Session::byUser(User::byId(436)),
             ),
         ]));
@@ -326,31 +378,46 @@ class SessionController extends z_controller {
         return $result;
     }
 
-    private function getSession(?Session $session): array {
+    private function getSession(Session|APIKey|null $session): array {
         if ($session === null) {
             return ['found' => false];
         }
 
-        return array_merge([
+        return [
             'id'             => $session->id(),
             'token'          => $session->token(),
             'userId'         => (int) $session->userId(),
             'userIdExec'     => (int) $session->userIdExec(),
+            'name'           => $session->name(),
+            'isPermanent'    => $session->isPermanent(),
             'extendedSeconds'=> is_null($session->extendedSeconds()) ? null : (int) $session->extendedSeconds(),
             'created'        => $session->created(),
-        ], $this->getApiKeyFields($session));
+        ];
     }
 
-    private function getApiKeyFields(Session $session): array {
+    private function getNameAndPermanence(Session|APIKey $session): array {
         return [
-            'name' => $session->name(),
+            'name'        => $session->name(),
             'isPermanent' => $session->isPermanent(),
-            'isApiKey' => $session->isApiKey(),
+        ];
+    }
+
+    private function getExpiry(Session|APIKey $session): array {
+        return [
+            'isExpired'   => $session->isExpired(),
+            'expiresAt'   => $session->expiresAt(),
+            'isPermanent' => $session->isPermanent(),
         ];
     }
 
     private function sessionIds(array $sessions): array {
-        return array_map(fn(Session $session) => $session->id(), $sessions);
+        return array_map(fn(Session|APIKey $session) => $session->id(), $sessions);
+    }
+
+    private function className(Session|APIKey|null $session): ?string {
+        if (is_null($session)) return null;
+
+        return (new \ReflectionClass($session))->getShortName();
     }
 
 }

@@ -105,35 +105,37 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
 */
 
 INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
--- byUser filter: one login, two api keys and one revoked api key
-(430, 'session_apikey_filter@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
--- manage: name and both flags are set through the Session object
+-- byUser / byId / byToken: one login, two api keys and one revoked api key
+(430, 'session_apikey_kinds@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- manage: name and permanence are set through the APIKey object
 (431, 'session_apikey_manage@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
 -- permanent: expired by age, kept alive by the flag
 (432, 'session_apikey_permanent@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
 -- auth flow: a permanent api key used as a login cookie
 (433, 'session_apikey_auth@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
--- add: session created with a name
-(434, 'session_apikey_add@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
--- clear name: named session that loses its name again
+-- add with name: Session::add($user, name: ...), an ordinary login
+(434, 'session_add_name@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- clear name: named api key that loses its name again
 (435, 'session_apikey_clearname@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
 -- login naming: logs in for real, password is "password" like the canonical seed
 (436, 'session_login_name@cypress.test',
     '772e7e18b509ee9dbf4a53d415187fa49c68c991873e3282c0025e9e53d4c946125f184c34e04a7fcd5136fcdc04bedc17afd981380ee05ccb7683e7d83ec615',
     '4401287036553e310907533.22322450',
-    1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+    1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- add: APIKey::add($user, name: ...) creates the key at runtime
+(437, 'session_apikey_add@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
 
 INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
--- byUser filter: user 430 owns one interactive login …
+-- kinds: user 430 owns one interactive login …
 (430, '0430a00000000000000000000000000000000000', 430, 430, NULL, 0, 0, NULL, '2025-01-01 12:00:00', 1),
 -- … two api keys …
 (431, '0430b00000000000000000000000000000000000', 430, 430, 'CI pipeline', 1, 1, NULL, '2025-01-01 12:00:00', 1),
 (432, '0430c00000000000000000000000000000000000', 430, 430, 'Backup job', 1, 1, NULL, '2025-01-01 12:00:00', 1),
--- … and a revoked api key, which no filter may return
+-- … and a revoked api key, which neither class may return
 (433, '0430d00000000000000000000000000000000000', 430, 430, 'Revoked key', 1, 1, NULL, '2025-01-01 12:00:00', 0),
 
--- manage: unnamed login session, flagged at runtime
-(434, '0431a00000000000000000000000000000000000', 431, 431, NULL, 0, 0, NULL, '2025-01-01 12:00:00', 1),
+-- manage: unnamed, expiring api key that is named and made permanent at runtime
+(434, '0431a00000000000000000000000000000000000', 431, 431, NULL, 0, 1, NULL, '2025-01-01 12:00:00', 1),
 
 -- permanent: created in the year 2000 without extension, expired unless permanent
 (435, '0432a00000000000000000000000000000000000', 432, 432, 'Never expires', 1, 1, NULL, '2000-01-01 12:00:00', 1),
@@ -143,3 +145,15 @@ INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `is_
 
 -- clear name: starts out named
 (437, '0435a00000000000000000000000000000000000', 435, 435, 'Temporary name', 0, 1, NULL, '2025-01-01 12:00:00', 1);
+
+
+/*
+    Session permanence (an ordinary login, not an api key)
+*/
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+(438, 'session_permanent_login@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
+-- created in the year 2000 without extension, so it is expired until the flag revives it
+(438, '0438a00000000000000000000000000000000000', 438, 438, NULL, 0, 0, NULL, '2000-01-01 12:00:00', 1);
