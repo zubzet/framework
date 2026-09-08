@@ -336,6 +336,75 @@ describe('Z-Admin Panel', () => {
     });
 
 
+    // ZController::action_login_as - the reason an admin may state for the sudo
+    describe('action_login_as (reason)', () => {
+        function sudo(query) {
+            cy.request({
+                url: `/z/login_as/3${query}`,
+                followRedirect: false,
+                failOnStatusCode: false,
+            });
+        }
+
+        it('records the reason the admin stated', () => {
+            cy.loginAs("admin");
+            sudo('?reason=' + encodeURIComponent('Ticket #4711'));
+
+            cy.request('/session/currentSession').then((res) => {
+                const out = JSON.parse(res.body);
+                expect(out.reason).to.eq('Ticket #4711');
+            });
+        });
+
+        it('falls back to a default reason when none is stated', () => {
+            cy.loginAs("admin");
+            sudo('');
+
+            cy.request('/session/currentSession').then((res) => {
+                const out = JSON.parse(res.body);
+                expect(out.reason).to.eq('z-admin impersonation');
+            });
+        });
+
+        it('falls back when the reason is only whitespace', () => {
+            cy.loginAs("admin");
+            sudo('?reason=' + encodeURIComponent('   '));
+
+            cy.request('/session/currentSession').then((res) => {
+                const out = JSON.parse(res.body);
+                expect(out.reason).to.eq('z-admin impersonation');
+            });
+        });
+
+        it('cuts an overlong reason to what the column takes', () => {
+            cy.loginAs("admin");
+            sudo('?reason=' + encodeURIComponent('R'.repeat(400)));
+
+            cy.request('/session/currentSession').then((res) => {
+                const out = JSON.parse(res.body);
+                expect(out.reason).to.have.length(255);
+            });
+        });
+
+        it('sends the reason typed into the prompt on the edit user page', () => {
+            cy.loginAs("admin");
+
+            cy.visit('/z/edit_user/3', {
+                onBeforeLoad(win) {
+                    cy.stub(win, 'prompt').returns('Typed into the prompt');
+                },
+            });
+
+            cy.contains('Login as').click();
+
+            cy.request('/session/currentSession').then((res) => {
+                const out = JSON.parse(res.body);
+                expect(out.reason).to.eq('Typed into the prompt');
+            });
+        });
+    });
+
+
     // ZController::action_login_as
     // The admin panel's permission-checked sudo distinct from the test app's /admin/loginas
     // which is the test apps shortcut that logs in as admin directly without permission checks.

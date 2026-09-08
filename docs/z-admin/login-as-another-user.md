@@ -7,3 +7,20 @@ Example:
 ```php
 $res->loginAs(1, 2); //Logs the requesting session in as user 1 and marks the real user as 2.
 ```
+
+## Naming a session and recording why it exists
+
+Every session records the request that created it on its own: `device` holds the user agent and `ip_creation` the address. The two optional arguments are what you choose yourself - a `$name` for the label a "your active sessions" list shows, and a `$reason` for why the session exists, which is what makes an impersonation traceable afterwards:
+
+```php
+$res->loginAs(1, 2, "Support session", "Ticket #4711"); //Names the session and records why it was opened
+```
+
+Both values are read back through [`Session::byUser()`](../core-features/access-control.md#session-object).
+
+## In the admin panel
+
+The "Login as" button on the user edit page asks for a reason before it sends you
+on. Leaving it empty or cancelling still logs you in - the session then records
+`z-admin impersonation` instead. Whatever is typed is cut to the 255 characters
+the column takes, so a long explanation shortens rather than failing.

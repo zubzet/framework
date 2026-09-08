@@ -3,6 +3,7 @@
      * This file holds the login model
      */
 
+    use ZubZet\Framework\Authentication\APIKey;
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Database\IsInternalModel;
     use ZubZet\Framework\Authentication\PasswordHash\Password;
@@ -34,24 +35,30 @@
         /**
          * Retrieve all active sessions of a user by its id
          * @param User $user The user object
+         * @param array $dbExpression Narrows the result to one kind of session
          * @return array of session objects
          * @internal
          */
-        public function getSessionsByUserId(User $user): array {
-            $sql = "SELECT *
-                    FROM `z_logintoken`
-                    WHERE `userId` = ?
-                    AND `active` = 1";
-            return $this->exec($sql, "i", $user->id())->resultToArray();
+        public function getSessionsByUserId(User $user, array $dbExpression = []): array {
+            $query = $this->dbSelect("*", [
+                "zr" => "z_logintoken"
+            ])->where([
+                "zr.userId" => $user->id(),
+                "zr.active" => 1,
+            ]);
+
+            if(!empty($dbExpression)) $query->where($dbExpression);
+
+            return $this->exec($query)->resultToArray();
         }
 
         /**
          * Set the extension time for a specific logintoken
-         * @param Session $session The session to set the extension time for
+         * @param Session|APIKey $session The session to set the extension time for
          * @param int $seconds The seconds to extend the lifetime of the token
          * @internal
          */
-        public function setExtensionTime(Session $session, int $seconds): void {
+        public function setExtensionTime(Session|APIKey $session, int $seconds): void {
             $sql = "UPDATE `z_logintoken`
                     SET `extended_seconds` = ?
                     WHERE `token` = ?
@@ -61,11 +68,11 @@
 
         /**
          * Increase the extension time for a specific logintoken
-         * @param Session $session The session to increase the extension time for
+         * @param Session|APIKey $session The session to increase the extension time for
          * @param int $seconds The seconds to increase the lifetime of the token
          * @internal
          */
-        public function extendLoginToken(Session $session, int $seconds): void {
+        public function extendLoginToken(Session|APIKey $session, int $seconds): void {
             $sql = "UPDATE `z_logintoken`
                     SET `extended_seconds` = COALESCE(`extended_seconds`, 0) + ?
                     WHERE `token` = ?
@@ -74,13 +81,39 @@
         }
 
         /**
+         * Names a session, or drops its name when null is passed
+         * @param Session|APIKey $session The session to name
+         * @param ?string $name The name of the session
+         * @internal
+         */
+        public function setSessionName(Session|APIKey $session, ?string $name): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `name` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "si", $name, $session->id());
+        }
+
+        /**
+         * Exempts a session from the regular lifetime, or subjects it to it again
+         * @param Session|APIKey $session The session to flag
+         * @param bool $isPermanent Whether the session never expires
+         * @internal
+         */
+        public function setSessionPermanent(Session|APIKey $session, bool $isPermanent): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `is_permanent` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "ii", (int) $isPermanent, $session->id());
+        }
+
+        /**
          * Validate a Session object by checking if the token is not expired
          *
-         * @param Session $session The session to validate
+         * @param Session|APIKey $session The session to validate
          * @return bool True if the session is valid, false otherwise
          * @internal
          */
-        public function validateSession(Session $session) {
+        public function validateSession(Session|APIKey $session) {
             if($session->isExpired()) {
                 $session->invalidate();
                 return false;
@@ -91,10 +124,10 @@
 
         /**
          * Invalidates a login token (session) for a user by setting it to inactive in the database
-         * @param Session $session The session to invalidate
+         * @param Session|APIKey $session The session to invalidate
          * @internal
          */
-        public function invalidateSession(Session $session): void {
+        public function invalidateSession(Session|APIKey $session): void {
             $sql = "UPDATE `z_logintoken`
                     SET `active`= 0
                     WHERE `id` = ?";
@@ -115,15 +148,60 @@
 
         /**
          * Creates a login token for a user
+         *
+         * The device and the creating address are taken from the current request,
+         * so every path that hands out a token records them the same way.
+         *
          * @param int $userId Id of the user
          * @param int $exec_userId Id of the executing user
-         * @return Session The resulting session
+         * @param ?string $name An optional name for the session
+         * @param ?string $reason Why the session was created, e.g. an impersonation
+         * @param bool $isApiKey Whether the token is an api key rather than a login
+         * @return Session|APIKey The resulting session, an APIKey when flagged as one
          */
-        function createLoginToken(int $userId, int $exec_userId): Session {
-            $token = bin2hex(random_bytes(20));
-            $sql = "INSERT INTO `z_logintoken`(`userId`, `userId_exec`, `token`) VALUES (?, ?, ?)";
-            $this->exec($sql, "iis", $userId, $exec_userId, $token);
+        function createLoginToken(
+            int $userId,
+            int $exec_userId,
+            ?string $name = null,
+            ?string $reason = null,
+            bool $isApiKey = false,
+        ): Session|APIKey {
+            $token = "zub-".bin2hex(random_bytes(32));
+
+            // The user agent is client controlled, so it is cut to what the column takes
+            $userAgent = request()->userAgent();
+            $device = is_null($userAgent) ? null : mb_substr($userAgent, 0, 255);
+
+            $sql = "INSERT INTO `z_logintoken`
+                        (`userId`, `userId_exec`, `token`, `name`, `device`, `reason`, `ip_creation`, `is_apikey`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $this->exec(
+                $sql, "iisssssi",
+                $userId, $exec_userId, $token,
+                $name, $device, $reason, request()->ip(),
+                (int) $isApiKey,
+            );
+
             return Session::byToken($token);
+        }
+
+        /**
+         * Records the address a session was last used from, when it changed
+         *
+         * Called on every authenticated request, so it only writes on a change.
+         *
+         * @param Session|APIKey $session The session that authenticated the request
+         * @internal
+         */
+        public function recordSessionIp(Session|APIKey $session): void {
+            $ip = request()->ip();
+
+            if(is_null($ip) || $ip === $session->ipLast()) return;
+
+            $sql = "UPDATE `z_logintoken`
+                    SET `ip_last` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "si", $ip, $session->id());
         }
 
         /**

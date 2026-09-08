@@ -73,6 +73,9 @@
             {
                 return $this->anonymousRequest();
             }
+            // The session is valid, so this request is what `ip_last` describes
+            model("z_login")->recordSessionIp($session);
+
             $this->userId = $session->userId();
             $this->execUserId = $session->userIdExec();
             $this->sessionToken = $session->token();
