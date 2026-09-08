@@ -559,35 +559,35 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 
 ## Session Object
 
-The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation.
+The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation. An api key is the same row with `is_apikey` set, represented by [`APIKey`](#api-keys). The two are siblings, not parent and child: they get their behavior from the `CanUseSession` trait, so everything documented here applies to both. Type as `Session|APIKey` where either kind may turn up.
 
 ### Session Retrieval
 
-* Returns a session by its token string, or `null` if not found.
+* Returns a session by its token string, or `null` if not found. The row decides the class, so a token belonging to an api key returns an [`APIKey`](#api-keys). This is the entry point of the authentication and therefore resolves both kinds, whichever class it is called on.
 
     ```php
-    Session::byToken(string $token): ?Session
+    Session::byToken(string $token): Session|APIKey|null
     ```
 
-* Returns all active sessions for a given user. `$isApiKey` narrows the result: `null` returns every session, `true` only api keys, `false` only interactive logins.
+* Returns all active logins of a user. Api keys are listed by `APIKey::byUser()` instead.
 
     ```php
-    Session::byUser(User $user, ?bool $isApiKey = null): array
+    Session::byUser(User $user): array
     ```
 
-* Returns a session by its ID.
+* Returns a login by its ID, or `null` if the ID belongs to an api key.
 
     ```php
     Session::byId(int|string $id): ?Session
     ```
 
-* Returns all sessions matching the given IDs.
+* Returns all logins matching the given IDs.
 
     ```php
     Session::byIds(int ...$ids): array
     ```
 
-* Returns all sessions.
+* Returns all logins.
 
     ```php
     Session::all(): array
@@ -597,43 +597,10 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
 
 ### Creating a Session
 
-* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`. The optional `$name` labels the session, which is what keeps api keys apart in a list.
+* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`. The optional `$name` labels the session, which is what a "your active sessions" list shows.
 
     ```php
     Session::add(User $user, ?User $userExec = null, ?string $name = null): Session
-    ```
-
-* Sessions started through the login flow name themselves after the user agent of the request that created them, cut to the 255 characters the column holds. A client that sends no user agent produces an unnamed session. Pass a name to [`$res->loginAs()`](../z-admin/login-as-another-user.md) to override this.
-
----
-
-### API Keys
-
-An api key is an ordinary session: it carries the same token and authenticates
-the same way. Two flags set it apart from an interactive login - one classifies
-it, the other exempts it from the login timeout.
-
-```php
-$key = Session::add($user, name: "Deployment pipeline");
-$key->setApiKey(true);
-$key->setPermanent(true);
-
-$key->token(); // the value the client sends as its z_login_token
-
-Session::byUser($user, isApiKey: true);  // the user's api keys
-Session::byUser($user, isApiKey: false); // the user's logins
-```
-
-* Classifies the session as an api key rather than an interactive login. The flag does not change how the session authenticates.
-
-    ```php
-    $session->setApiKey(bool $isApiKey): void
-    ```
-
-* Exempts the session from the login timeout, or subjects it to it again. A permanent session never expires and is therefore never invalidated on use, so switching this on revives a session that has expired but not yet been used.
-
-    ```php
-    $session->setPermanent(bool $isPermanent): void
     ```
 
 * Names the session, or removes its name when `null` is passed.
@@ -642,11 +609,49 @@ Session::byUser($user, isApiKey: false); // the user's logins
     $session->setName(?string $name): void
     ```
 
-!!! note "The login cookie has its own lifetime"
-    `is_permanent` is a server-side flag. `loginAs()` sets the `z_login_token`
-    cookie to expire after `loginTimeoutSeconds` regardless, so a browser drops
-    a permanent session's cookie at that point even though the session itself
-    lives on. Clients that send the token themselves are unaffected.
+* Sessions started through the login flow name themselves after the user agent of the request that created them, cut to the 255 characters the column holds. A client that sends no user agent produces an unnamed session. Pass a name to [`$res->loginAs()`](../z-admin/login-as-another-user.md) to override this.
+
+---
+
+### API Keys
+
+An api key is a session that is handed out deliberately instead of being
+created by logging in. It carries the same token, authenticates the same way and
+has the same lifetime controls -
+[`APIKey`](../api/classes/ZubZet-Framework-Authentication-APIKey.html) shares all
+of that with `Session` through the `CanUseSession` trait. What differs is that a
+key belongs to a single user and has **no executing user**, so its `add()` takes
+no `$userExec`. That is why the two are siblings rather than one extending the
+other: PHP would not allow the narrower signature on a subclass.
+
+```php
+$key = APIKey::add($user, name: "Deployment pipeline");
+$key->setPermanent(true); // from CanUseSession, like setName() and extend()
+
+$key->token(); // the value the client sends as its z_login_token
+
+APIKey::byUser($user);  // the user's api keys
+Session::byUser($user); // the user's logins
+```
+
+Every retriever is scoped to the class it is called on: `Session::byId()` does
+not find an api key and `APIKey::byId()` does not find a login, the same way
+[`Role`](#role-object) and `Group` split the `z_role` table.
+
+`byToken()` is the one exception. It resolves both kinds whichever class it is
+called on - returning an `APIKey` for a key and a plain `Session` for a login -
+so an authenticating request is judged by the right rules without the caller
+having to know which kind the token is.
+
+* Creates an api key for a user. The name is what keeps keys apart in a list, so it is worth passing.
+
+    ```php
+    APIKey::add(User $user, ?string $name = null): APIKey
+    ```
+
+Everything else a key needs it already has as a session: it is named through
+[`setName()`](#creating-a-session) and exempted from the login timeout through
+[`setPermanent()`](#lifetime-management), which is what most keys want.
 
 ---
 
@@ -663,6 +668,18 @@ Session::byUser($user, isApiKey: false); // the user's logins
     ```php
     $session->setExtensionTime(int $seconds): void
     ```
+
+* Exempts the session from the login timeout, or subjects it to it again. A permanent session never expires and is therefore never invalidated on use, so switching this on revives a session that has expired but not yet been used. This is what turns an [api key](#api-keys) into a credential that keeps working, but it applies to any session.
+
+    ```php
+    $session->setPermanent(bool $isPermanent): void
+    ```
+
+!!! note "The login cookie has its own lifetime"
+    `is_permanent` is a server-side flag. `loginAs()` sets the `z_login_token`
+    cookie to expire after `loginTimeoutSeconds` regardless, so a browser drops
+    a permanent session's cookie at that point even though the session itself
+    lives on. Clients that send the token themselves are unaffected.
 
 ---
 
@@ -684,11 +701,17 @@ Session::byUser($user, isApiKey: false); // the user's logins
     $session->isExpired(): bool
     ```
 
+* Returns the point in time the session becomes unusable, or `null` when it is permanent.
+
+    ```php
+    $session->expiresAt(): ?string
+    ```
+
 ---
 
 ### Session Data
 
-* Returns the session token string.
+* Returns the session token string. Issued tokens are a `zub-` prefix plus 32 random bytes in hex, 68 characters in total. Tokens issued before this format keep working, so do not validate one by its length.
 
     ```php
     $session->token(): string
@@ -716,12 +739,6 @@ Session::byUser($user, isApiKey: false); // the user's logins
 
     ```php
     $session->isPermanent(): bool
-    ```
-
-* Returns whether the session is an api key.
-
-    ```php
-    $session->isApiKey(): bool
     ```
 
 * Returns the number of seconds the session has been extended by, or `null` if not extended.
