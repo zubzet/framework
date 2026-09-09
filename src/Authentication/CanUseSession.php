@@ -1,6 +1,7 @@
 <?php
     namespace ZubZet\Framework\Authentication;
 
+    use DateTime;
     use ZubZet\Framework\Authentication\Permission\User;
 
 
@@ -28,6 +29,7 @@
             $this->setField("is_permanent", $data["is_permanent"]);
             $this->setField("is_apikey", $data["is_apikey"]);
             $this->setField("extended_seconds", $data["extended_seconds"]);
+            $this->setField("expires_at", $data["expires_at"]);
             $this->setField("created", $data["created"]);
         }
 
@@ -84,6 +86,19 @@
         }
 
         /**
+         * Fixes the point in time the session expires, or hands it back to the
+         * computed lifetime when null is passed. A fixed expiry replaces that
+         * lifetime, so extending the session no longer moves it.
+         */
+        public function setExpiresAt(?DateTime $expiresAt): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->setSessionExpiresAt($this, $expiresAt);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
          * Names the session, or removes its name when null is passed
          */
         public function setName(?string $name): void {
@@ -95,14 +110,16 @@
         }
 
         /**
-         * Exempts the session from the login timeout, or subjects it to it again. A
-         * permanent session is not invalidated on use, so an already expired session
-         * becomes usable again by turning this on.
+         * Subjects the session to expiring, or exempts it from it. A session that
+         * cannot expire is not invalidated on use, so an already expired one
+         * becomes usable again by turning this off.
+         *
+         * The column stores the exemption, so it is inverted here once.
          */
-        public function setPermanent(bool $isPermanent): void {
+        public function setCanExpire(bool $canExpire): void {
             if($this->shouldRefresh) $this->refresh();
 
-            model("z_login")->setSessionPermanent($this, $isPermanent);
+            model("z_login")->setSessionPermanent($this, !$canExpire);
 
             $this->refreshOnNextUse();
         }
@@ -113,12 +130,19 @@
         }
 
         /**
-         * The point in time the session becomes unusable, or null when it is permanent
+         * The point in time the session becomes unusable, or null when it cannot expire
+         *
+         * A fixed expiry wins over the computed lifetime, so neither the configured
+         * timeout nor an extension has a say once one is set. A session that cannot
+         * expire outranks both - it never becomes unusable at all.
          */
         public function expiresAt(bool $refresh = true): ?string {
             if($refresh && $this->shouldRefresh) $this->refresh();
 
-            if($this->isPermanent()) return null;
+            if(!$this->canExpire()) return null;
+
+            $fixedExpiry = $this->getField("expires_at");
+            if(!is_null($fixedExpiry)) return $fixedExpiry;
 
             $lifetime = (int) config("loginTimeoutSeconds", TIMESPAN_DAY_7);
 
@@ -181,8 +205,11 @@
             return $this->getField("ip_last");
         }
 
-        public function isPermanent(): bool {
-            return (bool) $this->getField("is_permanent");
+        /**
+         * Whether the session is subject to expiring at all
+         */
+        public function canExpire(): bool {
+            return !$this->getField("is_permanent");
         }
 
         public function extendedSeconds(): ?int {

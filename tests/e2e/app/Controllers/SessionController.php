@@ -164,20 +164,70 @@ class SessionController extends z_controller {
 
     /**
      * Session 438 is an ordinary login created in the year 2000, so it is
-     * expired until the permanent flag revives it.
+     * expired until it is exempted from expiring.
      */
     public function action_sessionPermanent(Request $req, Response $res): void {
         $session = Session::byId(438);
 
         $before = $this->getExpiry($session);
 
-        $session->setPermanent(true);
+        $session->setCanExpire(false);
         $session->refresh();
 
         echo(json_encode([
             'before' => $before,
             'after'  => $this->getExpiry($session),
         ]));
+    }
+
+
+    /**
+     * Session 440 was created in the year 2000, so the computed lifetime has
+     * long run out - the expiry fixed on it is what keeps it usable.
+     */
+    public function action_expiresAtFixed(Request $req, Response $res): void {
+        echo(json_encode($this->getExpiry(Session::byId(440))));
+    }
+
+    /**
+     * Session 441 was created now and extended by decades, both of which the
+     * expiry fixed in the past overrules.
+     */
+    public function action_expiresAtOverrules(Request $req, Response $res): void {
+        $session = Session::byId(441);
+
+        echo(json_encode(array_merge($this->getExpiry($session), [
+            'extendedSeconds' => (int) $session->extendedSeconds(),
+        ])));
+    }
+
+    /**
+     * Session 442 is an ordinary login from the year 2000, so it expires by its
+     * age until an expiry is fixed on it, and again once that is dropped.
+     */
+    public function action_setExpiresAt(Request $req, Response $res): void {
+        $session = Session::byId(442);
+
+        $before = $this->getExpiry($session);
+
+        $session->setExpiresAt(new DateTime('2099-01-01 12:00:00'));
+        $fixed = $this->getExpiry($session);
+
+        $session->setExpiresAt(null);
+
+        echo(json_encode([
+            'before'  => $before,
+            'fixed'   => $fixed,
+            'dropped' => $this->getExpiry($session),
+        ]));
+    }
+
+    /**
+     * Session 443 carries an expiry long past but is exempt from expiring,
+     * which outranks the date.
+     */
+    public function action_expiresAtPermanent(Request $req, Response $res): void {
+        echo(json_encode($this->getExpiry(Session::byId(443))));
     }
 
 
@@ -268,7 +318,7 @@ class SessionController extends z_controller {
             'userId' => (int) $apiKey->userId(),
             'token'  => $apiKey->token(),
             'reason' => $apiKey->reason(),
-        ], $this->getNameAndPermanence($apiKey))));
+        ], $this->getNameAndExpiry($apiKey))));
     }
 
     /**
@@ -278,34 +328,34 @@ class SessionController extends z_controller {
     public function action_apiKeyManage(Request $req, Response $res): void {
         $apiKey = APIKey::byId(434);
 
-        $before = $this->getNameAndPermanence($apiKey);
+        $before = $this->getNameAndExpiry($apiKey);
 
         $apiKey->setName('Renamed key');
-        $apiKey->setPermanent(true);
+        $apiKey->setCanExpire(false);
         $apiKey->refresh();
 
         echo(json_encode([
             'before' => $before,
-            'after'  => $this->getNameAndPermanence($apiKey),
-            'stored' => $this->getNameAndPermanence(APIKey::byId(434)),
+            'after'  => $this->getNameAndExpiry($apiKey),
+            'stored' => $this->getNameAndExpiry(APIKey::byId(434)),
         ]));
     }
 
     /**
      * Api key 435 was created in the year 2000 without an extension, so only
-     * the permanent flag keeps it alive. Dropping the flag expires it again.
+     * the exemption from expiring keeps it alive. Dropping it expires it again.
      */
     public function action_apiKeyPermanentExpiry(Request $req, Response $res): void {
         $apiKey = APIKey::byId(435);
 
-        $permanent = $this->getExpiry($apiKey);
+        $exempt = $this->getExpiry($apiKey);
 
-        $apiKey->setPermanent(false);
+        $apiKey->setCanExpire(true);
         $apiKey->refresh();
 
         echo(json_encode([
-            'permanent' => $permanent,
-            'temporary' => $this->getExpiry($apiKey),
+            'exempt'   => $exempt,
+            'expiring' => $this->getExpiry($apiKey),
         ]));
     }
 
@@ -442,24 +492,24 @@ class SessionController extends z_controller {
             'name'           => $session->name(),
             'device'         => $session->device(),
             'reason'         => $session->reason(),
-            'isPermanent'    => $session->isPermanent(),
+            'canExpire'      => $session->canExpire(),
             'extendedSeconds'=> is_null($session->extendedSeconds()) ? null : (int) $session->extendedSeconds(),
             'created'        => $session->created(),
         ];
     }
 
-    private function getNameAndPermanence(Session|APIKey $session): array {
+    private function getNameAndExpiry(Session|APIKey $session): array {
         return [
-            'name'        => $session->name(),
-            'isPermanent' => $session->isPermanent(),
+            'name'      => $session->name(),
+            'canExpire' => $session->canExpire(),
         ];
     }
 
     private function getExpiry(Session|APIKey $session): array {
         return [
-            'isExpired'   => $session->isExpired(),
-            'expiresAt'   => $session->expiresAt(),
-            'isPermanent' => $session->isPermanent(),
+            'isExpired' => $session->isExpired(),
+            'expiresAt' => $session->expiresAt(),
+            'canExpire' => $session->canExpire(),
         ];
     }
 
