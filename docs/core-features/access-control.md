@@ -723,7 +723,7 @@ other: PHP would not allow the narrower signature on a subclass.
 
 ```php
 $key = APIKey::add($user, name: "Deployment pipeline");
-$key->setPermanent(true); // from CanUseSession, like setName() and extend()
+$key->setCanExpire(false); // from CanUseSession, like setName() and extend()
 
 $key->token(); // the value the client sends as its z_login_token
 
@@ -751,7 +751,7 @@ having to know which kind the token is.
 
 Everything else a key needs it already has as a session: it is named through
 [`setName()`](#creating-a-session) and exempted from the login timeout through
-[`setPermanent()`](#lifetime-management), which is what most keys want.
+[`setCanExpire(false)`](#lifetime-management), which is what most keys want.
 
 ---
 
@@ -769,17 +769,28 @@ Everything else a key needs it already has as a session: it is named through
     $session->setExtensionTime(int $seconds): void
     ```
 
-* Exempts the session from the login timeout, or subjects it to it again. A permanent session never expires and is therefore never invalidated on use, so switching this on revives a session that has expired but not yet been used. This is what turns an [api key](#api-keys) into a credential that keeps working, but it applies to any session.
+* Fixes the point in time the session expires, or hands it back to the computed lifetime when `null` is passed. A fixed expiry replaces that lifetime entirely: neither `loginTimeoutSeconds` nor `extended_seconds` has a say while one is set, so `extend()` and `setExtensionTime()` write an extension that does not move the expiry. Takes a `DateTime`, like [`$user->verify()`](#verification-handling) does; the getters stay strings. The column is a `TIMESTAMP`, so the expiry has to fall inside its range - from 1970 up to `2106-02-07 06:28:15` UTC on the supported MariaDB versions. A date outside it is rejected by the database rather than silently truncated.
 
     ```php
-    $session->setPermanent(bool $isPermanent): void
+    $session->setExpiresAt(?DateTime $expiresAt): void
+    ```
+
+    ```php
+    $session->setExpiresAt(new DateTime("+30 days"));
+    $session->setExpiresAt(null); // back to the computed lifetime
+    ```
+
+* Subjects the session to expiring, or exempts it from it. A session passed `false` never expires and is therefore never invalidated on use, so exempting one revives a session that has expired but not yet been used. This is what turns an [api key](#api-keys) into a credential that keeps working, but it applies to any session. The exemption outranks a fixed expiry - it takes the session out of expiring altogether, rather than moving the point at which it does. It is stored inverted, in the `is_permanent` column.
+
+    ```php
+    $session->setCanExpire(bool $canExpire): void
     ```
 
 !!! note "The login cookie has its own lifetime"
-    `is_permanent` is a server-side flag. `loginAs()` sets the `z_login_token`
-    cookie to expire after `loginTimeoutSeconds` regardless, so a browser drops
-    a permanent session's cookie at that point even though the session itself
-    lives on. Clients that send the token themselves are unaffected.
+    `is_permanent` and `expires_at` are server-side. `loginAs()` sets the
+    `z_login_token` cookie to expire after `loginTimeoutSeconds` regardless, so a
+    browser drops the cookie at that point even though the session itself lives
+    on. Clients that send the token themselves are unaffected.
 
 ---
 
@@ -795,13 +806,13 @@ Everything else a key needs it already has as a session: it is named through
 
 ### Expiry Check
 
-* Returns `true` if the session has expired. The expiry is calculated from `created` plus the configured `loginTimeoutSeconds` (defaults to 7 days) plus any `extended_seconds`. A permanent session is never expired.
+* Returns `true` if the session has expired. A session exempt from expiring never is; otherwise the expiry is the one [fixed on the session](#lifetime-management), or, when it carries none, `created` plus the configured `loginTimeoutSeconds` (defaults to 7 days) plus any `extended_seconds`.
 
     ```php
     $session->isExpired(): bool
     ```
 
-* Returns the point in time the session becomes unusable, or `null` when it is permanent.
+* Returns the point in time the session becomes unusable, or `null` when the session is exempt from expiring. This is the effective expiry, whether it was fixed through [`setExpiresAt()`](#lifetime-management) or computed from the lifetime.
 
     ```php
     $session->expiresAt(): ?string
@@ -865,10 +876,10 @@ Everything else a key needs it already has as a session: it is named through
     $session->ipLast(): ?string
     ```
 
-* Returns whether the session is exempt from the login timeout.
+* Returns whether the session is subject to expiring at all. `false` means it is exempt, which is what [`setCanExpire(false)`](#lifetime-management) does.
 
     ```php
-    $session->isPermanent(): bool
+    $session->canExpire(): bool
     ```
 
 * Returns the number of seconds the session has been extended by, or `null` if not extended.

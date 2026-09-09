@@ -170,3 +170,32 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
 INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `device`, `reason`, `ip_creation`, `ip_last`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
 -- ip_last starts stale, the authenticated request carrying this cookie corrects it
 (439, '0439a00000000000000000000000000000000000', 439, 439, NULL, NULL, NULL, '203.0.113.7', '203.0.113.7', 0, 0, NULL, NOW(), 1);
+
+
+/*
+    A fixed expiry, which outranks the computed lifetime
+*/
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+-- fixed: kept alive by its expiry although the age says otherwise
+(440, 'session_expires_at_fixed@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- override: expired by its expiry although it is young and heavily extended
+(441, 'session_expires_at_override@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- set: the expiry is fixed and dropped again at runtime
+(442, 'session_expires_at_set@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- permanent: the flag exempts the session, so the expiry never applies
+(443, 'session_expires_at_permanent@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- auth: the cookie is rejected once the fixed expiry has passed
+(444, 'session_expires_at_auth@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `is_permanent`, `extended_seconds`, `expires_at`, `created`, `active`) VALUES
+-- created in the year 2000, so only the fixed expiry keeps it usable
+(440, '0440a00000000000000000000000000000000000', 440, 440, 0, NULL, '2099-01-01 12:00:00', '2000-01-01 12:00:00', 1),
+-- created now and extended by ~63 years, both overruled by the expiry in the past
+(441, '0441a00000000000000000000000000000000000', 441, 441, 0, 2000000000, '2000-01-01 12:00:00', NOW(), 1),
+-- expires by its age until an expiry is fixed on it at runtime
+(442, '0442a00000000000000000000000000000000000', 442, 442, 0, NULL, NULL, '2000-01-01 12:00:00', 1),
+-- permanent despite an expiry long past
+(443, '0443a00000000000000000000000000000000000', 443, 443, 1, NULL, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 1),
+-- auth flow: young enough to pass the lifetime check, rejected by the expiry
+(444, '0444a00000000000000000000000000000000000', 444, 444, 0, NULL, '2000-01-01 12:00:00', NOW(), 1);

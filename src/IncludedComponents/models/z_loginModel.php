@@ -94,6 +94,20 @@
         }
 
         /**
+         * Fixes the point in time a session expires, or hands it back to the
+         * computed lifetime when null is passed
+         * @param Session|APIKey $session The session to set the expiry on
+         * @param ?DateTime $expiresAt The point the session expires, or null for none
+         * @internal
+         */
+        public function setSessionExpiresAt(Session|APIKey $session, ?DateTime $expiresAt): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `expires_at` = ?
+                    WHERE `id` = ?";
+            $this->exec($sql, "si", $expiresAt?->format("Y-m-d H:i:s"), $session->id());
+        }
+
+        /**
          * Exempts a session from the regular lifetime, or subjects it to it again
          * @param Session|APIKey $session The session to flag
          * @param bool $isPermanent Whether the session never expires

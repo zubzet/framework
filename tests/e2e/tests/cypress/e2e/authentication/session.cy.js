@@ -27,7 +27,7 @@ describe('Authentication - Session', () => {
                 name: null,
                 device: null,
                 reason: null,
-                isPermanent: false,
+                canExpire: true,
             },
             {
                 id: 401,
@@ -39,7 +39,7 @@ describe('Authentication - Session', () => {
                 name: null,
                 device: null,
                 reason: null,
-                isPermanent: false,
+                canExpire: true,
             },
         ];
 
@@ -74,7 +74,7 @@ describe('Authentication - Session', () => {
                 name: null,
                 device: null,
                 reason: null,
-                isPermanent: false,
+                canExpire: true,
             });
         });
     });
@@ -96,7 +96,7 @@ describe('Authentication - Session', () => {
                 name: null,
                 device: null,
                 reason: null,
-                isPermanent: false,
+                canExpire: true,
             });
         });
     });
@@ -212,18 +212,83 @@ describe('Authentication - Session', () => {
     });
 
 
-    it('should make an ordinary login permanent, reviving an expired session', () => {
+    it('should exempt an ordinary login from expiring, reviving an expired session', () => {
         requestJson('/session/sessionPermanent').then((output) => {
             // Session 438 is a login created in the year 2000, without extension
-            expect(output.before.isPermanent).to.be.false;
+            expect(output.before.canExpire).to.be.true;
             expect(output.before.isExpired).to.be.true;
             expect(output.before.expiresAt).to.be.a('string');
 
             expect(output.after).to.deep.equal({
                 isExpired: false,
                 expiresAt: null,
-                isPermanent: true,
+                canExpire: false,
             });
+        });
+    });
+
+
+    /**
+     * A fixed expiry
+     */
+
+    it('should let a fixed expiry outrank the computed lifetime', () => {
+        requestJson('/session/expiresAtFixed').then((output) => {
+            // Session 440 was created in the year 2000, so only the date keeps it alive
+            expect(output).to.deep.equal({
+                isExpired: false,
+                expiresAt: '2099-01-01 12:00:00',
+                canExpire: true,
+            });
+        });
+    });
+
+    it('should ignore the timeout and the extension once an expiry is fixed', () => {
+        requestJson('/session/expiresAtOverrules').then((output) => {
+            // Session 441 was created now and extended by ~63 years on top
+            expect(output.extendedSeconds).to.equal(2000000000);
+
+            expect(output.expiresAt).to.equal('2000-01-01 12:00:00');
+            expect(output.isExpired).to.be.true;
+        });
+    });
+
+    it('should fix and drop the expiry through the session object (setExpiresAt)', () => {
+        requestJson('/session/setExpiresAt').then((output) => {
+            // Session 442 is a login from the year 2000 without an extension
+            expect(output.before.isExpired).to.be.true;
+            expect(output.before.expiresAt).to.be.a('string');
+
+            expect(output.fixed).to.deep.equal({
+                isExpired: false,
+                expiresAt: '2099-01-01 12:00:00',
+                canExpire: true,
+            });
+
+            // Dropping it hands the session back to created + timeout
+            expect(output.dropped).to.deep.equal(output.before);
+        });
+    });
+
+    it('should keep a session exempt from expiring despite a fixed expiry', () => {
+        requestJson('/session/expiresAtPermanent').then((output) => {
+            // Being exempt outranks the date - the session never becomes unusable
+            expect(output).to.deep.equal({
+                isExpired: false,
+                expiresAt: null,
+                canExpire: false,
+            });
+        });
+    });
+
+    it('should reject a request whose session is past its fixed expiry', () => {
+        // Session 444, user 444: created now, so only the fixed expiry rejects it
+        cy.session('auth_expires_at_444', () => {
+            cy.setCookie('z_login_token', '0444a00000000000000000000000000000000000');
+        });
+        requestJson('/session/whoami').then((output) => {
+            expect(output.isLoggedIn).to.be.false;
+            expect(output.userId).to.be.null;
         });
     });
 
@@ -299,21 +364,21 @@ describe('Authentication - Session', () => {
             expect(output.name).to.equal('Deployment pipeline');
             expect(output.reason).to.equal('CI needs read access');
             expect(output.token).to.match(TOKEN_FORMAT);
-            // A fresh key expires like a login until it is made permanent
-            expect(output.isPermanent).to.be.false;
+            // A fresh key expires like a login until it is exempted
+            expect(output.canExpire).to.be.true;
         });
     });
 
-    it('should set name and permanence through the api key object', () => {
+    it('should set name and expiry exemption through the api key object', () => {
         requestJson('/session/apiKeyManage').then((output) => {
             expect(output.before).to.deep.equal({
                 name: null,
-                isPermanent: false,
+                canExpire: true,
             });
 
             const expected = {
                 name: 'Renamed key',
-                isPermanent: true,
+                canExpire: false,
             };
 
             // Refreshed in place and read back from the database
@@ -331,23 +396,23 @@ describe('Authentication - Session', () => {
         });
     });
 
-    it('should never expire a permanent api key and expire it again once the flag is dropped', () => {
+    it('should never expire an exempt api key and expire it again once that is dropped', () => {
         requestJson('/session/apiKeyPermanentExpiry').then((output) => {
-            // Created in the year 2000 without extension - only the flag keeps it alive
-            expect(output.permanent).to.deep.equal({
+            // Created in the year 2000 without extension - only the exemption keeps it alive
+            expect(output.exempt).to.deep.equal({
                 isExpired: false,
                 expiresAt: null,
-                isPermanent: true,
+                canExpire: false,
             });
 
-            expect(output.temporary.isExpired).to.be.true;
-            expect(output.temporary.expiresAt).to.be.a('string');
-            expect(output.temporary.isPermanent).to.be.false;
+            expect(output.expiring.isExpired).to.be.true;
+            expect(output.expiring.expiresAt).to.be.a('string');
+            expect(output.expiring.canExpire).to.be.true;
         });
     });
 
-    it('should authenticate a request that carries a permanent api key as cookie', () => {
-        // Session 436, user 433: created in the year 2000, permanent api key
+    it('should authenticate a request that carries an exempt api key as cookie', () => {
+        // Session 436, user 433: created in the year 2000, exempt from expiring
         cy.session('auth_apikey_433', () => {
             cy.setCookie('z_login_token', '0433a00000000000000000000000000000000000');
         });
