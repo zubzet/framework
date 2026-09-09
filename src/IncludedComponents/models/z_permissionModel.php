@@ -17,39 +17,40 @@
         use IsInternalModel;
 
         /**
-         * Retrieve a permission object (user or role) by id and table
+         * Retrieve a permission object (user or role) by one of its identifiers
          *
-         * @param int|string $id The ID of the object to retrieve
          * @param string $table The database table to query
+         * @param string $column The identifying column, e.g. "id" or "uuid"
+         * @param int|string $identifier The value of the identifying column
          * @return array|null The data array of the object if found, null otherwise
          * @internal
          */
-        public function getById(int|string $id, string $table, ?array $expression = null): ?array {
+        public function getByIdentifier(string $table, string $column, int|string $identifier, ?array $expression = null): ?array {
             $query = $this->dbSelect("*", ["zr" => $table])->where([
-                "zr.id" => $id
-            ])->where([
+                "zr.$column" => $identifier,
                 "zr.active" => 1
             ]);
 
-            if(!is_null($expression) && !empty($expression)) $query->where($expression);
+            if(!empty($expression)) $query->where($expression);
 
             return $this->exec($query)->resultToLine();
         }
 
         /**
-         * Retrieve permission objects (user or role) by their ids
+         * Retrieve permission objects (user or role) by one of their identifiers
          *
-         * @param int ...$ids The ids of the objects to retrieve
          * @param string $table The database table to query
+         * @param string $column The identifying column, e.g. "id" or "uuid"
+         * @param array $identifiers The values of the identifying column
          * @return array[] An array of permission objects
          * @internal
          */
-        public function getByIds(string $table, array $ids, ?array $expression = null): array {
-            $query = $this->dbSelect("*", ["zr" => $table])->whereInList("id", $ids)->where([
-                "active" => 1
+        public function getByIdentifiers(string $table, string $column, array $identifiers, ?array $expression = null): array {
+            $query = $this->dbSelect("*", ["zr" => $table])->whereInList("zr.$column", $identifiers)->where([
+                "zr.active" => 1
             ]);
 
-            if(!is_null($expression) && !empty($expression)) $query->where($expression);
+            if(!empty($expression)) $query->where($expression);
 
             return $this->exec($query)->resultToArray();
         }
@@ -331,12 +332,12 @@
         public function addRoleGroup(string $rolename, bool $isGroup = false): array {
             $query = $this->dbInsert("z_role", [
                 "name" => $rolename,
-                "is_group" => $isGroup ? 1 : 0
+                "is_group" => $isGroup ? 1 : 0,
             ]);
 
             $insertedId = $this->exec($query)->getInsertId();
 
-            return $this->getById($insertedId, "z_role");
+            return $this->getByIdentifier("z_role", "id", $insertedId);
         }
 
         /**

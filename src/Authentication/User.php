@@ -30,6 +30,13 @@
          */
         public $orgId = null;
 
+
+
+        /**
+         * @var string|null $uuid The UUID of the user.
+         */
+        public $uuid = null;
+
         /**
          * @var int $execUserId ID of the user that is logged in as this user.
          * 
@@ -86,6 +93,7 @@
                     $this->orgId = $user["organizationId"];
                     $this->isLoggedIn = true;
                     $this->fields = $user;
+                    $this->uuid = $user["uuid"];
                 }
             }
         }

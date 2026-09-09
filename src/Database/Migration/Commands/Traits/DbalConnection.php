@@ -48,12 +48,14 @@
 
             $connection = DriverManager::getConnection($parameters);
 
-            // Used to map enum and vector types to string to avoid issues.
-            // Vector is not properly supported, it is just treated as a string.
+            // Used to map enum, vector and uuid types to avoid issues: DBAL's
+            // MariaDB platform maps none of them, so introspecting a schema that
+            // uses one throws. Vector is not properly supported, it is just
+            // treated as a string.
             // Method getDatabasePlatform does not exist below Doctrine DBAL 4.x
             if(method_exists($connection, 'getDatabasePlatform')) {
                 $platform = $connection->getDatabasePlatform();
-                foreach(["enum" => "string", "vector" => "string"] as $type => $mapping) {
+                foreach(["enum" => "string", "vector" => "string", "uuid" => "guid"] as $type => $mapping) {
                     if($platform->hasDoctrineTypeMappingFor($type)) continue;
                     $platform->registerDoctrineTypeMapping($type, $mapping);
                 }
