@@ -16,11 +16,12 @@ application: URLs, REST payloads and anything handed to a third party. Unlike th
 does not reveal how many records exist and cannot be guessed by counting up. The numeric ID stays the
 internal key used for foreign keys and joins.
 
-Every object that can be retrieved by ID can also be retrieved by UUID:
+Every object that can be retrieved by ID can also be retrieved by UUID, and every object returns its own:
 
 ```php
 User::byUuid(string $uuid): ?User
 Role::byUuids(string ...$uuids): array
+$organization->uuid(): string
 ```
 
 The UUID of the authenticated user is available without a lookup:
@@ -437,6 +438,12 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
 ### Role Data Access
 
+* Returns the role's [UUID](#uuids).
+
+    ```php
+    $role->uuid(): string
+    ```
+
 * Returns the role name.
 
     ```php
@@ -596,6 +603,12 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 ---
 
 ### Organization Data Access
+
+* Returns the organization's [UUID](#uuids).
+
+    ```php
+    $organization->uuid(): string
+    ```
 
 * Returns the organization's name.
 
@@ -797,6 +810,12 @@ Everything else a key needs it already has as a session: it is named through
 ---
 
 ### Session Data
+
+* Returns the session's [UUID](#uuids). It is the only identifier of a session that is safe to hand out.
+
+    ```php
+    $session->uuid(): string
+    ```
 
 * Returns the session token string. Issued tokens are a `zub-` prefix plus 32 random bytes in hex, 68 characters in total. Tokens issued before this format keep working, so do not validate one by its length.
 

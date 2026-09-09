@@ -75,6 +75,10 @@ class AuthenticationObject {
         return $this->id;
     }
 
+    public function uuid(): string {
+        return $this->getField('uuid');
+    }
+
     public function nullId() {
         $this->checkInstance();
 
