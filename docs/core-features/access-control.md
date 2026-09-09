@@ -11,7 +11,7 @@ At its core, the access control system introduces two primary domain objects: **
 ## UUIDs
 
 Every user, role, group, organization, session and API key carries a **UUID** next to its numeric ID,
-stored in the `uuid` column as an RFC 4122 string. It is the identifier meant to leave the
+stored in the `uuid` column as a native MariaDB `UUID` and read back as an RFC 4122 string. It is the identifier meant to leave the
 application: URLs, REST payloads and anything handed to a third party. Unlike the sequential ID, it
 does not reveal how many records exist and cannot be guessed by counting up. The numeric ID stays the
 internal key used for foreign keys and joins.
