@@ -45,13 +45,25 @@
                                 @endif
                             </small>
                         </div>
-                        <button
-                            class="btn btn-sm btn-outline-danger flex-shrink-0 z-revoke-api-key"
-                            data-uuid="{{ $apiKey->uuid() }}"
-                            data-test="btn-revoke-api-key"
-                        >
-                            Revoke
-                        </button>
+                        <div class="flex-shrink-0">
+                            <button
+                                class="btn btn-sm btn-outline-secondary z-rename-token"
+                                data-uuid="{{ $apiKey->uuid() }}"
+                                data-name="{{ $apiKey->name() }}"
+                                data-type="api-key"
+                                data-placeholder="Name, e.g. Deployment pipeline"
+                                data-test="btn-rename-api-key"
+                            >
+                                Rename
+                            </button>
+                            <button
+                                class="btn btn-sm btn-outline-danger z-revoke-api-key"
+                                data-uuid="{{ $apiKey->uuid() }}"
+                                data-test="btn-revoke-api-key"
+                            >
+                                Revoke
+                            </button>
+                        </div>
                     </div>
                 </li>
             @empty
@@ -92,6 +104,8 @@
             </div>
         </div>
     </div>
+
+    <x-zubzet::account.rename-token/>
 
     <script>
         $(() => {
