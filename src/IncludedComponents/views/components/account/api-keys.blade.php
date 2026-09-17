@@ -117,8 +117,9 @@
             });
 
             root.on("click", ".z-revoke-api-key", function() {
-                Z.Request.root("_zubzet/profile/revoke-api-key", null, {
-                    uuid: $(this).data("uuid")
+                Z.Request.root("_zubzet/profile/revoke-token", null, {
+                    uuid: $(this).data("uuid"),
+                    type: "api-key"
                 }, (res) => {
                     if("success" == res.result) location.reload();
                 });
