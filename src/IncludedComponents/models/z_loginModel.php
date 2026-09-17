@@ -202,22 +202,26 @@
         }
 
         /**
-         * Records the address a session was last used from, when it changed
+         * Records when and from where a session was last used
          *
-         * Called on every authenticated request, so it only writes on a change.
+         * Called on every authenticated request. The address is only written
+         * when it changed, the timestamp on every use.
          *
          * @param Session|APIKey $session The session that authenticated the request
          * @internal
          */
-        public function recordSessionIp(Session|APIKey $session): void {
+        public function recordSessionUse(Session|APIKey $session): void {
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["last_used" => $query->func()->now()]);
+
             $ip = request()->ip();
+            if(!is_null($ip) && $ip !== $session->ipLast()) $query->set("ip_last", $ip);
 
-            if(is_null($ip) || $ip === $session->ipLast()) return;
+            $query->where([
+                "id" => $session->id()
+            ]);
 
-            $sql = "UPDATE `z_logintoken`
-                    SET `ip_last` = ?
-                    WHERE `id` = ?";
-            $this->exec($sql, "si", $ip, $session->id());
+            $this->exec($query);
         }
 
         /**
