@@ -73,18 +73,27 @@
             return $res->success();
         }
 
-        public function renameSession(Request $req, Response $res) {
+        public function renameToken(Request $req, Response $res) {
             $uuid = $req->getPost("uuid", "");
             if(!is_string($uuid)) return $res->error("Unknown token");
 
-            $session = Session::byUuid($uuid);
-            if(is_null($session) || $session->userId() !== user()->userId) return $res->error("Unknown token");
+            // The kind picks the lookup, and each one only finds its own rows, so
+            // a session cannot be addressed as an api key either. A type the form
+            // never offers compares equal to nothing and lands on default
+            $token = match($req->getPost("type", "")) {
+                "session" => Session::byUuid($uuid),
+                "api-key" => APIKey::byUuid($uuid),
+                default => null,
+            };
+
+            // An unknown uuid and somebody else's are both not owned, so neither can be probed
+            if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
 
             // The name is client input and the column takes 255 characters
             $name = $req->getPost("name", "");
             $name = is_string($name) ? mb_substr(trim($name), 0, 255) : "";
 
-            $session->setName(empty($name) ? null : $name);
+            $token->setName(empty($name) ? null : $name);
 
             return $res->success();
         }
@@ -93,16 +102,12 @@
             $uuid = $req->getPost("uuid", "");
             if(!is_string($uuid)) return $res->error("Unknown token");
 
-            // The kind picks the lookup, and each one only finds its own rows,
-            // so a session cannot be revoked as an api key either. A type the
-            // form never offers compares equal to nothing and lands on default
             $token = match($req->getPost("type", "")) {
                 "session" => Session::byUuid($uuid),
                 "api-key" => APIKey::byUuid($uuid),
                 default => null,
             };
 
-            // An unknown uuid and somebody else's are both not owned, so neither can be probed
             if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
 
             $token->invalidate();

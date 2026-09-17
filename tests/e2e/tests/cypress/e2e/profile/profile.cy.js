@@ -89,6 +89,16 @@ describe('Profile', () => {
             cy.query('dash-profile').should('have.attr', 'href').and('match', /\/z\/profile$/);
             cy.query('btn-profile').should('have.attr', 'href').and('match', /\/z\/profile$/);
         });
+
+        // Both the sessions and the api keys ship the rename modal
+        it('carries the shared rename modal exactly once', () => {
+            login('0800a');
+            cy.visit('/z/profile');
+
+            cy.get('#z-rename-token').should('have.length', 1);
+            cy.query('btn-rename-session').should('exist');
+            cy.query('btn-rename-api-key').should('exist');
+        });
     });
 
     // ---------------------------------------------------------------------
@@ -229,15 +239,15 @@ describe('Profile', () => {
         it('renames a session through the modal', () => {
             login('0804a');
             cy.visit('/z/profile');
-            cy.intercept('POST', '**/rename-session').as('rename');
-            dontFade('session-rename');
+            cy.intercept('POST', '**/rename-token').as('rename');
+            dontFade('token-rename');
 
-            sessionRow(809).find('.z-rename-session').click();
-            cy.query('session-rename').should('be.visible');
-            cy.query('session-name').should('have.value', 'Tablet in the kitchen');
+            sessionRow(809).find('.z-rename-token').click();
+            cy.query('token-rename').should('be.visible');
+            cy.query('token-name').should('have.value', 'Tablet in the kitchen');
 
-            cy.query('session-name').clear().type('Workstation');
-            cy.query('btn-save-session-name').click();
+            cy.query('token-name').clear().type('Workstation');
+            cy.query('btn-save-token-name').click();
             cy.wait('@rename');
 
             sessionRow(809).should('contain', 'Workstation');
@@ -246,29 +256,29 @@ describe('Profile', () => {
         it('falls back to a generic name when the modal is emptied', () => {
             login('0804a');
             cy.visit('/z/profile');
-            cy.intercept('POST', '**/rename-session').as('rename');
-            dontFade('session-rename');
+            cy.intercept('POST', '**/rename-token').as('rename');
+            dontFade('token-rename');
 
-            sessionRow(809).find('.z-rename-session').click();
-            cy.query('session-rename').should('be.visible');
+            sessionRow(809).find('.z-rename-token').click();
+            cy.query('token-rename').should('be.visible');
 
-            cy.query('session-name').clear();
-            cy.query('btn-save-session-name').click();
+            cy.query('token-name').clear();
+            cy.query('btn-save-token-name').click();
             cy.wait('@rename');
 
-            sessionRow(809).find('.z-rename-session').should('have.attr', 'data-name', '');
+            sessionRow(809).find('.z-rename-token').should('have.attr', 'data-name', '');
             sessionRow(809).should('contain', 'Session');
         });
 
         it('cuts an overlong name to what the column takes', () => {
             login('0804a');
 
-            post('rename-session', { uuid: uuid(809), name: 'N'.repeat(400) }).then((out) => {
+            post('rename-token', { uuid: uuid(809), type: 'session', name: 'N'.repeat(400) }).then((out) => {
                 expect(out.result).to.eq('success');
             });
 
             cy.visit('/z/profile');
-            sessionRow(809).find('.z-rename-session')
+            sessionRow(809).find('.z-rename-token')
                 .invoke('attr', 'data-name')
                 .should('have.length', 255);
         });
@@ -419,6 +429,39 @@ describe('Profile', () => {
             apiKeyList().contains('li', 'API key').should('be.visible');
         });
 
+        it('renames an api key through the shared modal', () => {
+            login('0805a');
+            cy.visit('/z/profile');
+            cy.intercept('POST', '**/rename-token').as('rename');
+            dontFade('token-rename');
+
+            apiKeyRow(813).find('.z-rename-token').click();
+            cy.query('token-rename').should('be.visible');
+            cy.query('token-name').should('have.value', 'Reporting job');
+
+            cy.query('token-name').clear().type('Monthly report');
+            cy.query('btn-save-token-name').click();
+            cy.wait('@rename');
+
+            apiKeyRow(813).should('contain', 'Monthly report');
+        });
+
+        it('falls back to a generic name when an api key name is emptied', () => {
+            login('0805a');
+            cy.visit('/z/profile');
+            cy.intercept('POST', '**/rename-token').as('rename');
+            dontFade('token-rename');
+
+            apiKeyRow(813).find('.z-rename-token').click();
+            cy.query('token-rename').should('be.visible');
+
+            cy.query('token-name').clear();
+            cy.query('btn-save-token-name').click();
+            cy.wait('@rename');
+
+            apiKeyRow(813).should('contain', 'API key');
+        });
+
         it('revokes an api key', () => {
             login('0805a');
             cy.visit('/z/profile');
@@ -473,18 +516,28 @@ describe('Profile', () => {
         });
 
         it('refuses to rename a session of somebody else', () => {
-            post('rename-session', { uuid: uuid(814), name: 'Mine now' }).then(expectUnknownToken);
+            post('rename-token', { uuid: uuid(814), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
 
             login('0806a');
             cy.visit('/z/profile');
             sessionRow(814).should('contain', 'Not yours');
         });
 
+        // Both endpoints share the lookup, so the kinds hold for a rename too
+        it('refuses to rename a token addressed as the wrong kind', () => {
+            post('rename-token', { uuid: uuid(816), type: 'api-key', name: 'Mine now' }).then(expectUnknownToken);
+            post('rename-token', { uuid: uuid(817), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
+
+            cy.visit('/z/profile');
+            sessionRow(816).find('.z-rename-token').should('have.attr', 'data-name', '');
+            apiKeyRow(817).should('contain', 'Guarded key');
+        });
+
         it('turns a visitor who is not logged in away from every endpoint', () => {
             cy.clearCookie('z_login_token');
 
             post('revoke-token', { uuid: uuid(816), type: 'session' }).then(expectUnknownToken);
-            post('rename-session', { uuid: uuid(816), name: 'Mine now' }).then(expectUnknownToken);
+            post('rename-token', { uuid: uuid(816), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
 
             post('clear-sessions', {}).then((out) => {
                 expect(out).to.include({ result: 'error', message: 'Not logged in' });
