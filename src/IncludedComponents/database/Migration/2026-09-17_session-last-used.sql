@@ -1,0 +1,2 @@
+ALTER TABLE `z_logintoken`
+    ADD COLUMN IF NOT EXISTS `last_used` TIMESTAMP NULL DEFAULT NULL AFTER `expires_at`;
