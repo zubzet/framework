@@ -92,8 +92,9 @@
             var rename = $("#z-session-rename");
 
             $("#z-sessions").on("click", ".z-revoke-session", function() {
-                Z.Request.root("_zubzet/profile/revoke-session", null, {
-                    uuid: $(this).data("uuid")
+                Z.Request.root("_zubzet/profile/revoke-token", null, {
+                    uuid: $(this).data("uuid"),
+                    type: "session"
                 }, (res) => {
                     if("success" == res.result) location.reload();
                 });
