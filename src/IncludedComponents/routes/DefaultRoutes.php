@@ -14,9 +14,8 @@
         Route::group('/profile', function() {
             Route::post('/change-password', [ZubZetController::class, 'changePassword']);
             Route::post('/clear-sessions', [ZubZetController::class, 'clearSessions']);
-            Route::post('/revoke-session', [ZubZetController::class, 'revokeSession']);
+            Route::post('/revoke-token', [ZubZetController::class, 'revokeToken']);
             Route::post('/rename-session', [ZubZetController::class, 'renameSession']);
-            Route::post('/revoke-api-key', [ZubZetController::class, 'revokeApiKey']);
             Route::post('/create-api-key', [ZubZetController::class, 'createApiKey']);
         });
     });
