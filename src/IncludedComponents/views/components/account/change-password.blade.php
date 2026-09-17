@@ -7,7 +7,7 @@
                 dom: "z-change-password",
                 name: "password",
                 doReload: true,
-                customEndpoint: Z.Request.rootPath + "z/profile",
+                customEndpoint: Z.Request.rootPath + "_zubzet/profile/change-password",
             });
 
             passwordForm.createField({
