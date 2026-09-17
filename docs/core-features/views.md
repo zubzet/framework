@@ -193,11 +193,11 @@ The `zubzet::` namespace keeps these separate from your own components, so an ap
 The account components render the pieces of the profile page the admin panel ships under `z/profile`, so you can place them on a page of your own:
 ```blade
 <x-zubzet::account.change-password/>                        {{-- current, new and repeated password plus the submit button --}}
-<x-zubzet::account.sessions class="list-group-flush"/>      {{-- every login of the current user, each with a revoke button --}}
+<x-zubzet::account.sessions class="list-group-flush"/>      {{-- every login of the current user, each with a rename and a revoke button --}}
 <x-zubzet::account.clear-sessions class="btn btn-danger"/>  {{-- ends every login of the current user --}}
-<x-zubzet::account.api-keys/>                               {{-- the create form, the key list and the modal showing a fresh token --}}
+<x-zubzet::account.api-keys/>                               {{-- the create form, the key list with the same two buttons, and the modal showing a fresh token --}}
 ```
-They read the current user themselves and post to the framework's own `_zubzet/profile/*` routes (`change-password`, `clear-sessions`, `revoke-token`, `rename-session`, `create-api-key`, all post only, with `revoke-token` taking the kind as `type`), so they need neither data nor a route from you, work on any page, and render nothing for a guest. Framing is yours: none of them brings a card or a heading, `<x-zubzet::account.clear-sessions/>` brings no classes at all and takes its label from the slot. Every attribute you pass lands on the element the component renders.
+They read the current user themselves and post to the framework's own `_zubzet/profile/*` routes (`change-password`, `clear-sessions`, `revoke-token`, `rename-token`, `create-api-key`, all post only, with `revoke-token` and `rename-token` taking the kind as `type`), so they need neither data nor a route from you, work on any page, and render nothing for a guest. Framing is yours: none of them brings a card or a heading, `<x-zubzet::account.clear-sessions/>` brings no classes at all and takes its label from the slot. Every attribute you pass lands on the element the component renders.
 
 ## Pushing to the layout with stacks
 A view can push markup into a named stack that the layout renders elsewhere, which is handy for adding a page specific script without a dedicated section:
