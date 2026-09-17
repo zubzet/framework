@@ -149,14 +149,16 @@
         }
 
         /**
-         * Clears all sessions of a user by setting them to inactive in the database
+         * Clears all logins of a user by setting them to inactive in the database.
+         * Api keys are credentials of their own and are left alone.
          * @param User $user The user object
          * @internal
          */
         public function clearSessions(User $user): void {
             $sql = "UPDATE `z_logintoken`
                     SET `active`= 0
-                    WHERE `userId` = ?";
+                    WHERE `userId` = ?
+                    AND `is_apikey` = 0";
             $this->exec($sql, "i", $user->id());
         }
 
