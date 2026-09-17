@@ -31,6 +31,7 @@
             $this->setField("extended_seconds", $data["extended_seconds"]);
             $this->setField("expires_at", $data["expires_at"]);
             $this->setField("created", $data["created"]);
+            $this->setField("last_used", $data["last_used"]);
         }
 
         /**
@@ -218,6 +219,13 @@
 
         public function created(): ?string {
             return $this->getField("created");
+        }
+
+        /**
+         * When the session was last used, or null while it is unused
+         */
+        public function lastUsed(): ?string {
+            return $this->getField("last_used");
         }
 
         protected function refreshOnNextUse(): void {

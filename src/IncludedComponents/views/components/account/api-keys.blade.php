@@ -7,7 +7,7 @@
 @auth
     <div id="z-api-keys" {{ $attributes }}>
         <div class="input-group">
-            <input class="form-control z-api-key-name" data-test="api-key-name" placeholder="Name, e.g. Deployment pipeline">
+            <input class="form-control z-api-key-name" data-test="api-key-name" maxlength="255" placeholder="Name, e.g. Deployment pipeline">
             <select class="custom-select flex-grow-0 w-auto z-api-key-lifetime" data-test="api-key-lifetime">
                 @foreach(APIKey::LIFETIMES as $days => $label)
                     <option value="{{ $days }}">Expires in {{ $label }}</option>
@@ -31,10 +31,10 @@
                             </div>
                             <small class="text-muted d-block">
                                 Created {{ date("d.m.Y H:i", strtotime($apiKey->created())) }} from {{ $apiKey->ipCreation() ?? "an unknown address" }},
-                                @if(is_null($apiKey->ipLast()))
+                                @if(is_null($apiKey->lastUsed()))
                                     never used since
                                 @else
-                                    last seen from {{ $apiKey->ipLast() }}
+                                    last seen {{ date("d.m.Y H:i", strtotime($apiKey->lastUsed())) }} from {{ $apiKey->ipLast() ?? "an unknown address" }}
                                 @endif
                             </small>
                             <small class="text-muted d-block">
@@ -98,7 +98,7 @@
             var root = $("#z-api-keys");
 
             root.on("click", ".z-api-key-create", () => {
-                Z.Request.root("profile/create-api-key", null, {
+                Z.Request.root("z/profile", "create-api-key", {
                     name: root.find(".z-api-key-name").val(),
                     lifetime: root.find(".z-api-key-lifetime").val()
                 }, (res) => {
@@ -117,7 +117,7 @@
             });
 
             root.on("click", ".z-revoke-api-key", function() {
-                Z.Request.root("profile/revoke-api-key", null, {
+                Z.Request.root("z/profile", "revoke-api-key", {
                     uuid: $(this).data("uuid")
                 }, (res) => {
                     if("success" == res.result) location.reload();

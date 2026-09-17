@@ -16,6 +16,7 @@ It has following categories:
 | Add User | Form to add users
 | Roles | User permission managment |
 | Organization | [Organization management](organization-management.md) by its own members |
+| Profile | Own password, [sessions and api keys](../core-features/access-control.md) |
 
 
 ## Permissions
@@ -38,6 +39,8 @@ Members manage their own organization with:
 - [z.organization.invite](organization-management.md#invitations)
 - [z.organization.roles](organization-management.md#releasing-roles-to-organizations)
 - [z.organization.rename](organization-management.md)
+
+Profile is the exception: it only ever shows the requesting account, so every login reaches it without a permission.
 
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.
