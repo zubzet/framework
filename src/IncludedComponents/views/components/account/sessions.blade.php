@@ -20,10 +20,10 @@
                         </small>
                         <small class="text-muted d-block">
                             Started {{ date("d.m.Y H:i", strtotime($session->created())) }} from {{ $session->ipCreation() ?? "an unknown address" }},
-                            @if(is_null($session->ipLast()))
+                            @if(is_null($session->lastUsed()))
                                 never used since
                             @else
-                                last seen from {{ $session->ipLast() }}
+                                last seen {{ date("d.m.Y H:i", strtotime($session->lastUsed())) }} from {{ $session->ipLast() ?? "an unknown address" }}
                             @endif
                         </small>
                         <small class="text-muted d-block">
@@ -76,7 +76,7 @@
                     <p class="small text-muted">
                         An empty name hands the session back to its device name.
                     </p>
-                    <input class="form-control z-session-name" data-test="session-name" placeholder="Name, e.g. Laptop at home">
+                    <input class="form-control z-session-name" data-test="session-name" maxlength="255" placeholder="Name, e.g. Laptop at home">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary z-session-rename-save" data-test="btn-save-session-name">
@@ -92,7 +92,7 @@
             var rename = $("#z-session-rename");
 
             $("#z-sessions").on("click", ".z-revoke-session", function() {
-                Z.Request.root("profile/revoke-session", null, {
+                Z.Request.root("z/profile", "revoke-session", {
                     uuid: $(this).data("uuid")
                 }, (res) => {
                     if("success" == res.result) location.reload();
@@ -106,7 +106,7 @@
             });
 
             rename.on("click", ".z-session-rename-save", () => {
-                Z.Request.root("profile/rename-session", null, {
+                Z.Request.root("z/profile", "rename-session", {
                     uuid: rename.data("uuid"),
                     name: rename.find(".z-session-name").val()
                 }, (res) => {

@@ -895,6 +895,12 @@ Everything else a key needs it already has as a session: it is named through
     $session->created(): string
     ```
 
+* Returns when the session was last used, or `null` while it has not been used since it was created. Unlike `ipLast()`, this is written on every authenticated request.
+
+    ```php
+    $session->lastUsed(): ?string
+    ```
+
 ---
 
 ### Refreshing Session Data

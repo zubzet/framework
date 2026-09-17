@@ -10,7 +10,7 @@
     <script>
         $(() => {
             $("#z-clear-sessions").click(() => {
-                Z.Request.root("profile/clear-sessions", null, {}, (res) => {
+                Z.Request.root("z/profile", "clear-sessions", {}, (res) => {
                     if("success" == res.result) location.reload();
                 });
             });

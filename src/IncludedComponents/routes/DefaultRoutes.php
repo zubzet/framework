@@ -10,13 +10,4 @@
             Route::get('/health', [ZubZetController::class, 'health']);
         }
     });
-
-    Route::group('/profile', function() {
-        Route::post('/change-password', [ProfileController::class, 'changePassword']);
-        Route::post('/clear-sessions', [ProfileController::class, 'clearSessions']);
-        Route::post('/revoke-session', [ProfileController::class, 'revokeSession']);
-        Route::post('/rename-session', [ProfileController::class, 'renameSession']);
-        Route::post('/revoke-api-key', [ProfileController::class, 'revokeApiKey']);
-        Route::post('/create-api-key', [ProfileController::class, 'createApiKey']);
-    });
 ?>
