@@ -39,9 +39,11 @@
                     </div>
                     <div class="flex-shrink-0">
                         <button
-                            class="btn btn-sm btn-outline-secondary z-rename-session"
+                            class="btn btn-sm btn-outline-secondary z-rename-token"
                             data-uuid="{{ $session->uuid() }}"
                             data-name="{{ $session->name() }}"
+                            data-type="session"
+                            data-placeholder="Name, e.g. Laptop at home"
                             data-test="btn-rename-session"
                         >
                             Rename
@@ -61,55 +63,14 @@
         @endforelse
     </ul>
 
-    <div class="modal fade" id="z-session-rename" data-test="session-rename" tabindex="-1" role="dialog" aria-labelledby="z-session-rename-title" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="z-session-rename-title">
-                        <i class="fa fa-fw fa-pen mr-1"></i> Rename session
-                    </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p class="small text-muted">
-                        An empty name hands the session back to its device name.
-                    </p>
-                    <input class="form-control z-session-name" data-test="session-name" maxlength="255" placeholder="Name, e.g. Laptop at home">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary z-session-rename-save" data-test="btn-save-session-name">
-                        Save
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <x-zubzet::account.rename-token/>
 
     <script>
         $(() => {
-            var rename = $("#z-session-rename");
-
             $("#z-sessions").on("click", ".z-revoke-session", function() {
                 Z.Request.root("_zubzet/profile/revoke-token", null, {
                     uuid: $(this).data("uuid"),
                     type: "session"
-                }, (res) => {
-                    if("success" == res.result) location.reload();
-                });
-            });
-
-            $("#z-sessions").on("click", ".z-rename-session", function() {
-                rename.data("uuid", $(this).data("uuid"));
-                rename.find(".z-session-name").val($(this).attr("data-name"));
-                rename.modal("show");
-            });
-
-            rename.on("click", ".z-session-rename-save", () => {
-                Z.Request.root("_zubzet/profile/rename-session", null, {
-                    uuid: rename.data("uuid"),
-                    name: rename.find(".z-session-name").val()
                 }, (res) => {
                     if("success" == res.result) location.reload();
                 });
