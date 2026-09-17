@@ -168,7 +168,8 @@ User attributes can be updated directly on the instance.
     $user->updateOrganization(?Organization $organization);
     ```
 
-* Clears all active login sessions for the user.
+* Clears all active login sessions for the user. Api keys are credentials of their
+  own and are not touched.
 
     ```php
     $user->clearSessions();
