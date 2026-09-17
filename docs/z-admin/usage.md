@@ -15,6 +15,7 @@ It has following categories:
 | Edit User | Form to edit users
 | Add User | Form to add users
 | Roles | User permission managment |
+| Profile | Own password, [sessions and api keys](../core-features/access-control.md) |
 
 
 ## Permissions
@@ -30,6 +31,8 @@ To be able to use all functions, the following permissions are needed:
 - admin.roles.delete
 - admin.log
 - [admin.su](login-as-another-user.md)
+
+Profile is the exception: it only ever shows the requesting account, so every login reaches it without a permission.
 
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.
