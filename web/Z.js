@@ -118,6 +118,7 @@ Z = {
     error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
     error_password_reset: "An error occurred. Did you use the correct email address?",
     error_password_mismatch: "The password are not the same!",
+    error_password_wrong: "Your current password is wrong!",
     error_invalid_email: "This email is not allowed!",
     error_too_many_login_tries: "Too many login tries. Try again later.",
     error_login: "Username or password is wrong",
