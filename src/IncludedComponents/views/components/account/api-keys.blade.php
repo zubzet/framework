@@ -74,7 +74,14 @@
                         <p class="small text-muted">
                             Shown once. Copy it now, it cannot be read again.
                         </p>
-                        <input class="form-control z-api-key-token" data-test="api-key-token" readonly>
+                        <div class="input-group">
+                            <input class="form-control z-api-key-token" data-test="api-key-token" readonly>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary z-api-key-copy" data-test="btn-copy-api-key">
+                                    <i class="fa fa-fw fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-dismiss="modal" data-test="btn-api-key-done">
@@ -101,6 +108,12 @@
                         root.find(".z-api-key-name").val("");
                     }
                 });
+            });
+
+            root.on("click", ".z-api-key-copy", function() {
+                var token = root.find(".z-api-key-token");
+                navigator.clipboard.writeText(token.val());
+                $(this).html('<i class="fa fa-fw fa-check"></i> Copied');
             });
 
             root.on("click", ".z-revoke-api-key", function() {
