@@ -65,6 +65,16 @@
             return $this->revoke(Session::byUuid($req->getPost("uuid", "")), $res);
         }
 
+        public function renameSession(Request $req, Response $res) {
+            $session = Session::byUuid($req->getPost("uuid", ""));
+            if(!$this->owns($session)) return $res->error("Unknown token");
+
+            $name = trim($req->getPost("name", ""));
+            $session->setName(empty($name) ? null : $name);
+
+            return $res->success();
+        }
+
         public function revokeApiKey(Request $req, Response $res) {
             return $this->revoke(APIKey::byUuid($req->getPost("uuid", "")), $res);
         }
@@ -99,14 +109,16 @@
         }
 
         private function revoke(Session|APIKey|null $token, Response $res) {
-            // An unknown uuid and somebody else's get the same answer, so neither can be probed
-            if(is_null($token) || $token->userId() !== user()->userId) {
-                return $res->error("Unknown token");
-            }
+            if(!$this->owns($token)) return $res->error("Unknown token");
 
             $token->invalidate();
 
             return $res->success();
+        }
+
+        // An unknown uuid and somebody else's are both not owned, so neither can be probed
+        private function owns(Session|APIKey|null $token): bool {
+            return !is_null($token) && $token->userId() === user()->userId;
         }
 
     }
