@@ -92,7 +92,7 @@
             var rename = $("#z-session-rename");
 
             $("#z-sessions").on("click", ".z-revoke-session", function() {
-                Z.Request.root("z/profile", "revoke-session", {
+                Z.Request.root("_zubzet/profile/revoke-session", null, {
                     uuid: $(this).data("uuid")
                 }, (res) => {
                     if("success" == res.result) location.reload();
@@ -106,7 +106,7 @@
             });
 
             rename.on("click", ".z-session-rename-save", () => {
-                Z.Request.root("z/profile", "rename-session", {
+                Z.Request.root("_zubzet/profile/rename-session", null, {
                     uuid: rename.data("uuid"),
                     name: rename.find(".z-session-name").val()
                 }, (res) => {
