@@ -24,7 +24,7 @@
         }
 
         public function changePassword(Request $req, Response $res) {
-            $account = $this->account();
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
             $formResult = $req->validateForm([
@@ -65,7 +65,7 @@
         }
 
         public function clearSessions(Request $req, Response $res) {
-            $account = $this->account();
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
             Session::clearForUser($account);
@@ -73,29 +73,51 @@
             return $res->success();
         }
 
-        public function revokeSession(Request $req, Response $res) {
-            return $this->revokeToken(Session::byUuid($this->postText($req, "uuid", 36)), $res);
-        }
-
         public function renameSession(Request $req, Response $res) {
-            $session = Session::byUuid($this->postText($req, "uuid", 36));
-            if(!$this->ownsToken($session)) return $res->error("Unknown token");
+            $uuid = $req->getPost("uuid", "");
+            if(!is_string($uuid)) return $res->error("Unknown token");
 
-            $name = $this->postText($req, "name", 255);
+            $session = Session::byUuid($uuid);
+            if(is_null($session) || $session->userId() !== user()->userId) return $res->error("Unknown token");
+
+            // The name is client input and the column takes 255 characters
+            $name = $req->getPost("name", "");
+            $name = is_string($name) ? mb_substr(trim($name), 0, 255) : "";
+
             $session->setName(empty($name) ? null : $name);
 
             return $res->success();
         }
 
-        public function revokeApiKey(Request $req, Response $res) {
-            return $this->revokeToken(APIKey::byUuid($this->postText($req, "uuid", 36)), $res);
+        public function revokeToken(Request $req, Response $res) {
+            $uuid = $req->getPost("uuid", "");
+            if(!is_string($uuid)) return $res->error("Unknown token");
+
+            // The kind picks the lookup, and each one only finds its own rows,
+            // so a session cannot be revoked as an api key either. A type the
+            // form never offers compares equal to nothing and lands on default
+            $token = match($req->getPost("type", "")) {
+                "session" => Session::byUuid($uuid),
+                "api-key" => APIKey::byUuid($uuid),
+                default => null,
+            };
+
+            // An unknown uuid and somebody else's are both not owned, so neither can be probed
+            if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
+
+            $token->invalidate();
+
+            return $res->success();
         }
 
         public function createApiKey(Request $req, Response $res) {
-            $account = $this->account();
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
-            $name = $this->postText($req, "name", 255);
+            // The name is client input and the column takes 255 characters
+            $name = $req->getPost("name", "");
+            $name = is_string($name) ? mb_substr(trim($name), 0, 255) : "";
+
             $key = APIKey::add($account, name: empty($name) ? null : $name);
 
             $lifetime = $req->getPost("lifetime");
@@ -113,31 +135,6 @@
 
             // The single moment the token is readable to its owner
             return $res->success(["token" => $key->token()]);
-        }
-
-        // The signed in account, or null when the login has no account behind it
-        private function account(): ?User {
-            return user()->isLoggedIn ? User::byId(user()->userId) : null;
-        }
-
-        // Client input arrives as mixed, so a text field is cut to what its column takes
-        private function postText(Request $req, string $key, int $maxLength): string {
-            $value = $req->getPost($key, "");
-
-            return is_string($value) ? mb_substr(trim($value), 0, $maxLength) : "";
-        }
-
-        private function revokeToken(Session|APIKey|null $token, Response $res) {
-            if(!$this->ownsToken($token)) return $res->error("Unknown token");
-
-            $token->invalidate();
-
-            return $res->success();
-        }
-
-        // An unknown uuid and somebody else's are both not owned, so neither can be probed
-        private function ownsToken(Session|APIKey|null $token): bool {
-            return !is_null($token) && $token->userId() === user()->userId;
         }
 
     }
