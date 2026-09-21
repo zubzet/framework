@@ -3,6 +3,7 @@
      * This file holds the login model
      */
 
+    use Cake\Database\Expression\FunctionExpression;
     use ZubZet\Framework\Authentication\APIKey;
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Database\IsInternalModel;
@@ -162,6 +163,41 @@
             $this->exec($sql, "i", $user->id());
         }
 
+        function create2FAChallenge(int $userId): string {
+            $token = "zub-".bin2hex(random_bytes(32));
+
+            $userAgent = request()->userAgent();
+            $device = is_null($userAgent) ? null : mb_substr($userAgent, 0, 255);
+            $ip = request()->ip();
+
+            $query = $this->dbInsert("z_2fa_challenge", [
+                "userId" => $userId,
+                "token" => $token,
+                "ip_creation" => $ip,
+                "device" => $device,
+                "expires_at" => date("Y-m-d H:i:s", time() + 600),
+            ]);
+
+            $this->exec($query);
+
+            return $token;
+        }
+
+        /**
+         * Gets a 2FA challenge by its token
+         * @param string $challenge The challenge token
+         * @return ?array The challenge data, or null if not found
+         */
+        function get2FAChallenge(string $challenge): ?array {
+            $query = $this->dbSelect("*", "z_2fa_challenge")->where([
+                "token" => $challenge,
+                "active" => 1,
+                "expires_at >" => date("Y-m-d H:i:s"),
+            ])->limit(1);
+
+            return $this->exec($query)->resultToLine();
+        }
+
         /**
          * Creates a login token for a user
          *
@@ -173,6 +209,7 @@
          * @param ?string $name An optional name for the session
          * @param ?string $reason Why the session was created, e.g. an impersonation
          * @param bool $isApiKey Whether the token is an api key rather than a login
+         * @param bool $updateLast2FA Whether the login passed a two factor check
          * @return Session|APIKey The resulting session, an APIKey when flagged as one
          */
         function createLoginToken(
@@ -181,6 +218,7 @@
             ?string $name = null,
             ?string $reason = null,
             bool $isApiKey = false,
+            bool $updateLast2FA = false
         ): Session|APIKey {
             $token = "zub-".bin2hex(random_bytes(32));
 
@@ -188,15 +226,24 @@
             $userAgent = request()->userAgent();
             $device = is_null($userAgent) ? null : mb_substr($userAgent, 0, 255);
 
-            $sql = "INSERT INTO `z_logintoken`
-                        (`userId`, `userId_exec`, `token`, `name`, `device`, `reason`, `ip_creation`, `is_apikey`)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            $this->exec(
-                $sql, "iisssssi",
-                $userId, $exec_userId, $token,
-                $name, $device, $reason, request()->ip(),
-                (int) $isApiKey,
-            );
+            $insertArray = [
+                "userId" => $userId,
+                "userId_exec" => $exec_userId,
+                "token" => $token,
+                "name" => $name,
+                "device" => $device,
+                "reason" => $reason,
+                "ip_creation" => request()->ip(),
+                "is_apikey" => (int) $isApiKey,
+            ];
+
+            if($updateLast2FA) {
+                $insertArray["last_2fa"] = new FunctionExpression("CURRENT_TIMESTAMP");
+            }
+
+            $query = $this->dbInsert("z_logintoken", $insertArray);
+
+            $this->exec($query);
 
             return Session::byToken($token);
         }
@@ -428,6 +475,36 @@
             return $this->resultToLine()["RES"] == 0;
         }
         
+
+
+        /**
+         * Stores a fresh totp secret, left unconfirmed until a code proves the
+         * authenticator received it. Null drops two factor off the account.
+         * @param User $user The user to enroll
+         * @param ?string $secret The base32 secret, or null to remove it
+         * @internal
+         */
+        public function setTotpSecret(User $user, ?string $secret): void {
+            $sql = "UPDATE `z_user`
+                    SET `totp_secret` = ?,
+                        `totp_confirmed_at` = NULL
+                    WHERE `id` = ?";
+            $this->exec($sql, "si", $secret, $user->id());
+        }
+
+        /**
+         * Confirms the stored secret, which is what turns two factor on. The
+         * secret check keeps a confirmation from landing on an empty enrollment.
+         * @param User $user The user whose enrollment is complete
+         * @internal
+         */
+        public function confirmTotp(User $user): void {
+            $sql = "UPDATE `z_user`
+                    SET `totp_confirmed_at` = CURRENT_TIMESTAMP()
+                    WHERE `id` = ?
+                    AND `totp_secret` IS NOT NULL";
+            $this->exec($sql, "i", $user->id());
+        }
 
     }
 
