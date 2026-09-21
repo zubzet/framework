@@ -476,7 +476,9 @@ class User extends AuthenticationObject {
         $secret = $this->getField("totp_secret");
         if(is_null($secret)) return false;
 
-        return TOTP::create($secret)->verify($code, null, null);
+        // One 30 second step each way, so a clock that drifts a little and a code
+        // read just before its window turns still land
+        return TOTP::create($secret)->verify($code, null, 1);
     }
 
     /**
