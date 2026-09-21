@@ -44,6 +44,16 @@
         </div>
     </div>
 
+    <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
+        <i class="fa fa-fw fa-shield-alt"></i>
+        Two factor
+    </h2>
+    <div class="card shadow-sm">
+        <div class="card-body py-2 px-3">
+            <x-zubzet::account.two-factor/>
+        </div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
         <h2 class="mb-0 pl-1 font-weight-bold h5">
             <i class="fa fa-fw fa-desktop"></i>

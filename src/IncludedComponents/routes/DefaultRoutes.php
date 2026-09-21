@@ -17,6 +17,9 @@
             Route::post('/revoke-token', [ZubZetController::class, 'revokeToken']);
             Route::post('/rename-token', [ZubZetController::class, 'renameToken']);
             Route::post('/create-api-key', [ZubZetController::class, 'createApiKey']);
+            Route::post('/start-two-factor', [ZubZetController::class, 'startTwoFactor']);
+            Route::post('/confirm-two-factor', [ZubZetController::class, 'confirmTwoFactor']);
+            Route::post('/disable-two-factor', [ZubZetController::class, 'disableTwoFactor']);
         });
     });
 ?>
