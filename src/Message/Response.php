@@ -269,11 +269,11 @@
          * @param ?string $name An optional name for the session
          * @param ?string $reason Why the session was created, e.g. why an admin impersonates
          */
-        public function loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null) {
+        public function loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null, bool $updateLast2FA = false) {
             if($user_exec === null) $user_exec = $userId;
 
             $session = model("z_login", $this->booter->z_framework_root)
-                ->createLoginToken($userId, $user_exec, $name, $reason);
+                ->createLoginToken($userId, $user_exec, $name, $reason, updateLast2FA: $updateLast2FA);
 
             $this->setCookie(
                 "z_login_token",
