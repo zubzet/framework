@@ -204,18 +204,29 @@
         /**
          * Records when and from where a session was last used
          *
-         * Called on every authenticated request. The address is only written
-         * when it changed, the timestamp on every use.
+         * Called on every authenticated request, so a use that is already recorded
+         * within `session_last_used_throttle_seconds` is not written again - the
+         * timestamp is worth one write per throttle window, not one per request.
+         * A changed address is written whenever it changes, throttle or not.
          *
          * @param Session|APIKey $session The session that authenticated the request
          * @internal
          */
         public function recordSessionUse(Session|APIKey $session): void {
+            $ip = request()->ip();
+            $addressChanged = !is_null($ip) && $ip !== $session->ipLast();
+
+            // The row is already loaded, so the throttle costs no query of its own
+            $lastUsed = $session->lastUsed();
+            $throttle = configNumeric("session_last_used_throttle_seconds", 60);
+            $isRecent = !is_null($lastUsed) && strtotime($lastUsed) > time() - $throttle;
+
+            if($isRecent && !$addressChanged) return;
+
             $query = $this->dbUpdate("z_logintoken");
             $query->set(["last_used" => $query->func()->now()]);
 
-            $ip = request()->ip();
-            if(!is_null($ip) && $ip !== $session->ipLast()) $query->set("ip_last", $ip);
+            if($addressChanged) $query->set("ip_last", $ip);
 
             $query->where([
                 "id" => $session->id()
