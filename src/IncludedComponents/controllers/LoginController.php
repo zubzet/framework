@@ -122,6 +122,8 @@
 
             if(!$user->verifyTwoFactorCode($code)) return $res->error("Invalid code");
 
+            model("z_login")->invalidate2FAChallenge($challengeObj["id"]);
+
             $res->loginAs($user->id(), updateLast2FA: true);
 
             return $res->success();
