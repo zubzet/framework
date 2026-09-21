@@ -31,5 +31,6 @@
         });
 
         Route::post('/two-factor/login', [LoginController::class, 'twoFactorLogin']);
+        Route::post('/two-factor/refresh', [ZubZetController::class, 'refreshTwoFactor']);
     });
 ?>
