@@ -304,7 +304,7 @@
          * @param bool $boolResult Return the answer rather than ending the request
          * @return bool Whether the session is fresh enough
          */
-        public function requireFreshSession(bool $boolResult = false): bool {
+        public function requireFreshTwoFactor(bool $boolResult = false): bool {
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
