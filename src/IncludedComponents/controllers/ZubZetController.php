@@ -192,7 +192,10 @@
             $code = $req->getPost("code", "");
             if(!is_string($code)) return $res->error("Invalid input");
 
-            if(!$account->verifyTwoFactorCode(trim($code))) return $res->error("Wrong code");
+            if(!$account->verifyTwoFactorCode(trim($code))) {
+                if($this->spendTwoFactorTry($res)) return $res->error("Too many wrong codes. Signed out.");
+                return $res->error("Wrong code");
+            }
 
             $account->disableTwoFactor();
 
@@ -200,6 +203,49 @@
                 "userId" => $account->id(),
                 "reason" => "two-factor-disabled",
             ]);
+
+            return $res->success();
+        }
+
+
+        // Ein falscher Code kostet die Session einen Versuch. Ist der letzte weg,
+        // wird sie entwertet und das Cookie entfernt - der Besucher ist raus.
+        private function spendTwoFactorTry(Response $res): bool {
+            $session = Session::byToken(user()->getSessionToken());
+            if(is_null($session)) return false;
+
+            if(0 < model("z_login")->spendTwoFactorTry($session)) return false;
+
+            $session->invalidate();
+            $res->unsetCookie("z_login_token", domainScope: $res->getCookieDomainScope());
+
+            return true;
+        }
+
+        /**
+         * Asks a login that already exists for a fresh code and stamps the moment
+         * on the session it arrived with. No challenge is involved - the password
+         * step happened whenever this session was created.
+         */
+        public function refreshTwoFactor(Request $req, Response $res) {
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
+            if(is_null($account)) return $res->error("Not logged in");
+
+            if(!$account->hasTwoFactor()) return $res->error("Two factor is not active");
+
+            $code = $req->getPost("code", "");
+            if(!is_string($code)) return $res->error("Invalid input");
+
+            if(!$account->verifyTwoFactorCode(trim($code))) {
+                if($this->spendTwoFactorTry($res)) return $res->error("Too many wrong codes. Signed out.");
+                return $res->error("Wrong code");
+            }
+
+            // The token that authenticated this request is the one being stamped
+            $session = Session::byToken(user()->getSessionToken());
+            if(is_null($session)) return $res->error("Not logged in");
+
+            model("z_login")->recordTwoFactor($session);
 
             return $res->success();
         }

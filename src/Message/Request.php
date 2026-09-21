@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Message;
 
     use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
@@ -283,6 +284,36 @@
                 : user()->checkPermission($permission);
 
             if(!$hasPermission) {
+                if($boolResult) return false;
+                zubzet()->executePath(["error", "403"]);
+                exit;
+            }
+
+            return true;
+        }
+
+        /**
+         * Guards an action behind a recent two factor check. Answers true when the
+         * session passed one inside `two_factor_freshness_seconds`, and for every
+         * account that carries no two factor at all.
+         *
+         * Without $boolResult a stale session is turned away with a 403, the way
+         * checkPermission does it. Pass true on an endpoint that answers json, so
+         * the caller can send the visitor through Z.Presets.Refresh2FA() instead.
+         *
+         * @param bool $boolResult Return the answer rather than ending the request
+         * @return bool Whether the session is fresh enough
+         */
+        public function requireFreshSession(bool $boolResult = false): bool {
+            if(!user()->isLoggedIn) {
+                if($boolResult) return false;
+                zubzet()->executePath(["login", "index"]);
+                exit;
+            }
+
+            $session = Session::byToken(user()->getSessionToken());
+
+            if(is_null($session) || $session->requireRenew()) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
                 exit;
