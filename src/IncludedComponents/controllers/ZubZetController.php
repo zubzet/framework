@@ -142,6 +142,68 @@
             return $res->success(["token" => $key->token()]);
         }
 
+
+        public function startTwoFactor(Request $req, Response $res) {
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
+            if(is_null($account)) return $res->error("Not logged in");
+
+            // An active two factor is replaced by disabling it first, so a stolen
+            // session cannot quietly swap the secret for one it holds itself
+            if($account->hasTwoFactor()) return $res->error("Two factor is already active");
+
+            $totp = $account->startTwoFactor();
+
+            // The single moment the secret is readable to its owner
+            return $res->success([
+                "secret" => $totp->getSecret(),
+                "uri" => $totp->getProvisioningUri(),
+            ]);
+        }
+
+        public function confirmTwoFactor(Request $req, Response $res) {
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
+            if(is_null($account)) return $res->error("Not logged in");
+
+            // Without this the guard inside confirmTwoFactor would answer an
+            // already active account with "Wrong code", which reads as a typo
+            if($account->hasTwoFactor()) return $res->error("Two factor is already active");
+
+            $code = $req->getPost("code", "");
+            if(!is_string($code)) return $res->error("Invalid input");
+
+            if(!$account->confirmTwoFactor(trim($code))) return $res->error("Wrong code");
+
+            logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                "userId" => $account->id(),
+                "reason" => "two-factor-enabled",
+            ]);
+
+            return $res->success();
+        }
+
+        public function disableTwoFactor(Request $req, Response $res) {
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
+            if(is_null($account)) return $res->error("Not logged in");
+
+            if(!$account->hasTwoFactor()) return $res->error("Two factor is not active");
+
+            // A current code rather than the password: accounts here may carry no
+            // password at all, and whoever cannot produce a code is locked out anyway
+            $code = $req->getPost("code", "");
+            if(!is_string($code)) return $res->error("Invalid input");
+
+            if(!$account->verifyTwoFactorCode(trim($code))) return $res->error("Wrong code");
+
+            $account->disableTwoFactor();
+
+            logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                "userId" => $account->id(),
+                "reason" => "two-factor-disabled",
+            ]);
+
+            return $res->success();
+        }
+
     }
 
 ?>
