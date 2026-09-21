@@ -21,5 +21,7 @@
             Route::post('/confirm-two-factor', [ZubZetController::class, 'confirmTwoFactor']);
             Route::post('/disable-two-factor', [ZubZetController::class, 'disableTwoFactor']);
         });
+
+        Route::post('/two-factor/login', [LoginController::class, 'twoFactorLogin']);
     });
 ?>
