@@ -895,7 +895,7 @@ Everything else a key needs it already has as a session: it is named through
     $session->created(): string
     ```
 
-* Returns when the session was last used, or `null` while it has not been used since it was created. Unlike `ipLast()`, this is written on every authenticated request.
+* Returns when the session was last used, or `null` while it has not been used since it was created. Every authenticated request refreshes it, but at most once per `session_last_used_throttle_seconds` (defaults to 60), so the timestamp costs one write per throttle window rather than one per request - read it as "last seen around then", not to the second. Set the key to `0` to write on every request. A request from a new address is always written, because that is what updates `ipLast()`.
 
     ```php
     $session->lastUsed(): ?string
