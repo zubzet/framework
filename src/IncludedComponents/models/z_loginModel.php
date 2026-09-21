@@ -3,7 +3,6 @@
      * This file holds the login model
      */
 
-    use Cake\Database\Expression\FunctionExpression;
     use ZubZet\Framework\Authentication\APIKey;
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Database\IsInternalModel;
@@ -249,7 +248,8 @@
             ];
 
             if($updateLast2FA) {
-                $insertArray["last_2fa"] = new FunctionExpression("CURRENT_TIMESTAMP");
+                // Php clock, because requireRenew() reads it back with strtotime()
+                $insertArray["last_2fa"] = date("Y-m-d H:i:s");
             }
 
             $query = $this->dbInsert("z_logintoken", $insertArray);
@@ -257,6 +257,28 @@
             $this->exec($query);
 
             return Session::byToken($token);
+        }
+
+        // Zieht einen Zwei-Faktor-Versuch von der Session ab und gibt zurueck,
+        // wie viele ihr bleiben. Bei 0 ist sie verbraucht.
+        public function spendTwoFactorTry(Session $session): int {
+            $sql = "UPDATE `z_logintoken`
+                    SET `remaining_2fa_tries` = GREATEST(`remaining_2fa_tries` - 1, 0)
+                    WHERE `id` = ?";
+            $this->exec($sql, "i", $session->id());
+
+            $sql = "SELECT `remaining_2fa_tries` FROM `z_logintoken` WHERE `id` = ?";
+            return (int) $this->exec($sql, "i", $session->id())->resultToLine()["remaining_2fa_tries"];
+        }
+
+        // Stempelt eine frisch bestandene Zwei-Faktor-Pruefung auf die Session,
+        // die den Request authentifiziert hat
+        public function recordTwoFactor(Session $session): void {
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["last_2fa" => date("Y-m-d H:i:s")]);
+            $query->where(["id" => $session->id()]);
+
+            $this->exec($query);
         }
 
         /**

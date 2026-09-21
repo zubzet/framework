@@ -131,23 +131,38 @@ Z = {
    */
   Presets: {
     /**
-     * Opens the two factor modal for a challenge the login endpoint handed out.
-     * The markup comes from x-zubzet::authentication.2fa, which x-zubzet::body
-     * renders on every page.
-     * @param {string} challenge The challenge token the login answered with
-     * @param {string} redirect Where to go once the code was accepted. Empty reloads
+     * Opens the two factor modal and hands the six digits to `submit` once they
+     * are in. The markup comes from x-zubzet::authentication.2fa, which
+     * x-zubzet::body renders on every page.
+     * @param {function} submit Called with the code as its only argument
      */
-    Show2FA(challenge, redirect = "") {
+    Open2FAModal(submit) {
       var modal = $("#z-two-factor-modal");
       var boxes = $("#z-two-factor-digits .z-two-factor-digit");
 
+      Z.Presets.sending2FA = false;
       boxes.val("").removeClass("border-danger");
+      $("#z-two-factor-modal-send").prop("disabled", false);
       $("#z-two-factor-modal-error").addClass("d-none").text("");
 
       // Namespaced, so reopening the modal replaces these handlers rather than
       // stacking a second set on top of the first
       boxes.off(".z2fa");
       $("#z-two-factor-modal-send, #z-two-factor-modal-cancel").off(".z2fa");
+
+      var send = () => {
+        // The button and the last digit both reach this
+        if(Z.Presets.sending2FA) return;
+
+        var code = boxes.map((_, box) => box.value).get().join("");
+        if(code.length < boxes.length) return Z.Presets.Fail2FA(Z.Lang.error_2fa_incomplete);
+
+        Z.Presets.sending2FA = true;
+        $("#z-two-factor-modal-send").prop("disabled", true);
+        $("#z-two-factor-modal-error").addClass("d-none");
+
+        submit(code);
+      };
 
       // Writes digits into the boxes from `index` on, moves the cursor behind
       // them and sends once the last one is filled. Typing, a code the keyboard
@@ -160,7 +175,7 @@ Z = {
         boxes.removeClass("border-danger");
         boxes.eq(Math.min(index + digits.length, boxes.length - 1)).focus().select();
 
-        if(index + digits.length == boxes.length) Z.Presets.Send2FA(challenge, redirect);
+        if(index + digits.length == boxes.length) send();
       };
 
       boxes.on("input.z2fa", function() {
@@ -188,56 +203,75 @@ Z = {
         fill(boxes.index(this), (e.originalEvent.clipboardData || window.clipboardData).getData("text"));
       });
 
-      $("#z-two-factor-modal-send").on("click.z2fa", () => Z.Presets.Send2FA(challenge, redirect));
+      $("#z-two-factor-modal-send").on("click.z2fa", send);
       $("#z-two-factor-modal-cancel").on("click.z2fa", () => modal.modal("hide"));
 
-      modal.modal("show");
-
-      // The boxes only exist on screen once the modal finished opening
+      // Registered before showing: the modal carries no `fade`, so bootstrap
+      // fires this synchronously from inside modal("show")
       modal.one("shown.bs.modal", () => boxes.eq(0).focus());
+      modal.modal("show");
     },
 
     /**
-     * Redeems the code standing in the modal against a challenge
+     * Puts the modal back into a state where another code can be typed
+     * @param {string} message What went wrong, shown above the boxes
+     */
+    Fail2FA(message) {
+      var boxes = $("#z-two-factor-digits .z-two-factor-digit");
+
+      Z.Presets.sending2FA = false;
+      $("#z-two-factor-modal-send").prop("disabled", false);
+      $("#z-two-factor-modal-error").text(message).removeClass("d-none");
+      boxes.val("").addClass("border-danger").eq(0).focus();
+    },
+
+    /**
+     * The two factor step of a login, for a challenge the login endpoint handed
+     * out. Redeeming it is what creates the session.
      * @param {string} challenge The challenge token the login answered with
      * @param {string} redirect Where to go once the code was accepted. Empty reloads
      */
-    Send2FA(challenge, redirect = "") {
-      // The button and the last digit both reach this
-      if(Z.Presets.sending2FA) return;
+    Show2FA(challenge, redirect = "") {
+      Z.Presets.Open2FAModal((code) => {
+        // The challenge goes in the body rather than the url, so it stays out of
+        // access logs and browser history
+        Z.Request.root("_zubzet/two-factor/login", null, {
+          challenge: challenge,
+          code: code,
+        }, (res) => {
+          if(res.result != "success") return Z.Presets.Fail2FA(res.message);
 
-      var boxes = $("#z-two-factor-digits .z-two-factor-digit");
-      var error = $("#z-two-factor-modal-error");
-      var code = boxes.map((_, box) => box.value).get().join("");
+          $("#z-two-factor-modal").modal("hide");
 
-      var fail = (message) => {
-        Z.Presets.sending2FA = false;
-        $("#z-two-factor-modal-send").prop("disabled", false);
-        error.text(message).removeClass("d-none");
-        boxes.val("").addClass("border-danger").eq(0).focus();
-      };
+          if(redirect == "") {
+            location.reload();
+          } else {
+            location.href = redirect;
+          }
+        });
+      });
+    },
 
-      if(code.length < boxes.length) return fail(Z.Lang.error_2fa_incomplete);
+    /**
+     * Asks a visitor who is already logged in for a fresh code and stamps the
+     * moment on the session they are using. There is no challenge here - the
+     * password step happened when this session was created. Use it to gate an
+     * action behind a recent two factor check.
+     * @param {function} onDone Called once the code was accepted. Omitted reloads
+     */
+    Refresh2FA(onDone = null) {
+      Z.Presets.Open2FAModal((code) => {
+        Z.Request.root("_zubzet/two-factor/refresh", null, {code: code}, (res) => {
+          if(res.result != "success") return Z.Presets.Fail2FA(res.message);
 
-      Z.Presets.sending2FA = true;
-      $("#z-two-factor-modal-send").prop("disabled", true);
-      error.addClass("d-none");
+          $("#z-two-factor-modal").modal("hide");
 
-      // The challenge goes in the body rather than the url, so it stays out of
-      // access logs and browser history
-      Z.Request.root("_zubzet/two-factor/login", null, {
-        challenge: challenge,
-        code: code,
-      }, (res) => {
-        if(res.result != "success") return fail(res.message);
-
-        $("#z-two-factor-modal").modal("hide");
-
-        if(redirect == "") {
-          location.reload();
-        } else {
-          location.href = redirect;
-        }
+          if(onDone) {
+            onDone();
+          } else {
+            location.reload();
+          }
+        });
       });
     },
     /**
