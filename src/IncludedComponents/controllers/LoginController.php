@@ -85,9 +85,45 @@
                 return $res->error("Username or password is wrong");
             }
 
+            if($user->hasTwoFactor()) {
+                $challenge = model("z_login")->create2FAChallenge($user->id());
+
+                return $res->success([
+                    "twoFactor" => true,
+                    "challenge" => $challenge,
+                ]);
+            }
+
             // Correct. verifyPassword() has already self-healed the stored hash if
             // it was stale, so all that is left is to start the session.
             $res->loginAs($user->id());
+            return $res->success();
+        }
+
+
+        /**
+         * Redeems a two factor challenge and starts the session behind it.
+         * Reached over its own route, so the modal can post from any page.
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
+        public function twoFactorLogin(Request $req, Response $res) {
+            $challenge = $req->getPost("challenge");
+            if(empty($challenge) || !is_string($challenge)) return $res->error("Missing challenge");
+
+            $challengeObj = model("z_login")->get2FAChallenge($challenge);
+            if(is_null($challengeObj)) return $res->error("Invalid challenge");
+
+            $code = $req->getPost("code");
+            if(empty($code) || !is_string($code)) return $res->error("Missing code");
+
+            $user = User::byId($challengeObj["userId"]);
+            if(is_null($user)) return $res->error("Invalid challenge");
+
+            if(!$user->verifyTwoFactorCode($code)) return $res->error("Invalid code");
+
+            $res->loginAs($user->id(), updateLast2FA: true);
+
             return $res->success();
         }
 

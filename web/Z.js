@@ -122,6 +122,7 @@ Z = {
     error_invalid_email: "This email is not allowed!",
     error_too_many_login_tries: "Too many login tries. Try again later.",
     error_login: "Username or password is wrong",
+    error_2fa_incomplete: "Enter all six digits.",
     choose_file: "Choose file",
     CEDRemove: "✕"
   },
@@ -129,6 +130,116 @@ Z = {
    * Holds some presets to create fix effects
    */
   Presets: {
+    /**
+     * Opens the two factor modal for a challenge the login endpoint handed out.
+     * The markup comes from x-zubzet::authentication.2fa, which x-zubzet::body
+     * renders on every page.
+     * @param {string} challenge The challenge token the login answered with
+     * @param {string} redirect Where to go once the code was accepted. Empty reloads
+     */
+    Show2FA(challenge, redirect = "") {
+      var modal = $("#z-two-factor-modal");
+      var boxes = $("#z-two-factor-digits .z-two-factor-digit");
+
+      boxes.val("").removeClass("border-danger");
+      $("#z-two-factor-modal-error").addClass("d-none").text("");
+
+      // Namespaced, so reopening the modal replaces these handlers rather than
+      // stacking a second set on top of the first
+      boxes.off(".z2fa");
+      $("#z-two-factor-modal-send, #z-two-factor-modal-cancel").off(".z2fa");
+
+      // Writes digits into the boxes from `index` on, moves the cursor behind
+      // them and sends once the last one is filled. Typing, a code the keyboard
+      // autofills and a paste all end up here.
+      var fill = (index, text) => {
+        var digits = text.replace(/\D/g, "").slice(0, boxes.length - index);
+        if(digits == "") return;
+
+        digits.split("").forEach((digit, offset) => boxes.eq(index + offset).val(digit));
+        boxes.removeClass("border-danger");
+        boxes.eq(Math.min(index + digits.length, boxes.length - 1)).focus().select();
+
+        if(index + digits.length == boxes.length) Z.Presets.Send2FA(challenge, redirect);
+      };
+
+      boxes.on("input.z2fa", function() {
+        // Emptied first, so anything that is not a digit is simply dropped
+        var typed = this.value;
+        this.value = "";
+        fill(boxes.index(this), typed);
+      });
+
+      boxes.on("keydown.z2fa", function(e) {
+        if(e.key != "Backspace" || this.value != "") return;
+
+        // eq(-1) would wrap around to the last box
+        var previous = boxes.index(this) - 1;
+        if(previous < 0) return;
+
+        e.preventDefault();
+        boxes.eq(previous).val("").focus();
+      });
+
+      // maxlength cuts a paste down to one character before `input` sees it,
+      // so the whole code is taken off the clipboard instead
+      boxes.on("paste.z2fa", function(e) {
+        e.preventDefault();
+        fill(boxes.index(this), (e.originalEvent.clipboardData || window.clipboardData).getData("text"));
+      });
+
+      $("#z-two-factor-modal-send").on("click.z2fa", () => Z.Presets.Send2FA(challenge, redirect));
+      $("#z-two-factor-modal-cancel").on("click.z2fa", () => modal.modal("hide"));
+
+      modal.modal("show");
+
+      // The boxes only exist on screen once the modal finished opening
+      modal.one("shown.bs.modal", () => boxes.eq(0).focus());
+    },
+
+    /**
+     * Redeems the code standing in the modal against a challenge
+     * @param {string} challenge The challenge token the login answered with
+     * @param {string} redirect Where to go once the code was accepted. Empty reloads
+     */
+    Send2FA(challenge, redirect = "") {
+      // The button and the last digit both reach this
+      if(Z.Presets.sending2FA) return;
+
+      var boxes = $("#z-two-factor-digits .z-two-factor-digit");
+      var error = $("#z-two-factor-modal-error");
+      var code = boxes.map((_, box) => box.value).get().join("");
+
+      var fail = (message) => {
+        Z.Presets.sending2FA = false;
+        $("#z-two-factor-modal-send").prop("disabled", false);
+        error.text(message).removeClass("d-none");
+        boxes.val("").addClass("border-danger").eq(0).focus();
+      };
+
+      if(code.length < boxes.length) return fail(Z.Lang.error_2fa_incomplete);
+
+      Z.Presets.sending2FA = true;
+      $("#z-two-factor-modal-send").prop("disabled", true);
+      error.addClass("d-none");
+
+      // The challenge goes in the body rather than the url, so it stays out of
+      // access logs and browser history
+      Z.Request.root("_zubzet/two-factor/login", null, {
+        challenge: challenge,
+        code: code,
+      }, (res) => {
+        if(res.result != "success") return fail(res.message);
+
+        $("#z-two-factor-modal").modal("hide");
+
+        if(redirect == "") {
+          location.reload();
+        } else {
+          location.href = redirect;
+        }
+      });
+    },
     /**
      * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
      * @param {string} nameElementId ID of the dom element for the name/email input
@@ -152,6 +263,11 @@ Z = {
         }
 
         if (res.result == "success") {
+          if(res.twoFactor) {
+            this.Show2FA(res.challenge, redirect);
+            return;
+          }
+
           if (redirect == "") {
             window.location.reload();
           } else {
