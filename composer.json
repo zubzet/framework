@@ -23,7 +23,8 @@
         "components/jquery": "3.5.*",
         "components/bootstrap": "4.6.*",
         "components/font-awesome": "6.5.*",
-        "katanaphp/blade": "dev-integration/zubzet#ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c"
+        "katanaphp/blade": "dev-integration/zubzet#ac9a8f2d338d0e6e7fd8ea5094ede615e9fb6a5c",
+        "spomky-labs/otphp": "^10.0"
     },
     "autoload": {
         "files": [
