@@ -183,6 +183,17 @@
             return $token;
         }
 
+        function invalidate2FAChallenge(int $id): void {
+            $query = $this->dbUpdate("z_2fa_challenge", [
+                "active" => 0
+            ])->where([
+                "id" => $id,
+                "active" => 1,
+            ]);
+
+            $this->exec($query);
+        }
+
         /**
          * Gets a 2FA challenge by its token
          * @param string $challenge The challenge token
