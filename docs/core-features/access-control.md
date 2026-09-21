@@ -803,6 +803,12 @@ Everything else a key needs it already has as a session: it is named through
     $session->invalidate(): void
     ```
 
+* Ends every active login of a user in one statement, the session that issues it included. Api keys are credentials of their own and are left alone, so revoke those separately by calling `invalidate()` on each of [`APIKey::byUser()`](#api-keys). This is the static counterpart to [`$user->clearSessions()`](#updating-user-data), which is also what [`$user->updatePassword()`](#updating-user-data) runs - changing a password ends every login of the account, its keys keep working.
+
+    ```php
+    Session::clearForUser(User $user): void
+    ```
+
 ---
 
 ### Expiry Check
