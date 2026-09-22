@@ -456,8 +456,13 @@ class User extends AuthenticationObject {
         $secret = Base32::encodeUpperUnpadded(random_bytes(20));
 
         $totp = TOTP::create($secret);
-        $totp->setLabel($this->email());
-        // otphp rejects a colon in the issuer, in each encoding it looks for
+
+        // An account without an email is named generically in the authenticator
+        $email = $this->email();
+        $label = empty($email) ? "User" : $email;
+
+        // otphp rejects a colon in the label and the issuer, in each encoding it looks for
+        $totp->setLabel(str_replace([":", "%3A", "%3a"], "", $label));
         $issuer = str_replace([":", "%3A", "%3a"], "", config("pageName", default: "ZubZet"));
         $totp->setIssuer($issuer);
 
