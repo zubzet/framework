@@ -259,20 +259,24 @@
             return Session::byToken($token);
         }
 
-        // Zieht einen Zwei-Faktor-Versuch von der Session ab und gibt zurueck,
-        // wie viele ihr bleiben. Bei 0 ist sie verbraucht.
         public function spendTwoFactorTry(Session $session): int {
+            // Decrease the remaining 2fa tries by 1 when over 0
             $sql = "UPDATE `z_logintoken`
-                    SET `remaining_2fa_tries` = GREATEST(`remaining_2fa_tries` - 1, 0)
-                    WHERE `id` = ?";
+                    SET `remaining_2fa_tries` = `remaining_2fa_tries` - 1
+                    WHERE `id` = ?
+                    AND `remaining_2fa_tries` > 0";
             $this->exec($sql, "i", $session->id());
 
-            $sql = "SELECT `remaining_2fa_tries` FROM `z_logintoken` WHERE `id` = ?";
+            $sql = "SELECT `remaining_2fa_tries`
+                    FROM `z_logintoken`
+                    WHERE `id` = ?";
             return (int) $this->exec($sql, "i", $session->id())->resultToLine()["remaining_2fa_tries"];
         }
 
-        // Stempelt eine frisch bestandene Zwei-Faktor-Pruefung auf die Session,
-        // die den Request authentifiziert hat
+        /**
+         * Stamps a freshly passed two factor check on the session that
+         * authenticated the request
+         */
         public function recordTwoFactor(Session $session): void {
             $query = $this->dbUpdate("z_logintoken");
             $query->set(["last_2fa" => date("Y-m-d H:i:s")]);
