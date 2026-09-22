@@ -253,6 +253,8 @@
             if(is_null($session)) return $res->error("Not logged in");
 
             model("z_login")->recordTwoFactor($session);
+            // A passed check forgives what the session spent on typos
+            model("z_login")->resetTwoFactorTries($session);
 
             return $res->success();
         }
