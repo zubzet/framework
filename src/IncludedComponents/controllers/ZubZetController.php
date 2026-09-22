@@ -208,8 +208,8 @@
         }
 
 
-        // Ein falscher Code kostet die Session einen Versuch. Ist der letzte weg,
-        // wird sie entwertet und das Cookie entfernt - der Besucher ist raus.
+        // A wrong code costs the session a try. Once the last one is gone the
+        // session is invalidated and the cookie removed - the visitor is out.
         private function spendTwoFactorTry(Response $res): bool {
             $session = Session::byToken(user()->getSessionToken());
             if(is_null($session)) return false;
