@@ -47,7 +47,12 @@ class Session extends AuthenticationObject {
      */
     public function requireRenew(): bool {
         $user = User::byId($this->userId());
-        if(is_null($user) || !$user->hasTwoFactor()) return false;
+
+        // An account that no longer loads is turned away rather than waved
+        // through - a session outliving its user is not one to trust
+        if(is_null($user)) return true;
+
+        if(!$user->hasTwoFactor()) return false;
 
         $lastTwoFactor = $this->lastTwoFactor();
         if(is_null($lastTwoFactor)) return true;
