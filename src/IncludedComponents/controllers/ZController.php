@@ -133,6 +133,7 @@
                 "result" => "success",
                 "email" => $user["email"],
                 "userId" => $userId,
+                "hasTwoFactor" => User::byId($userId)?->hasTwoFactor() ?? false,
             ]);
         }
 
@@ -149,6 +150,31 @@
 
             $res->loginAs($userId, $req->getRequestingUser()->execUserId, reason: mb_substr($reason, 0, 255));
             return $res->rerouteUrl();
+        }
+
+        // Turns two factor off for an account, the way back in for an owner who
+        // lost their authenticator
+        public function action_disable_two_factor(Request $req, Response $res) {
+            $req->checkPermission("admin.user.edit");
+
+            if(!$req->isAction("disable_two_factor")) return $res->error("Invalid request");
+
+            $userId = $req->getParameters(0, 1);
+            if(empty($userId)) return $res->error("Missing user");
+
+            $user = User::byId($userId);
+            if(is_null($user)) return $res->error("Unknown user");
+
+            if(!$user->hasTwoFactor()) return $res->error("Two factor is not active");
+
+            $user->disableTwoFactor();
+
+            logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                "userId" => $user->id(),
+                "reason" => "two-factor-force-disabled",
+            ]);
+
+            return $res->success();
         }
 
 
