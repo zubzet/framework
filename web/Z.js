@@ -60,6 +60,7 @@ Z = {
             Z.Presets.Refresh2FA(() => {
               alert("Two factor check was successful. Please try again.");
             });
+            return;
           }
         } catch (e) {
           console.error("Please show this to a developer: ", data);
@@ -92,6 +93,7 @@ Z = {
                 Z.Presets.Refresh2FA(() => {
                   alert("Two factor check was successful. Please try again.");
                 });
+                return;
               }
             }
           } catch (e) {
@@ -150,6 +152,14 @@ Z = {
      * @param {function} submit Called with the code as its only argument
      */
     Open2FAModal(submit) {
+      if(!$("#z-two-factor-modal").length) {
+        var template = document.getElementById("z-two-factor-template");
+        // The markup ships with x-zubzet::body, which this page does not render
+        if(!template) return console.error("Two factor modal missing, add x-zubzet::body to the layout");
+
+        document.body.appendChild(template.content.cloneNode(true));
+      }
+
       var modal = $("#z-two-factor-modal");
       var boxes = $("#z-two-factor-digits .z-two-factor-digit");
 
@@ -281,6 +291,8 @@ Z = {
 
           if(onDone) {
             onDone();
+          } else {
+            location.reload();
           }
         });
       });
@@ -1092,12 +1104,11 @@ class ZForm {
         if (this.formErrorHook) {
           this.formErrorHook(json);
         }
+      } else if (json.twoFactorRenew == true) {
+        Z.Presets.Refresh2FA(() => {
+          alert("Two factor check was successful. Please try again.");
+        });
       } else if (json.result == "error") {
-        if(json.twoFactorRenew == true) {
-            Z.Presets.Refresh2FA(() => {
-              alert("Two factor check was successful. Please try again.");
-            });
-          }
         this.hint("alert-danger", Z.Lang.saveError);
       }
 
