@@ -259,7 +259,7 @@
             return Session::byToken($token);
         }
 
-        public function spendTwoFactorTry(Session $session): int {
+        public function spendTwoFactorTry(Session|APIKey $session): int {
             // Decrease the remaining 2fa tries by 1 when over 0
             $sql = "UPDATE `z_logintoken`
                     SET `remaining_2fa_tries` = `remaining_2fa_tries` - 1
@@ -276,7 +276,7 @@
         /**
          * Hands the session its full budget of two factor tries back
          */
-        public function resetTwoFactorTries(Session $session): void {
+        public function resetTwoFactorTries(Session|APIKey $session): void {
             $sql = "UPDATE `z_logintoken`
                     SET `remaining_2fa_tries` = DEFAULT(`remaining_2fa_tries`)
                     WHERE `id` = ?";
@@ -287,7 +287,7 @@
          * Stamps a freshly passed two factor check on the session that
          * authenticated the request
          */
-        public function recordTwoFactor(Session $session): void {
+        public function recordTwoFactor(Session|APIKey $session): void {
             $query = $this->dbUpdate("z_logintoken");
             $query->set(["last_2fa" => date("Y-m-d H:i:s")]);
             $query->where(["id" => $session->id()]);
