@@ -1,10 +1,12 @@
 @php
     use ZubZet\Framework\Authentication\Permission\User;
-
-    $account = User::byId(user()->userId);
 @endphp
 
 @auth
+    @php
+        $account = User::byId(user()->userId);
+    @endphp
+
     <script src="<?= zubzet()->rootFolder . "_zubzet/asset-proxy/qrcode.js" ?>"></script>
 
     <div id="z-two-factor" {{ $attributes }}>
