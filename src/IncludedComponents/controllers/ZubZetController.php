@@ -173,9 +173,12 @@
 
             if(!$account->confirmTwoFactor(trim($code))) return $res->error("Wrong code");
 
-            // The code proved itself, so whatever the session spent on typos is forgiven
+            // Turning it on is a passed check, and it forgives what the session spent on typos
             $session = Session::byToken(user()->getSessionToken());
-            if(!is_null($session)) model("z_login")->resetTwoFactorTries($session);
+            if(!is_null($session)) {
+                model("z_login")->recordTwoFactor($session);
+                model("z_login")->resetTwoFactorTries($session);
+            }
 
             logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
                 "userId" => $account->id(),
