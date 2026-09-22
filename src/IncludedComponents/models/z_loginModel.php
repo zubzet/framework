@@ -274,6 +274,16 @@
         }
 
         /**
+         * Hands the session its full budget of two factor tries back
+         */
+        public function resetTwoFactorTries(Session $session): void {
+            $sql = "UPDATE `z_logintoken`
+                    SET `remaining_2fa_tries` = DEFAULT(`remaining_2fa_tries`)
+                    WHERE `id` = ?";
+            $this->exec($sql, "i", $session->id());
+        }
+
+        /**
          * Stamps a freshly passed two factor check on the session that
          * authenticated the request
          */
