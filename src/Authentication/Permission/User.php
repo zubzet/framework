@@ -457,7 +457,9 @@ class User extends AuthenticationObject {
 
         $totp = TOTP::create($secret);
         $totp->setLabel($this->email());
-        $totp->setIssuer(config("pageName", default: "ZubZet"));
+        // otphp rejects a colon in the issuer, in each encoding it looks for
+        $issuer = str_replace([":", "%3A", "%3a"], "", config("pageName", default: "ZubZet"));
+        $totp->setIssuer($issuer);
 
         model("z_login")->setTotpSecret($this, $secret);
         $this->clearFields();
