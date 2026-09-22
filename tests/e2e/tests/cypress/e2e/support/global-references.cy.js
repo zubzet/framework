@@ -55,7 +55,13 @@ describe('Global references', () => {
         before(() => {
             cy.exec('docker exec application php instance_test.php').then((result) => {
                 expect(result.exitCode, 'instance_test.php exits cleanly').to.eq(0);
-                probe = JSON.parse(result.stdout);
+
+                const jsonStart = result.stdout.indexOf('{');
+                const jsonEnd = result.stdout.lastIndexOf('}');
+                expect(jsonStart, 'probe JSON start found in stdout').to.be.gte(0);
+                expect(jsonEnd, 'probe JSON end found in stdout').to.be.gte(jsonStart);
+
+                probe = JSON.parse(result.stdout.slice(jsonStart, jsonEnd + 1));
             });
         });
 
