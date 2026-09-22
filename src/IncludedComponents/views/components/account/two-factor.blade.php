@@ -104,11 +104,16 @@
             }
 
             root.on("click", ".z-two-factor-start", function() {
-                $(this).prop("disabled", true);
+                var button = $(this);
+                button.prop("disabled", true);
                 error.addClass("d-none");
 
                 Z.Request.root("_zubzet/profile/start-two-factor", null, {}, (res) => {
-                    if("success" != res.result) return fail(res.message);
+                    // Stays disabled once it worked, a second run would stack another qr code
+                    if("success" != res.result) {
+                        button.prop("disabled", false);
+                        return fail(res.message);
+                    }
 
                     root.find(".z-two-factor-secret").val(res.secret);
                     root.find(".z-two-factor-setup").removeClass("d-none");
