@@ -298,13 +298,18 @@
          * account that carries no two factor at all.
          *
          * Without $boolResult a stale session is turned away with a 403, the way
-         * checkPermission does it. Pass true on an endpoint that answers json, so
-         * the caller can send the visitor through Z.Presets.Refresh2FA() instead.
+         * checkPermission does it. On an endpoint that answers json, pass true and
+         * hand the answer to the client instead:
          *
+         *     if(!$req->requireFreshTwoFactor(boolResult: true)) {
+         *         return $res->error("Two factor required", ["twoFactorRenew" => true]);
+         *     }
+         *
+         * @param ?int $freshnessSeconds How recent the check has to be, or null for the configured window
          * @param bool $boolResult Return the answer rather than ending the request
          * @return bool Whether the session is fresh enough
          */
-        public function requireFreshTwoFactor(bool $boolResult = false): bool {
+        public function requireFreshTwoFactor(?int $freshnessSeconds = null, bool $boolResult = false): bool {
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
@@ -313,9 +318,10 @@
 
             $session = Session::byToken(user()->getSessionToken());
 
-            if(is_null($session) || $session->requireRenew()) {
+            if(is_null($session) || $session->requireRenew($freshnessSeconds)) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
+                response()->error("Two factor required", ["twoFactorRenew" => true]);
                 exit;
             }
 

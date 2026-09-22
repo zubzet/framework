@@ -195,7 +195,7 @@
          * `two_factor_freshness_seconds`. An api key is never stamped, so it
          * stays stale for every account that carries two factor.
          */
-        public function requireRenew(): bool {
+        public function requireRenew(?int $freshnessSeconds = null): bool {
             $user = User::byId($this->userId());
 
             // A session outliving its user is turned away, not waved through
@@ -206,7 +206,7 @@
             $lastTwoFactor = $this->lastTwoFactor();
             if(is_null($lastTwoFactor)) return true;
 
-            $freshness = configNumeric("two_factor_freshness_seconds", 900);
+            $freshness = is_null($freshnessSeconds) ? configNumeric("two_factor_freshness_seconds", 900) : $freshnessSeconds;
 
             return strtotime($lastTwoFactor) <= time() - $freshness;
         }
