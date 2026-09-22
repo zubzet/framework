@@ -305,9 +305,12 @@
         /**
          * Generates a generic error
          * @param string $message An error message
+         * @param mixed[] $payload An optional payload that will be added to the result
          */
-        public function error($message = "") {
-            $this->generateRest(["result" => "error", "message" => $message]);
+        public function error($message = "", $payload = []) {
+            $result = ["result" => "error", "message" => $message];
+            $result = array_merge($result, $payload);
+            $this->generateRest($result);
         }
 
         /**
