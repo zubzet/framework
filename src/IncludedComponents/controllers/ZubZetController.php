@@ -176,8 +176,8 @@
             // Turning it on is a passed check, and it forgives what the session spent on typos
             $session = Session::byToken(user()->getSessionToken());
             if(!is_null($session)) {
-                model("z_login")->recordTwoFactor($session);
-                model("z_login")->resetTwoFactorTries($session);
+                $session->recordTwoFactor();
+                $session->resetTwoFactorTries();
             }
 
             logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
@@ -221,7 +221,7 @@
             $session = Session::byToken(user()->getSessionToken());
             if(is_null($session)) return false;
 
-            if(0 < model("z_login")->spendTwoFactorTry($session)) return false;
+            if(0 < $session->spendTwoFactorTry()) return false;
 
             $session->invalidate();
             $res->unsetCookie("z_login_token", domainScope: $res->getCookieDomainScope());
@@ -252,9 +252,9 @@
             $session = Session::byToken(user()->getSessionToken());
             if(is_null($session)) return $res->error("Not logged in");
 
-            model("z_login")->recordTwoFactor($session);
+            $session->recordTwoFactor();
             // A passed check forgives what the session spent on typos
-            model("z_login")->resetTwoFactorTries($session);
+            $session->resetTwoFactorTries();
 
             return $res->success();
         }

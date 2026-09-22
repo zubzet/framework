@@ -25,6 +25,8 @@ class Session extends AuthenticationObject {
      * never did
      */
     public function lastTwoFactor(): ?string {
+        if($this->shouldRefresh) $this->refresh();
+
         return $this->getField("last_2fa");
     }
 
@@ -33,7 +35,44 @@ class Session extends AuthenticationObject {
      * is signed out rather than asked again.
      */
     public function remainingTwoFactorTries(): int {
+        if($this->shouldRefresh) $this->refresh();
+
         return (int) $this->getField("remaining_2fa_tries");
+    }
+
+    /**
+     * Stamps a freshly passed two factor check on the session
+     */
+    public function recordTwoFactor(): void {
+        if($this->shouldRefresh) $this->refresh();
+
+        model("z_login")->recordTwoFactor($this);
+
+        $this->refreshOnNextUse();
+    }
+
+    /**
+     * Hands the session its full budget of two factor tries back
+     */
+    public function resetTwoFactorTries(): void {
+        if($this->shouldRefresh) $this->refresh();
+
+        model("z_login")->resetTwoFactorTries($this);
+
+        $this->refreshOnNextUse();
+    }
+
+    /**
+     * Spends one of the tries on a wrong code and answers how many are left
+     */
+    public function spendTwoFactorTry(): int {
+        if($this->shouldRefresh) $this->refresh();
+
+        $remaining = model("z_login")->spendTwoFactorTry($this);
+
+        $this->refreshOnNextUse();
+
+        return $remaining;
     }
 
     /**
