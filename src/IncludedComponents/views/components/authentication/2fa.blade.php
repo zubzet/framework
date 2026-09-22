@@ -19,7 +19,7 @@
                 <i class="fa fa-shield-alt fa-2x text-primary mb-3"></i>
 
                 <h5 class="mb-1" id="z-two-factor-modal-title">Two factor</h5>
-                <p class="text-muted small mb-4">
+                <p class="text-muted small mb-4" id="z-two-factor-modal-hint">
                     Your password was accepted. Enter the code from your authenticator.
                 </p>
 

@@ -55,6 +55,12 @@ Z = {
         var dat = null;
         try {
           dat = JSON.parse(data);
+
+          if(dat.result == "error" && dat.twoFactorRenew == true) {
+            Z.Presets.Refresh2FA(() => {
+              alert("Two factor check was successful. Please try again.");
+            });
+          }
         } catch (e) {
           console.error("Please show this to a developer: ", data);
         }
@@ -80,7 +86,14 @@ Z = {
         if(parse) {
           var dat = null;
           try {
-            if(typeof data !== 'object') dat = JSON.parse(data);
+            if(typeof data !== 'object') {
+              dat = JSON.parse(data);
+              if(dat.result == "error" && dat.twoFactorRenew == true) {
+                Z.Presets.Refresh2FA(() => {
+                  alert("Two factor check was successful. Please try again.");
+                });
+              }
+            }
           } catch (e) {
             console.error("Please show this to a developer: ", data);
           }
@@ -268,8 +281,6 @@ Z = {
 
           if(onDone) {
             onDone();
-          } else {
-            location.reload();
           }
         });
       });
@@ -1082,6 +1093,11 @@ class ZForm {
           this.formErrorHook(json);
         }
       } else if (json.result == "error") {
+        if(json.twoFactorRenew == true) {
+            Z.Presets.Refresh2FA(() => {
+              alert("Two factor check was successful. Please try again.");
+            });
+          }
         this.hint("alert-danger", Z.Lang.saveError);
       }
 
