@@ -326,7 +326,8 @@ describe('Two factor gate', () => {
             cy.get('#z-two-factor-modal').should('not.be.visible');
             cy.query('result').should('be.empty');
 
-            // The typed values survived
+            // The typed values survived, resent once ZForm's 300 ms double-submit guard has passed
+            cy.wait(400);
             cy.get('#form button.btn-primary').click();
             cy.wait('@submit');
             cy.query('result').should('contain', 'saved');
