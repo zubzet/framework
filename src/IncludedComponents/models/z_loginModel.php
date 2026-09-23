@@ -162,7 +162,7 @@
             $this->exec($sql, "i", $user->id());
         }
 
-        function create2FAChallenge(int $userId): string {
+        function createTwoFactorChallenge(int $userId): string {
             $token = "zub-".bin2hex(random_bytes(32));
 
             $userAgent = request()->userAgent();
@@ -182,7 +182,7 @@
             return $token;
         }
 
-        function invalidate2FAChallenge(int $id): void {
+        function invalidateTwoFactorChallenge(int $id): void {
             $query = $this->dbUpdate("z_2fa_challenge", [
                 "active" => 0
             ])->where([
@@ -194,11 +194,11 @@
         }
 
         /**
-         * Gets a 2FA challenge by its token
+         * Gets a two factor challenge by its token
          * @param string $challenge The challenge token
          * @return ?array The challenge data, or null if not found
          */
-        function get2FAChallenge(string $challenge): ?array {
+        function getTwoFactorChallenge(string $challenge): ?array {
             $query = $this->dbSelect("*", "z_2fa_challenge")->where([
                 "token" => $challenge,
                 "active" => 1,
@@ -219,7 +219,7 @@
          * @param ?string $name An optional name for the session
          * @param ?string $reason Why the session was created, e.g. an impersonation
          * @param bool $isApiKey Whether the token is an api key rather than a login
-         * @param bool $updateLast2FA Whether the login passed a two factor check
+         * @param bool $recordTwoFactor Whether the login passed a two factor check
          * @return Session|APIKey The resulting session, an APIKey when flagged as one
          */
         function createLoginToken(
@@ -228,7 +228,7 @@
             ?string $name = null,
             ?string $reason = null,
             bool $isApiKey = false,
-            bool $updateLast2FA = false
+            bool $recordTwoFactor = false
         ): Session|APIKey {
             $token = "zub-".bin2hex(random_bytes(32));
 
@@ -247,7 +247,7 @@
                 "is_apikey" => (int) $isApiKey,
             ];
 
-            if($updateLast2FA) {
+            if($recordTwoFactor) {
                 // Php clock, because requireRenew() reads it back with strtotime()
                 $insertArray["last_2fa"] = date("Y-m-d H:i:s");
             }
@@ -260,7 +260,7 @@
         }
 
         public function spendTwoFactorTry(Session|APIKey $session): int {
-            // Decrease the remaining 2fa tries by 1 when over 0
+            // Decrease the remaining two factor tries by 1 when over 0
             $sql = "UPDATE `z_logintoken`
                     SET `remaining_2fa_tries` = `remaining_2fa_tries` - 1
                     WHERE `id` = ?
@@ -525,13 +525,13 @@
 
 
         /**
-         * Stores a fresh totp secret, left unconfirmed until a code proves the
+         * Stores a fresh two factor secret, left unconfirmed until a code proves the
          * authenticator received it. Null drops two factor off the account.
          * @param User $user The user to enroll
          * @param ?string $secret The base32 secret, or null to remove it
          * @internal
          */
-        public function setTotpSecret(User $user, ?string $secret): void {
+        public function setTwoFactorSecret(User $user, ?string $secret): void {
             $sql = "UPDATE `z_user`
                     SET `totp_secret` = ?,
                         `totp_confirmed_at` = NULL
@@ -545,7 +545,7 @@
          * @param User $user The user whose enrollment is complete
          * @internal
          */
-        public function confirmTotp(User $user): void {
+        public function confirmTwoFactor(User $user): void {
             $sql = "UPDATE `z_user`
                     SET `totp_confirmed_at` = CURRENT_TIMESTAMP()
                     WHERE `id` = ?

@@ -168,7 +168,7 @@
             ]);
         }
 
-        // GET /TwoFactorProbe/expireChallenge/<userId>, php clock like create2FAChallenge()
+        // GET /TwoFactorProbe/expireChallenge/<userId>, php clock like createTwoFactorChallenge()
         public function action_expireChallenge(Request $req, Response $res): void {
             $userId = (int) $req->getParameters(0, 1);
 

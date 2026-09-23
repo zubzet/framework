@@ -57,7 +57,7 @@ Z = {
           dat = JSON.parse(data);
 
           if(dat.result == "error" && dat.twoFactorRenew == true) {
-            Z.Presets.Refresh2FA(() => {
+            Z.Presets.RefreshTwoFactor(() => {
               alert("Two factor check was successful. Please try again.");
             });
             return;
@@ -90,7 +90,7 @@ Z = {
             if(typeof data !== 'object') {
               dat = JSON.parse(data);
               if(dat.result == "error" && dat.twoFactorRenew == true) {
-                Z.Presets.Refresh2FA(() => {
+                Z.Presets.RefreshTwoFactor(() => {
                   alert("Two factor check was successful. Please try again.");
                 });
                 return;
@@ -137,7 +137,7 @@ Z = {
     error_invalid_email: "This email is not allowed!",
     error_too_many_login_tries: "Too many login tries. Try again later.",
     error_login: "Username or password is wrong",
-    error_2fa_incomplete: "Enter all six digits.",
+    error_two_factor_incomplete: "Enter all six digits.",
     choose_file: "Choose file",
     CEDRemove: "✕"
   },
@@ -147,11 +147,11 @@ Z = {
   Presets: {
     /**
      * Opens the two factor modal and hands the six digits to `submit` once they
-     * are in. The markup comes from x-zubzet::authentication.2fa, which
+     * are in. The markup comes from x-zubzet::authentication.two-factor, which
      * x-zubzet::body renders on every page.
      * @param {function} submit Called with the code as its only argument
      */
-    Open2FAModal(submit) {
+    OpenTwoFactorModal(submit) {
       if(!$("#z-two-factor-modal").length) {
         var template = document.getElementById("z-two-factor-template");
         // The markup ships with x-zubzet::body, which this page does not render
@@ -163,24 +163,24 @@ Z = {
       var modal = $("#z-two-factor-modal");
       var boxes = $("#z-two-factor-digits .z-two-factor-digit");
 
-      Z.Presets.sending2FA = false;
+      Z.Presets.sendingTwoFactor = false;
       boxes.val("").removeClass("border-danger");
       $("#z-two-factor-modal-send").prop("disabled", false);
       $("#z-two-factor-modal-error").addClass("d-none").text("");
 
       // Namespaced, so reopening the modal replaces these handlers rather than
       // stacking a second set on top of the first
-      boxes.off(".z2fa");
-      $("#z-two-factor-modal-send, #z-two-factor-modal-cancel").off(".z2fa");
+      boxes.off(".zTwoFactor");
+      $("#z-two-factor-modal-send, #z-two-factor-modal-cancel").off(".zTwoFactor");
 
       var send = () => {
         // The button and the last digit both reach this
-        if(Z.Presets.sending2FA) return;
+        if(Z.Presets.sendingTwoFactor) return;
 
         var code = boxes.map((_, box) => box.value).get().join("");
-        if(code.length < boxes.length) return Z.Presets.Fail2FA(Z.Lang.error_2fa_incomplete);
+        if(code.length < boxes.length) return Z.Presets.FailTwoFactor(Z.Lang.error_two_factor_incomplete);
 
-        Z.Presets.sending2FA = true;
+        Z.Presets.sendingTwoFactor = true;
         $("#z-two-factor-modal-send").prop("disabled", true);
         $("#z-two-factor-modal-error").addClass("d-none");
 
@@ -201,14 +201,14 @@ Z = {
         if(index + digits.length == boxes.length) send();
       };
 
-      boxes.on("input.z2fa", function() {
+      boxes.on("input.zTwoFactor", function() {
         // Emptied first, so anything that is not a digit is simply dropped
         var typed = this.value;
         this.value = "";
         fill(boxes.index(this), typed);
       });
 
-      boxes.on("keydown.z2fa", function(e) {
+      boxes.on("keydown.zTwoFactor", function(e) {
         if(e.key != "Backspace" || this.value != "") return;
 
         // eq(-1) would wrap around to the last box
@@ -221,13 +221,13 @@ Z = {
 
       // maxlength cuts a paste down to one character before `input` sees it,
       // so the whole code is taken off the clipboard instead
-      boxes.on("paste.z2fa", function(e) {
+      boxes.on("paste.zTwoFactor", function(e) {
         e.preventDefault();
         fill(boxes.index(this), (e.originalEvent.clipboardData || window.clipboardData).getData("text"));
       });
 
-      $("#z-two-factor-modal-send").on("click.z2fa", send);
-      $("#z-two-factor-modal-cancel").on("click.z2fa", () => modal.modal("hide"));
+      $("#z-two-factor-modal-send").on("click.zTwoFactor", send);
+      $("#z-two-factor-modal-cancel").on("click.zTwoFactor", () => modal.modal("hide"));
 
       // Registered before showing: the modal carries no `fade`, so bootstrap
       // fires this synchronously from inside modal("show")
@@ -239,10 +239,10 @@ Z = {
      * Puts the modal back into a state where another code can be typed
      * @param {string} message What went wrong, shown above the boxes
      */
-    Fail2FA(message) {
+    FailTwoFactor(message) {
       var boxes = $("#z-two-factor-digits .z-two-factor-digit");
 
-      Z.Presets.sending2FA = false;
+      Z.Presets.sendingTwoFactor = false;
       $("#z-two-factor-modal-send").prop("disabled", false);
       $("#z-two-factor-modal-error").text(message).removeClass("d-none");
       boxes.val("").addClass("border-danger").eq(0).focus();
@@ -254,15 +254,15 @@ Z = {
      * @param {string} challenge The challenge token the login answered with
      * @param {string} redirect Where to go once the code was accepted. Empty reloads
      */
-    Show2FA(challenge, redirect = "") {
-      Z.Presets.Open2FAModal((code) => {
+    ShowTwoFactor(challenge, redirect = "") {
+      Z.Presets.OpenTwoFactorModal((code) => {
         // The challenge goes in the body rather than the url, so it stays out of
         // access logs and browser history
         Z.Request.root("_zubzet/two-factor/login", null, {
           challenge: challenge,
           code: code,
         }, (res) => {
-          if(res.result != "success") return Z.Presets.Fail2FA(res.message);
+          if(res.result != "success") return Z.Presets.FailTwoFactor(res.message);
 
           $("#z-two-factor-modal").modal("hide");
 
@@ -282,10 +282,10 @@ Z = {
      * action behind a recent two factor check.
      * @param {function} onDone Called once the code was accepted. Omitted reloads
      */
-    Refresh2FA(onDone = null) {
-      Z.Presets.Open2FAModal((code) => {
+    RefreshTwoFactor(onDone = null) {
+      Z.Presets.OpenTwoFactorModal((code) => {
         Z.Request.root("_zubzet/two-factor/refresh", null, {code: code}, (res) => {
-          if(res.result != "success") return Z.Presets.Fail2FA(res.message);
+          if(res.result != "success") return Z.Presets.FailTwoFactor(res.message);
 
           $("#z-two-factor-modal").modal("hide");
 
@@ -321,7 +321,7 @@ Z = {
 
         if (res.result == "success") {
           if(res.twoFactor) {
-            this.Show2FA(res.challenge, redirect);
+            this.ShowTwoFactor(res.challenge, redirect);
             return;
           }
 
@@ -1105,7 +1105,7 @@ class ZForm {
           this.formErrorHook(json);
         }
       } else if (json.twoFactorRenew == true) {
-        Z.Presets.Refresh2FA(() => {
+        Z.Presets.RefreshTwoFactor(() => {
           alert("Two factor check was successful. Please try again.");
         });
       } else if (json.result == "error") {

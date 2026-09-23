@@ -4,8 +4,8 @@ describe('Two factor login', () => {
     });
 
     const PASSWORD = 'password';
-    const WITH_2FA = 'twofactor_login@cypress.test';
-    const WITHOUT_2FA = 'twofactor_enroll@cypress.test';
+    const WITH_TWO_FACTOR = 'twofactor_login@cypress.test';
+    const WITHOUT_TWO_FACTOR = 'twofactor_enroll@cypress.test';
 
     const probe = (path) => cy.request(path).then((res) => JSON.parse(res.body));
     const code = (userId, offset = 0) =>
@@ -43,7 +43,7 @@ describe('Two factor login', () => {
     // ---------------------------------------------------------------------
     describe('the challenge', () => {
         it('answers a correct password with a challenge instead of a session', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 expect(out.result).to.eq('success');
                 expect(out.twoFactor).to.be.true;
                 expect(out.challenge).to.match(/^zub-[0-9a-f]{64}$/);
@@ -53,7 +53,7 @@ describe('Two factor login', () => {
         });
 
         it('logs an account without two factor straight in', () => {
-            login(WITHOUT_2FA).then((out) => {
+            login(WITHOUT_TWO_FACTOR).then((out) => {
                 expect(out.result).to.eq('success');
                 expect(out.twoFactor).to.be.undefined;
                 expect(out.challenge).to.be.undefined;
@@ -65,7 +65,7 @@ describe('Two factor login', () => {
         it('asks for no code while an enrollment is unconfirmed', () => {
             cy.request('/TwoFactorProbe/setState/850?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&confirmed=0');
 
-            login(WITHOUT_2FA).then((out) => {
+            login(WITHOUT_TWO_FACTOR).then((out) => {
                 expect(out.result).to.eq('success');
                 expect(out.twoFactor).to.be.undefined;
             });
@@ -74,14 +74,14 @@ describe('Two factor login', () => {
         });
 
         it('hands out no challenge for a wrong password', () => {
-            login(WITH_2FA, 'not the password').then((out) => {
+            login(WITH_TWO_FACTOR, 'not the password').then((out) => {
                 expect(out).to.include({ result: 'error', message: 'Username or password is wrong' });
                 expect(out.challenge).to.be.undefined;
             });
         });
 
         it('expires the challenge ten minutes out', () => {
-            login(WITH_2FA).then(() => {
+            login(WITH_TWO_FACTOR).then(() => {
                 probe('/TwoFactorProbe/challenge/852').then((challenge) => {
                     expect(challenge.found).to.be.true;
                     expect(challenge.active).to.be.true;
@@ -97,7 +97,7 @@ describe('Two factor login', () => {
     // ---------------------------------------------------------------------
     describe('redeeming it', () => {
         it('starts the session on a correct code', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 code(852).then((value) => {
                     redeem({ challenge: out.challenge, code: value }).then((redeemed) => {
                         expect(redeemed.result).to.eq('success');
@@ -109,7 +109,7 @@ describe('Two factor login', () => {
         });
 
         it('stamps the fresh check on the new session', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 code(852).then((value) => {
                     redeem({ challenge: out.challenge, code: value });
                 });
@@ -123,7 +123,7 @@ describe('Two factor login', () => {
         });
 
         it('rejects a wrong code without starting a session', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 redeem({ challenge: out.challenge, code: '000000' }).then((redeemed) => {
                     expect(redeemed).to.include({ result: 'error', message: 'Invalid code' });
                 });
@@ -133,7 +133,7 @@ describe('Two factor login', () => {
         });
 
         it('rejects a code that belongs to another account', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 code(857).then((value) => {
                     redeem({ challenge: out.challenge, code: value }).then((redeemed) => {
                         expect(redeemed).to.include({ result: 'error', message: 'Invalid code' });
@@ -145,7 +145,7 @@ describe('Two factor login', () => {
         });
 
         it('keeps the challenge usable after a wrong code', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 redeem({ challenge: out.challenge, code: '000000' });
 
                 code(852).then((value) => {
@@ -157,7 +157,7 @@ describe('Two factor login', () => {
         });
 
         it('burns the challenge once it was redeemed', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 code(852).then((value) => {
                     redeem({ challenge: out.challenge, code: value });
 
@@ -177,7 +177,7 @@ describe('Two factor login', () => {
         });
 
         it('rejects a challenge that ran out of time', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 cy.request('/TwoFactorProbe/expireChallenge/852');
 
                 code(852).then((value) => {
@@ -203,7 +203,7 @@ describe('Two factor login', () => {
         });
 
         it('requires a code', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 redeem({ challenge: out.challenge }).then((redeemed) => {
                     expect(redeemed).to.include({ result: 'error', message: 'Missing code' });
                 });
@@ -211,7 +211,7 @@ describe('Two factor login', () => {
         });
 
         it('accepts a code one step either side', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 code(852, -30).then((value) => {
                     redeem({ challenge: out.challenge, code: value }).then((redeemed) => {
                         expect(redeemed.result).to.eq('success');
@@ -225,7 +225,7 @@ describe('Two factor login', () => {
     describe('the login limit', () => {
         // maxLoginTriesPerTimespan = 5 over maxLoginTriesTimespan = 3 minutes
         it('counts a wrong code against it and blocks the account', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 for(let attempt = 0; attempt < 6; attempt++) {
                     redeem({ challenge: out.challenge, code: '000000' });
                 }
@@ -240,13 +240,13 @@ describe('Two factor login', () => {
         });
 
         it('turns the password step away too once the codes used the budget up', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 for(let attempt = 0; attempt < 6; attempt++) {
                     redeem({ challenge: out.challenge, code: '000000' });
                 }
             });
 
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 expect(out).to.include({
                     result: 'error',
                     message: 'Too many login tries. Try again later.',
@@ -255,7 +255,7 @@ describe('Two factor login', () => {
         });
 
         it('lets a correct code through while the budget lasts', () => {
-            login(WITH_2FA).then((out) => {
+            login(WITH_TWO_FACTOR).then((out) => {
                 redeem({ challenge: out.challenge, code: '000000' });
                 redeem({ challenge: out.challenge, code: '000000' });
 
@@ -274,7 +274,7 @@ describe('Two factor login', () => {
             cy.visit('/login');
             cy.intercept('POST', '**/two-factor/login').as('redeem');
 
-            cy.query('username').type(WITH_2FA);
+            cy.query('username').type(WITH_TWO_FACTOR);
             cy.query('password').type(PASSWORD);
             cy.query('btn-login').click();
 
@@ -291,7 +291,7 @@ describe('Two factor login', () => {
         it('shows the error in the modal and lets another code be typed', () => {
             cy.visit('/login');
 
-            cy.query('username').type(WITH_2FA);
+            cy.query('username').type(WITH_TWO_FACTOR);
             cy.query('password').type(PASSWORD);
             cy.query('btn-login').click();
 
@@ -304,7 +304,7 @@ describe('Two factor login', () => {
         it('refuses an incomplete code without asking the server', () => {
             cy.visit('/login');
 
-            cy.query('username').type(WITH_2FA);
+            cy.query('username').type(WITH_TWO_FACTOR);
             cy.query('password').type(PASSWORD);
             cy.query('btn-login').click();
 
@@ -318,7 +318,7 @@ describe('Two factor login', () => {
             cy.visit('/login');
             cy.intercept('POST', '**/login').as('uilogin');
 
-            cy.query('username').type(WITHOUT_2FA);
+            cy.query('username').type(WITHOUT_TWO_FACTOR);
             cy.query('password').type(PASSWORD);
             cy.query('btn-login').click();
 
