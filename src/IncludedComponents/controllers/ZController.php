@@ -12,6 +12,9 @@
      */
     class ZController extends z_controller {
 
+        // An organization invite stays valid for seven days
+        private const ORGANIZATION_INVITE_LIFETIME = TIMESPAN_DAY_7;
+
         public function __construct(Request $req, Response $res) {
             $res->setDefaultLayout("layout/z_admin_layout.php");
         }
@@ -165,6 +168,8 @@
             if(!user()->isLoggedIn) return $res->reroute(["login", "index"]);
 
             $action = $req->getParameters(0, 1);
+            $target = $req->getParameters(1, 1);
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
 
             if("invite" === $action && $req->hasFormData("z-organization-invite")) {
                 $req->checkPermission("z.organization.invite");
@@ -176,17 +181,16 @@
                 if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 
                 $email = $req->getPost("email");
-                $userOrganization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
 
                 // Only an active account outside any organization can be invited, accepting would fail otherwise
                 $invitee = User::byEmail($email);
-                if(is_null($userOrganization) || is_null($invitee) || !is_null($invitee->organization())) {
+                if(is_null($organization) || is_null($invitee) || !is_null($invitee->organization())) {
                     $formResult->addCustomError("email", "user_unavailable");
                 } else {
                     // One open invite per address, an expired one no longer counts
                     $openInvites = array_filter(
-                        model("z_organization")->getInvitesByEmail($userOrganization, $email),
-                        fn($invite) => strtotime($invite["created"]) + TIMESPAN_DAY_7 >= time(),
+                        model("z_organization")->getInvitesByEmail($organization, $email),
+                        fn($invite) => strtotime($invite["created"]) + self::ORGANIZATION_INVITE_LIFETIME >= time(),
                     );
 
                     if(!empty($openInvites)) $formResult->addCustomError("email", "already_invited");
@@ -194,29 +198,30 @@
 
                 if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 
-                $token = model("z_organization")->createInvite($userOrganization, $email);
-
-                $inviteLink = config("root") . "z/organization/invitation/" . $token;
+                $token = model("z_organization")->createInvite($organization, $email);
 
                 return $res->success([
-                    "invite_link" => $inviteLink
+                    "invite_link" => config("root") . "z/organization/invitation/" . $token,
                 ]);
-            } else if("revoke" === $action) {
+            }
+
+            if("revoke" === $action) {
                 $req->checkPermission("z.organization.invite");
 
-                $invite = model("z_organization")->getInviteById((int) $req->getParameters(1, 1));
-
                 // Only invites of the own organization may be revoked
-                if(is_null($invite) || $invite["organizationId"] !== user()->orgId) return $res->error("invalid_invite");
+                $invite = model("z_organization")->getInviteById((int) $target);
+                if(is_null($invite) || $invite["organizationId"] !== $organization?->id()) return $res->error("invalid_invite");
 
                 model("z_organization")->deactivateInvite($invite["id"]);
                 return $res->success();
-            } else if("roles" === $action && $req->hasFormData("z-organization-member-" . $req->getParameters(1, 1))) {
+            }
+
+            if("roles" === $action && $req->hasFormData("z-organization-member-" . $target)) {
                 $req->checkPermission("z.organization.roles");
 
                 // Only members of the own organization
-                $member = User::byId((int) $req->getParameters(1, 1));
-                if(is_null($member) || is_null(user()->orgId) || $member->organization()?->id() !== user()->orgId) {
+                $member = User::byId((int) $target);
+                if(is_null($organization) || is_null($member) || $member->organization()?->id() !== $organization->id()) {
                     return $res->error("invalid_member");
                 }
 
@@ -235,10 +240,11 @@
                 }
 
                 return $res->success();
-            } else if("rename" === $action && $req->hasFormData("z-organization-rename")) {
+            }
+
+            if("rename" === $action && $req->hasFormData("z-organization-rename")) {
                 $req->checkPermission("z.organization.rename");
 
-                $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
                 if(is_null($organization)) return $res->error("invalid_organization");
 
                 $formResult = $req->validateForm([
@@ -249,22 +255,23 @@
 
                 $organization->updateName($req->getPost("name"));
                 return $res->success();
-            } else if("invitation" === $action) {
+            }
+
+            if("invitation" === $action) {
                 $isAccept = "accept" === $req->getParameters(2, 1);
 
-                $token = $req->getParameters(1, 1);
-                $invite = empty($token) ? null : model("z_organization")->getInviteByToken($token);
-                $organization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
+                $invite = empty($target) ? null : model("z_organization")->getInviteByToken($target);
+                $invitedOrganization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
                 $user = User::byId(user()->userId);
 
-                // Unknown, expired after seven days, meant for another address or its organization is gone
+                // Unknown, expired, meant for another address or its organization is gone
                 $error = null;
-                if(is_null($organization)
-                    || strtotime($invite["created"]) + TIMESPAN_DAY_7 < time()
+                if(is_null($invitedOrganization)
+                    || strtotime($invite["created"]) + self::ORGANIZATION_INVITE_LIFETIME < time()
                     || 0 !== strcasecmp($invite["email"], $user->email())
                 ) {
                     $error = "invalid_token";
-                } else if(!is_null($user->organization())) {
+                } else if(!is_null($organization)) {
                     $error = "already_in_organization";
                 }
 
@@ -275,7 +282,7 @@
                 }
 
                 if($isAccept) {
-                    $user->updateOrganization($organization);
+                    $user->updateOrganization($invitedOrganization);
                     model("z_organization")->deactivateInvite($invite["id"]);
 
                     return $res->success();
@@ -284,23 +291,26 @@
                 return $res->render("administration/organization_invitation", [
                     "title" => "Invitation",
                     "invite" => $invite,
+                    // name() is typed string, an organization may have none
+                    "organizationName" => $invitedOrganization->getField("name"),
                 ], "layout/min_layout.php");
             }
 
             $invites = [];
-            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
             if(!is_null($organization) && $req->checkPermission("z.organization.invite", true)) {
                 foreach(model("z_organization")->getInvitesByOrganization($organization) as $invite) {
-                    // An invite is valid for seven days, expired ones are not listed
-                    $invite["expires_at"] = strtotime($invite["created"]) + TIMESPAN_DAY_7;
+                    // Expired invites are not listed
+                    $invite["expires_at"] = strtotime($invite["created"]) + self::ORGANIZATION_INVITE_LIFETIME;
                     if($invite["expires_at"] >= time()) $invites[] = $invite;
                 }
             }
 
             $members = [];
-            $roleFood = "[]";
+            $roleFood = [];
             if(!is_null($organization) && $req->checkPermission("z.organization.roles", true)) {
-                $roleFood = $this->makeFood(model("z_organization")->getAssignableRoles(), "id", "name");
+                foreach(model("z_organization")->getAssignableRoles() as $role) {
+                    $roleFood[] = ["value" => $role["id"], "text" => $role["name"]];
+                }
 
                 $heldRoleIds = [];
                 foreach(model("z_organization")->getAssignedRoles($organization) as $assignment) {

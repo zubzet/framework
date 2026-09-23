@@ -15,9 +15,10 @@
 
         <script>
             $(() => {
-                var food = <?= $food ?>;
+                // Role names and addresses come from users, they must not close the script tag
+                var food = <?= json_encode($food, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 
-                <?= json_encode($members) ?>.forEach((member) => {
+                <?= json_encode($members, JSON_HEX_TAG | JSON_HEX_AMP) ?>.forEach((member) => {
                     var form = Z.Forms.create({
                         dom: "z-organization-member-" + member.id + "-form",
                         name: "z-organization-member-" + member.id,
