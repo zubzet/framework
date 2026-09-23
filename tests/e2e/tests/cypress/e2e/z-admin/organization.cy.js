@@ -83,9 +83,11 @@ describe('Z-Admin - Organization', () => {
             cy.visit('/z/organization');
             cy.intercept('POST', '/z/organization/rename').as('rename');
 
+            cy.query('btn-open-organization-rename').click();
             cy.form('name').should('have.value', 'zorg_Rename').clear().type('zorg_Renamed');
             cy.get('#z-organization-rename-form .btn-primary').click();
             cy.wait('@rename');
+            cy.get('.z-organization-name').should('have.text', 'zorg_Renamed');
 
             cy.visit('/z/organization');
             cy.form('name').should('have.value', 'zorg_Renamed');
@@ -137,6 +139,7 @@ describe('Z-Admin - Organization', () => {
             cy.visit('/z/organization');
             cy.intercept('POST', '/z/organization/invite').as('invite');
 
+            cy.query('btn-open-organization-invite').click();
             cy.form('email').type('zorg_invitable@cypress.test');
             cy.get('#z-organization-invite-form .btn-primary').click();
             cy.wait('@invite');
@@ -149,6 +152,7 @@ describe('Z-Admin - Organization', () => {
             cy.visit('/z/organization');
             cy.intercept('POST', '/z/organization/invite').as('invite');
 
+            cy.query('btn-open-organization-invite').click();
             cy.form('email').type('zorg_nobody@cypress.test');
             cy.get('#z-organization-invite-form .btn-primary').click();
             cy.wait('@invite');
@@ -267,6 +271,7 @@ describe('Z-Admin - Organization', () => {
             cy.visit('/z/organization');
             cy.intercept('POST', '/z/organization/roles/801').as('roles');
 
+            cy.query('organization-member-801').find('[data-test="btn-edit-organization-member-roles"]').click();
             cy.get('#z-organization-member-801-form select[name=roles]').select('zorg_Assignable_Role');
             cy.get('#z-organization-member-801-form .btn-primary').click();
             cy.wait('@roles');
