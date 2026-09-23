@@ -13,6 +13,13 @@
 
             var inputName = form.createField({name: "name", type: "name", text: <?= json_encode(__("admin.roles.name")) ?>, value: "<?php echo $opt["name"]; ?>"});
 
+            form.createField({
+                name: "is_org_assignable",
+                type: "checkbox",
+                text: "Organizations may assign this role to their members",
+                value: <?php echo json_encode($opt["isOrgAssignable"]); ?>,
+            });
+
             form.addSeperator();
 
             var ced = form.createCED({

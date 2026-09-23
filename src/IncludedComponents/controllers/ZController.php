@@ -1,5 +1,7 @@
 <?php
 
+    use ZubZet\Framework\Authentication\Organization;
+    use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
@@ -159,6 +161,170 @@
             ]);
         }
 
+        public function action_organization(Request $req, Response $res) {
+            if(!user()->isLoggedIn) return $res->reroute(["login", "index"]);
+
+            $action = $req->getParameters(0, 1);
+
+            if("invite" === $action && $req->hasFormData("z-organization-invite")) {
+                $req->checkPermission("z.organization.invite");
+
+                $formResult = $req->validateForm([
+                    (new FormField("email"))->required()->filter(FILTER_VALIDATE_EMAIL),
+                ]);
+
+                if($formResult->hasErrors) return $res->formErrors($formResult->errors);
+
+                $email = $req->getPost("email");
+                $userOrganization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+
+                // Only an active account outside any organization can be invited, accepting would fail otherwise
+                $invitee = User::byEmail($email);
+                if(is_null($userOrganization) || is_null($invitee) || !is_null($invitee->organization())) {
+                    $formResult->addCustomError("email", "user_unavailable");
+                } else {
+                    // One open invite per address, an expired one no longer counts
+                    $openInvites = array_filter(
+                        model("z_organization")->getInvitesByEmail($userOrganization, $email),
+                        fn($invite) => strtotime($invite["created"]) + TIMESPAN_DAY_7 >= time(),
+                    );
+
+                    if(!empty($openInvites)) $formResult->addCustomError("email", "already_invited");
+                }
+
+                if($formResult->hasErrors) return $res->formErrors($formResult->errors);
+
+                $token = model("z_organization")->createInvite($userOrganization, $email);
+
+                $inviteLink = config("root") . "z/organization/invitation/" . $token;
+
+                return $res->success([
+                    "invite_link" => $inviteLink
+                ]);
+            } else if("revoke" === $action) {
+                $req->checkPermission("z.organization.invite");
+
+                $invite = model("z_organization")->getInviteById((int) $req->getParameters(1, 1));
+
+                // Only invites of the own organization may be revoked
+                if(is_null($invite) || $invite["organizationId"] !== user()->orgId) return $res->error("invalid_invite");
+
+                model("z_organization")->deactivateInvite($invite["id"]);
+                return $res->success();
+            } else if("roles" === $action && $req->hasFormData("z-organization-member-" . $req->getParameters(1, 1))) {
+                $req->checkPermission("z.organization.roles");
+
+                // Only members of the own organization
+                $member = User::byId((int) $req->getParameters(1, 1));
+                if(is_null($member) || is_null(user()->orgId) || $member->organization()?->id() !== user()->orgId) {
+                    return $res->error("invalid_member");
+                }
+
+                // Only roles released to organizations
+                $assignableRoleIds = array_column(model("z_organization")->getAssignableRoles(), "id");
+                $formResult = $req->validateForm([
+                    (new FormField("roles"))->in($assignableRoleIds),
+                ]);
+
+                if($formResult->hasErrors) return $res->formErrors($formResult->errors);
+
+                // The selection replaces the assignable roles the member holds, an empty one is not posted at all
+                $selectedRoleIds = (array) $req->getPost("roles", []);
+                foreach($assignableRoleIds as $roleId) {
+                    model("z_user")->changeRoleStateByUserIdAndRoleId($member->id(), $roleId, in_array($roleId, $selectedRoleIds));
+                }
+
+                return $res->success();
+            } else if("rename" === $action && $req->hasFormData("z-organization-rename")) {
+                $req->checkPermission("z.organization.rename");
+
+                $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+                if(is_null($organization)) return $res->error("invalid_organization");
+
+                $formResult = $req->validateForm([
+                    (new FormField("name"))->required()->length(3, 255),
+                ]);
+
+                if($formResult->hasErrors) return $res->formErrors($formResult->errors);
+
+                $organization->updateName($req->getPost("name"));
+                return $res->success();
+            } else if("invitation" === $action) {
+                $isAccept = "accept" === $req->getParameters(2, 1);
+
+                $token = $req->getParameters(1, 1);
+                $invite = empty($token) ? null : model("z_organization")->getInviteByToken($token);
+                $organization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
+                $user = User::byId(user()->userId);
+
+                // Unknown, expired after seven days, meant for another address or its organization is gone
+                $error = null;
+                if(is_null($organization)
+                    || strtotime($invite["created"]) + TIMESPAN_DAY_7 < time()
+                    || 0 !== strcasecmp($invite["email"], $user->email())
+                ) {
+                    $error = "invalid_token";
+                } else if(!is_null($user->organization())) {
+                    $error = "already_in_organization";
+                }
+
+                if(!is_null($error)) {
+                    // The accept button shows the message, the page answers like an unknown address
+                    if($isAccept) return $res->error($error);
+                    return zubzet()->executePath(["error", "404"]);
+                }
+
+                if($isAccept) {
+                    $user->updateOrganization($organization);
+                    model("z_organization")->deactivateInvite($invite["id"]);
+
+                    return $res->success();
+                }
+
+                return $res->render("administration/organization_invitation", [
+                    "title" => "Invitation",
+                    "invite" => $invite,
+                ], "layout/min_layout.php");
+            }
+
+            $invites = [];
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+            if(!is_null($organization) && $req->checkPermission("z.organization.invite", true)) {
+                foreach(model("z_organization")->getInvitesByOrganization($organization) as $invite) {
+                    // An invite is valid for seven days, expired ones are not listed
+                    $invite["expires_at"] = strtotime($invite["created"]) + TIMESPAN_DAY_7;
+                    if($invite["expires_at"] >= time()) $invites[] = $invite;
+                }
+            }
+
+            $members = [];
+            $roleFood = "[]";
+            if(!is_null($organization) && $req->checkPermission("z.organization.roles", true)) {
+                $roleFood = $this->makeFood(model("z_organization")->getAssignableRoles(), "id", "name");
+
+                $heldRoleIds = [];
+                foreach(model("z_organization")->getAssignedRoles($organization) as $assignment) {
+                    $heldRoleIds[$assignment["user"]][] = $assignment["role"];
+                }
+
+                foreach($organization->getUsers() as $member) {
+                    $members[] = [
+                        "id" => $member->id(),
+                        // email() is typed string, an account may have none
+                        "email" => $member->getField("email"),
+                        "roles" => $heldRoleIds[$member->id()] ?? [],
+                    ];
+                }
+            }
+
+            return $res->render("administration/organization.php", [
+                "organizationName" => $organization?->getField("name"),
+                "invites" => $invites,
+                "members" => $members,
+                "roleFood" => $roleFood,
+            ]);
+        }
+
         // Action for the role configuration page
         public function action_roles(Request $req, Response $res) {
             $req->checkPermission("admin.roles.list");
@@ -191,6 +357,7 @@
             if($req->hasFormData()) {
                 $formResult = $req->validateForm([
                     (new FormField("name"))->required()->length(3, 100),
+                    (new FormField("is_org_assignable"))->required()->in(["0", "1"]),
                 ]);
                 $subformResult = $req->validateCED("permissions", [
                     (new FormField("name"))->required()->length(3, 100),
@@ -207,6 +374,7 @@
 
             return $res->render("administration/roles.php", [
                 "name" => $role["name"],
+                "isOrgAssignable" => (bool) $role["is_org_assignable"],
                 "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"]),
             ]);
         }
