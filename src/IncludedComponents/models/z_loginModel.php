@@ -101,10 +101,13 @@
          * @internal
          */
         public function setSessionExpiresAt(Session|APIKey $session, ?DateTime $expiresAt): void {
-            $sql = "UPDATE `z_logintoken`
-                    SET `expires_at` = ?
-                    WHERE `id` = ?";
-            $this->exec($sql, "si", $expiresAt?->format("Y-m-d H:i:s"), $session->id());
+            $query = $this->dbUpdate("z_logintoken", [
+                "expires_at" => $expiresAt?->format("Y-m-d H:i:s"),
+            ])->where([
+                "id" => $session->id(),
+            ]);
+
+            $this->exec($query);
         }
 
         /**
@@ -162,7 +165,7 @@
             $this->exec($sql, "i", $user->id());
         }
 
-        function createTwoFactorChallenge(int $userId): string {
+        public function createTwoFactorChallenge(int $userId): string {
             $token = "zub-".bin2hex(random_bytes(32));
 
             $userAgent = request()->userAgent();
@@ -182,7 +185,7 @@
             return $token;
         }
 
-        function invalidateTwoFactorChallenge(int $id): void {
+        public function invalidateTwoFactorChallenge(int $id): void {
             $query = $this->dbUpdate("z_2fa_challenge", [
                 "active" => 0
             ])->where([
@@ -198,7 +201,7 @@
          * @param string $challenge The challenge token
          * @return ?array The challenge data, or null if not found
          */
-        function getTwoFactorChallenge(string $challenge): ?array {
+        public function getTwoFactorChallenge(string $challenge): ?array {
             $query = $this->dbSelect("*", "z_2fa_challenge")->where([
                 "token" => $challenge,
                 "active" => 1,
@@ -261,26 +264,31 @@
 
         public function spendTwoFactorTry(Session|APIKey $session): int {
             // Decrease the remaining two factor tries by 1 when over 0
-            $sql = "UPDATE `z_logintoken`
-                    SET `remaining_2fa_tries` = `remaining_2fa_tries` - 1
-                    WHERE `id` = ?
-                    AND `remaining_2fa_tries` > 0";
-            $this->exec($sql, "i", $session->id());
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["remaining_2fa_tries" => $query->newExpr("remaining_2fa_tries - 1")]);
+            $query->where([
+                "id" => $session->id(),
+                "remaining_2fa_tries >" => 0,
+            ]);
 
-            $sql = "SELECT `remaining_2fa_tries`
-                    FROM `z_logintoken`
-                    WHERE `id` = ?";
-            return (int) $this->exec($sql, "i", $session->id())->resultToLine()["remaining_2fa_tries"];
+            $this->exec($query);
+
+            $query = $this->dbSelect("remaining_2fa_tries", "z_logintoken")->where([
+                "id" => $session->id(),
+            ]);
+
+            return (int) $this->exec($query)->resultToLine()["remaining_2fa_tries"];
         }
 
         /**
          * Hands the session its full budget of two factor tries back
          */
         public function resetTwoFactorTries(Session|APIKey $session): void {
-            $sql = "UPDATE `z_logintoken`
-                    SET `remaining_2fa_tries` = DEFAULT(`remaining_2fa_tries`)
-                    WHERE `id` = ?";
-            $this->exec($sql, "i", $session->id());
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["remaining_2fa_tries" => $query->newExpr("DEFAULT(remaining_2fa_tries)")]);
+            $query->where(["id" => $session->id()]);
+
+            $this->exec($query);
         }
 
         /**
@@ -532,11 +540,14 @@
          * @internal
          */
         public function setTwoFactorSecret(User $user, ?string $secret): void {
-            $sql = "UPDATE `z_user`
-                    SET `totp_secret` = ?,
-                        `totp_confirmed_at` = NULL
-                    WHERE `id` = ?";
-            $this->exec($sql, "si", $secret, $user->id());
+            $query = $this->dbUpdate("z_user", [
+                "totp_secret" => $secret,
+                "totp_confirmed_at" => null,
+            ])->where([
+                "id" => $user->id(),
+            ]);
+
+            $this->exec($query);
         }
 
         /**
@@ -546,11 +557,14 @@
          * @internal
          */
         public function confirmTwoFactor(User $user): void {
-            $sql = "UPDATE `z_user`
-                    SET `totp_confirmed_at` = CURRENT_TIMESTAMP()
-                    WHERE `id` = ?
-                    AND `totp_secret` IS NOT NULL";
-            $this->exec($sql, "i", $user->id());
+            $query = $this->dbUpdate("z_user");
+            $query->set(["totp_confirmed_at" => $query->func()->now()]);
+            $query->where([
+                "id" => $user->id(),
+                "totp_secret IS NOT" => null,
+            ]);
+
+            $this->exec($query);
         }
 
     }
