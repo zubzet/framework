@@ -501,7 +501,7 @@ class User extends AuthenticationObject {
         $issuer = str_replace([":", "%3A", "%3a"], "", config("pageName", default: "ZubZet"));
         $totp->setIssuer($issuer);
 
-        model("z_login")->setTotpSecret($this, $secret);
+        model("z_login")->setTwoFactorSecret($this, $secret);
         $this->clearFields();
 
         return $totp;
@@ -540,7 +540,7 @@ class User extends AuthenticationObject {
         if($this->hasTwoFactor()) return false;
         if(!$this->verifyTwoFactorCode($code)) return false;
 
-        model("z_login")->confirmTotp($this);
+        model("z_login")->confirmTwoFactor($this);
         $this->clearFields();
 
         return true;
@@ -552,7 +552,7 @@ class User extends AuthenticationObject {
      * @return void
      */
     public function disableTwoFactor(): void {
-        model("z_login")->setTotpSecret($this, null);
+        model("z_login")->setTwoFactorSecret($this, null);
         $this->clearFields();
     }
 }

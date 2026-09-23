@@ -10,6 +10,6 @@
     </script>
 @endauth
 
-<x-zubzet::authentication.2fa/>
+<x-zubzet::authentication.two-factor/>
 
 <?= \ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge::renderBody(); ?>
