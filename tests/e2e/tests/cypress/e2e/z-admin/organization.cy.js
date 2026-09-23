@@ -15,7 +15,7 @@ describe('Z-Admin - Organization', () => {
 
     describe('Navigation', () => {
         it('links the page for users with z.organization.invite', () => {
-            cy.loginAs('zorg_admin');
+            cy.loginAs('zorg_manager');
             cy.visit('/z/organization');
 
             cy.query('btn-organization').should('have.attr', 'href').and('match', /\/z\/organization$/);
@@ -66,7 +66,7 @@ describe('Z-Admin - Organization', () => {
         });
 
         it('shows every card with every permission', () => {
-            cy.loginAs('zorg_admin');
+            cy.loginAs('zorg_manager');
             cy.visit('/z/organization');
 
             cy.get('#z-organization-rename-form').should('exist');
@@ -125,7 +125,7 @@ describe('Z-Admin - Organization', () => {
     });
 
     describe('Invite', () => {
-        beforeEach(() => cy.loginAs('zorg_admin'));
+        beforeEach(() => cy.loginAs('zorg_manager'));
 
         const invite = (email) => post('/z/organization/invite', {
             isFormData: 1,
@@ -211,7 +211,7 @@ describe('Z-Admin - Organization', () => {
     });
 
     describe('Open invitations', () => {
-        beforeEach(() => cy.loginAs('zorg_admin'));
+        beforeEach(() => cy.loginAs('zorg_manager'));
 
         it('lists the open invitations of the own organization', () => {
             cy.visit('/z/organization');
@@ -246,7 +246,7 @@ describe('Z-Admin - Organization', () => {
     });
 
     describe('Members', () => {
-        beforeEach(() => cy.loginAs('zorg_admin'));
+        beforeEach(() => cy.loginAs('zorg_manager'));
 
         const saveRoles = (userId, roles = {}) => post(`/z/organization/roles/${userId}`, {
             isFormData: 1,
@@ -257,7 +257,7 @@ describe('Z-Admin - Organization', () => {
         it('lists the members with their assignable roles', () => {
             cy.visit('/z/organization');
 
-            cy.query('organization-member-800').should('contain', 'zorg_admin@cypress.test');
+            cy.query('organization-member-800').should('contain', 'zorg_manager@cypress.test');
             cy.query('organization-member-801').should('contain', 'zorg_member@cypress.test');
             cy.get('#z-organization-member-801-form [data-value="261"]').should('exist');
             cy.get('#z-organization-member-801-form [data-value="262"]').should('not.exist');
@@ -362,7 +362,7 @@ describe('Z-Admin - Organization', () => {
             cy.loginAs('zorg_invitee_request');
             accept('zorg_token_accept_request').its('result').should('eq', 'success');
 
-            cy.loginAs('zorg_admin');
+            cy.loginAs('zorg_manager');
             cy.visit('/z/organization');
             cy.query('organization-member-804').should('contain', 'zorg_invitee_request@cypress.test');
 

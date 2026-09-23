@@ -17,7 +17,7 @@ INSERT INTO `z_role`(`id`, `name`, `is_group`, `is_org_assignable`, `active`, `c
 
 -- User 246 holds group 246 but not 247
 INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
-(246, 'zadmin_group_member@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+(246, 'zpanel_group_member@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
 
 INSERT INTO `z_user_role`(`id`, `role`, `user`, `active`, `created`) VALUES
 (246, 246, 246, 1, '2000-01-01 12:00:00');

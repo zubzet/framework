@@ -21,7 +21,7 @@ INSERT INTO `z_organization`(`id`, `name`, `groupId`, `active`, `created`) VALUE
 
 INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`, `organizationId`) VALUES
 -- Manages org 800 with every organization permission
-(800, 'zorg_admin@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 800),
+(800, 'zorg_manager@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 800),
 -- Member of org 800 without permissions
 (801, 'zorg_member@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 800),
 -- Holds every organization permission but belongs to no organization
