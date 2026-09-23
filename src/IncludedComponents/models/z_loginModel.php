@@ -251,7 +251,6 @@
             ];
 
             if($recordTwoFactor) {
-                // Php clock, because requireRenew() reads it back with strtotime()
                 $insertArray["last_2fa"] = date("Y-m-d H:i:s");
             }
 
