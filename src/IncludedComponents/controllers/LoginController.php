@@ -96,7 +96,7 @@
             }
 
             if($user->hasTwoFactor()) {
-                $challenge = model("z_login")->create2FAChallenge($user->id());
+                $challenge = model("z_login")->createTwoFactorChallenge($user->id());
 
                 return $res->success([
                     "twoFactor" => true,
@@ -121,7 +121,7 @@
             $challenge = $req->getPost("challenge");
             if(empty($challenge) || !is_string($challenge)) return $res->error("Missing challenge");
 
-            $challengeObj = model("z_login")->get2FAChallenge($challenge);
+            $challengeObj = model("z_login")->getTwoFactorChallenge($challenge);
             if(is_null($challengeObj)) return $res->error("Invalid challenge");
 
             $code = $req->getPost("code");
@@ -139,9 +139,9 @@
                 return $res->error("Invalid code");
             }
 
-            model("z_login")->invalidate2FAChallenge($challengeObj["id"]);
+            model("z_login")->invalidateTwoFactorChallenge($challengeObj["id"]);
 
-            $res->loginAs($user->id(), updateLast2FA: true);
+            $res->loginAs($user->id(), recordTwoFactor: true);
 
             return $res->success();
         }
