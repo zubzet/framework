@@ -21,12 +21,6 @@
     use ZubZet\Framework\Support\GlobalReferences;
     use ZubZet\Framework\ErrorHandling\GenericException\NotInstantiatedException;
 
-    // stdout carries nothing but the JSON the spec parses. Vendor code is not
-    // deprecation-free on PHP 8.4+ (thecodingmachine/safe, symfony/var-dumper),
-    // and showErrors = ALL would promote those notices to exceptions mid-boot.
-    error_reporting(E_ALL & ~E_DEPRECATED);
-    ini_set("display_errors", "stderr");
-
     chdir(realpath(__DIR__));
 
     $source = getenv("COMPOSER_VENDOR_DIR") ?: "./";

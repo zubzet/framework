@@ -484,8 +484,14 @@ class User extends AuthenticationObject {
         if(is_null($secret)) return false;
 
         // One 30 second step each way, so a clock that drifts a little and a code
-        // read just before its window turns still land
-        return TOTP::create($secret)->verify($code, null, 1);
+        // read just before its window turns still land. Checked per timestamp, because
+        // otphp 10 counts verify()'s window in periods and otphp 11 in seconds
+        $totp = TOTP::create($secret);
+        $now = time();
+        $period = $totp->getPeriod();
+        return $totp->verify($code, $now - $period)
+            || $totp->verify($code, $now)
+            || $totp->verify($code, $now + $period);
     }
 
     /**
