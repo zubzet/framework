@@ -56,12 +56,7 @@ Z = {
         try {
           dat = JSON.parse(data);
 
-          if(dat.result == "error" && dat.twoFactorRenew == true) {
-            Z.Presets.RefreshTwoFactor(() => {
-              alert("Two factor check was successful. Please try again.");
-            });
-            return;
-          }
+          if(dat.twoFactorRenew == true) return Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
         } catch (e) {
           console.error("Please show this to a developer: ", data);
         }
@@ -89,12 +84,7 @@ Z = {
           try {
             if(typeof data !== 'object') {
               dat = JSON.parse(data);
-              if(dat.result == "error" && dat.twoFactorRenew == true) {
-                Z.Presets.RefreshTwoFactor(() => {
-                  alert("Two factor check was successful. Please try again.");
-                });
-                return;
-              }
+              if(dat.twoFactorRenew == true) return Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
             }
           } catch (e) {
             console.error("Please show this to a developer: ", data);
@@ -138,6 +128,7 @@ Z = {
     error_too_many_login_tries: "Too many login tries. Try again later.",
     error_login: "Username or password is wrong",
     error_two_factor_incomplete: "Enter all six digits.",
+    two_factor_renewed: "Two factor check was successful. Please try again.",
     choose_file: "Choose file",
     CEDRemove: "✕"
   },
@@ -1105,9 +1096,7 @@ class ZForm {
           this.formErrorHook(json);
         }
       } else if (json.twoFactorRenew == true) {
-        Z.Presets.RefreshTwoFactor(() => {
-          alert("Two factor check was successful. Please try again.");
-        });
+        Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
       } else if (json.result == "error") {
         this.hint("alert-danger", Z.Lang.saveError);
       }
