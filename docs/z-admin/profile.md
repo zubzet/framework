@@ -4,9 +4,8 @@ Every logged in account has a profile page in the Z-Admin panel at `/z/profile`.
 
 | Section | Function |
 | ------- | -------- |
-| Your data | Email, member since and the organization |
-| Change password | Current, new and repeated password |
-| Two factor | Set up and turn off [two factor authentication](../core-features/two-factor-authentication.md) |
+| Header | Email, member since and the organization |
+| Security | *Change* opens the password modal, and two factor is set up and turned off in place ([two factor authentication](../core-features/two-factor-authentication.md)) |
 | Sessions | Every login of the account, with rename and revoke, and *Clear all sessions* |
 | API keys | Create, rename and revoke [api keys](../core-features/access-control.md#api-keys) |
 
@@ -18,7 +17,7 @@ A new password ends every login of the account, the current browser included, so
 
 ## Two Factor
 
-*Set up two factor* shows a QR code for the authenticator and the key to type in by hand. Two factor stays off until a code from the authenticator confirms that the secret arrived. Turning it off again asks for a current code. After 5 wrong codes the session is signed out.
+*Set up* shows a QR code for the authenticator and the key to type in by hand. Two factor stays off until a code from the authenticator confirms that the secret arrived. Turning it off again asks for a current code. After 5 wrong codes the session is signed out.
 
 An owner who lost their authenticator cannot turn it off themselves. An admin with `admin.user.edit` can, with *Disable two factor* on the account's page under *Edit User*.
 

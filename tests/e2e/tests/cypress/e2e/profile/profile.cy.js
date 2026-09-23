@@ -173,7 +173,10 @@ describe('Profile', () => {
             login('0803a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/_zubzet/profile/change-password').as('change');
+            dontFade('change-password-modal');
 
+            cy.query('btn-open-change-password').click();
+            cy.query('change-password-modal').should('be.visible');
             cy.form('password_current').type('not the password');
             cy.form('password_new').type('changed-password');
             cy.form('password_repeat').type('changed-password');

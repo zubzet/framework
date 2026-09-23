@@ -42,13 +42,20 @@
                 </div>
             </div>
         @else
-            <div data-test="two-factor-inactive">
-                <i class="fa fa-fw fa-shield-alt text-muted"></i>
-                Two factor is off
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="mr-3">
+                    <div data-test="two-factor-inactive">
+                        <i class="fa fa-fw fa-shield-alt text-muted"></i>
+                        Two factor is off
+                    </div>
+                    <small class="text-muted d-block">
+                        A login then also asks for a code from an authenticator app.
+                    </small>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary flex-shrink-0 z-two-factor-start" data-test="btn-start-two-factor">
+                    Set up
+                </button>
             </div>
-            <button class="btn btn-primary mt-3 z-two-factor-start" data-test="btn-start-two-factor">
-                <i class="fa fa-fw fa-plus text-white"></i> Set up two factor
-            </button>
         @endif
 
         @if(!$account->hasTwoFactor())
