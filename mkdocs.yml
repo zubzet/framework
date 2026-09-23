@@ -123,6 +123,7 @@ nav:
         - Global Helper Functions: core-features/global-helper-functions
         - Console Commands: core-features/console-commands
         - Access Control: core-features/access-control
+        - Two Factor Authentication: core-features/two-factor-authentication
         - Logging: core-features/logging
         - Debug Bar: core-features/debug-bar
         - Error Handling: core-features/error-handling
@@ -132,6 +133,7 @@ nav:
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
+        - Profile: z-admin/profile
     - Forms:
         - Auto Validation: forms/auto-form-validation
         - CED Validation: forms/ced-validation
