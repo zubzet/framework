@@ -61,6 +61,15 @@ The framework includes some extra functionality when it comes to the above menti
 ### File
 `$req->getFile` uses `$_FILE` like `$req->getPost` uses `$_POST`.
 
+### Accept-Language
+`$req->acceptLanguage()` returns the locales of the request's `Accept-Language` header, best first. Entries are ordered by their `q` value, malformed entries and `q=0` are dropped, and each tag is brought into its canonical case, so `en-us` and `EN-US` are one entry. The header is client controlled, so only the first 50 entries are read.
+
+```php
+$req->acceptLanguage(); // "de-CH,de;q=0.9,en;q=0.8" -> ["de-CH", "de", "en"]
+```
+
+[Translations](translations.md#locale) use it to pick the locale of a visitor without one of their own.
+
 ## See also
 
 - [Aliases and virtual links](../advanced-features/aliases-and-virtual-links.md): shorter or alternative versions of your virtual links

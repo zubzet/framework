@@ -116,6 +116,7 @@ module list.
 | Commands | `app/Commands/` | Registered in the console next to framework commands |
 | Migrations | `app/Database/migrations/` | Join the external migration set |
 | Seeds | `app/Database/seed/` | Run by `db:seed` after userspace seeds |
+| Translations | `app/Translations/` | [Catalogues](../core-features/translations.md) join the translator, an application key beats a module key |
 | Assets | `webroot/` | Served via `/_zubzet/asset-proxy/` |
 
 ### Views
