@@ -23,7 +23,7 @@
         "components/bootstrap": "4.6.*",
         "components/font-awesome": "6.5.*",
         "katanaphp/blade": "^0.2",
-        "spomky-labs/otphp": "^10.0"
+        "spomky-labs/otphp": "^10.0 || ^11.3"
     },
     "require-dev": {
         "phpunit/php-code-coverage": "9.*"
