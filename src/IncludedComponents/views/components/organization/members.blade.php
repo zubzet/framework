@@ -33,6 +33,8 @@
                         food: food,
                         value: member.roles,
                     });
+
+                    $(form.buttonSubmit).html('<i class="fa fa-fw fa-save"></i> Save roles');
                 });
             });
         </script>

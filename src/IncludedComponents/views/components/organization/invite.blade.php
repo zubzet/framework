@@ -37,6 +37,8 @@
                     required: true,
                 });
 
+                $(form.buttonSubmit).html('<i class="fa fa-fw fa-user-plus"></i> Create invitation');
+
                 root.on("click", ".z-organization-invite-copy", function() {
                     navigator.clipboard.writeText(root.find(".z-organization-invite-link").val());
                     $(this).html('<i class="fa fa-fw fa-check"></i> Copied');

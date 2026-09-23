@@ -19,6 +19,8 @@
                     required: true,
                     value: <?= json_encode($name ?? "", JSON_HEX_TAG | JSON_HEX_AMP) ?>,
                 });
+
+                $(form.buttonSubmit).html('<i class="fa fa-fw fa-save"></i> Save name');
             });
         </script>
     @endif
