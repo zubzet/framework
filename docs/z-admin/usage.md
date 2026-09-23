@@ -16,7 +16,7 @@ It has following categories:
 | Add User | Form to add users
 | Roles | User permission managment |
 | Organization | [Organization management](organization-management.md) by its own members |
-| Profile | Own password, [sessions and api keys](../core-features/access-control.md) |
+| Profile | [Own password, two factor, sessions and api keys](profile.md) |
 
 
 ## Permissions
@@ -48,3 +48,6 @@ The list offers every role, but a group only while the user already holds it. Gr
 Be advised, each role gives special permissions, some give the user special powers, therefore please see the list above of what roles have which permissions.
 
 After you set a role, you can either add more roles or save the user by clicking ‘submit’ at the bottom of the page. The user should now be able to use their role.
+
+## Two factor
+An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.edit`.
