@@ -10,9 +10,10 @@
                     dom: "z-organization-rename-form",
                     name: "z-organization-rename",
                     customEndpoint: Z.Request.rootPath + "z/organization/rename",
+                    saveHook: () => $(".z-organization-name").text(nameField.value),
                 });
 
-                form.createField({
+                var nameField = form.createField({
                     name: "name",
                     type: "text",
                     text: "Name",

@@ -5,8 +5,21 @@
         <ul {{ $attributes->class("list-group z-organization-members") }}>
             @forelse($members as $member)
                 <li class="list-group-item" data-test="organization-member-{{ $member['id'] }}">
-                    <div class="mb-2">{{ $member["email"] ?? "No email" }}</div>
-                    <div id="z-organization-member-{{ $member['id'] }}-form"></div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-truncate mr-3">{{ $member["email"] ?? "No email" }}</span>
+                        <button
+                            class="btn btn-sm btn-outline-secondary flex-shrink-0"
+                            data-toggle="collapse"
+                            data-target="#z-organization-member-{{ $member['id'] }}-roles"
+                            aria-expanded="false"
+                            data-test="btn-edit-organization-member-roles"
+                        >
+                            <i class="fa fa-fw fa-user-tag"></i> Roles
+                        </button>
+                    </div>
+                    <div class="collapse" id="z-organization-member-{{ $member['id'] }}-roles">
+                        <div class="pt-3" id="z-organization-member-{{ $member['id'] }}-form"></div>
+                    </div>
                 </li>
             @empty
                 <li class="list-group-item text-muted" data-test="organization-members-empty">No members.</li>
