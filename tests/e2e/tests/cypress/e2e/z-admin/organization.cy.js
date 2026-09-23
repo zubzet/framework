@@ -13,6 +13,13 @@ describe('Z-Admin - Organization', () => {
             .its('status');
     }
 
+    // A fading modal swallows keystrokes and clicks while it animates
+    function openModal(name) {
+        cy.query(`organization-${name}-modal`).invoke('removeClass', 'fade');
+        cy.query(`btn-open-organization-${name}`).click();
+        cy.query(`organization-${name}-modal`).should('be.visible');
+    }
+
     describe('Navigation', () => {
         it('links the page for users with z.organization.invite', () => {
             cy.loginAs('zorg_manager');
@@ -83,7 +90,7 @@ describe('Z-Admin - Organization', () => {
             cy.visit('/z/organization');
             cy.intercept('POST', '/z/organization/rename').as('rename');
 
-            cy.query('btn-open-organization-rename').click();
+            openModal('rename');
             cy.form('name').should('have.value', 'zorg_Rename').clear().type('zorg_Renamed');
             cy.get('#z-organization-rename-form .btn-primary').click();
             cy.wait('@rename');
@@ -139,7 +146,7 @@ describe('Z-Admin - Organization', () => {
             cy.visit('/z/organization');
             cy.intercept('POST', '/z/organization/invite').as('invite');
 
-            cy.query('btn-open-organization-invite').click();
+            openModal('invite');
             cy.form('email').type('zorg_invitable@cypress.test');
             cy.get('#z-organization-invite-form .btn-primary').click();
             cy.wait('@invite');
@@ -152,7 +159,7 @@ describe('Z-Admin - Organization', () => {
             cy.visit('/z/organization');
             cy.intercept('POST', '/z/organization/invite').as('invite');
 
-            cy.query('btn-open-organization-invite').click();
+            openModal('invite');
             cy.form('email').type('zorg_nobody@cypress.test');
             cy.get('#z-organization-invite-form .btn-primary').click();
             cy.wait('@invite');

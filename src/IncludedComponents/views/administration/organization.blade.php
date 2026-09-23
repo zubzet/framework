@@ -59,7 +59,7 @@
         </div>
 
         @if(user()->checkPermission("z.organization.rename"))
-            <div class="modal fade" id="z-organization-rename-modal" tabindex="-1" aria-labelledby="z-organization-rename-title" aria-hidden="true">
+            <div class="modal fade" id="z-organization-rename-modal" data-test="organization-rename-modal" tabindex="-1" aria-labelledby="z-organization-rename-title" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -80,7 +80,7 @@
         @endif
 
         @if(user()->checkPermission("z.organization.invite"))
-            <div class="modal fade" id="z-organization-invite-modal" tabindex="-1" aria-labelledby="z-organization-invite-title" aria-hidden="true">
+            <div class="modal fade" id="z-organization-invite-modal" data-test="organization-invite-modal" tabindex="-1" aria-labelledby="z-organization-invite-title" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
