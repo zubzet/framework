@@ -29,7 +29,7 @@
 
             $formResult = $req->validateForm([
                 (new FormField("password_current"))->required(),
-                (new FormField("password_new"))->required()->length(3, 64),
+                (new FormField("password_new"))->required(),
                 (new FormField("password_repeat"))->required(),
             ]);
 
