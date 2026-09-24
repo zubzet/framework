@@ -13,21 +13,21 @@
             passwordForm.createField({
                 name: "password_current",
                 type: "password",
-                text: "Current password",
+                text: <?= json_encode(__("account.change_password.current")) ?>,
                 required: true
             });
 
             passwordForm.createField({
                 name: "password_new",
                 type: "password",
-                text: "New password",
+                text: <?= json_encode(__("account.change_password.new")) ?>,
                 required: true
             });
 
             passwordForm.createField({
                 name: "password_repeat",
                 type: "password",
-                text: "Repeat new password",
+                text: <?= json_encode(__("account.change_password.repeat")) ?>,
                 required: true
             });
         });

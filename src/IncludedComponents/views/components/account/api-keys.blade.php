@@ -7,16 +7,16 @@
 @auth
     <div id="z-api-keys" {{ $attributes }}>
         <div class="input-group">
-            <input class="form-control z-api-key-name" data-test="api-key-name" maxlength="255" placeholder="Name, e.g. Deployment pipeline">
+            <input class="form-control z-api-key-name" data-test="api-key-name" maxlength="255" placeholder="{{ __("account.api_keys.name_placeholder") }}">
             <select class="custom-select flex-grow-0 w-auto z-api-key-lifetime" data-test="api-key-lifetime">
-                @foreach(APIKey::LIFETIMES as $days => $label)
-                    <option value="{{ $days }}">Expires in {{ $label }}</option>
+                @foreach(array_keys(APIKey::LIFETIMES) as $days)
+                    <option value="{{ $days }}">{{ __("account.api_keys.expires_in", ["{lifetime}" => __("account.api_keys.lifetime.$days")]) }}</option>
                 @endforeach
-                <option value="never">Never expires</option>
+                <option value="never">{{ __("account.never_expires") }}</option>
             </select>
             <div class="input-group-append">
                 <button class="btn btn-primary z-api-key-create" data-test="btn-create-api-key">
-                    <i class="fa fa-fw fa-plus text-white"></i> Create api key
+                    <i class="fa fa-fw fa-plus text-white"></i> {{ __("account.api_keys.create") }}
                 </button>
             </div>
         </div>
@@ -27,21 +27,21 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="mr-3">
                             <div>
-                                {{ $apiKey->name() ?? "API key" }}
+                                {{ $apiKey->name() ?? __("account.api_keys.fallback_name") }}
                             </div>
                             <small class="text-muted d-block">
-                                Created {{ date("d.m.Y H:i", strtotime($apiKey->created())) }} from {{ $apiKey->ipCreation() ?? "an unknown address" }},
+                                {{ __("account.api_keys.created", ["{date}" => date("d.m.Y H:i", strtotime($apiKey->created())), "{ip}" => $apiKey->ipCreation() ?? __("account.unknown_address")]) }}
                                 @if(is_null($apiKey->lastUsed()))
-                                    never used since
+                                    {{ __("account.never_used") }}
                                 @else
-                                    last seen {{ date("d.m.Y H:i", strtotime($apiKey->lastUsed())) }} from {{ $apiKey->ipLast() ?? "an unknown address" }}
+                                    {{ __("account.last_seen", ["{date}" => date("d.m.Y H:i", strtotime($apiKey->lastUsed())), "{ip}" => $apiKey->ipLast() ?? __("account.unknown_address")]) }}
                                 @endif
                             </small>
                             <small class="text-muted d-block">
                                 @if(is_null($apiKey->expiresAt()))
-                                    Never expires
+                                    {{ __("account.never_expires") }}
                                 @else
-                                    Expires {{ date("d.m.Y H:i", strtotime($apiKey->expiresAt())) }}
+                                    {{ __("account.expires", ["{date}" => date("d.m.Y H:i", strtotime($apiKey->expiresAt()))]) }}
                                 @endif
                             </small>
                         </div>
@@ -51,23 +51,23 @@
                                 data-uuid="{{ $apiKey->uuid() }}"
                                 data-name="{{ $apiKey->name() }}"
                                 data-type="api-key"
-                                data-placeholder="Name, e.g. Deployment pipeline"
+                                data-placeholder="{{ __("account.api_keys.name_placeholder") }}"
                                 data-test="btn-rename-api-key"
                             >
-                                Rename
+                                {{ __("account.rename") }}
                             </button>
                             <button
                                 class="btn btn-sm btn-outline-danger z-revoke-api-key"
                                 data-uuid="{{ $apiKey->uuid() }}"
                                 data-test="btn-revoke-api-key"
                             >
-                                Revoke
+                                {{ __("account.revoke") }}
                             </button>
                         </div>
                     </div>
                 </li>
             @empty
-                <li class="list-group-item text-muted" data-test="api-keys-empty">No api keys.</li>
+                <li class="list-group-item text-muted" data-test="api-keys-empty">{{ __("account.api_keys.empty") }}</li>
             @endforelse
         </ul>
 
@@ -76,28 +76,28 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="z-api-keys-title">
-                            <i class="fa fa-fw fa-code mr-1"></i> Your new api key
+                            <i class="fa fa-fw fa-code mr-1"></i> {{ __("account.api_keys.created_title") }}
                         </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ __("account.close") }}">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
                         <p class="small text-muted">
-                            Shown once. Copy it now, it cannot be read again.
+                            {{ __("account.api_keys.created_hint") }}
                         </p>
                         <div class="input-group">
                             <input class="form-control z-api-key-token" data-test="api-key-token" readonly>
                             <div class="input-group-append">
                                 <button type="button" class="btn btn-outline-secondary z-api-key-copy" data-test="btn-copy-api-key">
-                                    <i class="fa fa-fw fa-copy"></i> Copy
+                                    <i class="fa fa-fw fa-copy"></i> {{ __("account.api_keys.copy") }}
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-dismiss="modal" data-test="btn-api-key-done">
-                            Done
+                            {{ __("account.api_keys.done") }}
                         </button>
                     </div>
                 </div>
@@ -127,7 +127,7 @@
             root.on("click", ".z-api-key-copy", function() {
                 var token = root.find(".z-api-key-token");
                 navigator.clipboard.writeText(token.val());
-                $(this).html('<i class="fa fa-fw fa-check"></i> Copied');
+                $(this).html('<i class="fa fa-fw fa-check"></i> ' + <?= json_encode(e(__("account.api_keys.copied"))) ?>);
             });
 
             root.on("click", ".z-revoke-api-key", function() {
