@@ -33,6 +33,7 @@
                             inputmode="numeric"
                             autocomplete="{{ 0 === $digit ? "one-time-code" : "off" }}"
                             maxlength="1"
+                            aria-label="Digit {{ $digit + 1 }} of 6"
                         >
                     @endfor
                 </div>
