@@ -164,12 +164,11 @@ describe('Two factor gate', () => {
 
     // ---------------------------------------------------------------------
     describe('without boolResult', () => {
-        it('answers a stale session with a 403 page', () => {
+        it('answers a stale session with a renew error', () => {
             login('0854a');
             age('0854a');
 
-            cy.request({ url: '/TwoFactorProbe/guardPage', failOnStatusCode: false })
-                .then((res) => expect(res.status).to.eq(403));
+            guard('guardPage').then(expectRenew);
         });
 
         it('serves the page to a fresh session', () => {

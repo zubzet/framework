@@ -47,7 +47,7 @@ public function action_delete_account(Request $req, Response $res) {
 
 The check counts as recent within `two_factor_freshness_seconds` (defaults to 900). A different window can be passed as the first argument. Accounts without two factor always pass, there is nothing to renew. An [api key](access-control.md#api-keys) is never stamped, so for an account with two factor it never passes.
 
-Without further arguments a stale session gets a 403, the way `checkPermission()` does it. An endpoint that answers JSON passes `boolResult: true` and hands the answer to the client instead:
+Without further arguments a stale session is answered with a JSON error carrying `twoFactorRenew` and the request ends. To answer the client yourself, pass `boolResult: true`:
 
 ```php
 if(!$req->requireFreshTwoFactor(boolResult: true)) {
