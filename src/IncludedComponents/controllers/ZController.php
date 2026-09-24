@@ -55,7 +55,7 @@
 
             $formResult = $req->validateForm([
                 (new FormField("email"))->unique("z_user", "email"),
-                (new FormField("organization"))->exists("z_organization", "id"),
+                (new FormField("organization"))->in(array_column($this->getOrganizations($req), "id")),
             ]);
 
             $email = $req->getPost("email");
@@ -120,7 +120,7 @@
             $roles = $req->getModel("z_general")->getTableWhere("z_role", "*", "active = 1 AND (is_group = 0 OR id IN (SELECT role FROM z_user_role WHERE active = 1 AND user = ?))", "i", [$userId]);
 
             if($req->hasFormData()) {
-                $organizationField = (new FormField("organization"))->exists("z_organization", "id");
+                $organizationField = (new FormField("organization"))->in(array_column($this->getOrganizations($req), "id"));
                 $organizationField->noSave = true;
 
                 $formResult = $req->validateForm([
