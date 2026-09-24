@@ -132,7 +132,7 @@ describe('Profile', () => {
 
             post('change-password', { ...credentials, password_new: 'ab', password_repeat: 'ab' }).then((out) => {
                 expect(out.result).to.eq('formErrors');
-                expect(out.formErrors).to.deep.include({ name: 'password_new', type: 'length', info: [3, 64] });
+                expect(out.formErrors).to.deep.include({ name: 'password_new', type: 'length', info: [3, 1024] });
             });
         });
 

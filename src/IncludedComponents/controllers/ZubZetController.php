@@ -1,6 +1,7 @@
 <?php
 
     use ZubZet\Framework\Authentication\APIKey;
+    use ZubZet\Framework\Authentication\PasswordHash\Password;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Logger\LogEventType;
@@ -29,7 +30,7 @@
 
             $formResult = $req->validateForm([
                 (new FormField("password_current"))->required(),
-                (new FormField("password_new"))->required(),
+                (new FormField("password_new"))->required()->length(Password::MIN_LENGTH_BYTES, Password::MAX_LENGTH_BYTES),
                 (new FormField("password_repeat"))->required(),
             ]);
 
