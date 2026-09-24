@@ -12,7 +12,8 @@ describe('Two factor', () => {
             url: `${url}/${action}`,
             form: true,
             failOnStatusCode: false,
-            body,
+            // The action Z.js sends along
+            body: { action, ...body },
         }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
     }
 

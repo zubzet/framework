@@ -25,6 +25,9 @@
         }
 
         public function changePassword(Request $req, Response $res) {
+            // Only the Z.Forms submit, which carries the csrf token
+            if(!$req->hasFormData()) return $res->error("Invalid request");
+
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
@@ -66,6 +69,9 @@
         }
 
         public function clearSessions(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("clear-sessions")) return $res->error("Invalid request");
+
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
@@ -75,6 +81,9 @@
         }
 
         public function renameToken(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("rename-token")) return $res->error("Invalid request");
+
             $uuid = $req->getPost("uuid", "");
             if(!is_string($uuid)) return $res->error("Unknown token");
 
@@ -100,6 +109,9 @@
         }
 
         public function revokeToken(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("revoke-token")) return $res->error("Invalid request");
+
             $uuid = $req->getPost("uuid", "");
             if(!is_string($uuid)) return $res->error("Unknown token");
 
@@ -117,6 +129,9 @@
         }
 
         public function createApiKey(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("create-api-key")) return $res->error("Invalid request");
+
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
@@ -145,6 +160,9 @@
 
 
         public function startTwoFactor(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("start-two-factor")) return $res->error("Invalid request");
+
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
@@ -162,6 +180,9 @@
         }
 
         public function confirmTwoFactor(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("confirm-two-factor")) return $res->error("Invalid request");
+
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
@@ -190,6 +211,9 @@
         }
 
         public function disableTwoFactor(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("disable-two-factor")) return $res->error("Invalid request");
+
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
@@ -236,6 +260,9 @@
          * step happened whenever this session was created.
          */
         public function refreshTwoFactor(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("two-factor-refresh")) return $res->error("Invalid request");
+
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
