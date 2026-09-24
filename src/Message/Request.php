@@ -297,9 +297,9 @@
          * session passed one inside `two_factor_freshness_seconds`, and for every
          * account that carries no two factor at all.
          *
-         * Without $boolResult a stale session is turned away with a 403, the way
-         * checkPermission does it. On an endpoint that answers json, pass true and
-         * hand the answer to the client instead:
+         * Without $boolResult a stale session is answered with a json error carrying
+         * `twoFactorRenew`, which Z.js turns into the two factor modal. Pass true to
+         * answer the client yourself instead:
          *
          *     if(!$req->requireFreshTwoFactor(boolResult: true)) {
          *         return $res->error("Two factor required", ["twoFactorRenew" => true]);
@@ -320,7 +320,6 @@
 
             if(is_null($session) || $session->requireRenew($freshnessSeconds)) {
                 if($boolResult) return false;
-                zubzet()->executePath(["error", "403"]);
                 response()->error("Two factor required", ["twoFactorRenew" => true]);
                 exit;
             }
