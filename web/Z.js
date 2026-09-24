@@ -108,8 +108,9 @@ Z = {
         data: Object.assign(data, {action: subaction, _zReq: 1}),
         url: Z.Request.rootPath + action,
         async: async,
-        headers: this._csrfHeaders(),
-        ...additionalParameters
+        ...additionalParameters,
+        // Merged last, so caller headers extend the token instead of replacing it
+        headers: {...additionalParameters.headers, ...this._csrfHeaders()},
       }).done((data) => {
         if(parse) {
           var dat = null;
