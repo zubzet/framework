@@ -54,7 +54,7 @@
 
             $formResult = $req->validateForm([
                 (new FormField("email"))->unique("z_user", "email"),
-                (new FormField("organization"))->exists("z_organization", "id"),
+                (new FormField("organization"))->in(array_column($this->getOrganizations($req), "id")),
             ]);
 
             $email = $req->getPost("email");
@@ -98,7 +98,7 @@
             $email = $user["email"];
 
             if($req->hasFormData()) {
-                $organizationField = (new FormField("organization"))->exists("z_organization", "id");
+                $organizationField = (new FormField("organization"))->in(array_column($this->getOrganizations($req), "id"));
                 $organizationField->noSave = true;
 
                 $formResult = $req->validateForm([
