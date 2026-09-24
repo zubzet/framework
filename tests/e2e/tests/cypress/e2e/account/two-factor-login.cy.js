@@ -27,7 +27,8 @@ describe('Two factor login', () => {
             url: '/_zubzet/two-factor/login',
             form: true,
             failOnStatusCode: false,
-            body,
+            // The action Z.js sends along
+            body: { action: 'two-factor-login', ...body },
         }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
     }
 

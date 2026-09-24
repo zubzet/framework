@@ -72,7 +72,7 @@
     <script>
         $(() => {
             $("#z-sessions").on("click", ".z-revoke-session", function() {
-                Z.Request.root("_zubzet/profile/revoke-token", null, {
+                Z.Request.root("_zubzet/profile/revoke-token", "revoke-token", {
                     uuid: $(this).data("uuid"),
                     type: "session"
                 }, (res) => {

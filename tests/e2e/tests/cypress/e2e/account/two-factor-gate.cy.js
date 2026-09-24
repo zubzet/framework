@@ -187,7 +187,8 @@ describe('Two factor gate', () => {
             url: '/_zubzet/two-factor/refresh',
             form: true,
             failOnStatusCode: false,
-            body,
+            // The action Z.js sends along
+            body: { action: 'two-factor-refresh', ...body },
         }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
 
         it('stamps the session and opens the gate again', () => {

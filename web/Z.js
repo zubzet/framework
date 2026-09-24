@@ -249,7 +249,7 @@ Z = {
       Z.Presets.OpenTwoFactorModal((code) => {
         // The challenge goes in the body rather than the url, so it stays out of
         // access logs and browser history
-        Z.Request.root("_zubzet/two-factor/login", null, {
+        Z.Request.root("_zubzet/two-factor/login", "two-factor-login", {
           challenge: challenge,
           code: code,
         }, (res) => {
@@ -275,7 +275,7 @@ Z = {
      */
     RefreshTwoFactor(onDone = null) {
       Z.Presets.OpenTwoFactorModal((code) => {
-        Z.Request.root("_zubzet/two-factor/refresh", null, {code: code}, (res) => {
+        Z.Request.root("_zubzet/two-factor/refresh", "two-factor-refresh", {code: code}, (res) => {
           if(res.result != "success") return Z.Presets.FailTwoFactor(res.message);
 
           $("#z-two-factor-modal").modal("hide");
