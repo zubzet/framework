@@ -4,6 +4,10 @@
 @endphp
 
 @auth
+    @php
+        $currentUuid = Session::byToken(user()->getSessionToken())?->uuid();
+    @endphp
+
     <ul id="z-sessions" {{ $attributes->class("list-group") }}>
         @forelse(Session::byUser(User::byId(user()->userId)) as $session)
             <li class="list-group-item" data-test="session-{{ $session->uuid() }}">
@@ -11,7 +15,7 @@
                     <div class="mr-3">
                         <div>
                             {{ $session->name() ?? __("account.sessions.fallback_name") }}
-                            @if($session->uuid() === Session::byToken(user()->getSessionToken())?->uuid())
+                            @if($session->uuid() === $currentUuid)
                                 <span class="badge badge-success" data-test="session-current">{{ __("account.sessions.current") }}</span>
                             @endif
                         </div>
