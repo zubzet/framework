@@ -3,7 +3,7 @@
 @auth
     <div {{ $attributes->class("z-organization-accept") }}>
         <button class="btn btn-primary z-organization-accept-button" data-token="{{ $token }}" data-test="btn-accept-organization-invitation">
-            <i class="fa fa-fw fa-check text-white"></i> Accept invitation
+            <i class="fa fa-fw fa-check text-white"></i> {{ __("organization.accept") }}
         </button>
         <div class="small text-danger mt-2 d-none z-organization-accept-error" data-test="organization-accept-error"></div>
     </div>

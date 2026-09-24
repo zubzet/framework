@@ -2,12 +2,12 @@
 
 @section("content")
     @if(is_null(user()->orgId))
-        <h2>Organization</h2>
-        <p>You are not a member of any organization.</p>
+        <h2>{{ __("admin.organization.title") }}</h2>
+        <p>{{ __("admin.organization.no_organization") }}</p>
     @else
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
             <div class="mr-3">
-                <small class="text-muted text-uppercase">Organization</small>
+                <small class="text-muted text-uppercase">{{ __("admin.organization.title") }}</small>
                 <h2 class="mb-0 z-organization-name mt-2">
                     {{ $organizationName }}
                 </h2>
@@ -15,12 +15,12 @@
             <div class="mt-2">
                 @if(user()->checkPermission("z.organization.rename"))
                     <button class="btn btn-outline-secondary" data-toggle="modal" data-target="#z-organization-rename-modal" data-test="btn-open-organization-rename">
-                        <i class="fa fa-fw fa-pen"></i> Rename
+                        <i class="fa fa-fw fa-pen"></i> {{ __("admin.organization.rename") }}
                     </button>
                 @endif
                 @if(user()->checkPermission("z.organization.invite"))
                     <button class="btn btn-primary" data-toggle="modal" data-target="#z-organization-invite-modal" data-test="btn-open-organization-invite">
-                        <i class="fa fa-fw fa-user-plus text-white"></i> Invite member
+                        <i class="fa fa-fw fa-user-plus text-white"></i> {{ __("admin.organization.invite") }}
                     </button>
                 @endif
             </div>
@@ -31,12 +31,12 @@
                 <div class="col-lg mb-3">
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <span class="font-weight-bold"><i class="fa fa-fw fa-users"></i> Members</span>
+                            <span class="font-weight-bold"><i class="fa fa-fw fa-users"></i> {{ __("admin.organization.members") }}</span>
                             <span class="badge badge-pill badge-secondary">{{ count($members) }}</span>
                         </div>
                         <x-zubzet::organization.members :members="$members" :food="$roleFood" class="list-group-flush"/>
                         <div class="card-footer small text-muted">
-                            Open a member's roles to give them access or take it away again.
+                            {{ __("admin.organization.members_hint") }}
                         </div>
                     </div>
                 </div>
@@ -46,12 +46,12 @@
                 <div class="col-lg-5 mb-3">
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <span class="font-weight-bold"><i class="fa fa-fw fa-envelope-open-text"></i> Open invitations</span>
+                            <span class="font-weight-bold"><i class="fa fa-fw fa-envelope-open-text"></i> {{ __("admin.organization.invites") }}</span>
                             <span class="badge badge-pill badge-secondary">{{ count($invites) }}</span>
                         </div>
                         <x-zubzet::organization.invites :invites="$invites" class="list-group-flush"/>
                         <div class="card-footer small text-muted">
-                            Invitations waiting to be accepted. Revoke one if it was sent by mistake.
+                            {{ __("admin.organization.invites_hint") }}
                         </div>
                     </div>
                 </div>
@@ -65,9 +65,9 @@
                         <div class="modal-header">
                             <h5 class="modal-title" id="z-organization-rename-title">
                                 <i class="fa fa-pen mr-2"></i>
-                                Rename organization
+                                {{ __("admin.organization.rename_title") }}
                             </h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="{{ __("admin.organization.close") }}">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
@@ -86,16 +86,15 @@
                         <div class="modal-header">
                             <h5 class="modal-title" id="z-organization-invite-title">
                                 <i class="fa fa-user-plus mr-2"></i>
-                                Invite a member
+                                {{ __("admin.organization.invite_title") }}
                             </h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="{{ __("admin.organization.close") }}">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
                         <div class="modal-body">
                             <p class="small text-muted">
-                                Enter an email address to create an invitation link and share it with that person.
-                                The link stays valid for 7 days.
+                                {{ __("admin.organization.invite_hint") }}
                             </p>
                             <x-zubzet::organization.invite/>
                         </div>

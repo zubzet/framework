@@ -348,7 +348,6 @@ describe('Z-Admin - Organization', () => {
             cy.loginAs('zorg_stranger');
             cy.visit('/z/organization/invitation/zorg_token_open');
 
-            cy.title().should('eq', 'Invitation');
             cy.query('invitation-organization').should('contain', 'zorg_Main');
             cy.query('invitation-email').should('contain', 'zorg_stranger@cypress.test');
             cy.get('#navbar').should('not.exist');

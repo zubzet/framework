@@ -16,12 +16,12 @@
                 var nameField = form.createField({
                     name: "name",
                     type: "text",
-                    text: "Name",
+                    text: <?= json_encode(__("organization.rename.name")) ?>,
                     required: true,
                     value: <?= json_encode($name ?? "", JSON_HEX_TAG | JSON_HEX_AMP) ?>,
                 });
 
-                $(form.buttonSubmit).html('<i class="fa fa-fw fa-save"></i> Save name');
+                $(form.buttonSubmit).html('<i class="fa fa-fw fa-save"></i> ' + <?= json_encode(e(__("organization.rename.save"))) ?>);
             });
         </script>
     @endif

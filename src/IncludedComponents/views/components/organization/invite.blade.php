@@ -7,7 +7,7 @@
                 <input class="form-control z-organization-invite-link" data-test="organization-invite-link" readonly>
                 <div class="input-group-append">
                     <button type="button" class="btn btn-outline-secondary z-organization-invite-copy" data-test="btn-copy-organization-invite">
-                        <i class="fa fa-fw fa-copy"></i> Copy
+                        <i class="fa fa-fw fa-copy"></i> {{ __("organization.invite.copy") }}
                     </button>
                 </div>
             </div>
@@ -25,7 +25,7 @@
                         // The link stays until the next invite, the field is free for it
                         emailField.value = "";
                         root.find(".z-organization-invite-link").val(res.invite_link);
-                        root.find(".z-organization-invite-copy").html('<i class="fa fa-fw fa-copy"></i> Copy');
+                        root.find(".z-organization-invite-copy").html('<i class="fa fa-fw fa-copy"></i> ' + <?= json_encode(e(__("organization.invite.copy"))) ?>);
                         root.find(".z-organization-invite-result").removeClass("d-none");
                     },
                 });
@@ -33,15 +33,15 @@
                 var emailField = form.createField({
                     name: "email",
                     type: "email",
-                    text: "Email",
+                    text: <?= json_encode(__("organization.invite.email")) ?>,
                     required: true,
                 });
 
-                $(form.buttonSubmit).html('<i class="fa fa-fw fa-user-plus"></i> Create invitation');
+                $(form.buttonSubmit).html('<i class="fa fa-fw fa-user-plus"></i> ' + <?= json_encode(e(__("organization.invite.create"))) ?>);
 
                 root.on("click", ".z-organization-invite-copy", function() {
                     navigator.clipboard.writeText(root.find(".z-organization-invite-link").val());
-                    $(this).html('<i class="fa fa-fw fa-check"></i> Copied');
+                    $(this).html('<i class="fa fa-fw fa-check"></i> ' + <?= json_encode(e(__("organization.invite.copied"))) ?>);
                 });
             });
         </script>
