@@ -95,6 +95,72 @@
             return $this->input->SERVER['HTTP_USER_AGENT'] ?? null;
         }
 
+        public function acceptLanguage(): array {
+            $header = $this->input->SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
+            if(!is_string($header) || "" === trim($header)) return [];
+
+            // Cap the entries, because the header is client controlled
+            $entries = array_slice(explode(",", $header), 0, 50);
+
+            $accepted = [];
+
+            foreach($entries as $entry) {
+                // Split locale from optional parameters such as q=0.9
+                $parts = array_map("trim", explode(";", $entry));
+
+                $locale = array_shift($parts);
+                $quality = 1.0;
+
+                // Only well formed language tags: de, en-US, zh-Hans-CN, es-419
+                if(!preg_match('/^[a-z]{1,8}(?:-[a-z0-9]{1,8})*$/i', $locale)) continue;
+
+                // Read the optional quality value; omitted q values default to 1.0.
+                foreach($parts as $parameter) {
+                    if(!preg_match('/^q\s*=\s*(.*)$/i', $parameter, $match)) continue;
+
+                    // Valid is 0 to 0.999 or 1 followed by zeros. A malformed q must not
+                    // fall back to 1.0, that would rank the broken entry highest.
+                    if(!preg_match('/^(?:0(?:\.\d{1,3})?|1(?:\.0{1,3})?)$/', $match[1])) {
+                        $quality = 0.0;
+                        break;
+                    }
+
+                    $quality = (float) $match[1];
+                    break;
+                }
+
+                // q=0 explicitly means that the locale is not acceptable.
+                if($quality <= 0.0) continue;
+
+                // Canonical form, so that "en-us" and "EN-US" collapse into one entry.
+                $subtags = explode("-", strtolower($locale));
+
+                foreach($subtags as $index => $subtag) {
+                    if(0 === $index || !ctype_alpha($subtag)) continue;
+
+                    if(2 === strlen($subtag)) $subtags[$index] = strtoupper($subtag);   // region
+                    elseif(4 === strlen($subtag)) $subtags[$index] = ucfirst($subtag);  // script
+                }
+
+                $locale = implode("-", $subtags);
+
+                // Keep the first occurrence, but let a later duplicate raise its quality.
+                if(isset($accepted[$locale]) && $accepted[$locale]["quality"] >= $quality) continue;
+
+                $accepted[$locale] = [
+                    "locale"  => $locale,
+                    "quality" => $quality,
+                ];
+            }
+
+            $accepted = array_values($accepted);
+
+            // Sort by quality
+            usort($accepted, fn($a, $b) => $b["quality"] <=> $a["quality"]);
+
+            return array_column($accepted, "locale");
+        }
+
         public function getExecutionTime(): ?float {
             if(!isset($this->input->SERVER["REQUEST_TIME_FLOAT"])) return null;
             return microtime(true) - $this->input->SERVER["REQUEST_TIME_FLOAT"];

@@ -23,6 +23,17 @@
             $declaration();
         }
 
+        /**
+         * @internal Only declare a global function if it not already exists, otherwise do nothing.
+         *
+         * @param string $name Name of the function
+         * @param callable $declaration Callable that declares the function when executed
+         */
+        public static function optionalAndThen(string $name, callable $declaration): void {
+            if(function_exists($name)) return;
+            $declaration();
+        }
+
         public static function resolve(string|array $message): void {
             if(is_array($message)) {
                 $message = implode("\n", $message);

@@ -1,0 +1,28 @@
+# i18n Ally does not ship a symfony/translation framework, so the ZubZet
+# translation helper is described here instead. i18n Ally reloads this file on
+# every change; the catalogue layout itself is configured in settings.json.
+# Reference: https://github.com/lokalise/i18n-ally/wiki/Custom-Framework
+
+# Blade templates report as "blade" only when a Blade extension claims them,
+# and as "php" otherwise. Both spellings hold __() calls.
+languageIds:
+    - php
+    - blade
+
+# The message id is capture group 1; a leading non-word character keeps a
+# method named "…__" from matching. The domain and locale arguments cannot be
+# captured (i18n Ally reads group 1 only), so a call passing an explicit
+# domain: is resolved against the default domain and may read as missing.
+usageMatchRegex:
+    - "[^\\w\\d]__\\(\\s*['\"]({key})['\"]"
+    - "Translation::translate\\(\\s*['\"]({key})['\"]"
+
+# The only i18n framework in the repo: keeps auto-detection from adding
+# another one should enabledFrameworks ever be dropped from settings.json.
+monopoly: true
+
+# Offered when extracting a hard-coded string into a catalogue.
+refactorTemplates:
+    - __("$1")
+    - "{{ __(\"$1\") }}"
+    - $1

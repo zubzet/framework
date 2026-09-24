@@ -177,6 +177,25 @@ view("adminpanel/dashboard");
 
 ```
 
+### `__()`
+
+Translates a message id into the active locale. See [Translations](translations.md) for the catalogues and how the locale is picked.
+
+**Syntax:** `__(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string`
+
+* **$id**: The message id. An id no catalogue defines is returned unchanged.
+* **$parameters**: Placeholder values, keyed the way the catalogue spells the placeholder.
+* **$domain**: The catalogue domain, `messages` when omitted.
+* **$locale**: A locale override, the active locale when omitted.
+
+The framework only declares it when no global `__()` exists yet, so an application or library that brings its own keeps it.
+
+**Example:**
+
+```php
+echo __("dashboard.welcome", ["{name}" => $name]);
+```
+
 ### `e()`
 
 Escapes a string for safe HTML output. It strips tags and then escapes the remaining special characters through the render engine, so its output matches what `{{ }}` produces in a [view](views.md).

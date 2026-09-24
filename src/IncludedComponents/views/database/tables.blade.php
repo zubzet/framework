@@ -7,7 +7,7 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
                         <div class="text-muted small">
-                            Amount Of Tables
+                            <?= e(__("admin.database.tables_total")) ?>
                         </div>
                         <div class="h4 mb-0" data-test="table-amount"><?= number_format(count($opt["status"]["tables"])) ?></div>
                     </div>
@@ -20,7 +20,7 @@
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div>
                         <div class="text-muted small">
-                            Approx. Amount Of Rows
+                            <?= e(__("admin.database.rows_approx")) ?>
                         </div>
                         <div class="h4 mb-0" data-test="row-amount"><?= number_format($opt["status"]["approxRows"]) ?></div>
                     </div>
@@ -34,13 +34,13 @@
         <table class="table table-hover table-sm mb-0">
             <thead class="thead-light">
                 <tr>
-                    <th>Table</th>
+                    <th><?= e(__("admin.database.table")) ?></th>
                     <th class="text-right text-lg-left">
-                        Rows
+                        <?= e(__("admin.database.rows")) ?>
                         <i class="fa fa-caret-down"></i>
                     </th>
-                    <th class="d-none d-lg-table-cell">Created</th>
-                    <th class="d-none d-lg-table-cell">Updated</th>
+                    <th class="d-none d-lg-table-cell"><?= e(__("admin.database.created")) ?></th>
+                    <th class="d-none d-lg-table-cell"><?= e(__("admin.database.updated")) ?></th>
                     <th class="d-none d-lg-table-cell"></th>
                 </tr>
             </thead>
@@ -55,19 +55,19 @@
 
                             <!-- Mobile-only expandable details -->
                             <details class="d-lg-none mt-1 small">
-                                <summary class="text-muted">Details</summary>
+                                <summary class="text-muted"><?= e(__("admin.database.details")) ?></summary>
                                 <div class="mt-1">
                                     <div>
-                                        <span class="text-muted">Created:</span>
+                                        <span class="text-muted"><?= e(__("admin.database.created")) ?>:</span>
                                         <?= $t["Create_time"] ? date("Y-m-d H:i:s", strtotime($t["Create_time"])) : "—" ?>
                                     </div>
                                     <div>
-                                        <span class="text-muted">Updated:</span>
+                                        <span class="text-muted"><?= e(__("admin.database.updated")) ?>:</span>
                                         <?= $t["Update_time"] ? date("Y-m-d H:i:s", strtotime($t["Update_time"])) : "—" ?>
                                     </div>
                                     <div class="mt-2">
-                                        <a class="btn btn-sm btn-outline-primary" href="<?= "$opt[root]z/database/$t[Name]" ?>" title="Open table">
-                                            <i class="fa fa-arrow-right"></i> Open
+                                        <a class="btn btn-sm btn-outline-primary" href="<?= "$opt[root]z/database/$t[Name]" ?>" title="<?= e(__("admin.database.open_table")) ?>">
+                                            <i class="fa fa-arrow-right"></i> <?= e(__("admin.database.open")) ?>
                                         </a>
                                     </div>
                                 </div>
@@ -86,7 +86,7 @@
                         </td>
 
                         <td class="text-right">
-                            <a class="btn btn-sm btn-outline-primary d-none d-lg-inline-flex" href="<?= "$opt[root]z/database/$t[Name]" ?>" title="Open table">
+                            <a class="btn btn-sm btn-outline-primary d-none d-lg-inline-flex" href="<?= "$opt[root]z/database/$t[Name]" ?>" title="<?= e(__("admin.database.open_table")) ?>">
                                 <i class="fa fa-arrow-right"></i>
                             </a>
                         </td>

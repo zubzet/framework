@@ -106,6 +106,7 @@ nav:
         - Models: core-features/models
         - Views: core-features/views
         - Layouts: core-features/layouts
+        - Translations: core-features/translations
         - Permission System: core-features/permission-system
         - Password Handling: core-features/password-handling
         - Configuration: core-features/configuration
