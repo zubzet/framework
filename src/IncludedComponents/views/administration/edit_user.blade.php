@@ -36,7 +36,7 @@
             form.createActionButton(<?= json_encode(__("admin.edit_user.disable_two_factor")) ?>, "btn-outline-danger", function() {
                 if(!window.confirm(<?= json_encode(__("admin.edit_user.disable_two_factor_confirm")) ?>)) return;
 
-                Z.Request.root("z/disable_two_factor/<?= $opt["userId"]; ?>", "disable_two_factor", {}, (res) => {
+                Z.Request.action("disable_two_factor", {}, (res) => {
                     if(res.result != "success") return window.alert(res.message);
                     window.location.reload();
                 });

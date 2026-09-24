@@ -460,7 +460,7 @@ describe('Two factor', () => {
 
     // ---------------------------------------------------------------------
     describe('an admin turning it off', () => {
-        const adminDisable = (userId) => post(`disable_two_factor/${userId}`, { action: 'disable_two_factor' }, '/z');
+        const adminDisable = (userId) => post(`edit_user/${userId}`, { action: 'disable_two_factor' }, '/z');
 
         beforeEach(() => {
             setState(851, SECRET_A);
@@ -500,7 +500,7 @@ describe('Two factor', () => {
 
             cy.request({
                 method: 'POST',
-                url: '/z/disable_two_factor/851',
+                url: '/z/edit_user/851',
                 form: true,
                 failOnStatusCode: false,
                 body: { action: 'disable_two_factor' },
