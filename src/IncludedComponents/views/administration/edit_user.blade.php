@@ -32,6 +32,17 @@
                 window.location.href = url;
             });
 
+<?php if($opt["hasTwoFactor"]) { ?>
+            form.createActionButton(<?= json_encode(__("admin.edit_user.disable_two_factor")) ?>, "btn-outline-danger", function() {
+                if(!window.confirm(<?= json_encode(__("admin.edit_user.disable_two_factor_confirm")) ?>)) return;
+
+                Z.Request.action("disable_two_factor", {}, (res) => {
+                    if(res.result != "success") return window.alert(res.message);
+                    window.location.reload();
+                });
+            });
+<?php } ?>
+
             form.addSeperator();
 
             var pced = form.createCED({

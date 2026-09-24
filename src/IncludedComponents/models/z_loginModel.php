@@ -101,10 +101,13 @@
          * @internal
          */
         public function setSessionExpiresAt(Session|APIKey $session, ?DateTime $expiresAt): void {
-            $sql = "UPDATE `z_logintoken`
-                    SET `expires_at` = ?
-                    WHERE `id` = ?";
-            $this->exec($sql, "si", $expiresAt?->format("Y-m-d H:i:s"), $session->id());
+            $query = $this->dbUpdate("z_logintoken", [
+                "expires_at" => $expiresAt?->format("Y-m-d H:i:s"),
+            ])->where([
+                "id" => $session->id(),
+            ]);
+
+            $this->exec($query);
         }
 
         /**
@@ -149,15 +152,63 @@
         }
 
         /**
-         * Clears all sessions of a user by setting them to inactive in the database
+         * Clears all logins of a user by setting them to inactive in the database.
+         * Api keys are credentials of their own and are left alone.
          * @param User $user The user object
          * @internal
          */
         public function clearSessions(User $user): void {
             $sql = "UPDATE `z_logintoken`
                     SET `active`= 0
-                    WHERE `userId` = ?";
+                    WHERE `userId` = ?
+                    AND `is_apikey` = 0";
             $this->exec($sql, "i", $user->id());
+        }
+
+        public function createTwoFactorChallenge(int $userId): string {
+            $token = "zub-".bin2hex(random_bytes(32));
+
+            $userAgent = request()->userAgent();
+            $device = is_null($userAgent) ? null : mb_substr($userAgent, 0, 255);
+            $ip = request()->ip();
+
+            $query = $this->dbInsert("z_2fa_challenge", [
+                "userId" => $userId,
+                "token" => $token,
+                "ip_creation" => $ip,
+                "device" => $device,
+                "expires_at" => date("Y-m-d H:i:s", time() + 600),
+            ]);
+
+            $this->exec($query);
+
+            return $token;
+        }
+
+        public function invalidateTwoFactorChallenge(int $id): void {
+            $query = $this->dbUpdate("z_2fa_challenge", [
+                "active" => 0
+            ])->where([
+                "id" => $id,
+                "active" => 1,
+            ]);
+
+            $this->exec($query);
+        }
+
+        /**
+         * Gets a two factor challenge by its token
+         * @param string $challenge The challenge token
+         * @return ?array The challenge data, or null if not found
+         */
+        public function getTwoFactorChallenge(string $challenge): ?array {
+            $query = $this->dbSelect("*", "z_2fa_challenge")->where([
+                "token" => $challenge,
+                "active" => 1,
+                "expires_at >" => date("Y-m-d H:i:s"),
+            ])->limit(1);
+
+            return $this->exec($query)->resultToLine();
         }
 
         /**
@@ -171,6 +222,7 @@
          * @param ?string $name An optional name for the session
          * @param ?string $reason Why the session was created, e.g. an impersonation
          * @param bool $isApiKey Whether the token is an api key rather than a login
+         * @param bool $recordTwoFactor Whether the login passed a two factor check
          * @return Session|APIKey The resulting session, an APIKey when flagged as one
          */
         function createLoginToken(
@@ -179,6 +231,7 @@
             ?string $name = null,
             ?string $reason = null,
             bool $isApiKey = false,
+            bool $recordTwoFactor = false
         ): Session|APIKey {
             $token = "zub-".bin2hex(random_bytes(32));
 
@@ -186,36 +239,101 @@
             $userAgent = request()->userAgent();
             $device = is_null($userAgent) ? null : mb_substr($userAgent, 0, 255);
 
-            $sql = "INSERT INTO `z_logintoken`
-                        (`userId`, `userId_exec`, `token`, `name`, `device`, `reason`, `ip_creation`, `is_apikey`)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            $this->exec(
-                $sql, "iisssssi",
-                $userId, $exec_userId, $token,
-                $name, $device, $reason, request()->ip(),
-                (int) $isApiKey,
-            );
+            $insertArray = [
+                "userId" => $userId,
+                "userId_exec" => $exec_userId,
+                "token" => $token,
+                "name" => $name,
+                "device" => $device,
+                "reason" => $reason,
+                "ip_creation" => request()->ip(),
+                "is_apikey" => (int) $isApiKey,
+            ];
+
+            if($recordTwoFactor) {
+                $insertArray["last_2fa"] = date("Y-m-d H:i:s");
+            }
+
+            $query = $this->dbInsert("z_logintoken", $insertArray);
+
+            $this->exec($query);
 
             return Session::byToken($token);
         }
 
+        public function spendTwoFactorTry(Session|APIKey $session): int {
+            // Decrease the remaining two factor tries by 1 when over 0
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["remaining_2fa_tries" => $query->newExpr("remaining_2fa_tries - 1")]);
+            $query->where([
+                "id" => $session->id(),
+                "remaining_2fa_tries >" => 0,
+            ]);
+
+            $this->exec($query);
+
+            $query = $this->dbSelect("remaining_2fa_tries", "z_logintoken")->where([
+                "id" => $session->id(),
+            ]);
+
+            return (int) $this->exec($query)->resultToLine()["remaining_2fa_tries"];
+        }
+
         /**
-         * Records the address a session was last used from, when it changed
+         * Hands the session its full budget of two factor tries back
+         */
+        public function resetTwoFactorTries(Session|APIKey $session): void {
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["remaining_2fa_tries" => $query->newExpr("DEFAULT(remaining_2fa_tries)")]);
+            $query->where(["id" => $session->id()]);
+
+            $this->exec($query);
+        }
+
+        /**
+         * Stamps a freshly passed two factor check on the session that
+         * authenticated the request
+         */
+        public function recordTwoFactor(Session|APIKey $session): void {
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["last_2fa" => date("Y-m-d H:i:s")]);
+            $query->where(["id" => $session->id()]);
+
+            $this->exec($query);
+        }
+
+        /**
+         * Records when and from where a session was last used
          *
-         * Called on every authenticated request, so it only writes on a change.
+         * Called on every authenticated request, so a use that is already recorded
+         * within `session_last_used_throttle_seconds` is not written again - the
+         * timestamp is worth one write per throttle window, not one per request.
+         * A changed address is written whenever it changes, throttle or not.
          *
          * @param Session|APIKey $session The session that authenticated the request
          * @internal
          */
-        public function recordSessionIp(Session|APIKey $session): void {
+        public function recordSessionUse(Session|APIKey $session): void {
             $ip = request()->ip();
+            $addressChanged = !is_null($ip) && $ip !== $session->ipLast();
 
-            if(is_null($ip) || $ip === $session->ipLast()) return;
+            // The row is already loaded, so the throttle costs no query of its own
+            $lastUsed = $session->lastUsed();
+            $throttle = configNumeric("session_last_used_throttle_seconds", 60);
+            $isRecent = !is_null($lastUsed) && strtotime($lastUsed) > time() - $throttle;
 
-            $sql = "UPDATE `z_logintoken`
-                    SET `ip_last` = ?
-                    WHERE `id` = ?";
-            $this->exec($sql, "si", $ip, $session->id());
+            if($isRecent && !$addressChanged) return;
+
+            $query = $this->dbUpdate("z_logintoken");
+            $query->set(["last_used" => $query->func()->now()]);
+
+            if($addressChanged) $query->set("ip_last", $ip);
+
+            $query->where([
+                "id" => $session->id()
+            ]);
+
+            $this->exec($query);
         }
 
         /**
@@ -411,6 +529,42 @@
             return $this->resultToLine()["RES"] == 0;
         }
         
+
+
+        /**
+         * Stores a fresh two factor secret, left unconfirmed until a code proves the
+         * authenticator received it. Null drops two factor off the account.
+         * @param User $user The user to enroll
+         * @param ?string $secret The base32 secret, or null to remove it
+         * @internal
+         */
+        public function setTwoFactorSecret(User $user, ?string $secret): void {
+            $query = $this->dbUpdate("z_user", [
+                "totp_secret" => $secret,
+                "totp_confirmed_at" => null,
+            ])->where([
+                "id" => $user->id(),
+            ]);
+
+            $this->exec($query);
+        }
+
+        /**
+         * Confirms the stored secret, which is what turns two factor on. The
+         * secret check keeps a confirmation from landing on an empty enrollment.
+         * @param User $user The user whose enrollment is complete
+         * @internal
+         */
+        public function confirmTwoFactor(User $user): void {
+            $query = $this->dbUpdate("z_user");
+            $query->set(["totp_confirmed_at" => $query->func()->now()]);
+            $query->where([
+                "id" => $user->id(),
+                "totp_secret IS NOT" => null,
+            ]);
+
+            $this->exec($query);
+        }
 
     }
 

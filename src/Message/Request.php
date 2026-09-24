@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Message;
 
     use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
@@ -285,6 +286,41 @@
             if(!$hasPermission) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
+                exit;
+            }
+
+            return true;
+        }
+
+        /**
+         * Guards an action behind a recent two factor check. Answers true when the
+         * session passed one inside `two_factor_freshness_seconds`, and for every
+         * account that carries no two factor at all.
+         *
+         * Without $boolResult a stale session is answered with a json error carrying
+         * `twoFactorRenew`, which Z.js turns into the two factor modal. Pass true to
+         * answer the client yourself instead:
+         *
+         *     if(!$req->requireFreshTwoFactor(boolResult: true)) {
+         *         return $res->error("Two factor required", ["twoFactorRenew" => true]);
+         *     }
+         *
+         * @param ?int $freshnessSeconds How recent the check has to be, or null for the configured window
+         * @param bool $boolResult Return the answer rather than ending the request
+         * @return bool Whether the session is fresh enough
+         */
+        public function requireFreshTwoFactor(?int $freshnessSeconds = null, bool $boolResult = false): bool {
+            if(!user()->isLoggedIn) {
+                if($boolResult) return false;
+                zubzet()->executePath(["login", "index"]);
+                exit;
+            }
+
+            $session = Session::byToken(user()->getSessionToken());
+
+            if(is_null($session) || $session->requireRenew($freshnessSeconds)) {
+                if($boolResult) return false;
+                response()->error("Two factor required", ["twoFactorRenew" => true]);
                 exit;
             }
 

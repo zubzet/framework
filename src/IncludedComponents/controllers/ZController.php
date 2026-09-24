@@ -1,5 +1,6 @@
 <?php
 
+    use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
@@ -87,6 +88,24 @@
             }
 
             $req->checkPermission("admin.user.edit");
+
+            // Turns two factor off, the way back in for an owner who lost their authenticator
+            if($req->isAction("disable_two_factor")) {
+                $account = User::byId($userId);
+                if(is_null($account)) return $res->error("Unknown user");
+
+                if(!$account->hasTwoFactor()) return $res->error("Two factor is not active");
+
+                $account->disableTwoFactor();
+
+                logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                    "userId" => $account->id(),
+                    "reason" => "two-factor-force-disabled",
+                ]);
+
+                return $res->success();
+            }
+
             $user = $req->getModel("z_user")->getUserById($userId);
             $email = $user["email"];
 
@@ -132,6 +151,7 @@
                 "result" => "success",
                 "email" => $user["email"],
                 "userId" => $userId,
+                "hasTwoFactor" => User::byId($userId)?->hasTwoFactor() ?? false,
             ]);
         }
 
@@ -208,6 +228,16 @@
             return $res->render("administration/roles.php", [
                 "name" => $role["name"],
                 "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"]),
+            ]);
+        }
+
+        // The profile page of the requesting user, open to every login rather than to admins
+        public function action_profile(Request $req, Response $res) {
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
+            if(is_null($account)) return $res->reroute(["login"]);
+
+            return $res->render("administration/profile.php", [
+                "account" => $account,
             ]);
         }
 

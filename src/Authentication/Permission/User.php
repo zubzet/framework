@@ -5,6 +5,8 @@ namespace ZubZet\Framework\Authentication\Permission;
 use ZubZet\Framework\Authentication\AuthenticationObject;
 
 use DateTime;
+use OTPHP\TOTP;
+use ParagonIE\ConstantTime\Base32;
 use ZubZet\Framework\Authentication\HandleTrait;
 use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\PasswordHash\Password;
@@ -421,5 +423,101 @@ class User extends AuthenticationObject {
      */
     public function refreshAllPermissions(): void {
         $this->setField("permissions", model("z_permission")->getPermissionsByUserAll($this));
+    }
+
+
+    /**
+     * Whether two factor is active, which only a confirmed enrollment makes it.
+     * A stored secret on its own is an enrollment nobody finished.
+     *
+     * @return bool
+     */
+    public function hasTwoFactor(): bool {
+        return !is_null($this->getField("totp_confirmed_at"));
+    }
+
+    /**
+     * When the user confirmed their authenticator
+     *
+     * @return ?string The timestamp, or null while two factor is off
+     */
+    public function twoFactorConfirmedAt(): ?string {
+        return $this->getField("totp_confirmed_at");
+    }
+
+    /**
+     * Begin an enrollment by storing a fresh secret that does not count yet.
+     * The returned object carries the secret and the provisioning uri, the two
+     * shapes an authenticator takes it in.
+     *
+     * @return TOTP The enrollment, to be shown once and never again
+     */
+    public function startTwoFactor(): TOTP {
+        $secret = Base32::encodeUpperUnpadded(random_bytes(20));
+
+        $totp = TOTP::create($secret);
+
+        // An account without an email is named generically in the authenticator
+        $email = $this->email();
+        $label = empty($email) ? "User" : $email;
+
+        // otphp rejects a colon in the label and the issuer, in each encoding it looks for
+        $totp->setLabel(str_replace([":", "%3A", "%3a"], "", $label));
+        $issuer = str_replace([":", "%3A", "%3a"], "", config("pageName", default: "ZubZet"));
+        $totp->setIssuer($issuer);
+
+        model("z_login")->setTwoFactorSecret($this, $secret);
+        $this->clearFields();
+
+        return $totp;
+    }
+
+    /**
+     * Check a code against the stored secret. Answers false while the account
+     * carries no secret, so a caller cannot tell enrollment states apart by it.
+     *
+     * @param string $code The code from the authenticator
+     * @return bool Whether the code matched
+     */
+    public function verifyTwoFactorCode(string $code): bool {
+        $secret = $this->getField("totp_secret");
+        if(is_null($secret)) return false;
+
+        // One 30 second step each way, so a clock that drifts a little and a code
+        // read just before its window turns still land. Checked per timestamp, because
+        // otphp 10 counts verify()'s window in periods and otphp 11 in seconds
+        $totp = TOTP::create($secret);
+        $now = time();
+        $period = $totp->getPeriod();
+        return $totp->verify($code, $now - $period)
+            || $totp->verify($code, $now)
+            || $totp->verify($code, $now + $period);
+    }
+
+    /**
+     * Finish an enrollment. Turning two factor on takes a code, which is what
+     * proves the secret reached the authenticator and was not lost in the page.
+     *
+     * @param string $code The code from the authenticator
+     * @return bool Whether the enrollment is now active
+     */
+    public function confirmTwoFactor(string $code): bool {
+        if($this->hasTwoFactor()) return false;
+        if(!$this->verifyTwoFactorCode($code)) return false;
+
+        model("z_login")->confirmTwoFactor($this);
+        $this->clearFields();
+
+        return true;
+    }
+
+    /**
+     * Drop two factor and the secret behind it
+     *
+     * @return void
+     */
+    public function disableTwoFactor(): void {
+        model("z_login")->setTwoFactorSecret($this, null);
+        $this->clearFields();
     }
 }

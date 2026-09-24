@@ -168,7 +168,8 @@ User attributes can be updated directly on the instance.
     $user->updateOrganization(?Organization $organization);
     ```
 
-* Clears all active login sessions for the user.
+* Clears all active login sessions for the user. Api keys are credentials of their
+  own and are not touched.
 
     ```php
     $user->clearSessions();
@@ -203,6 +204,43 @@ Verification status is time-aware and can be set or queried at arbitrary points 
 
     ```php
     $user->isVerified(string $at = "NOW"): bool
+    ```
+
+---
+
+### Two Factor
+
+The account side of [two factor authentication](two-factor-authentication.md). The secret lives in `z_user.totp_secret`, and only a confirmed enrollment (`totp_confirmed_at`) turns two factor on.
+
+* Starts an enrollment: stores a fresh secret that does not count yet and returns it as an `OTPHP\TOTP`. `getSecret()` and `getProvisioningUri()` are the two shapes an authenticator takes it in. The label is the user's email and the issuer the `pageName`. Starting again replaces the secret and turns an active two factor off until the new one is confirmed, which is why the profile page refuses to start while two factor is on.
+
+    ```php
+    $user->startTwoFactor(): TOTP
+    ```
+
+* Turns two factor on when the code matches the stored secret. Returns `false` for a wrong code and for an account that already has two factor.
+
+    ```php
+    $user->confirmTwoFactor(string $code): bool
+    ```
+
+* Checks a code against the stored secret, one 30 second step either side of the current one. Returns `false` while the account has no secret.
+
+    ```php
+    $user->verifyTwoFactorCode(string $code): bool
+    ```
+
+* Returns whether two factor is on, and since when.
+
+    ```php
+    $user->hasTwoFactor(): bool
+    $user->twoFactorConfirmedAt(): ?string
+    ```
+
+* Turns two factor off and drops the secret.
+
+    ```php
+    $user->disableTwoFactor(): void
     ```
 
 ---
@@ -753,6 +791,12 @@ Everything else a key needs it already has as a session: it is named through
 [`setName()`](#creating-a-session) and exempted from the login timeout through
 [`setCanExpire(false)`](#lifetime-management), which is what most keys want.
 
+* The lifetimes the [profile page](../z-admin/profile.md) offers for a new key next to *Never expires*, in days mapped to their label.
+
+    ```php
+    APIKey::LIFETIMES // [1 => "1 day", 3 => "3 days", ..., 365 => "1 year"]
+    ```
+
 ---
 
 ### Lifetime Management
@@ -802,6 +846,12 @@ Everything else a key needs it already has as a session: it is named through
     $session->invalidate(): void
     ```
 
+* Ends every active login of a user in one statement, the session that issues it included. Api keys are credentials of their own and are left alone, so revoke those separately by calling `invalidate()` on each of [`APIKey::byUser()`](#api-keys). This is the static counterpart to [`$user->clearSessions()`](#updating-user-data), which is also what [`$user->updatePassword()`](#updating-user-data) runs - changing a password ends every login of the account, its keys keep working.
+
+    ```php
+    Session::clearForUser(User $user): void
+    ```
+
 ---
 
 ### Expiry Check
@@ -816,6 +866,44 @@ Everything else a key needs it already has as a session: it is named through
 
     ```php
     $session->expiresAt(): ?string
+    ```
+
+---
+
+### Two Factor Checks
+
+A session remembers when it last passed a [two factor](two-factor-authentication.md) check, in `z_logintoken.last_2fa`, and how many wrong codes it may still send, in `remaining_2fa_tries`.
+
+* Returns whether the session has to pass two factor again. `false` for an account without two factor, `true` while the session never passed a check or once the last one is older than `$freshnessSeconds` (defaults to `two_factor_freshness_seconds`, 900). A session whose user is gone always has to. This is what [`$req->requireFreshTwoFactor()`](two-factor-authentication.md#guarding-an-action) asks.
+
+    ```php
+    $session->requireRenew(?int $freshnessSeconds = null): bool
+    ```
+
+* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (5 to begin with).
+
+    ```php
+    $session->lastTwoFactor(): ?string
+    $session->remainingTwoFactorTries(): int
+    ```
+
+* Stamps a passed check on the session, and gives it its full budget of tries back.
+
+    ```php
+    $session->recordTwoFactor(): void
+    $session->resetTwoFactorTries(): void
+    ```
+
+* Spends one try on a wrong code and returns how many are left. At zero the caller is expected to sign the session out, the framework's own endpoints do.
+
+    ```php
+    $session->spendTwoFactorTry(): int
+    ```
+
+* A login that verified the code itself stamps the new session right away.
+
+    ```php
+    $res->loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null, bool $recordTwoFactor = false)
     ```
 
 ---
@@ -892,6 +980,12 @@ Everything else a key needs it already has as a session: it is named through
 
     ```php
     $session->created(): string
+    ```
+
+* Returns when the session was last used, or `null` while it has not been used since it was created. Every authenticated request refreshes it, but at most once per `session_last_used_throttle_seconds` (defaults to 60), so the timestamp costs one write per throttle window rather than one per request - read it as "last seen around then", not to the second. Set the key to `0` to write on every request. A request from a new address is always written, because that is what updates `ipLast()`.
+
+    ```php
+    $session->lastUsed(): ?string
     ```
 
 ---

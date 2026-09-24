@@ -31,6 +31,7 @@
             $this->setField("extended_seconds", $data["extended_seconds"]);
             $this->setField("expires_at", $data["expires_at"]);
             $this->setField("created", $data["created"]);
+            $this->setField("last_used", $data["last_used"]);
         }
 
         /**
@@ -130,6 +131,87 @@
         }
 
         /**
+         * When this session last passed a two factor check, or null while it
+         * never did
+         */
+        public function lastTwoFactor(): ?string {
+            if($this->shouldRefresh) $this->refresh();
+
+            return $this->getField("last_2fa");
+        }
+
+        /**
+         * How many wrong two factor codes this session may still send. At zero it
+         * is signed out rather than asked again.
+         */
+        public function remainingTwoFactorTries(): int {
+            if($this->shouldRefresh) $this->refresh();
+
+            return (int) $this->getField("remaining_2fa_tries");
+        }
+
+        /**
+         * Stamps a freshly passed two factor check on the session
+         */
+        public function recordTwoFactor(): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->recordTwoFactor($this);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
+         * Hands the session its full budget of two factor tries back
+         */
+        public function resetTwoFactorTries(): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->resetTwoFactorTries($this);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
+         * Spends one of the tries on a wrong code and answers how many are left
+         */
+        public function spendTwoFactorTry(): int {
+            if($this->shouldRefresh) $this->refresh();
+
+            $remaining = model("z_login")->spendTwoFactorTry($this);
+
+            $this->refreshOnNextUse();
+
+            return $remaining;
+        }
+
+        /**
+         * Whether this session has to pass two factor again before it is let near
+         * a guarded action.
+         *
+         * False for an account that carries no two factor - there is nothing to
+         * renew and the visitor could never satisfy it. Otherwise true while the
+         * session never passed a check, or once the last one aged past
+         * `two_factor_freshness_seconds`. An api key starts without a stamp, so it
+         * stays stale for an account with two factor until it passes a renewal.
+         */
+        public function requireRenew(?int $freshnessSeconds = null): bool {
+            $user = User::byId($this->userId());
+
+            // A session outliving its user is turned away, not waved through
+            if(is_null($user)) return true;
+
+            if(!$user->hasTwoFactor()) return false;
+
+            $lastTwoFactor = $this->lastTwoFactor();
+            if(is_null($lastTwoFactor)) return true;
+
+            $freshness = is_null($freshnessSeconds) ? configNumeric("two_factor_freshness_seconds", 900) : $freshnessSeconds;
+
+            return strtotime($lastTwoFactor) <= time() - $freshness;
+        }
+
+        /**
          * The point in time the session becomes unusable, or null when it cannot expire
          *
          * A fixed expiry wins over the computed lifetime, so neither the configured
@@ -218,6 +300,13 @@
 
         public function created(): ?string {
             return $this->getField("created");
+        }
+
+        /**
+         * When the session was last used, or null while it is unused
+         */
+        public function lastUsed(): ?string {
+            return $this->getField("last_used");
         }
 
         protected function refreshOnNextUse(): void {
