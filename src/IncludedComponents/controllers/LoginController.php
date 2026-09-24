@@ -118,6 +118,9 @@
          * @param Response $res The response object
          */
         public function twoFactorLogin(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("two-factor-login")) return $res->error("Invalid request");
+
             $challenge = $req->getPost("challenge");
             if(empty($challenge) || !is_string($challenge)) return $res->error("Missing challenge");
 

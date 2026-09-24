@@ -114,7 +114,7 @@
                 button.prop("disabled", true);
                 error.addClass("d-none");
 
-                Z.Request.root("_zubzet/profile/start-two-factor", null, {}, (res) => {
+                Z.Request.root("_zubzet/profile/start-two-factor", "start-two-factor", {}, (res) => {
                     // Stays disabled once it worked, a second run would stack another qr code
                     if("success" != res.result) {
                         button.prop("disabled", false);
@@ -130,7 +130,7 @@
             root.on("click", ".z-two-factor-confirm", () => {
                 error.addClass("d-none");
 
-                Z.Request.root("_zubzet/profile/confirm-two-factor", null, {
+                Z.Request.root("_zubzet/profile/confirm-two-factor", "confirm-two-factor", {
                     code: root.find(".z-two-factor-code").val()
                 }, (res) => {
                     if("success" != res.result) return fail(res.message);
@@ -147,7 +147,7 @@
             root.on("click", ".z-two-factor-disable-confirm", () => {
                 error.addClass("d-none");
 
-                Z.Request.root("_zubzet/profile/disable-two-factor", null, {
+                Z.Request.root("_zubzet/profile/disable-two-factor", "disable-two-factor", {
                     code: root.find(".z-two-factor-disable-code").val()
                 }, (res) => {
                     if("success" != res.result) return fail(res.message);
