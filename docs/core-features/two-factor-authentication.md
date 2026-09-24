@@ -45,7 +45,7 @@ public function action_delete_account(Request $req, Response $res) {
 }
 ```
 
-The check counts as recent within `two_factor_freshness_seconds` (defaults to 900). A different window can be passed as the first argument. Accounts without two factor always pass, there is nothing to renew. An [api key](access-control.md#api-keys) is never stamped, so for an account with two factor it never passes.
+The check counts as recent within `two_factor_freshness_seconds` (defaults to 900). A different window can be passed as the first argument. Accounts without two factor always pass, there is nothing to renew. An [api key](access-control.md#api-keys) starts without a stamp, so for an account with two factor it does not pass until it renews the check at `POST _zubzet/two-factor/refresh`.
 
 Without further arguments a stale session is answered with a JSON error carrying `twoFactorRenew` and the request ends. To answer the client yourself, pass `boolResult: true`:
 
