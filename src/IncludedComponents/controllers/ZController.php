@@ -316,7 +316,6 @@
             if(is_null($account)) return $res->reroute(["login"]);
 
             return $res->render("administration/profile.php", [
-                "title" => "Profile",
                 "account" => $account,
             ]);
         }

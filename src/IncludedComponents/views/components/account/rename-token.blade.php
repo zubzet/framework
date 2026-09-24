@@ -6,21 +6,21 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="z-rename-token-title">
-                            <i class="fa fa-fw fa-pen mr-1"></i> Rename
+                            <i class="fa fa-fw fa-pen mr-1"></i> {{ __("account.rename_token.title") }}
                         </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ __("account.close") }}">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
                         <p class="small text-muted">
-                            An empty name hands it back to the generic one.
+                            {{ __("account.rename_token.hint") }}
                         </p>
-                        <input class="form-control z-token-name" data-test="token-name" maxlength="255" placeholder="Name">
+                        <input class="form-control z-token-name" data-test="token-name" maxlength="255" placeholder="{{ __("account.rename_token.placeholder") }}">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary z-token-rename-save" data-test="btn-save-token-name">
-                            Save
+                            {{ __("account.rename_token.save") }}
                         </button>
                     </div>
                 </div>
@@ -36,7 +36,7 @@
                     rename.data("uuid", $(this).data("uuid"));
                     rename.data("type", $(this).data("type"));
                     rename.find(".z-token-name")
-                        .attr("placeholder", $(this).data("placeholder") || "Name")
+                        .attr("placeholder", $(this).data("placeholder") || <?= json_encode(__("account.rename_token.placeholder")) ?>)
                         .val($(this).attr("data-name"));
                     rename.modal("show");
                 });
