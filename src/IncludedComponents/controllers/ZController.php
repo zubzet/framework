@@ -261,7 +261,9 @@
             }
 
             if("invitation" === $action) {
-                $isAccept = "accept" === $req->getParameters(2, 1);
+                // Joining takes the button's POST, a followed link only shows the page
+                $isAccept = "accept" === $req->getParameters(2, 1)
+                    && "POST" === ($req->input->SERVER["REQUEST_METHOD"] ?? null);
 
                 $invite = empty($target) ? null : model("z_organization")->getInviteByToken($target);
                 $invitedOrganization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
