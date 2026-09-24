@@ -15,6 +15,7 @@ It has following categories:
 | Edit User | Form to edit users
 | Add User | Form to add users
 | Roles | User permission managment |
+| Organization | [Organization management](organization-management.md) by its own members |
 
 
 ## Permissions
@@ -31,8 +32,15 @@ To be able to use all functions, the following permissions are needed:
 - admin.log
 - [admin.su](login-as-another-user.md)
 
+Members manage their own organization with:
+
+- [z.organization.invite](organization-management.md#invitations)
+- [z.organization.roles](organization-management.md#releasing-roles-to-organizations)
+- [z.organization.rename](organization-management.md)
+
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.
+The list offers every role, but a group only while the user already holds it. Groups follow the user's [organization](../core-features/access-control.md#organization-object), so they are not handed out here.
 Be advised, each role gives special permissions, some give the user special powers, therefore please see the list above of what roles have which permissions.
 
 After you set a role, you can either add more roles or save the user by clicking ‘submit’ at the bottom of the page. The user should now be able to use their role.

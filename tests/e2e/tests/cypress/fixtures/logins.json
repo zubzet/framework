@@ -48,5 +48,33 @@
     "locale_uncovered": {
         "name": "locale-uncovered@zierhut-it.de",
         "token": "user_locale_uncovered"
+    },
+
+    "zorg_manager": {
+        "token": "0800a00000000000000000000000000000000000"
+    },
+
+    "zorg_member": {
+        "token": "0801a00000000000000000000000000000000000"
+    },
+
+    "zorg_orgless": {
+        "token": "0802a00000000000000000000000000000000000"
+    },
+
+    "zorg_invitee": {
+        "token": "0803a00000000000000000000000000000000000"
+    },
+
+    "zorg_invitee_request": {
+        "token": "0804a00000000000000000000000000000000000"
+    },
+
+    "zorg_renamer": {
+        "token": "0808a00000000000000000000000000000000000"
+    },
+
+    "zorg_stranger": {
+        "token": "0810a00000000000000000000000000000000000"
     }
 }

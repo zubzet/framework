@@ -60,6 +60,94 @@
             $this->exec($query);
         }
 
+        public function createInvite(Organization $organization, string $email): string {
+            $token = bin2hex(random_bytes(16));
+
+            $query = $this->dbInsert("z_organization_invite", [
+                "organizationId" => $organization->id(),
+                "email" => $email,
+                "token" => $token
+            ]);
+
+            $this->exec($query);
+            return $token;
+        }
+
+        public function getInviteById(int $id): ?array {
+            $query = $this->dbSelect("*", "z_organization_invite")->where([
+                "id" => $id,
+                "active" => 1
+            ]);
+
+            return $this->exec($query)->resultToLine();
+        }
+
+        public function getInviteByToken(string $token): ?array {
+            $query = $this->dbSelect("*", "z_organization_invite")->where([
+                "token" => $token,
+                "active" => 1
+            ]);
+
+            return $this->exec($query)->resultToLine();
+        }
+
+        public function getInvitesByOrganization(Organization $organization): array {
+            $query = $this->dbSelect("*", "z_organization_invite")->where([
+                "organizationId" => $organization->id(),
+                "active" => 1
+            ])->orderDesc("created");
+
+            return $this->exec($query)->resultToArray();
+        }
+
+        public function getInvitesByEmail(Organization $organization, string $email): array {
+            $query = $this->dbSelect("*", "z_organization_invite")->where([
+                "organizationId" => $organization->id(),
+                "email" => $email,
+                "active" => 1
+            ]);
+
+            return $this->exec($query)->resultToArray();
+        }
+
+        // Accepting and revoking both take the invite out of use
+        public function deactivateInvite(int $id): void {
+            $query = $this->dbUpdate("z_organization_invite", [
+                "active" => 0
+            ])->where([
+                "id" => $id,
+                "active" => 1
+            ]);
+
+            $this->exec($query);
+        }
+
+        // Roles and groups an organization may hand to its members, by `is_org_assignable`
+        public function getAssignableRoles(): array {
+            $query = $this->dbSelect("*", "z_role")->where([
+                "is_org_assignable" => 1,
+                "active" => 1
+            ])->orderAsc("name");
+
+            return $this->exec($query)->resultToArray();
+        }
+
+        // Which assignable roles the members of an organization hold, one row per user and role
+        public function getAssignedRoles(Organization $organization): array {
+            $query = $this->dbSelect(["user" => "zur.user", "role" => "zur.role"], ["zur" => "z_user_role"])
+                ->innerJoin(["zu" => "z_user"], "zu.id = zur.user")
+                ->innerJoin(["zr" => "z_role"], "zr.id = zur.role")
+                ->where([
+                    "zu.organizationId" => $organization->id(),
+                    "zu.active" => 1,
+                    "zur.active" => 1,
+                    "zr.is_org_assignable" => 1,
+                    "zr.active" => 1
+                ]);
+
+            return $this->exec($query)->resultToArray();
+        }
+
     }
 
 ?>
