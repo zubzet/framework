@@ -7,7 +7,7 @@
         $account = User::byId(user()->userId);
     @endphp
 
-    <script src="<?= zubzet()->rootFolder . "_zubzet/asset-proxy/qrcode.js" ?>"></script>
+    <script src="<?= zubzet()->rootFolder . "_zubzet/asset-proxy/js/qrcode.js" ?>"></script>
 
     <div id="z-two-factor" {{ $attributes }}>
         @if($account->hasTwoFactor())
