@@ -10,31 +10,31 @@
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="mr-3">
                         <div>
-                            {{ $session->name() ?? "Session" }}
+                            {{ $session->name() ?? __("account.sessions.fallback_name") }}
                             @if($session->uuid() === Session::byToken(user()->getSessionToken())?->uuid())
-                                <span class="badge badge-success" data-test="session-current">This browser</span>
+                                <span class="badge badge-success" data-test="session-current">{{ __("account.sessions.current") }}</span>
                             @endif
                         </div>
                         <small class="text-muted d-block">
-                            {{ $session->device() ?? "Unknown device" }}
+                            {{ $session->device() ?? __("account.sessions.unknown_device") }}
                         </small>
                         <small class="text-muted d-block">
-                            Started {{ date("d.m.Y H:i", strtotime($session->created())) }} from {{ $session->ipCreation() ?? "an unknown address" }},
+                            {{ __("account.sessions.started", ["{date}" => date("d.m.Y H:i", strtotime($session->created())), "{ip}" => $session->ipCreation() ?? __("account.unknown_address")]) }}
                             @if(is_null($session->lastUsed()))
-                                never used since
+                                {{ __("account.never_used") }}
                             @else
-                                last seen {{ date("d.m.Y H:i", strtotime($session->lastUsed())) }} from {{ $session->ipLast() ?? "an unknown address" }}
+                                {{ __("account.last_seen", ["{date}" => date("d.m.Y H:i", strtotime($session->lastUsed())), "{ip}" => $session->ipLast() ?? __("account.unknown_address")]) }}
                             @endif
                         </small>
                         <small class="text-muted d-block">
                             @if(is_null($session->expiresAt()))
-                                Never expires
+                                {{ __("account.never_expires") }}
                             @else
-                                Expires {{ date("d.m.Y H:i", strtotime($session->expiresAt())) }}
+                                {{ __("account.expires", ["{date}" => date("d.m.Y H:i", strtotime($session->expiresAt()))]) }}
                             @endif
                         </small>
                         @if(!is_null($session->reason()))
-                            <small class="text-muted d-block">Reason: {{ $session->reason() }}</small>
+                            <small class="text-muted d-block">{{ __("account.sessions.reason", ["{reason}" => $session->reason()]) }}</small>
                         @endif
                     </div>
                     <div class="flex-shrink-0">
@@ -43,23 +43,23 @@
                             data-uuid="{{ $session->uuid() }}"
                             data-name="{{ $session->name() }}"
                             data-type="session"
-                            data-placeholder="Name, e.g. Laptop at home"
+                            data-placeholder="{{ __("account.sessions.name_placeholder") }}"
                             data-test="btn-rename-session"
                         >
-                            Rename
+                            {{ __("account.rename") }}
                         </button>
                         <button
                             class="btn btn-sm btn-outline-danger z-revoke-session"
                             data-uuid="{{ $session->uuid() }}"
                             data-test="btn-revoke-session"
                         >
-                            Revoke
+                            {{ __("account.revoke") }}
                         </button>
                     </div>
                 </div>
             </li>
         @empty
-            <li class="list-group-item text-muted" data-test="sessions-empty">No sessions.</li>
+            <li class="list-group-item text-muted" data-test="sessions-empty">{{ __("account.sessions.empty") }}</li>
         @endforelse
     </ul>
 

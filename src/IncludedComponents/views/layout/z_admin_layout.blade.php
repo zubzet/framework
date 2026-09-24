@@ -165,7 +165,7 @@
                         <div class="list-group mb-1">
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-profile" href="<?= $opt["root"]; ?>z/profile">
                                 <i class="fa fa-fw fa-user"></i>
-                                Profile
+                                <?= e(__("admin.nav.profile")) ?>
                             </a>
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>">
                                 <i class="fa fa-fw fa-arrow-left"></i>

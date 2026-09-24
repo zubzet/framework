@@ -33,8 +33,8 @@
             });
 
 <?php if($opt["hasTwoFactor"]) { ?>
-            form.createActionButton("Disable two factor", "btn-outline-danger", function() {
-                if(!window.confirm("Turn two factor off for this account? It signs in with the password alone until the owner sets it up again.")) return;
+            form.createActionButton(<?= json_encode(__("admin.edit_user.disable_two_factor")) ?>, "btn-outline-danger", function() {
+                if(!window.confirm(<?= json_encode(__("admin.edit_user.disable_two_factor_confirm")) ?>)) return;
 
                 Z.Request.root("z/disable_two_factor/<?= $opt["userId"]; ?>", "disable_two_factor", {}, (res) => {
                     if(res.result != "success") return window.alert(res.message);

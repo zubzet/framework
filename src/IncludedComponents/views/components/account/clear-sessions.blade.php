@@ -1,7 +1,7 @@
 @auth
     <button type="button" id="z-clear-sessions" {{ $attributes }} data-test="btn-clear-sessions">
         @if($slot->isEmpty())
-            Clear all sessions
+            {{ __("account.sessions.clear") }}
         @else
             {{ $slot }}
         @endif

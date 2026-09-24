@@ -20,9 +20,9 @@
             <div class="modal-body text-center px-4 pt-4 pb-2">
                 <i class="fa fa-shield-alt fa-2x text-primary mb-3"></i>
 
-                <h5 class="mb-1" id="z-two-factor-modal-title">Two factor</h5>
+                <h5 class="mb-1" id="z-two-factor-modal-title">{{ __("account.two_factor.modal.title") }}</h5>
                 <p class="text-muted small mb-4">
-                    Your password was accepted. Enter the code from your authenticator.
+                    {{ __("account.two_factor.modal.hint") }}
                 </p>
 
                 <div class="d-flex justify-content-center" id="z-two-factor-digits">
@@ -42,10 +42,10 @@
 
             <div class="modal-footer border-0 justify-content-center pb-4">
                 <button type="button" class="btn btn-link text-muted" id="z-two-factor-modal-cancel">
-                    Cancel
+                    {{ __("account.two_factor.modal.cancel") }}
                 </button>
                 <button type="button" class="btn btn-primary px-4" id="z-two-factor-modal-send">
-                    Sign in
+                    {{ __("account.two_factor.modal.sign_in") }}
                 </button>
             </div>
         </div>
