@@ -95,13 +95,16 @@
             $user = $req->getModel("z_user")->getUserById($userId);
             $email = $user["email"];
 
+            // Plain roles and the groups the user already holds, offered and accepted alike
+            $roles = $req->getModel("z_general")->getTableWhere("z_role", "*", "active = 1 AND (is_group = 0 OR id IN (SELECT role FROM z_user_role WHERE active = 1 AND user = ?))", "i", [$userId]);
+
             if($req->hasFormData()) {
                 $formResult = $req->validateForm([
                     (new FormField("email"))->unique("z_user", "email", "id", $userId),
                 ]);
 
                 $subformResult = $req->validateCED("roles", [
-                    (new FormField("role"))->required()->exists("z_role", "id"),
+                    (new FormField("role"))->required()->in(array_column($roles, "id")),
                 ]);
 
                 $subPermissionForm = $req->validateCED("permissions", [
@@ -131,7 +134,7 @@
 
             return $res->render("administration/edit_user.php", [
                 "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
-                "roles" => $this->makeFood($req->getModel("z_general")->getTableWhere("z_role", "*", "active = 1 AND (is_group = 0 OR id IN (SELECT role FROM z_user_role WHERE active = 1 AND user = ?))", "i", [$userId]), "id", "name"),
+                "roles" => $this->makeFood($roles, "id", "name"),
                 "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
                 "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
                 "result" => "success",
