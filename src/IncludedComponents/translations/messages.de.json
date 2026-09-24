@@ -24,7 +24,8 @@
             "roles": "Rollen",
             "groups": "Gruppen",
             "back": "Zurück",
-            "logout": "Abmelden"
+            "logout": "Abmelden",
+            "organization": "Organisation"
         },
         "dashboard": {
             "title": "Dashboard"
@@ -59,7 +60,8 @@
             "create": "Rolle erstellen",
             "create_confirm": "Soll wirklich eine neue Rolle erstellt werden?",
             "delete": "Rolle löschen",
-            "delete_confirm": "Soll diese Rolle wirklich gelöscht werden?"
+            "delete_confirm": "Soll diese Rolle wirklich gelöscht werden?",
+            "org_assignable": "Organisationen dürfen diese Rolle ihren Mitgliedern zuweisen"
         },
         "maintenance": {
             "title": "Wartungsmodus",
@@ -94,6 +96,51 @@
             "next": "Nächste",
             "last": "Letzte",
             "empty": "In {table} gibt es keine Zeilen."
+        },
+        "organization": {
+            "title": "Organisation",
+            "no_organization": "Sie sind kein Mitglied einer Organisation.",
+            "rename": "Umbenennen",
+            "invite": "Mitglied einladen",
+            "members": "Mitglieder",
+            "members_hint": "Öffnen Sie die Rollen eines Mitglieds, um ihm Zugriff zu geben oder wieder zu entziehen.",
+            "invites": "Offene Einladungen",
+            "invites_hint": "Einladungen, die noch nicht angenommen wurden. Widerrufen Sie eine, falls sie versehentlich verschickt wurde.",
+            "rename_title": "Organisation umbenennen",
+            "invite_title": "Mitglied einladen",
+            "invite_hint": "Geben Sie eine E-Mail-Adresse ein, um einen Einladungslink zu erstellen, und teilen Sie ihn mit dieser Person. Der Link ist 7 Tage gültig.",
+            "close": "Schließen"
+        },
+        "organization_invitation": {
+            "title": "Einladung",
+            "hint": "Sie wurden eingeladen, dieser Organisation beizutreten. Wenn Sie annehmen, wird Ihr Konto Mitglied.",
+            "invited_as": "Eingeladen als",
+            "invited_on": "Eingeladen am"
+        }
+    },
+    "organization": {
+        "accept": "Einladung annehmen",
+        "invite": {
+            "email": "E-Mail",
+            "create": "Einladung erstellen",
+            "copy": "Kopieren",
+            "copied": "Kopiert"
+        },
+        "invites": {
+            "validity": "Eingeladen am {created}, gültig bis {expires}",
+            "revoke": "Widerrufen",
+            "empty": "Keine offenen Einladungen."
+        },
+        "members": {
+            "no_email": "Keine E-Mail",
+            "roles": "Rollen",
+            "roles_placeholder": "Rolle hinzufügen …",
+            "save": "Rollen speichern",
+            "empty": "Keine Mitglieder."
+        },
+        "rename": {
+            "name": "Name",
+            "save": "Namen speichern"
         }
     }
 }

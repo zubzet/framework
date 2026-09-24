@@ -166,7 +166,7 @@
                             <?php if($opt["user"]->checkPermission("z.organization.invite")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-organization" href="<?= $opt["root"]; ?>z/organization">
                                     <i class="fa fa-fw fa-building"></i>
-                                    Organization
+                                    <?= e(__("admin.nav.organization")) ?>
                                 </a>
                             <?php } ?>
                             <a class="list-group-item list-group-item-dark list-group-item-action nav-item" href="<?= $opt["root"]; ?>">

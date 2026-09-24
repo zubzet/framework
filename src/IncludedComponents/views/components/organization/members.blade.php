@@ -6,7 +6,7 @@
             @forelse($members as $member)
                 <li class="list-group-item" data-test="organization-member-{{ $member['id'] }}">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-truncate mr-3">{{ $member["email"] ?? "No email" }}</span>
+                        <span class="text-truncate mr-3">{{ $member["email"] ?? __("organization.members.no_email") }}</span>
                         <button
                             class="btn btn-sm btn-outline-secondary flex-shrink-0"
                             data-toggle="collapse"
@@ -14,7 +14,7 @@
                             aria-expanded="false"
                             data-test="btn-edit-organization-member-roles"
                         >
-                            <i class="fa fa-fw fa-user-tag"></i> Roles
+                            <i class="fa fa-fw fa-user-tag"></i> {{ __("organization.members.roles") }}
                         </button>
                     </div>
                     <div class="collapse" id="z-organization-member-{{ $member['id'] }}-roles">
@@ -22,7 +22,7 @@
                     </div>
                 </li>
             @empty
-                <li class="list-group-item text-muted" data-test="organization-members-empty">No members.</li>
+                <li class="list-group-item text-muted" data-test="organization-members-empty">{{ __("organization.members.empty") }}</li>
             @endforelse
         </ul>
 
@@ -41,13 +41,13 @@
                     form.createField({
                         name: "roles",
                         type: "multi-select",
-                        text: "Roles",
-                        placeholder: "Add a role...",
+                        text: <?= json_encode(__("organization.members.roles")) ?>,
+                        placeholder: <?= json_encode(__("organization.members.roles_placeholder")) ?>,
                         food: food,
                         value: member.roles,
                     });
 
-                    $(form.buttonSubmit).html('<i class="fa fa-fw fa-save"></i> Save roles');
+                    $(form.buttonSubmit).html('<i class="fa fa-fw fa-save"></i> ' + <?= json_encode(e(__("organization.members.save"))) ?>);
                 });
             });
         </script>

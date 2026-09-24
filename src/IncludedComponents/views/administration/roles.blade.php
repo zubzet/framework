@@ -16,7 +16,7 @@
             form.createField({
                 name: "is_org_assignable",
                 type: "checkbox",
-                text: "Organizations may assign this role to their members",
+                text: <?= json_encode(__("admin.roles.org_assignable")) ?>,
                 value: <?php echo json_encode($opt["isOrgAssignable"]); ?>,
             });
 

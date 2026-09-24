@@ -289,7 +289,6 @@
                 }
 
                 return $res->render("administration/organization_invitation", [
-                    "title" => "Invitation",
                     "invite" => $invite,
                     // name() is typed string, an organization may have none
                     "organizationName" => $invitedOrganization->getField("name"),

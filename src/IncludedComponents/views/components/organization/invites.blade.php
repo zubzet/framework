@@ -9,8 +9,7 @@
                         <div class="mr-3">
                             <div>{{ $invite["email"] }}</div>
                             <small class="text-muted d-block">
-                                Invited {{ date("d.m.Y H:i", strtotime($invite["created"])) }},
-                                valid until {{ date("d.m.Y H:i", $invite["expires_at"]) }}
+                                {{ __("organization.invites.validity", ["{created}" => date("d.m.Y H:i", strtotime($invite["created"])), "{expires}" => date("d.m.Y H:i", $invite["expires_at"])]) }}
                             </small>
                         </div>
                         <button
@@ -18,12 +17,12 @@
                             data-id="{{ $invite['id'] }}"
                             data-test="btn-revoke-organization-invite"
                         >
-                            Revoke
+                            {{ __("organization.invites.revoke") }}
                         </button>
                     </div>
                 </li>
             @empty
-                <li class="list-group-item text-muted" data-test="organization-invites-empty">No open invitations.</li>
+                <li class="list-group-item text-muted" data-test="organization-invites-empty">{{ __("organization.invites.empty") }}</li>
             @endforelse
         </ul>
 
