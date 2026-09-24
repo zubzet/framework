@@ -192,8 +192,8 @@
          * False for an account that carries no two factor - there is nothing to
          * renew and the visitor could never satisfy it. Otherwise true while the
          * session never passed a check, or once the last one aged past
-         * `two_factor_freshness_seconds`. An api key is never stamped, so it
-         * stays stale for every account that carries two factor.
+         * `two_factor_freshness_seconds`. An api key starts without a stamp, so it
+         * stays stale for an account with two factor until it passes a renewal.
          */
         public function requireRenew(?int $freshnessSeconds = null): bool {
             $user = User::byId($this->userId());
