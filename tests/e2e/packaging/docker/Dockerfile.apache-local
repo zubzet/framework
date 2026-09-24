@@ -5,7 +5,18 @@ ARG USER_UID=1000
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 USER root
-RUN usermod -u "${USER_UID}" www-data \
+# ext-pcntl lets the task worker supervisor trap SIGTERM and drain its workers
+# instead of being killed mid-task. The framework runs without it (tasks in
+# flight are then recovered through their reservation timeout), but the e2e
+# stack ships it so the documented graceful stop is the path under test.
+RUN docker-php-ext-install pcntl
+
+# COMPOSER_VENDOR_DIR is a named volume shared with the worker container. Docker
+# seeds a fresh named volume from the image, so the directory has to exist here
+# with the right owner: otherwise the volume is created root owned and the
+# unprivileged www-data cannot install into it.
+RUN mkdir -p /var/www/vendor \
+ && usermod -u "${USER_UID}" www-data \
  && groupmod -g "${USER_UID}" www-data \
  && chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
 

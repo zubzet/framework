@@ -80,6 +80,10 @@ jobs:
               environment:
                 XDEBUG_MODE: "coverage"
                 DEBUG_ZUBZET_COVERAGE_FRAMEWORK: "true"
+            worker:
+              environment:
+                XDEBUG_MODE: "coverage"
+                DEBUG_ZUBZET_COVERAGE_FRAMEWORK: "true"
           EOF
 
       - name: Pre-pull compose services

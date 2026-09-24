@@ -20,6 +20,19 @@
         public $insertId;
 
         /**
+         * @var int $affectedRows Rows changed by the last write, or rows
+         *     returned by the last read.
+         *
+         *     This is mysqli's affected_rows, which counts rows actually
+         *     changed, not rows matched: an UPDATE writing a column its current
+         *     value reports 0. A conditional update can therefore use it to
+         *     tell whether it won, as long as it changes something, which is
+         *     how the task queue claims work exclusively.
+         */
+        #[IncludeInCheckpoint]
+        public int $affectedRows = 0;
+
+        /**
          * @var ?Model $callingModel A reference to the model that is currently handling the query, if any
          */
         #[IncludeInCheckpoint]

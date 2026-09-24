@@ -27,4 +27,9 @@
         public const USER_LOGGED_IN_ANOTHER = "USER_LOGGED_IN_ANOTHER";
         public const USER_LOGGED_OUT = "USER_LOGGED_OUT";
 
+        // Background tasks
+        public const TASK_DONE = "TASK_DONE";
+        public const TASK_FAILED = "TASK_FAILED";
+        public const TASK_ABANDONED = "TASK_ABANDONED";
+
     }
