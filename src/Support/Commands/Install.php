@@ -1,6 +1,8 @@
 <?php
     namespace ZubZet\Framework\Support\Commands;
 
+    use RecursiveIteratorIterator;
+    use RecursiveDirectoryIterator;
     use Symfony\Component\Console\Command\Command;
     use Symfony\Component\Console\Input\InputArgument;
     use Symfony\Component\Console\Input\InputInterface;
@@ -24,13 +26,18 @@
             "webroot/assets/css",
             "webroot/assets/js",
             "z_config",
+            "packaging",
+            "packaging/docker",
         ];
+
+        // Files copied from stubs/project, relative to the project root.
+        private const STUBS = __DIR__ . "/stubs/project";
 
         protected function configure(): void {
             $this->setName("install");
-            $this->setDescription("Builds the project folder structure.");
+            $this->setDescription("Builds a new ZubZet project.");
 
-            $this->addArgument("path", InputArgument::REQUIRED, "The project folder to build the structure in.");
+            $this->addArgument("path", InputArgument::REQUIRED, "The project folder to build the project in.");
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
@@ -51,6 +58,32 @@
                     return Command::FAILURE;
                 }
                 $out->writeln("<info>created: {$folder}</info>");
+            }
+
+            $stubs = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(self::STUBS, RecursiveDirectoryIterator::SKIP_DOTS));
+            foreach($stubs as $stub) {
+                $file = substr($stub->getPathname(), strlen(self::STUBS) + 1);
+
+                if(file_exists("{$path}/{$file}")) {
+                    $out->writeln("exists:  {$file}");
+                    continue;
+                }
+
+                if(!copy($stub->getPathname(), "{$path}/{$file}")) {
+                    $out->writeln("<error>failed:  {$file}</error>");
+                    return Command::FAILURE;
+                }
+                $out->writeln("<info>created: {$file}</info>");
+            }
+
+            chmod("{$path}/zubzet", 0755);
+
+            $out->writeln("<info>composer require zubzet/framework</info>");
+            // The caller's COMPOSER_VENDOR_DIR points at the framework's vendor, not the new project's.
+            passthru("env -u COMPOSER_VENDOR_DIR composer require zubzet/framework --no-interaction --working-dir=" . escapeshellarg($path), $exitCode);
+            if($exitCode !== 0) {
+                $out->writeln("<error>composer require failed</error>");
+                return Command::FAILURE;
             }
 
             return Command::SUCCESS;

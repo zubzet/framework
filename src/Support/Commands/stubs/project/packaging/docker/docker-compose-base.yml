@@ -1,0 +1,86 @@
+x-config-z-settings: &config-z-settings
+  COMPOSER_VENDOR_DIR: "/var/www/vendor"
+
+  CONFIG_HOST: http://localhost:8080
+  CONFIG_ROOTDIRECTORY: ""
+
+  ## Database
+  CONFIG_DBHOST: database:3306
+  CONFIG_DBNAME: app
+  CONFIG_DBPASSWORD: app_password
+  CONFIG_DBUSERNAME: app
+
+  ## Mailer
+  CONFIG_MAIL_FROM: no-reply@zubzet.com
+  CONFIG_MAIL_PORT: 25
+  CONFIG_MAIL_SMTP: mailer
+  CONFIG_MAIL_USER: user
+  CONFIG_MAIL_PASSWORD: password
+  CONFIG_MAIL_SECURITY: "false"
+
+x-built-application-image: &built-application-image
+  image: docker-application:latest
+  build:
+    context: .
+    dockerfile: Dockerfile.apache-local
+  restart: on-failure
+  environment:
+      <<: *config-z-settings
+  extra_hosts:
+    - host.docker.internal:host-gateway
+  volumes:
+    - ../../:/var/www/html
+    - ../../../../:/var/www/framework
+    - ./site-000-default.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+  depends_on:
+    database:
+      condition: service_healthy
+
+services:
+  # Application
+  application:
+    container_name: application
+    <<: *built-application-image
+    ports:
+      - 8080:80
+
+  # Backend Services
+  database:
+    container_name: database
+    image: mariadb:10.5.22
+    restart: on-failure
+    environment:
+      MYSQL_DATABASE: app
+      MYSQL_PASSWORD: app_password
+      MARIADB_ROOT_PASSWORD: root_password
+      MYSQL_USER: app
+      TZ: Europe/Berlin
+    volumes:
+      - mariadb:/var/lib/mysql
+    healthcheck:
+      test: healthcheck.sh --connect
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  # Management Tools
+  database_dashboard:
+    image: phpmyadmin:latest
+    restart: on-failure
+    environment:
+      PMA_HOSTS: database
+      PMA_USER: app
+      PMA_PASSWORD: app_password
+      UPLOAD_LIMIT: 10G
+    ports:
+      - 8081:80
+
+  mailer:
+    image: rnwood/smtp4dev:latest
+    restart: on-failure
+    ports:
+      - 3300:80
+
+volumes:
+  mariadb:
+  rabbitmq:
