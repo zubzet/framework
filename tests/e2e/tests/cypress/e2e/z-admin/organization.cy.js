@@ -21,14 +21,14 @@ describe('Z-Admin - Organization', () => {
     }
 
     describe('Navigation', () => {
-        it('links the page for users with z.organization.invite', () => {
+        it('links the page for users with z.organization.manage', () => {
             cy.loginAs('zorg_manager');
             cy.visit('/z/organization');
 
             cy.query('btn-organization').should('have.attr', 'href').and('match', /\/z\/organization$/);
         });
 
-        it('hides the link from users without z.organization.invite', () => {
+        it('hides the link from users without z.organization.manage', () => {
             cy.loginAs('zorg_member');
             cy.visit('/z/organization');
 

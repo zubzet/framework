@@ -55,7 +55,9 @@ INSERT INTO `z_user_permission`(`id`, `name`, `user`, `active`, `created`) VALUE
 (803, 'z.organization.invite', 802, 1, '2000-01-01 12:00:00'),
 (804, 'z.organization.roles', 802, 1, '2000-01-01 12:00:00'),
 (805, 'z.organization.rename', 802, 1, '2000-01-01 12:00:00'),
-(806, 'z.organization.rename', 808, 1, '2000-01-01 12:00:00');
+(806, 'z.organization.rename', 808, 1, '2000-01-01 12:00:00'),
+(807, 'z.organization.manage', 800, 1, '2000-01-01 12:00:00'),
+(808, 'z.organization.manage', 802, 1, '2000-01-01 12:00:00');
 
 INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `extended_seconds`, `created`, `active`) VALUES
 (800, '0800a00000000000000000000000000000000000', 800, 800, NULL, NOW(), 1),

@@ -12,9 +12,6 @@
      */
     class ZController extends z_controller {
 
-        // An organization invite stays valid for seven days
-        private const ORGANIZATION_INVITE_LIFETIME = TIMESPAN_DAY_7;
-
         public function __construct(Request $req, Response $res) {
             $res->setDefaultLayout("layout/z_admin_layout.php");
         }
@@ -189,14 +186,9 @@
                 $invitee = User::byEmail($email);
                 if(is_null($organization) || is_null($invitee) || !is_null($invitee->organization())) {
                     $formResult->addCustomError("email", "user_unavailable");
-                } else {
-                    // One open invite per address, an expired one no longer counts
-                    $openInvites = array_filter(
-                        model("z_organization")->getInvitesByEmail($organization, $email),
-                        fn($invite) => strtotime($invite["created"]) + self::ORGANIZATION_INVITE_LIFETIME >= time(),
-                    );
-
-                    if(!empty($openInvites)) $formResult->addCustomError("email", "already_invited");
+                } else if(model("z_organization")->hasOpenInvite($organization, $email)) {
+                    // One open invite per address
+                    $formResult->addCustomError("email", "already_invited");
                 }
 
                 if($formResult->hasErrors) return $res->formErrors($formResult->errors);
@@ -211,11 +203,13 @@
             if("revoke" === $action) {
                 $req->checkPermission("z.organization.invite");
 
-                // Only invites of the own organization may be revoked
-                $invite = model("z_organization")->getInviteById((int) $target);
-                if(is_null($invite) || $invite["organizationId"] !== $organization?->id()) return $res->error("invalid_invite");
+                if(is_null($organization)) return $res->error("invalid_organization");
 
-                model("z_organization")->deactivateInvite($invite["id"]);
+                // Only invites of the own organization may be revoked
+                $invite = model("z_organization")->getInvite($organization, (int) $target);
+                if(is_null($invite)) return $res->error("invalid_invite");
+
+                model("z_organization")->deactivateInvite($organization, $invite["id"]);
                 return $res->success();
             }
 
@@ -271,10 +265,7 @@
 
                 // Unknown, expired, meant for another address or its organization is gone
                 $error = null;
-                if(is_null($invitedOrganization)
-                    || strtotime($invite["created"]) + self::ORGANIZATION_INVITE_LIFETIME < time()
-                    || 0 !== strcasecmp($invite["email"], $user->email())
-                ) {
+                if(is_null($invitedOrganization) || 0 !== strcasecmp($invite["email"], $user->email())) {
                     $error = "invalid_token";
                 } else if(!is_null($organization)) {
                     $error = "already_in_organization";
@@ -288,7 +279,7 @@
 
                 if($isAccept) {
                     $user->updateOrganization($invitedOrganization);
-                    model("z_organization")->deactivateInvite($invite["id"]);
+                    model("z_organization")->deactivateInvite($invitedOrganization, $invite["id"]);
 
                     return $res->success();
                 }
@@ -302,11 +293,7 @@
 
             $invites = [];
             if(!is_null($organization) && $req->checkPermission("z.organization.invite", true)) {
-                foreach(model("z_organization")->getInvitesByOrganization($organization) as $invite) {
-                    // Expired invites are not listed
-                    $invite["expires_at"] = strtotime($invite["created"]) + self::ORGANIZATION_INVITE_LIFETIME;
-                    if($invite["expires_at"] >= time()) $invites[] = $invite;
-                }
+                $invites = model("z_organization")->getInvitesByOrganization($organization);
             }
 
             $members = [];

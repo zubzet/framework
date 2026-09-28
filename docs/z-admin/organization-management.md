@@ -9,7 +9,7 @@ Members of an [organization](../core-features/access-control.md#organization-obj
 | Members | `z.organization.roles` | Give members roles and take them away again |
 | Open invitations | `z.organization.invite` | List and revoke invitations that are not accepted yet |
 
-A user who belongs to no organization sees a notice instead. The sidebar entry *Organization* (under *Other*) and the dashboard card show up with `z.organization.invite`. The other permissions reach the page through its direct link.
+A user who belongs to no organization sees a notice instead. The sidebar entry *Organization* (under *Other*) and the dashboard card show up with `z.organization.manage`. Without it the page is still reached through its direct link.
 
 ---
 
