@@ -78,6 +78,13 @@
         </h2>
         <div class="row">
             <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <a href="<?= "$opt[root]z/profile" ?>" data-test="dash-profile" class="card shadow-sm h-100 text-decoration-none text-muted">
+                    <div class="card-body d-flex align-items-center justify-content-center py-5">
+                        <i class="fa fa-user fa-4x"></i>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <a href="<?= "$opt[root]" ?>" data-test="dash-back" class="card shadow-sm h-100 text-decoration-none text-muted">
                     <div class="card-body d-flex align-items-center justify-content-center py-5">
                         <i class="fa fa-arrow-left fa-4x"></i>

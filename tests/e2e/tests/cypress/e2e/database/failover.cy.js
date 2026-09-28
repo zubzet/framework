@@ -20,16 +20,29 @@ describe('Galera failover', () => {
 
         // Bring the killed node back (whichever it was; start is a no-op on
         // running nodes) and wait until the cluster is whole again, so
-        // everything after this file sees a healthy stack.
+        // everything after this file sees a healthy stack. Each node is asked
+        // itself: the cluster size reaches three while the rejoining node still
+        // receives its state transfer, and a node that is not synced answers
+        // with "WSREP has not yet prepared node", which db:seed does not retry.
         cy.exec('docker start galera1 galera2 galera3', { timeout: 30000 });
-        const waitForSize3 = (retriesLeft) => {
-            cy.request('/DatabaseClusterProbe/status').then((res) => {
-                if (res.body.clusterSize === 3 && res.body.state === 'Synced') return;
-                expect(retriesLeft, 'cluster rejoin attempts left').to.be.greaterThan(0);
-                cy.wait(2000).then(() => waitForSize3(retriesLeft - 1));
+        const NODES = ['galera1', 'galera2', 'galera3'];
+        const waitForSynced = (retriesLeft) => {
+            const states = [];
+            NODES.forEach((node) => {
+                cy.exec(
+                    `docker exec ${node} mariadb -uroot -proot_password --silent -e ` +
+                    `"SELECT CONCAT(s.VARIABLE_VALUE, '/', r.VARIABLE_VALUE) FROM information_schema.GLOBAL_STATUS s, information_schema.GLOBAL_STATUS r ` +
+                    `WHERE s.VARIABLE_NAME = 'wsrep_local_state_comment' AND r.VARIABLE_NAME = 'wsrep_ready'"`,
+                    { failOnNonZeroExit: false, timeout: 15000 }
+                ).then(({ stdout }) => states.push(`${node}=${stdout.trim() || 'down'}`));
+            });
+            cy.then(() => {
+                if (states.every((state) => state.endsWith('=Synced/ON'))) return;
+                expect(retriesLeft, `cluster rejoin attempts left (${states.join(', ')})`).to.be.greaterThan(0);
+                cy.wait(2000).then(() => waitForSynced(retriesLeft - 1));
             });
         };
-        waitForSize3(60);
+        waitForSynced(90);
     });
 
     it('a request survives its database node dying mid-flight', () => {
