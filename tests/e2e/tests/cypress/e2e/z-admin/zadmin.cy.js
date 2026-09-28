@@ -260,6 +260,17 @@ describe('Z-Admin Panel', () => {
         });
     });
 
+    describe('action_edit_user (role options)', () => {
+        it('offers roles and only the groups the user already holds', () => {
+            cy.loginAs("admin");
+
+            cy.request('/z/edit_user/246').its('body')
+                .should('include', '"text":"zadmin_OrgAssignable"')
+                .and('include', '"text":"zadmin_HeldGroup"')
+                .and('not.include', '"text":"zadmin_OtherGroup"');
+        });
+    });
+
     it('Goes into roles and creates a role with a single permission', () => {
         cy.visit("/admin/loginas");
         cy.visit("/z");
@@ -273,7 +284,7 @@ describe('Z-Admin Panel', () => {
         cy.form("name").should("exist");
         cy.form("name").type("test");
         cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').should('be.visible').click();
-        cy.get('input#input-2').type('test');
+        cy.get('input[name=name]').eq(1).type('test');
         cy.get('.btn.btn-primary').last().click();
         cy.get(".form-text.text-danger").should('not.be.visible');
     });
@@ -288,7 +299,7 @@ describe('Z-Admin Panel', () => {
         cy.form("name").type("test");
         cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').should('be.visible').click();
         cy.get('.btn.btn-primary').filter(':has(i.fas.fa-plus)').click();
-        cy.get('input#input-2').type('test');
+        cy.get('input[name=name]').eq(1).type('test');
         cy.get('.btn.btn-primary').last().click();
         cy.get(".form-text.text-danger").should('be.visible');
     });
@@ -335,6 +346,42 @@ describe('Z-Admin Panel', () => {
         });
     });
 
+
+    describe('action_roles (org assignable)', () => {
+        beforeEach(() => cy.loginAs("admin"));
+
+        it('saves the checkbox', () => {
+            cy.visit('/z/roles/248');
+            cy.intercept('POST', '/z/roles/248').as('saveRole');
+
+            cy.form('is_org_assignable').should('be.checked').uncheck();
+            cy.get('.btn.btn-primary').last().click();
+            cy.wait('@saveRole');
+
+            cy.visit('/z/roles/248');
+            cy.form('is_org_assignable').should('not.be.checked');
+        });
+
+        it('only stores 0 or 1', () => {
+            cy.request({
+                method: 'POST',
+                url: '/z/roles/248',
+                form: true,
+                body: { isFormData: 1, name: 'zadmin_OrgAssignable', is_org_assignable: '5' },
+            }).then((res) => {
+                expect(JSON.parse(res.body).formErrors).to.deep.include({ name: 'is_org_assignable', type: 'in' });
+            });
+
+            cy.request({
+                method: 'POST',
+                url: '/z/roles/248',
+                form: true,
+                body: { isFormData: 1, name: 'zadmin_OrgAssignable' },
+            }).then((res) => {
+                expect(JSON.parse(res.body).formErrors).to.deep.include({ name: 'is_org_assignable', type: 'required' });
+            });
+        });
+    });
 
     // ZController::action_login_as - the reason an admin may state for the sudo
     describe('action_login_as (reason)', () => {
