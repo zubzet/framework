@@ -2,6 +2,7 @@
     namespace ZubZet\Framework\Support\Commands;
 
     use Symfony\Component\Console\Command\Command;
+    use Symfony\Component\Console\Input\InputArgument;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
 
@@ -28,16 +29,24 @@
         protected function configure(): void {
             $this->setName("install");
             $this->setDescription("Builds the project folder structure.");
+
+            $this->addArgument("path", InputArgument::REQUIRED, "The project folder to build the structure in.");
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
+            $path = rtrim((string) $in->getArgument("path"), "/");
+            if(!is_dir($path)) {
+                $out->writeln("<error>Folder does not exist: {$path}</error>");
+                return Command::FAILURE;
+            }
+
             foreach(self::FOLDERS as $folder) {
-                if(is_dir($folder)) {
+                if(is_dir("{$path}/{$folder}")) {
                     $out->writeln("exists:  {$folder}");
                     continue;
                 }
 
-                if(!mkdir($folder)) {
+                if(!mkdir("{$path}/{$folder}")) {
                     $out->writeln("<error>failed:  {$folder}</error>");
                     return Command::FAILURE;
                 }
