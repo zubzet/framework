@@ -1,0 +1,13 @@
+ARG PHP_TAG=8.4-apache
+FROM ghcr.io/zubzet/php:${PHP_TAG}
+
+ARG USER_UID=1000
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+USER root
+RUN usermod -u "${USER_UID}" www-data \
+ && groupmod -g "${USER_UID}" www-data \
+ && chown -R www-data:www-data /var/www /var/log/apache2 /run/apache2
+
+WORKDIR /var/www/html
+USER www-data
