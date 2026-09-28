@@ -34,6 +34,7 @@ To be able to use all functions, the following permissions are needed:
 
 Members manage their own organization with:
 
+- [z.organization.manage](organization-management.md): the sidebar entry and dashboard card
 - [z.organization.invite](organization-management.md#invitations)
 - [z.organization.roles](organization-management.md#releasing-roles-to-organizations)
 - [z.organization.rename](organization-management.md)

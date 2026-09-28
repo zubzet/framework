@@ -77,7 +77,7 @@
             <?= e(__("admin.nav.other")) ?>
         </h2>
         <div class="row">
-            <?php if($opt["user"]->checkPermission("z.organization.invite")) { ?>
+            <?php if($opt["user"]->checkPermission("z.organization.manage")) { ?>
                 <div class="col-12 col-sm-6 col-md-3 mb-3">
                     <a href="<?= "$opt[root]z/organization" ?>" data-test="dash-organization" class="card shadow-sm h-100 text-decoration-none text-muted">
                         <div class="card-body d-flex align-items-center justify-content-center py-5">
