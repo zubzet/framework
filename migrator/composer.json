@@ -1,0 +1,13 @@
+{
+    "require": {
+        "symfony/console": "^6.0",
+        "symfony/filesystem": "^6.0",
+        "symfony/finder": "^6.0",
+        "sebastian/diff": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ZubZet\\Tooling\\": "src/"
+        }
+    }
+}
