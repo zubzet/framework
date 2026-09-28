@@ -433,7 +433,7 @@ class User extends AuthenticationObject {
      * @return bool
      */
     public function hasTwoFactor(): bool {
-        return !is_null($this->getField("totp_confirmed_at"));
+        return !is_null($this->getField("two_factor_confirmed_at"));
     }
 
     /**
@@ -442,7 +442,7 @@ class User extends AuthenticationObject {
      * @return ?string The timestamp, or null while two factor is off
      */
     public function twoFactorConfirmedAt(): ?string {
-        return $this->getField("totp_confirmed_at");
+        return $this->getField("two_factor_confirmed_at");
     }
 
     /**
@@ -466,7 +466,7 @@ class User extends AuthenticationObject {
         $issuer = str_replace([":", "%3A", "%3a"], "", config("pageName", default: "ZubZet"));
         $totp->setIssuer($issuer);
 
-        model("z_login")->setTwoFactorSecret($this, $secret);
+        model("z_user")->setTwoFactorSecret($this, $secret);
         $this->clearFields();
 
         return $totp;
@@ -480,7 +480,7 @@ class User extends AuthenticationObject {
      * @return bool Whether the code matched
      */
     public function verifyTwoFactorCode(string $code): bool {
-        $secret = $this->getField("totp_secret");
+        $secret = $this->getField("two_factor_secret");
         if(is_null($secret)) return false;
 
         // One 30 second step each way, so a clock that drifts a little and a code
@@ -505,7 +505,7 @@ class User extends AuthenticationObject {
         if($this->hasTwoFactor()) return false;
         if(!$this->verifyTwoFactorCode($code)) return false;
 
-        model("z_login")->confirmTwoFactor($this);
+        model("z_user")->confirmTwoFactor($this);
         $this->clearFields();
 
         return true;
@@ -517,7 +517,7 @@ class User extends AuthenticationObject {
      * @return void
      */
     public function disableTwoFactor(): void {
-        model("z_login")->setTwoFactorSecret($this, null);
+        model("z_user")->setTwoFactorSecret($this, null);
         $this->clearFields();
     }
 }

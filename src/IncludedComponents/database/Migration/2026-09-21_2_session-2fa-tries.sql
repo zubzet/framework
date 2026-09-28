@@ -1,2 +1,0 @@
-ALTER TABLE `z_logintoken`
-  ADD COLUMN IF NOT EXISTS `remaining_2fa_tries` TINYINT UNSIGNED NOT NULL DEFAULT 5 AFTER `last_2fa`;

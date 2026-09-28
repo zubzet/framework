@@ -210,7 +210,7 @@ Verification status is time-aware and can be set or queried at arbitrary points 
 
 ### Two Factor
 
-The account side of [two factor authentication](two-factor-authentication.md). The secret lives in `z_user.totp_secret`, and only a confirmed enrollment (`totp_confirmed_at`) turns two factor on.
+The account side of [two factor authentication](two-factor-authentication.md). The secret lives in `z_user.two_factor_secret`, and only a confirmed enrollment (`two_factor_confirmed_at`) turns two factor on.
 
 * Starts an enrollment: stores a fresh secret that does not count yet and returns it as an `OTPHP\TOTP`. `getSecret()` and `getProvisioningUri()` are the two shapes an authenticator takes it in. The label is the user's email and the issuer the `pageName`. Starting again replaces the secret and turns an active two factor off until the new one is confirmed, which is why the profile page refuses to start while two factor is on.
 
@@ -872,7 +872,7 @@ Everything else a key needs it already has as a session: it is named through
 
 ### Two Factor Checks
 
-A session remembers when it last passed a [two factor](two-factor-authentication.md) check, in `z_logintoken.last_2fa`, and how many wrong codes it may still send, in `remaining_2fa_tries`.
+A session remembers when it last passed a [two factor](two-factor-authentication.md) check, in `z_logintoken.last_two_factor`, and how many wrong codes it may still send, in `remaining_two_factor_tries`.
 
 * Returns whether the session has to pass two factor again. `false` for an account without two factor, `true` while the session never passed a check or once the last one is older than `$freshnessSeconds` (defaults to `two_factor_freshness_seconds`, 900). A session whose user is gone always has to. This is what [`$req->requireFreshTwoFactor()`](two-factor-authentication.md#guarding-an-action) asks.
 
@@ -880,7 +880,7 @@ A session remembers when it last passed a [two factor](two-factor-authentication
     $session->requireRenew(?int $freshnessSeconds = null): bool
     ```
 
-* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (5 to begin with).
+* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (`two_factor_tries` to begin with, 5 by default).
 
     ```php
     $session->lastTwoFactor(): ?string

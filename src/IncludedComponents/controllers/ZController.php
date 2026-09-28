@@ -234,7 +234,7 @@
         // The profile page of the requesting user, open to every login rather than to admins
         public function action_profile(Request $req, Response $res) {
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
-            if(is_null($account)) return $res->reroute(["login"]);
+            if(is_null($account)) return zubzet()->executePath(["login", "index"]);
 
             return $res->render("administration/profile.php", [
                 "account" => $account,

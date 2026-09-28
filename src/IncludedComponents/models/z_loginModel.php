@@ -172,12 +172,12 @@
             $device = is_null($userAgent) ? null : mb_substr($userAgent, 0, 255);
             $ip = request()->ip();
 
-            $query = $this->dbInsert("z_2fa_challenge", [
+            $query = $this->dbInsert("z_two_factor_challenge", [
                 "userId" => $userId,
                 "token" => $token,
                 "ip_creation" => $ip,
                 "device" => $device,
-                "expires_at" => date("Y-m-d H:i:s", time() + 600),
+                "expires_at" => date("Y-m-d H:i:s", time() + configNumeric("two_factor_challenge_seconds", 600)),
             ]);
 
             $this->exec($query);
@@ -186,7 +186,7 @@
         }
 
         public function invalidateTwoFactorChallenge(int $id): void {
-            $query = $this->dbUpdate("z_2fa_challenge", [
+            $query = $this->dbUpdate("z_two_factor_challenge", [
                 "active" => 0
             ])->where([
                 "id" => $id,
@@ -202,7 +202,7 @@
          * @return ?array The challenge data, or null if not found
          */
         public function getTwoFactorChallenge(string $challenge): ?array {
-            $query = $this->dbSelect("*", "z_2fa_challenge")->where([
+            $query = $this->dbSelect("*", "z_two_factor_challenge")->where([
                 "token" => $challenge,
                 "active" => 1,
                 "expires_at >" => date("Y-m-d H:i:s"),
@@ -248,10 +248,11 @@
                 "reason" => $reason,
                 "ip_creation" => request()->ip(),
                 "is_apikey" => (int) $isApiKey,
+                "remaining_two_factor_tries" => configNumeric("two_factor_tries", 5),
             ];
 
             if($recordTwoFactor) {
-                $insertArray["last_2fa"] = date("Y-m-d H:i:s");
+                $insertArray["last_two_factor"] = date("Y-m-d H:i:s");
             }
 
             $query = $this->dbInsert("z_logintoken", $insertArray);
@@ -264,19 +265,19 @@
         public function spendTwoFactorTry(Session|APIKey $session): int {
             // Decrease the remaining two factor tries by 1 when over 0
             $query = $this->dbUpdate("z_logintoken");
-            $query->set(["remaining_2fa_tries" => $query->newExpr("remaining_2fa_tries - 1")]);
+            $query->set(["remaining_two_factor_tries" => $query->newExpr("remaining_two_factor_tries - 1")]);
             $query->where([
                 "id" => $session->id(),
-                "remaining_2fa_tries >" => 0,
+                "remaining_two_factor_tries >" => 0,
             ]);
 
             $this->exec($query);
 
-            $query = $this->dbSelect("remaining_2fa_tries", "z_logintoken")->where([
+            $query = $this->dbSelect("remaining_two_factor_tries", "z_logintoken")->where([
                 "id" => $session->id(),
             ]);
 
-            return (int) $this->exec($query)->resultToLine()["remaining_2fa_tries"];
+            return (int) $this->exec($query)->resultToLine()["remaining_two_factor_tries"];
         }
 
         /**
@@ -284,7 +285,7 @@
          */
         public function resetTwoFactorTries(Session|APIKey $session): void {
             $query = $this->dbUpdate("z_logintoken");
-            $query->set(["remaining_2fa_tries" => $query->newExpr("DEFAULT(remaining_2fa_tries)")]);
+            $query->set(["remaining_two_factor_tries" => configNumeric("two_factor_tries", 5)]);
             $query->where(["id" => $session->id()]);
 
             $this->exec($query);
@@ -296,7 +297,7 @@
          */
         public function recordTwoFactor(Session|APIKey $session): void {
             $query = $this->dbUpdate("z_logintoken");
-            $query->set(["last_2fa" => date("Y-m-d H:i:s")]);
+            $query->set(["last_two_factor" => date("Y-m-d H:i:s")]);
             $query->where(["id" => $session->id()]);
 
             $this->exec($query);
@@ -529,42 +530,6 @@
             return $this->resultToLine()["RES"] == 0;
         }
         
-
-
-        /**
-         * Stores a fresh two factor secret, left unconfirmed until a code proves the
-         * authenticator received it. Null drops two factor off the account.
-         * @param User $user The user to enroll
-         * @param ?string $secret The base32 secret, or null to remove it
-         * @internal
-         */
-        public function setTwoFactorSecret(User $user, ?string $secret): void {
-            $query = $this->dbUpdate("z_user", [
-                "totp_secret" => $secret,
-                "totp_confirmed_at" => null,
-            ])->where([
-                "id" => $user->id(),
-            ]);
-
-            $this->exec($query);
-        }
-
-        /**
-         * Confirms the stored secret, which is what turns two factor on. The
-         * secret check keeps a confirmation from landing on an empty enrollment.
-         * @param User $user The user whose enrollment is complete
-         * @internal
-         */
-        public function confirmTwoFactor(User $user): void {
-            $query = $this->dbUpdate("z_user");
-            $query->set(["totp_confirmed_at" => $query->func()->now()]);
-            $query->where([
-                "id" => $user->id(),
-                "totp_secret IS NOT" => null,
-            ]);
-
-            $this->exec($query);
-        }
 
     }
 

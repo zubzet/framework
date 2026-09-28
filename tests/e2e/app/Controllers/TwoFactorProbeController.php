@@ -13,12 +13,12 @@
             $offset = (int) $req->getGet("offset", 0);
 
             $row = db()->exec(
-                "SELECT `totp_secret` FROM `z_user` WHERE `id` = ?",
+                "SELECT `two_factor_secret` FROM `z_user` WHERE `id` = ?",
                 "i",
                 $userId
             )->resultToLine();
 
-            $secret = $row["totp_secret"] ?? null;
+            $secret = $row["two_factor_secret"] ?? null;
 
             echo json_encode([
                 "found" => !is_null($secret),
@@ -40,17 +40,17 @@
             $userId = (int) $req->getParameters(0, 1);
 
             $row = db()->exec(
-                "SELECT `totp_secret`, `totp_confirmed_at` FROM `z_user` WHERE `id` = ?",
+                "SELECT `two_factor_secret`, `two_factor_confirmed_at` FROM `z_user` WHERE `id` = ?",
                 "i",
                 $userId
             )->resultToLine();
 
             echo json_encode([
                 "found" => !empty($row),
-                "hasSecret" => !empty($row) && !is_null($row["totp_secret"]),
-                "secret" => $row["totp_secret"] ?? null,
-                "confirmedAt" => $row["totp_confirmed_at"] ?? null,
-                "hasTwoFactor" => !empty($row) && !is_null($row["totp_confirmed_at"]),
+                "hasSecret" => !empty($row) && !is_null($row["two_factor_secret"]),
+                "secret" => $row["two_factor_secret"] ?? null,
+                "confirmedAt" => $row["two_factor_confirmed_at"] ?? null,
+                "hasTwoFactor" => !empty($row) && !is_null($row["two_factor_confirmed_at"]),
             ]);
         }
 
@@ -59,7 +59,7 @@
             $token = (string) $req->getParameters(0, 1);
 
             $row = db()->exec(
-                "SELECT `active`, `last_2fa`, `remaining_2fa_tries` FROM `z_logintoken` WHERE `token` = ?",
+                "SELECT `active`, `last_two_factor`, `remaining_two_factor_tries` FROM `z_logintoken` WHERE `token` = ?",
                 "s",
                 $token
             )->resultToLine();
@@ -67,8 +67,8 @@
             echo json_encode([
                 "exists" => !empty($row),
                 "active" => !empty($row) && 1 === (int) $row["active"],
-                "lastTwoFactor" => $row["last_2fa"] ?? null,
-                "remainingTries" => isset($row["remaining_2fa_tries"]) ? (int) $row["remaining_2fa_tries"] : null,
+                "lastTwoFactor" => $row["last_two_factor"] ?? null,
+                "remainingTries" => isset($row["remaining_two_factor_tries"]) ? (int) $row["remaining_two_factor_tries"] : null,
             ]);
         }
 
@@ -80,7 +80,7 @@
             $stamp = is_null($seconds) ? null : date("Y-m-d H:i:s", time() - (int) $seconds);
 
             db()->exec(
-                "UPDATE `z_logintoken` SET `last_2fa` = ? WHERE `token` = ?",
+                "UPDATE `z_logintoken` SET `last_two_factor` = ? WHERE `token` = ?",
                 "ss",
                 $stamp,
                 $token
@@ -96,7 +96,7 @@
 
             db()->exec(
                 "UPDATE `z_logintoken`
-                 SET `active` = 1, `remaining_2fa_tries` = ?, `last_2fa` = NULL
+                 SET `active` = 1, `remaining_two_factor_tries` = ?, `last_two_factor` = NULL
                  WHERE `token` = ?",
                 "is",
                 $tries,
@@ -114,7 +114,7 @@
 
             if(empty($secret)) {
                 db()->exec(
-                    "UPDATE `z_user` SET `totp_secret` = NULL, `totp_confirmed_at` = NULL WHERE `id` = ?",
+                    "UPDATE `z_user` SET `two_factor_secret` = NULL, `two_factor_confirmed_at` = NULL WHERE `id` = ?",
                     "i",
                     $userId
                 );
@@ -125,7 +125,7 @@
 
             db()->exec(
                 "UPDATE `z_user`
-                 SET `totp_secret` = ?, `totp_confirmed_at` = IF(?, CURRENT_TIMESTAMP(), NULL)
+                 SET `two_factor_secret` = ?, `two_factor_confirmed_at` = IF(?, CURRENT_TIMESTAMP(), NULL)
                  WHERE `id` = ?",
                 "sii",
                 $secret,
@@ -150,7 +150,7 @@
             $userId = (int) $req->getParameters(0, 1);
 
             $row = db()->exec(
-                "SELECT `token`, `active`, `expires_at` FROM `z_2fa_challenge`
+                "SELECT `token`, `active`, `expires_at` FROM `z_two_factor_challenge`
                  WHERE `userId` = ? ORDER BY `id` DESC LIMIT 1",
                 "i",
                 $userId
@@ -173,7 +173,7 @@
             $userId = (int) $req->getParameters(0, 1);
 
             db()->exec(
-                "UPDATE `z_2fa_challenge` SET `expires_at` = ? WHERE `userId` = ?",
+                "UPDATE `z_two_factor_challenge` SET `expires_at` = ? WHERE `userId` = ?",
                 "si",
                 date("Y-m-d H:i:s", time() - 60),
                 $userId
@@ -187,7 +187,7 @@
             $userId = (int) $req->getParameters(0, 1);
 
             $row = db()->exec(
-                "SELECT COUNT(*) AS `total`, SUM(`active`) AS `active` FROM `z_2fa_challenge` WHERE `userId` = ?",
+                "SELECT COUNT(*) AS `total`, SUM(`active`) AS `active` FROM `z_two_factor_challenge` WHERE `userId` = ?",
                 "i",
                 $userId
             )->resultToLine();
