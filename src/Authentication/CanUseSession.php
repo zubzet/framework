@@ -137,7 +137,7 @@
         public function lastTwoFactor(): ?string {
             if($this->shouldRefresh) $this->refresh();
 
-            return $this->getField("last_2fa");
+            return $this->getField("last_two_factor");
         }
 
         /**
@@ -147,7 +147,7 @@
         public function remainingTwoFactorTries(): int {
             if($this->shouldRefresh) $this->refresh();
 
-            return (int) $this->getField("remaining_2fa_tries");
+            return (int) $this->getField("remaining_two_factor_tries");
         }
 
         /**

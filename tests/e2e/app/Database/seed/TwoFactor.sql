@@ -1,6 +1,6 @@
--- Fixtures for account/two-factor*.cy.js. last_2fa stays NULL, php writes it: see /TwoFactorProbe/ageSession
+-- Fixtures for account/two-factor*.cy.js. last_two_factor stays NULL, php writes it: see /TwoFactorProbe/ageSession
 
-INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`, `organizationId`, `totp_secret`, `totp_confirmed_at`) VALUES
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`, `organizationId`, `two_factor_secret`, `two_factor_confirmed_at`) VALUES
 -- off, with a password: enrollment
 (850, 'twofactor_enroll@cypress.test', '772e7e18b509ee9dbf4a53d415187fa49c68c991873e3282c0025e9e53d4c946125f184c34e04a7fcd5136fcdc04bedc17afd981380ee05ccb7683e7d83ec615', '4401287036553e310907533.22322450', 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, NULL, NULL),
 

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `z_2fa_challenge` (
+CREATE TABLE IF NOT EXISTS `z_two_factor_challenge` (
   `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
   `token` VARCHAR(255) NOT NULL,
   `userId` INT NOT NULL,
@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS `z_2fa_challenge` (
 );
 
 ALTER TABLE `z_logintoken`
-  ADD COLUMN IF NOT EXISTS `last_2fa` TIMESTAMP NULL DEFAULT NULL AFTER `last_used`;
+  ADD COLUMN IF NOT EXISTS `last_two_factor` TIMESTAMP NULL DEFAULT NULL AFTER `last_used`;
 
 ALTER TABLE `z_user`
-  ADD COLUMN IF NOT EXISTS `totp_secret` VARCHAR(255) NULL DEFAULT NULL AFTER `salt`,
-  ADD COLUMN IF NOT EXISTS `totp_confirmed_at` TIMESTAMP NULL DEFAULT NULL AFTER `totp_secret`;
+  ADD COLUMN IF NOT EXISTS `two_factor_secret` VARCHAR(255) NULL DEFAULT NULL AFTER `salt`,
+  ADD COLUMN IF NOT EXISTS `two_factor_confirmed_at` TIMESTAMP NULL DEFAULT NULL AFTER `two_factor_secret`;

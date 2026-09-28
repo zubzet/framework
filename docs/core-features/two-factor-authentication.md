@@ -27,7 +27,7 @@ When the password of an account with two factor is correct, the login creates no
 {"result": "success", "twoFactor": true, "challenge": "zub-..."}
 ```
 
-The challenge is redeemed at `POST _zubzet/two-factor/login` with the fields `challenge` and `code`. A correct code creates the session, already stamped with a passed check. A challenge is valid for 10 minutes and can be redeemed once. Wrong codes count against the same limit as wrong passwords (`maxLoginTriesPerTimespan` within `maxLoginTriesTimespan`).
+The challenge is redeemed at `POST _zubzet/two-factor/login` with the fields `challenge` and `code`. A correct code creates the session, already stamped with a passed check. A challenge is valid for `two_factor_challenge_seconds` (defaults to 600) and can be redeemed once. Wrong codes count against the same limit as wrong passwords (`maxLoginTriesPerTimespan` within `maxLoginTriesTimespan`).
 
 `Z.Presets.Login` does all of this on its own: it opens the two factor modal, sends the code and continues like a normal login once it is accepted. The modal markup ships with `<x-zubzet::body/>`, so every layout that uses the login has to render it (see [Layouts](layouts.md)).
 
@@ -57,7 +57,7 @@ if(!$req->requireFreshTwoFactor(boolResult: true)) {
 
 `Z.Request.action()`, `Z.Request.root()` and `Z.Forms` react to `twoFactorRenew` on their own: they open the modal, send the code to `POST _zubzet/two-factor/refresh`, which stamps the current session, and tell the user to try again. `Z.Presets.RefreshTwoFactor(onDone)` opens the same modal on demand.
 
-Every session may send 5 wrong codes on a renewal or when turning two factor off. After the last one it is signed out. A passed check gives the session all its tries back.
+Every session may send `two_factor_tries` (defaults to 5) wrong codes on a renewal or when turning two factor off. After the last one it is signed out. A passed check gives the session all its tries back.
 
 ---
 
@@ -66,5 +66,7 @@ Every session may send 5 wrong codes on a renewal or when turning two factor off
 | Setting | Default | Meaning |
 | ------- | ------- | ------- |
 | `two_factor_freshness_seconds` | `900` | How long a passed check counts as recent for `requireFreshTwoFactor()` |
+| `two_factor_challenge_seconds` | `600` | How long the challenge of a login's two factor step can be redeemed |
+| `two_factor_tries` | `5` | How many wrong codes a session may send on a renewal or when turning two factor off |
 
 The texts of the modal come from `Z.Lang` in `Z.js` and can be overwritten in the layout after the layout essentials are embedded: `error_two_factor_incomplete`, `two_factor_renewed` and `error_password_wrong` for the password change.

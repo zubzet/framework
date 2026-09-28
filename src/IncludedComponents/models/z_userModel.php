@@ -338,5 +338,40 @@
             $this->exec($updateQuery);
         }
 
+        /**
+         * Stores a fresh two factor secret, left unconfirmed until a code proves the
+         * authenticator received it. Null drops two factor off the account.
+         * @param User $user The user to enroll
+         * @param ?string $secret The base32 secret, or null to remove it
+         * @internal
+         */
+        public function setTwoFactorSecret(User $user, ?string $secret): void {
+            $query = $this->dbUpdate("z_user", [
+                "two_factor_secret" => $secret,
+                "two_factor_confirmed_at" => null,
+            ])->where([
+                "id" => $user->id(),
+            ]);
+
+            $this->exec($query);
+        }
+
+        /**
+         * Confirms the stored secret, which is what turns two factor on. The
+         * secret check keeps a confirmation from landing on an empty enrollment.
+         * @param User $user The user whose enrollment is complete
+         * @internal
+         */
+        public function confirmTwoFactor(User $user): void {
+            $query = $this->dbUpdate("z_user");
+            $query->set(["two_factor_confirmed_at" => $query->func()->now()]);
+            $query->where([
+                "id" => $user->id(),
+                "two_factor_secret IS NOT" => null,
+            ]);
+
+            $this->exec($query);
+        }
+
     }
 ?>
