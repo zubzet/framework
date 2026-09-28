@@ -21,6 +21,16 @@
 
         public static function initialize(): void {
             if(Collector::isActive()) {
+                if(!self::hasCoverageLibrary()) {
+                    throw new \RuntimeException(
+                        "Coverage session is active (" . self::$sessionLocation . " exists), " .
+                        "but the phpunit/php-code-coverage library is not installed. " .
+                        "It is a development dependency of ZubZet: install it with " .
+                        "composer require --dev \"phpunit/php-code-coverage:9.*\", " .
+                        "or remove " . self::$sessionLocation . " to disable coverage."
+                    );
+                }
+
                 if(!self::hasDriver()) {
                     throw new \RuntimeException(
                         "Coverage session is active (" . self::$sessionLocation . " exists), " .
@@ -46,6 +56,11 @@
         /** Returns true if a PHP code coverage driver (Xdebug or PCOV) is loaded. */
         public static function hasDriver(): bool {
             return extension_loaded('xdebug') || extension_loaded('pcov');
+        }
+
+        /** Returns true if the phpunit/php-code-coverage library (a dev dependency) is installed. */
+        public static function hasCoverageLibrary(): bool {
+            return \Composer\InstalledVersions::isInstalled('phpunit/php-code-coverage');
         }
 
         /** Returns the session ID, reading it from disk on first call. */
