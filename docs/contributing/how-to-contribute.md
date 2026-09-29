@@ -15,7 +15,7 @@ Practical implications:
 
 - Feature work targets `develop`. PRs may be opened as **draft / WIP** while in progress.
 - Promotions to `main` happen as a separate PR (`develop` → `main`) when the maintainer is satisfied with the integrated state.
-- CI runs the full PHP matrix (8.0–8.6) on pushes to `develop`, `main`, and version tags. PRs and other branches run an extremes-only smoke (8.0 + 8.5).
+- CI runs the full PHP matrix (8.0–8.6) on pushes to `develop`, `main`, and version tags. PRs and other branches run an extremes-only smoke (8.0 + 8.6).
 
 !!! note "Release candidates"
     During a release-candidate phase (for example **v1.2.0-RC1**), allow prerelease stability so
