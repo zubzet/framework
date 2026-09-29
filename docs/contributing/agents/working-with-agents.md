@@ -12,7 +12,7 @@ This page is for AI coding agents (Claude Code, Cursor, Codex, Aider, etc.) and 
 | `tests/e2e/` | Cypress end-to-end test suite running the dockerized app |
 | `tests/e2e/modules/` | The two sample modules (`guestbook`, `theme`) permanently installed in the e2e app |
 | `mkdocs.yml` | Docs site nav and theme config |
-| `composer.json` | PHP 8.0–8.5 support, autoload, dependencies |
+| `composer.json` | PHP 8.0–8.6 support, autoload, dependencies |
 
 There is no top-level `package.json` and no PHPUnit suite — testing is end-to-end only, run from `tests/e2e/`.
 
@@ -254,7 +254,7 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 - **Atomic commits.** Split work by scope. Example: a feature touching code + tests + docs becomes `refactor(...)`, `feat(...)`, `test(...)`, `docs(...)` — four commits, one scope each. Combining (`feat+test`) is not the project style.
 - **One-line messages, no `Co-Authored-By` trailer.**
 - **PR base is `develop`.** Feature work merges into `develop`; `develop` is later promoted to `main` via a separate PR. Verify with `gh pr view <n> --json baseRefName` if unsure; some tooling surfaces stale branch names. See [How To Contribute → Branching model](../how-to-contribute.md#branching-model).
-- CI runs e2e on PHP 8.0 and 8.5 for PRs and feature-branch pushes (the version-edge smoke). Pushes to `develop`, `main`, and version tags run the full matrix (8.0–8.5). Watch with `gh pr checks <n> --repo zubzet/framework --watch`.
+- CI runs e2e on PHP 8.0 and 8.6 for PRs and feature-branch pushes (the version-edge smoke). Pushes to `develop`, `main`, and version tags run the full matrix (8.0–8.6). Watch with `gh pr checks <n> --repo zubzet/framework --watch`.
 
 ## Working style for AI agents
 

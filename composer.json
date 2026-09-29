@@ -6,7 +6,7 @@
         "wiki": "https://zubzet.com/docs"
     },
     "require": {
-        "php": ">=8.0.2 <8.6",
+        "php": "^8.0.2",
         "composer-runtime-api": "^2.1",
         "cakephp/database": "^4.5",
         "nikic/fast-route": "^1.3",
