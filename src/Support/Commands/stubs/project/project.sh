@@ -4,7 +4,9 @@ ZUBZET_PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 export ZUBZET_PROJECT_ROOT
 
 vendor="${COMPOSER_VENDOR_DIR:-$ZUBZET_PROJECT_ROOT/vendor}"
-script="$vendor/zubzet/framework/scripts/project.sh"
+# Test only: the fork, switch back to "zubzet/framework" once merged
+package="qtnoe/zubzet-framework"
+script="$vendor/$package/scripts/project.sh"
 
 # Vendor not installed yet (e.g. fresh clone) -> install it via Docker, no local Composer needed
 if [ ! -f "$script" ]; then
@@ -29,7 +31,7 @@ if [ ! -f "$script" ]; then
     # Still missing -> composer.json does not require the framework
     if [ ! -f "$script" ]; then
         echo "Error: $script not found after composer install." >&2
-        echo "Make sure composer.json requires zubzet/framework." >&2
+        echo "Make sure composer.json requires $package." >&2
         exit 1
     fi
 fi
