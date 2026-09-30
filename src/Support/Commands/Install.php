@@ -30,8 +30,8 @@
             "packaging/docker",
         ];
 
-        // Files copied from stubs/project, relative to the project root.
-        private const STUBS = __DIR__ . "/stubs/project";
+        // Files copied from the framework's stubs/project, relative to the project root.
+        private const STUBS = __DIR__ . "/../../../stubs/project";
 
         // Test only: the fork branch, switch back to "zubzet/framework" once merged.
         private const PACKAGE = "qtnoe/zubzet-framework:dev-feat/install-command";
