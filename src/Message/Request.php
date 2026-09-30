@@ -384,7 +384,6 @@
          * @return bool True if the request is of the specified type
          */
         public function isAction(string $type): bool {
-            if(!isset($this->input->POST["_zReq"])) return false;
             return $this->getPost("action") == $type;
         }
 

@@ -35,7 +35,7 @@
             // Only verify if the request is a Z.js request or the caller explicitly asks for it.
             $shouldVerify = $enforce
                 || isset(request()->input->POST['isFormData'])
-                || isset(request()->input->POST['_zReq']);
+                || isset(request()->input->POST['action']);
 
             if(!$shouldVerify) return;
 

@@ -1,6 +1,6 @@
 describe('CSRF protection', () => {
     // A marked Z.Request post to a harmless action
-    const marked = { action: 'add', _zReq: 1, number1: 5, number2: 6 };
+    const marked = { action: 'add', number1: 5, number2: 6 };
 
     function post(url, body, headers = {}) {
         return cy.request({
