@@ -77,6 +77,7 @@
             }
 
             chmod("{$path}/zubzet", 0755);
+            chmod("{$path}/project.sh", 0755);
 
             $out->writeln("<info>composer require zubzet/framework</info>");
             // The caller's COMPOSER_VENDOR_DIR points at the framework's vendor, not the new project's.
