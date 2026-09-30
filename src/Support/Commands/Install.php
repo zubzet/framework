@@ -33,6 +33,9 @@
         // Files copied from stubs/project, relative to the project root.
         private const STUBS = __DIR__ . "/stubs/project";
 
+        // Test only: the fork branch, switch back to "zubzet/framework" once merged.
+        private const PACKAGE = "qtnoe/zubzet-framework:dev-feat/install-command";
+
         protected function configure(): void {
             $this->setName("install");
             $this->setDescription("Builds a new ZubZet project.");
@@ -79,9 +82,9 @@
             chmod("{$path}/zubzet", 0755);
             chmod("{$path}/project.sh", 0755);
 
-            $out->writeln("<info>composer require zubzet/framework</info>");
+            $out->writeln("<info>composer require " . self::PACKAGE . "</info>");
             // The caller's COMPOSER_VENDOR_DIR points at the framework's vendor, not the new project's.
-            passthru("env -u COMPOSER_VENDOR_DIR composer require zubzet/framework --no-interaction --working-dir=" . escapeshellarg($path), $exitCode);
+            passthru("env -u COMPOSER_VENDOR_DIR composer require " . escapeshellarg(self::PACKAGE) . " --no-interaction --working-dir=" . escapeshellarg($path), $exitCode);
             if($exitCode !== 0) {
                 $out->writeln("<error>composer require failed</error>");
                 return Command::FAILURE;
