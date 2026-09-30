@@ -82,7 +82,7 @@ Z = {
     action(action, data, handler) {
       $.ajax({
         method: "POST",
-        data: Object.assign(data, {action: action, _zReq: 1}),
+        data: Object.assign(data, {action: action}),
         headers: this._csrfHeaders(),
       }).done((data) => {
         var dat = null;
@@ -105,7 +105,7 @@ Z = {
     root(action, subaction, data, handler = null, async = true, parse = true, additionalParameters = {}) {
       $.ajax({
         method: "POST",
-        data: Object.assign(data, {action: subaction, _zReq: 1}),
+        data: Object.assign(data, {action: subaction}),
         url: Z.Request.rootPath + action,
         async: async,
         ...additionalParameters,

@@ -20,14 +20,14 @@ Constructing a `Csrf` object issues the cookie and runs the check. The Router do
 The token is compared when both conditions hold:
 
 1. The request method is **not** `GET`, `HEAD` or `OPTIONS`.
-2. The request carries a ZubZet marker - `isFormData` (sent by `Z.Forms`) or `_zReq` (sent by `Z.Request.action()` / `Z.Request.root()`).
+2. The request carries a ZubZet marker - `isFormData` (sent by `Z.Forms`) or `action` (sent by `Z.Request.action()` / `Z.Request.root()`).
 
 Anything else passes through unchecked.
 
 The marker travels in the request body, so an attacker can leave it out to opt out of the check. That is harmless wherever reaching the code also requires the marker, because dropping it costs the attacker the action itself:
 
 - `$req->hasFormData()` needs `isFormData`.
-- `$req->isAction()` needs `_zReq`.
+- `$req->isAction()` needs `action`.
 
 It is not harmless for actions that run on the plain POST fields without either predicate. Those construct their own `Csrf` with `enforce: true`, which skips the marker test and always demands the header:
 

@@ -311,7 +311,7 @@ describe('Z-Admin Panel', () => {
                 method: 'POST',
                 url: `/z/roles/${roleId}`,
                 form: true,
-                body: { action: 'delete', _zReq: 1 },
+                body: { action: 'delete' },
             }).then((delRes) => {
                 const delBody = typeof delRes.body === 'string' ? JSON.parse(delRes.body) : delRes.body;
                 expect(delBody.result).to.eq('success');
@@ -328,7 +328,7 @@ describe('Z-Admin Panel', () => {
                 url: '/z/roles/100',
                 form: true,
                 failOnStatusCode: false,
-                body: { action: 'delete', _zReq: 1 },
+                body: { action: 'delete' },
             }).then((res) => {
                 expect(res.status).to.eq(403);
             });

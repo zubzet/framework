@@ -23,7 +23,7 @@ describe('auth:migrate-hashing command', () => {
             url: '/login',
             form: true,
             failOnStatusCode: false,
-            body: { action: 'login', _zReq: 1, name: email, password: PASSWORD },
+            body: { action: 'login', name: email, password: PASSWORD },
         });
 
     before(() => cy.dbSeed());

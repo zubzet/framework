@@ -235,7 +235,6 @@ describe('Auth flows', () => {
                 failOnStatusCode: false,
                 body: {
                     action: 'login',
-                    _zReq: 1,
                     name: 'auth_ratelimit@cypress.test',
                     password,
                 },

@@ -2,7 +2,7 @@
 //
 // Z.Forms / Z.Request read the `z_csrf` cookie and echo it back as an
 // `X-CSRF-Token` header; the Csrf object rejects any marked request
-// (isFormData / _zReq) that arrives without a matching header. A spec posting
+// (isFormData / action) that arrives without a matching header. A spec posting
 // through a bare cy.request() bypasses Z.js entirely and therefore looks
 // exactly like a forged cross-origin request - 403. Use this instead whenever
 // a spec simulates a Z.Forms submit without driving the actual UI.
