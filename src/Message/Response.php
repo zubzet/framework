@@ -278,7 +278,7 @@
             $this->setCookie(
                 "z_login_token",
                 $session->token(),
-                time() + intval($this->getBooterSettings("loginTimeoutSeconds")),
+                time() + (int) config("loginTimeoutSeconds", default: TIMESPAN_DAY_7),
                 "/",
                 $this->getCookieDomainScope(),
             );
