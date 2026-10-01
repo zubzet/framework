@@ -1,7 +1,7 @@
 # CSRF Protection
-Since version **1.4.0**, the framework defends [`Z.Forms` and `Z.Request`](../frontend-integration/backend-requests.md) against Cross-Site Request Forgery with a stateless double-submit cookie.
+Since version **1.4.0**, the framework defends every state-changing request against Cross-Site Request Forgery with a stateless double-submit cookie.
 
-Every request ensures a `z_csrf` cookie holding a random 40-character token: a fresh one is issued when the browser sends none, otherwise the existing one is reused. Z.js reads that cookie and echoes it back as an `X-CSRF-Token` header on every request it sends. The server compares the two and answers a mismatch with `403` and a JSON error body:
+Every request ensures a `z_csrf` cookie holding a random 40-character token: a fresh one is issued when the browser sends none, otherwise the existing one is reused. Z.js reads that cookie and echoes it back as an `X-CSRF-Token` header on every request it sends, so [`Z.Forms` and `Z.Request`](../frontend-integration/backend-requests.md) need no change. The server compares the two and answers a mismatch with `403` and a JSON error body:
 
 ```json
 {
@@ -15,26 +15,44 @@ Every request ensures a `z_csrf` cookie holding a random 40-character token: a f
 The cookie travels automatically on any request the browser makes, so on its own it proves nothing. The header does: setting it requires reading the cookie, and only code from the same origin is allowed to do that. An attacker's page can trigger a request, but cannot fill in the header.
 
 ## When the check runs
-Constructing a `CSRF` object issues the cookie and runs the check. The Router does that once per request.
+The Router issues the cookie on every request. Before the middlewares and the action of a route run, the token is compared for every request that
 
-The token is compared when both conditions hold:
+1. uses a method other than `GET`, `HEAD` or `OPTIONS`, and
+2. a cross-site page could send without a CORS preflight.
 
-1. The request method is **not** `GET`, `HEAD` or `OPTIONS`.
-2. The request carries a ZubZet marker - `isFormData` (sent by `Z.Forms`) or `action` (sent by `Z.Request.action()` / `Z.Request.root()`).
+The second condition skips requests that only a script on an allowed origin, or a client outside the browser, can send:
 
-Anything else passes through unchecked.
+| Skipped when | Typical sender |
+| ------------ | -------------- |
+| The `Content-Type` is anything but `application/x-www-form-urlencoded`, `multipart/form-data` or `text/plain` | JSON APIs, webhooks posting JSON |
+| An `Authorization` header carries a scheme other than `Basic`, `Digest`, `NTLM` or `Negotiate` | `Bearer` tokens of SPAs, mobile apps and services |
 
-The marker travels in the request body, so an attacker can leave it out to opt out of the check. That is harmless wherever reaching the code also requires the marker, because dropping it costs the attacker the action itself:
+The four schemes stay checked because the browser attaches cached credentials of these schemes by itself, to cross-site requests too. A request without a body has no `Content-Type` and is checked as well.
 
-- `$req->hasFormData()` needs `isFormData`.
-- `$req->isAction()` needs `action`.
+Safe methods are never checked, so an action must not change state on `GET`.
 
-It is not harmless for actions that run on the plain POST fields without either predicate. Those call `CSRF::enforce()`, which skips the marker test and always demands the token:
+## Opting out
+An endpoint that a browser session never calls with its own token, like form-encoded API-key authentication or a `navigator.sendBeacon()` target, opts out on its route or group:
 
 ```php
-CSRF::enforce();
+Route::post('/hook', [HookController::class, 'action_receive'])->withoutCsrf();
+
+Route::group('/api', function() {
+    Route::post('/orders', [ApiController::class, 'action_orders']);
+})->withoutCsrf();
 ```
 
+The opt-out is inherited exactly like a [group middleware](routing.md#middleware-on-groups): it covers every route declared inside the group and every convention path below its prefix. A group without routes is therefore enough for convention controllers:
+
+```php
+Route::group('/click/interaction')->withoutCsrf();
+```
+
+Such a group only reaches convention paths. An explicit route opts out where it is declared, either directly or by being declared inside the group.
+
+An opted-out endpoint has to authenticate its caller by something other than the session cookie.
+
+## Raw HTML forms
 A raw HTML form cannot set a header, so it carries the token in a hidden `_csrf` field instead, which the check accepts in place of the header. `CSRF::field()` renders that input from the cookie the Router has already issued:
 
 ```blade
@@ -56,17 +74,8 @@ There is nothing to configure. The framework's cookies (`z_csrf`, the `z_login_t
 
 Keep `host` on `https://` in production: without `Secure`, a single `http://` request to the same domain leaks the session and the token in cleartext to anyone on the network path.
 
-## Limits of this release
-The check is scoped to `Z.Forms` and `Z.Request` so existing applications keep working without code changes. That leaves gaps:
-
-| Not covered | Consequence |
-| ----------- | ----------- |
-| Raw `<form method="post">` in application code | No marker, so no check unless the action constructs `CSRF::enforce()` and the form embeds `CSRF::field()` |
-| Actions reading `getPost()` without `hasFormData()` / `isAction()` | Nothing forces the marker, so nothing forces the check |
-| State-changing actions reachable via `GET` | Safe methods are never checked |
-| Custom `fetch()` / `$.ajax()` outside `Z.Request` | Must attach the header itself, otherwise it receives a `403` |
-
-For custom AJAX, ask Z.js for the token and set the header yourself:
+## Custom AJAX
+Requests built by hand with `fetch()` or `$.ajax()` bypass Z.js and have to attach the header themselves, otherwise they receive a `403`. Ask Z.js for the token:
 
 ```js
 fetch(url, {

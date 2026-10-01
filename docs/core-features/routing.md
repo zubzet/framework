@@ -169,6 +169,20 @@ Every request to `/api/{apiVersion}/users` or `/api/{apiVersion}/users/{id}`:
 
 ---
 
+### CSRF Opt-out
+
+The [CSRF check](csrf-protection.md) runs before the middlewares of a route. A route or group whose callers authenticate without the session cookie opts out with `withoutCsrf()`, which is inherited like a group middleware:
+
+```php
+Route::group('/api', function () {
+    Route::post('/orders', [ApiController::class, 'action_orders']);
+})->withoutCsrf();
+```
+
+See [When the check runs](csrf-protection.md#when-the-check-runs) for the requests the check already skips by itself.
+
+---
+
 ## Route Parameters
 
 Within the routing system, you can define dynamic route segments using curly braces, e.g. `{parameter}`.  
