@@ -439,8 +439,10 @@ To prevent race conditions, broken schemas, and inconsistent data, ZubZet applie
 #### Lock States
 The command reports one of the following states:
 
-* **`LOCKED` (0)** – A migration is currently in progress, or a previous migration was interrupted (e.g., a **Manual Migration**), leaving the database protected against concurrent execution.
-* **`UNLOCKED` (1)** – The database is clear. No migration is currently active, and new migrations can be started safely.
+* **`LOCKED` (exit code 1)** – A migration is currently in progress, or a previous migration was interrupted (e.g., a **Manual Migration**), leaving the database protected against concurrent execution.
+* **`UNLOCKED` (exit code 0)** – The database is clear. No migration is currently active, and new migrations can be started safely.
+
+The exit code makes the command usable as a check in scripts, e.g. `db:status && db:migrate`.
 
 !!! warning
     If the status remains **LOCKED** even though no migration is running, it usually means a **Manual Migration** was reached or a process **crashed**.
