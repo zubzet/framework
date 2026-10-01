@@ -9,9 +9,8 @@
      * gets the cookie sent for them but cannot read it, so they cannot fill
      * in the header.
      *
-     * Constructing the object is the whole defense: it issues the token and
-     * runs the check. The Router does that once per request; an action that
-     * cannot rely on the marker calls `CSRF::enforce()`.
+     * The Router constructs the object to issue the token. Dispatch calls
+     * `CSRF::verify()` before the middlewares and the action of a route run.
      *
      * The cookie is host-only on purpose, even under
      * `login_scope_allow_subdomains` - see docs/core-features/csrf-protection.
@@ -27,22 +26,11 @@
         /** The token of this request, issued or reused by ensureToken(). */
         private static string $token = '';
 
-        /**
-         * @param bool $enforce Verify regardless of the marker, which lives in
-         * the request body and is therefore attacker-controlled. Needed
-         * wherever an action runs on the plain POST fields and never requires
-         * the marker itself.
-         */
-        public function __construct(bool $enforce = false) {
+        public function __construct() {
             $this->ensureToken();
+        }
 
-            // Only verify if the request is a Z.js request or the caller explicitly asks for it.
-            $shouldVerify = $enforce
-                || isset(request()->input->POST['isFormData'])
-                || isset(request()->input->POST['action']);
-
-            if(!$shouldVerify) return;
-
+        public static function verify(): void {
             // Safe methods do not require a CSRF token
             $method = strtoupper(request()->input->SERVER['REQUEST_METHOD'] ?? 'GET');
             if(in_array($method, self::SAFE, true)) return;
@@ -55,22 +43,12 @@
                 http_response_code(403);
                 header('Content-Type: application/json');
                 response()->generateRestError(403, 'csrf token mismatch');
-                return;
             }
         }
 
         /**
-         * Verify regardless of the marker. For an action that runs on the
-         * plain POST fields and never requires the marker itself.
-         */
-        public static function enforce(): void {
-            new self(enforce: true);
-        }
-
-        /**
-         * Hidden input for a raw HTML form whose action verifies with
-         * `CSRF::enforce()`. The Router has already issued the token for
-         * this request.
+         * Hidden input for a raw HTML form, which cannot set the header. The
+         * Router has already issued the token for this request.
          */
         public static function field(): string {
             return '<input type="hidden" name="' . self::FIELD . '" value="' . e(self::$token) . '">';

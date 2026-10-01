@@ -29,7 +29,7 @@ describe('Guestbook module', () => {
     });
 
     it('accepts a POSTed entry and lists it immediately and on the next GET', () => {
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/guestbook/add',
             form: true,

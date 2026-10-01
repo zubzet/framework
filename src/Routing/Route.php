@@ -6,6 +6,7 @@
     use Request;
     use Response;
     use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\Security\CSRF;
 
     class Route {
 
@@ -83,6 +84,9 @@
                 }
             }
 
+            // Before any middleware, which may act on the request just like the action
+            CSRF::verify();
+
             // Execute collected middlewares and exit if any returns any other than true
             foreach($toExecuteMiddlewares as $toExecuteMiddleware) {
                 [$class, $method] = $toExecuteMiddleware->getAction();
@@ -139,6 +143,9 @@
             ];
 
             $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares) {
+                // Before any middleware, which may act on the request just like the action
+                CSRF::verify();
+
                 foreach($effectiveMiddlewares as $middleware) {
                     [$middlewareClass, $middlewareMethod] = $middleware->getAction();
 

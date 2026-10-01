@@ -7,7 +7,7 @@ describe('Form Field - integer() and exists() rules', () => {
     });
 
     function postValidate(body) {
-        return cy.request({
+        return cy.zRequest({
             method: 'POST',
             url: '/Form/validateIntegerExists',
             form: true,

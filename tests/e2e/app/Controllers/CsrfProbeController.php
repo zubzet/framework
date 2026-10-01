@@ -5,10 +5,8 @@
     // Probe for tests/cypress/e2e/core/csrf.cy.js. No DB access - no seed.
     class CsrfProbeController extends z_controller {
 
-        // An action on the plain POST fields, which demands the token itself
-        public function action_enforced(Request $req, Response $res) {
-            CSRF::enforce();
-
+        // An action on the plain POST fields, without any Z.js marker
+        public function action_plain(Request $req, Response $res) {
             return $res->success();
         }
 

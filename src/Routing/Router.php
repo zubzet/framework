@@ -24,7 +24,7 @@
                 request()->urlParts = $customUrlParts;
             }
 
-            // CSRF defense: issue a token on every request, verify on mutations.
+            // CSRF defense: issue a token on every request, dispatch verifies it before the route runs.
             new CSRF();
 
             $dispatcher = $this->getRouteDispatcher();
