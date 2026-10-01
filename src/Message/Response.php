@@ -82,6 +82,19 @@
             return str_starts_with((string) config("host"), "https://");
         }
 
+        // One attribute set for z_login_token and z_csrf, so the two can never drift apart
+        public function setFrameworkCookie(string $name, string $value, int $lifetime, bool $hostOnly = false): void {
+            // Not HttpOnly: Z.js reads the token, the session watcher in the body component the login cookie
+            $this->setCookie($name, $value, [
+                "expires" => time() + $lifetime,
+                "path" => "/",
+                "domain" => $hostOnly ? "" : $this->getCookieDomainScope(),
+                "secure" => $this->cookieSecure(),
+                "httponly" => false,
+                "samesite" => "Lax",
+            ]);
+        }
+
         /**
          * Removes a cookie at the client
          * @param string $name Name of the cookie
@@ -284,14 +297,11 @@
             $session = model("z_login", $this->booter->z_framework_root)
                 ->createLoginToken($userId, $user_exec, $name, $reason, recordTwoFactor: $recordTwoFactor);
 
-            // Not HttpOnly: the session watcher in the body component reads it.
-            $this->setCookie("z_login_token", $session->token(), [
-                "expires" => time() + (int) config("loginTimeoutSeconds", default: TIMESPAN_DAY_7),
-                "path" => "/",
-                "domain" => $this->getCookieDomainScope(),
-                "secure" => $this->cookieSecure(),
-                "samesite" => "Lax",
-            ]);
+            $this->setFrameworkCookie(
+                "z_login_token",
+                $session->token(),
+                (int) config("loginTimeoutSeconds", default: TIMESPAN_DAY_7),
+            );
             $this->deleteOldLoginCookieDomainScope();
 
             if ($userId == $user_exec) {

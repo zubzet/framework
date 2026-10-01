@@ -87,13 +87,7 @@
             $token = bin2hex(random_bytes(20));
 
             // No domain attribute: sibling subdomains must not read this.
-            setcookie(self::COOKIE, $token, [
-                'expires' => time() + self::LIFETIME,
-                'path' => '/',
-                'secure' => response()->cookieSecure(),
-                'httponly' => false,
-                'samesite' => 'Lax',
-            ]);
+            response()->setFrameworkCookie(self::COOKIE, $token, self::LIFETIME, hostOnly: true);
 
             // The cookie only reaches the browser with the response, so make
             // the token visible within this request too.
