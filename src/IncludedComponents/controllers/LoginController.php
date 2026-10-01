@@ -6,6 +6,7 @@
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Security\CSRF;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -22,6 +23,9 @@
          */
         public function action_index($req, $res) {
             if($req->isAction("login")) {
+                // checkPermission() reaches this action internally, past the dispatch check of an opted-out route
+                CSRF::verify();
+
                 $loginModel = $req->getModel("z_login", $req->getZRoot());
 
                 // Look the account up by the submitted login (its email).

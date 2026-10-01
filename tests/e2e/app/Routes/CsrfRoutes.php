@@ -12,5 +12,6 @@
 
     // No route declares this path, it is reached by the convention fallback
     Route::group('/CsrfProbe/exempt')->withoutCsrf();
+    Route::group('/CsrfProbe/guarded')->withoutCsrf();
 
 ?>

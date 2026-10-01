@@ -162,6 +162,19 @@ describe('CSRF protection', () => {
                 });
             });
         });
+
+        // checkPermission() runs the login internally, past the dispatch check of the opted-out route
+        it('does not log in a forged post through an opted-out route', () => {
+            token();
+
+            cy.fixture('logins.json').then((logins) => {
+                post('/CsrfProbe/guarded', { action: 'login', name: logins.customer.name, password: logins.customer.password }).then((res) => {
+                    expect(res.status).to.eq(403);
+                    const cookies = [].concat(res.headers['set-cookie'] || []);
+                    expect(cookies.some((cookie) => cookie.startsWith('z_login_token='))).to.eq(false);
+                });
+            });
+        });
     });
 
     describe('the browser side', () => {

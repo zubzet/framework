@@ -15,6 +15,13 @@
             return $res->success();
         }
 
+        // Opted out in CsrfRoutes.php, sends a guest on to the login through checkPermission()
+        public function action_guarded(Request $req, Response $res) {
+            $req->checkPermission("admin.panel");
+
+            return $res->success();
+        }
+
         // What a raw HTML form embeds to carry the token
         public function action_field(Request $req, Response $res) {
             echo CSRF::field();
