@@ -26,13 +26,13 @@
             $req->checkPermission("admin.maintenance");
 
             if($req->isAction("bypass-maintenance")) {
-                $res->setCookie(
-                    MaintenanceHandler::$COOKIE_KEY,
-                    "true",
-                    time() + TIMESPAN_DAY_1,
+                $res->setCookie(MaintenanceHandler::$COOKIE_KEY, "true", [
+                    "expires" => time() + TIMESPAN_DAY_1,
                     // Without the trailing slash, so the bare root sends it too
-                    rtrim($req->getRootFolder(), "/") ?: "/",
-                );
+                    "path" => rtrim($req->getRootFolder(), "/") ?: "/",
+                    "secure" => $res->cookieSecure(),
+                    "samesite" => "Lax",
+                ]);
                 return $res->success();
             }
 
