@@ -161,6 +161,18 @@ class SessionController extends z_controller {
         echo(json_encode($this->getSession($session)));
     }
 
+    /** Without loginTimeoutSeconds a new session lives for the documented 7 days. */
+    public function action_addWithoutTimeoutSetting(Request $req, Response $res): void {
+        $settings = zubzet()->getAllAttributes();
+        unset($settings["loginTimeoutSeconds"]);
+        zubzet()->setAttributes($settings);
+
+        $session = Session::add(User::byId(421));
+        echo(json_encode([
+            'lifetime' => strtotime($session->expiresAt()) - strtotime($session->created()),
+        ]));
+    }
+
 
     /**
      * Session 438 is an ordinary login created in the year 2000, so it is
