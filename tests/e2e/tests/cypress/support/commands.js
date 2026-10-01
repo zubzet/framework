@@ -1,7 +1,7 @@
 // A cy.request() that carries the CSRF token the way Z.js does.
 //
 // Z.Forms / Z.Request read the `z_csrf` cookie and echo it back as an
-// `X-CSRF-Token` header; the Csrf object rejects any marked request
+// `X-CSRF-Token` header; the CSRF object rejects any marked request
 // (isFormData / action) that arrives without a matching header. A spec posting
 // through a bare cy.request() bypasses Z.js entirely and therefore looks
 // exactly like a forged cross-origin request - 403. Use this instead whenever
