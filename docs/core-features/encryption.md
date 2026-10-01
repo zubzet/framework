@@ -67,15 +67,33 @@ try {
 }
 ```
 
-A missing `encryption_key`, or one shorter than 32 characters, throws a `RuntimeException` on both
-encryption and decryption, so a misconfiguration is noticed before anything is stored.
+A missing `encryption_key`, or one shorter than 32 characters, throws a `RuntimeException`, so a
+misconfiguration is noticed before anything is stored. Decryption checks the value first: a value
+that is not in the encrypted format throws the `DecryptionException` even when the key is missing.
 
 ## Storage format
 
-An encrypted value is plain text of the form `zenc1:` followed by base64, so it fits into a
-`VARCHAR` or `TEXT` column. It is about `(length × 4 / 3) + 44` characters long; a `TEXT` column
-avoids having to size it. The `zenc1:` prefix versions the format, which lets a later release
-change the algorithm while still reading values stored today.
+An encrypted value is plain text of the form `zenc:aes-256-gcm:` followed by base64url. It only
+contains `A-Z`, `a-z`, `0-9`, `-`, `_` and `:`, so it can be stored in a `VARCHAR` or `TEXT` column
+and passed through URLs, JSON or environment variables without escaping. It is about
+`(length × 4 / 3) + 55` characters long; a `TEXT` column avoids having to size it.
+
+Any string can be encrypted, including binary data. To store several values together, encrypt them
+as JSON:
+
+```php
+$stored = encryptSecret(json_encode(["accessKey" => $accessKey, "secretKey" => $secretKey]));
+$credentials = json_decode(decryptSecret($stored), true);
+```
 
 The cipher key is derived from `encryption_key` with HKDF-SHA256, so the setting may be any
 sufficiently long random string.
+
+## Changing the algorithm
+
+Every value names the cipher it was encrypted with, so the framework can switch to a different
+algorithm without breaking stored values. A cipher is a class implementing
+`ZubZet\Framework\Security\Cipher\Cipher`, registered under a fixed identifier in
+`Encryption::CIPHERS`. A new default only affects values encrypted from then on; existing values
+keep decrypting with the cipher they name, as long as it stays registered. Only authenticated
+ciphers qualify, otherwise a wrong key could no longer be detected.
