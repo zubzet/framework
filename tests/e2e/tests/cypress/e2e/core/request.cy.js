@@ -47,7 +47,7 @@ describe('Request', () => {
     });
 
     it('POST', () => {
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/Core/Post',
             form: true,
@@ -291,7 +291,7 @@ describe('Request', () => {
             expect(out.jsonError).to.eq(null);
         });
 
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/Core/requestBody',
             body: 'not-json{',

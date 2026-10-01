@@ -69,7 +69,7 @@ describe('Auth flows', () => {
         it('writes a reset code, sends an email, and returns success JSON', () => {
             clearMailhog();
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -96,7 +96,7 @@ describe('Auth flows', () => {
         });
 
         it('returns "error" JSON for an unknown email but still 200', () => {
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -117,7 +117,7 @@ describe('Auth flows', () => {
     describe('action_reset', () => {
         it('consumes a reset code, updates the password, and disables the code', () => {
             // Step 1: kick off forgot-password to create a reset code for user 602.
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -136,7 +136,7 @@ describe('Auth flows', () => {
                 });
 
                 // Step 4: POST the new password.
-                cy.request({
+                cy.zRequest({
                     method: 'POST',
                     url: `/login/reset/${code}/`,
                     form: true,
@@ -194,7 +194,7 @@ describe('Auth flows', () => {
         it('resend path: POSTing email re-issues a verify token and renders the wait page', () => {
             clearMailhog();
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/verify',
                 form: true,

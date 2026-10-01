@@ -294,7 +294,7 @@ describe('Input/State', () => {
         // landing in State.POST. This is the one wither-independent piece
         // of fromRequest() that has user-visible semantics.
         it('rawurldecodes <#decURI#>-prefixed POST values', () => {
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/StateProbe/decURI',
                 form: true,

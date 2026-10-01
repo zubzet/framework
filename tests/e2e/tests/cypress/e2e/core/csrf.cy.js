@@ -1,5 +1,5 @@
 describe('CSRF protection', () => {
-    // A marked Z.Request post to a harmless action
+    // A Z.Request post to a harmless action
     const marked = { action: 'add', number1: 5, number2: 6 };
 
     function post(url, body, headers = {}) {
@@ -13,12 +13,16 @@ describe('CSRF protection', () => {
         });
     }
 
+    function send(options) {
+        return cy.request({ failOnStatusCode: false, ...options });
+    }
+
     // Every response issues the cookie, a cheap GET primes it
     function token() {
         return cy.request('/_zubzet/health').then(() => cy.getCookie('z_csrf')).its('value');
     }
 
-    describe('a marked request', () => {
+    describe('a Z.js request', () => {
         it('is rejected without the header', () => {
             token();
 
@@ -48,36 +52,30 @@ describe('CSRF protection', () => {
         });
     });
 
-    describe('an unmarked request', () => {
-        it('is not checked by the router', () => {
+    describe('any other request', () => {
+        it('is rejected without the header', () => {
             token();
 
-            post('/Frontend/backendrequest', { number1: 5, number2: 6 }).its('status').should('eq', 200);
+            post('/CsrfProbe/plain', {}).its('status').should('eq', 403);
         });
 
-        it('is rejected without the header where the action enforces it', () => {
-            token();
-
-            post('/CsrfProbe/enforced', {}).its('status').should('eq', 403);
-        });
-
-        it('passes where the action enforces it and the header matches', () => {
+        it('passes with the header matching the cookie', () => {
             token().then((value) => {
-                post('/CsrfProbe/enforced', {}, { 'X-CSRF-Token': value }).its('status').should('eq', 200);
+                post('/CsrfProbe/plain', {}, { 'X-CSRF-Token': value }).its('status').should('eq', 200);
             });
         });
 
         // A raw HTML form cannot set a header and carries the token in a field
-        it('passes where the action enforces it and the _csrf field matches', () => {
+        it('passes with the _csrf field matching the cookie', () => {
             token().then((value) => {
-                post('/CsrfProbe/enforced', { _csrf: value }).its('status').should('eq', 200);
+                post('/CsrfProbe/plain', { _csrf: value }).its('status').should('eq', 200);
             });
         });
 
-        it('is rejected where the action enforces it and the _csrf field does not match', () => {
+        it('is rejected with a _csrf field that does not match', () => {
             token();
 
-            post('/CsrfProbe/enforced', { _csrf: 'f'.repeat(40) }).its('status').should('eq', 403);
+            post('/CsrfProbe/plain', { _csrf: 'f'.repeat(40) }).its('status').should('eq', 403);
         });
 
         it('renders the cookie as a hidden _csrf input through CSRF::field()', () => {
@@ -85,6 +83,10 @@ describe('CSRF protection', () => {
                 cy.request('/CsrfProbe/field').its('body')
                     .should('eq', `<input type="hidden" name="_csrf" value="${value}">`);
             });
+        });
+
+        it('passes on a safe method', () => {
+            send({ method: 'GET', url: '/CsrfProbe/plain' }).its('status').should('eq', 200);
         });
     });
 

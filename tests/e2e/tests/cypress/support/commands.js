@@ -1,11 +1,11 @@
 // A cy.request() that carries the CSRF token the way Z.js does.
 //
 // Z.Forms / Z.Request read the `z_csrf` cookie and echo it back as an
-// `X-CSRF-Token` header; the CSRF object rejects any marked request
-// (isFormData / action) that arrives without a matching header. A spec posting
+// `X-CSRF-Token` header; the CSRF check rejects any non-GET request a browser
+// could send cross-site that arrives without a matching header. A spec posting
 // through a bare cy.request() bypasses Z.js entirely and therefore looks
 // exactly like a forged cross-origin request - 403. Use this instead whenever
-// a spec simulates a Z.Forms submit without driving the actual UI.
+// a spec posts form data without driving the actual UI.
 Cypress.Commands.add('zRequest', (options) => {
     const send = (token) => cy.request({
         ...options,
