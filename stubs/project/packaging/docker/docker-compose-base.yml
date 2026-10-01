@@ -47,7 +47,7 @@ services:
   # Backend Services
   database:
     container_name: database
-    image: mariadb:10.5.22
+    image: mariadb:11.8
     restart: on-failure
     environment:
       MYSQL_DATABASE: app
