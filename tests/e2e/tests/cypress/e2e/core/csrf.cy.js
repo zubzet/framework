@@ -154,6 +154,7 @@ describe('CSRF protection', () => {
 
             cy.fixture('logins.json').then((logins) => {
                 post('/login', { action: 'login', name: logins.customer.name, password: logins.customer.password }).then((res) => {
+                    expect(res.status).to.eq(403);
                     const cookies = [].concat(res.headers['set-cookie'] || []);
                     expect(cookies.some((cookie) => cookie.startsWith('z_login_token='))).to.eq(false);
                     const body = typeof res.body === 'string' ? res.body : JSON.stringify(res.body);
