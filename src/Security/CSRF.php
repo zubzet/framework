@@ -23,6 +23,12 @@
         private const SAFE = ["GET", "HEAD", "OPTIONS"];
         private const LIFETIME = 60 * 60 * 24 * 30; // 30 days
 
+        // What a cross-site form or no-cors fetch can send without a CORS preflight; "" is a request without a body
+        private const SIMPLE_CONTENT_TYPES = ["", "application/x-www-form-urlencoded", "multipart/form-data", "text/plain"];
+
+        // Authorization schemes the browser attaches by itself, to cross-site requests too
+        private const BROWSER_AUTH_SCHEMES = ["basic", "digest", "negotiate", "ntlm"];
+
         /** The token of this request, issued or reused by ensureToken(). */
         private static string $token = '';
 
@@ -34,6 +40,25 @@
             // Safe methods do not require a CSRF token
             $method = strtoupper(request()->input->SERVER['REQUEST_METHOD'] ?? 'GET');
             if(in_array($method, self::SAFE, true)) return;
+
+            // Any other content type needs a CORS preflight to be sent cross-site, so it cannot be forged
+            $contentType = explode(";", request()->input->SERVER['CONTENT_TYPE'] ?? "")[0];
+            $contentType = strtolower(trim($contentType));
+            if(!in_array($contentType, self::SIMPLE_CONTENT_TYPES, true)) {
+                return;
+            }
+
+            // Same for an Authorization header set by script; mod_php keeps it out of $_SERVER, not out of getallheaders()
+            $headers = [];
+            if(function_exists("getallheaders")) {
+                $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+            }
+
+            $authorization = trim($headers["authorization"] ?? "");
+            $authScheme = strtolower(explode(" ", $authorization)[0]);
+            if(!empty($authScheme) && !in_array($authScheme, self::BROWSER_AUTH_SCHEMES, true)) {
+                return;
+            }
 
             $cookie = request()->getCookie(self::COOKIE) ?? null;
             // A raw HTML form cannot set the header and sends the field instead

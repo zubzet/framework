@@ -85,8 +85,45 @@ describe('CSRF protection', () => {
             });
         });
 
+        it('is rejected with a text/plain body', () => {
+            token();
+
+            send({ method: 'POST', url: '/CsrfProbe/plain', body: 'x', headers: { 'Content-Type': 'text/plain' } })
+                .its('status').should('eq', 403);
+        });
+
+        it('is rejected without a body', () => {
+            token();
+
+            send({ method: 'DELETE', url: '/CsrfProbe/plain' }).its('status').should('eq', 403);
+        });
+
         it('passes on a safe method', () => {
             send({ method: 'GET', url: '/CsrfProbe/plain' }).its('status').should('eq', 200);
+        });
+    });
+
+    // Neither leaves a browser cross-site without a CORS preflight
+    describe('a request a browser cannot forge', () => {
+        it('passes with a JSON body', () => {
+            token();
+
+            send({ method: 'POST', url: '/CsrfProbe/plain', body: { a: 1 } }).its('status').should('eq', 200);
+        });
+
+        it('passes with a bearer token', () => {
+            token();
+
+            send({ method: 'DELETE', url: '/CsrfProbe/plain', headers: { Authorization: 'Bearer abc' } })
+                .its('status').should('eq', 200);
+        });
+
+        // The browser attaches cached Basic credentials by itself, cross-site included
+        it('is still checked with Basic credentials', () => {
+            token();
+
+            send({ method: 'DELETE', url: '/CsrfProbe/plain', headers: { Authorization: 'Basic dXNlcjpwYXNz' } })
+                .its('status').should('eq', 403);
         });
     });
 
