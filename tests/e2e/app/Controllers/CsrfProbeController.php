@@ -10,6 +10,11 @@
             return $res->success();
         }
 
+        // Reached by convention under a group that opted out in CsrfRoutes.php
+        public function action_exempt(Request $req, Response $res) {
+            return $res->success();
+        }
+
         // What a raw HTML form embeds to carry the token
         public function action_field(Request $req, Response $res) {
             echo CSRF::field();
