@@ -42,6 +42,7 @@ These todos should be as temporary as possible:
 1. Added - `$organization->hasMember(User $user)` and `$user->isMemberOf(Organization $organization)` check if a user belongs to a given organization. A removed organization has no members. See [Access Control](docs/core-features/access-control.md#organization-object)
 1. Fixed - `z_logintoken.token` had no index, so the session lookup of every authenticated request scanned the whole table, including every session ever invalidated. The migration `2026-10-02_session-token-index.sql` adds a unique index. **Migrator note:** the migration runs automatically and fails if two sessions share a token, which the framework never issues; `SELECT token FROM z_logintoken GROUP BY token HAVING COUNT(*) > 1` lists them
 1. Fixed - `db:status` returned exit code 0 while the migration table was locked and 1 while it was unlocked. It now exits with 0 when unlocked and 1 when locked, so `db:status && db:migrate` works as a guard. **Migrator note:** scripts that relied on the inverted exit code have to be flipped
+1. Fixed - An unset `loginTimeoutSeconds` gave sessions a lifetime of 0 instead of the documented 7 days, and the login cookie set by `$res->loginAs()` expired the moment it was set. Both now fall back to 7 days
 
 ## v1.2.0
 1. Added DEV Changelog
