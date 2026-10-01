@@ -7,6 +7,7 @@
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Translation\Translation;
+    use ZubZet\Framework\Security\CSRF;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -36,6 +37,9 @@
                     "noLayout" => $req->getGet("noLayout", false),
                 ], "layout/min_layout.php");
             }
+
+            // checkPermission() reaches this action internally, past the dispatch check of an opted-out route
+            CSRF::verify();
 
             // Look the account up by the submitted login (its email).
             $user = User::byEmail($req->getPost("name"));
