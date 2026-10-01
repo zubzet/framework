@@ -11,6 +11,7 @@
     use ZubZet\Framework\Authentication\Commands\HashingAlgorithmMigration;
     use Symfony\Component\Console\Application as ConsoleApplication;
     use ZubZet\Framework\Database\Migration\Commands\UnlockMigration;
+    use ZubZet\Framework\Tasks\Commands\Work as QueueWork;
     use ZubZet\Framework\Testing\Coverage\Commands\Stop as CoverageStop;
     use ZubZet\Framework\Testing\Coverage\Commands\Start as CoverageStart;
 
@@ -36,6 +37,7 @@
                     new HashingAlgorithmMigration(),
                     new Startup(),
                     new ModuleSetup(),
+                    new QueueWork(),
                     new CoverageStart(),
                     new CoverageStop(),
                 ],

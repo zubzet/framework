@@ -272,6 +272,8 @@
                 ? $this->result->num_rows
                 : $this->conn->affected_rows;
 
+            $this->affectedRows = $rowCount;
+
             $this->stmt->close();
 
             $this->lastHeartbeat = time();
