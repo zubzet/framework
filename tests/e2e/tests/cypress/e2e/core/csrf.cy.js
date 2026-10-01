@@ -66,6 +66,26 @@ describe('CSRF protection', () => {
                 post('/CsrfProbe/enforced', {}, { 'X-CSRF-Token': value }).its('status').should('eq', 200);
             });
         });
+
+        // A raw HTML form cannot set a header and carries the token in a field
+        it('passes where the action enforces it and the _csrf field matches', () => {
+            token().then((value) => {
+                post('/CsrfProbe/enforced', { _csrf: value }).its('status').should('eq', 200);
+            });
+        });
+
+        it('is rejected where the action enforces it and the _csrf field does not match', () => {
+            token();
+
+            post('/CsrfProbe/enforced', { _csrf: 'f'.repeat(40) }).its('status').should('eq', 403);
+        });
+
+        it('renders the cookie as a hidden _csrf input through CSRF::field()', () => {
+            token().then((value) => {
+                cy.request('/CsrfProbe/field').its('body')
+                    .should('eq', `<input type="hidden" name="_csrf" value="${value}">`);
+            });
+        });
     });
 
     describe('the browser side', () => {
