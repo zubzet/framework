@@ -88,6 +88,22 @@ describe('CSRF protection', () => {
         });
     });
 
+    describe('the bundled login', () => {
+        // Login CSRF: a cross-site form posting valid credentials must not start a session
+        it('does not log in a forged post without the header', () => {
+            token();
+
+            cy.fixture('logins.json').then((logins) => {
+                post('/login', { action: 'login', name: logins.customer.name, password: logins.customer.password }).then((res) => {
+                    const cookies = [].concat(res.headers['set-cookie'] || []);
+                    expect(cookies.some((cookie) => cookie.startsWith('z_login_token='))).to.eq(false);
+                    const body = typeof res.body === 'string' ? res.body : JSON.stringify(res.body);
+                    expect(body).not.to.contain('"result":"success"');
+                });
+            });
+        });
+    });
+
     describe('the browser side', () => {
         it('sends the cookie as header from Z.Request', () => {
             cy.intercept('POST', '/Frontend/backendrequest').as('request');
