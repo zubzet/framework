@@ -58,5 +58,3 @@ fi
 
 # Non-interactive (pipe, CI, cron) -> run in container without TTY
 exec docker exec -i application php index.php "$@"
-
-docker compose -f "$directory/packaging/docker/docker-compose-base.yml" up --build -d
