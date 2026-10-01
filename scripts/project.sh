@@ -8,7 +8,9 @@ compose() {
 
 case "$1" in
     start)
-        compose up --remove-orphans --build -d &&
+        # The application container runs as the project owner, so it can write to the project files
+        compose build --build-arg USER_UID="$(ls -nd "$root" | awk '{print $3}')" &&
+        compose up --remove-orphans -d &&
         docker exec application composer install &&
         docker exec application php index.php db:seed &&
         docker exec application php index.php info:startup --pwd "$root"
