@@ -15,7 +15,7 @@ Every request ensures a `z_csrf` cookie holding a random 40-character token: a f
 The cookie travels automatically on any request the browser makes, so on its own it proves nothing. The header does: setting it requires reading the cookie, and only code from the same origin is allowed to do that. An attacker's page can trigger a request, but cannot fill in the header.
 
 ## When the check runs
-Constructing a `Csrf` object issues the cookie and runs the check. The Router does that once per request.
+Constructing a `CSRF` object issues the cookie and runs the check. The Router does that once per request.
 
 The token is compared when both conditions hold:
 
@@ -29,10 +29,19 @@ The marker travels in the request body, so an attacker can leave it out to opt o
 - `$req->hasFormData()` needs `isFormData`.
 - `$req->isAction()` needs `action`.
 
-It is not harmless for actions that run on the plain POST fields without either predicate. Those construct their own `Csrf` with `enforce: true`, which skips the marker test and always demands the header:
+It is not harmless for actions that run on the plain POST fields without either predicate. Those call `CSRF::enforce()`, which skips the marker test and always demands the token:
 
 ```php
-new Csrf(enforce: true);
+CSRF::enforce();
+```
+
+A raw HTML form cannot set a header, so it carries the token in a hidden `_csrf` field instead, which the check accepts in place of the header. `CSRF::field()` renders that input from the cookie the Router has already issued:
+
+```blade
+<form method="post">
+    {!! \ZubZet\Framework\Security\CSRF::field() !!}
+    ...
+</form>
 ```
 
 ## Interaction with `login_scope_allow_subdomains`
@@ -43,22 +52,16 @@ The `z_csrf` cookie deliberately does **not** follow that setting. It is always 
 The practical consequence is that each host maintains its own token. A page served from one subdomain cannot submit a `Z.Forms` request to another subdomain.
 
 ## Configuration
-The cookie carries the `Secure` attribute by default, so the browser only ever sends it back over HTTPS. Production deployments need no configuration.
+There is nothing to configure. The framework's cookies (`z_csrf`, the `z_login_token` session cookie and the maintenance bypass cookie) carry the `Secure` attribute whenever the `host` setting starts with `https://`, so the browser only ever sends them back over HTTPS. A deployment whose `host` is `http://` gets them without the attribute, because a `Secure` cookie is never stored on a plain `http://` origin: the token would never return, every mutating request would be answered with `403`, and no login would stick.
 
-A `Secure` cookie is ignored on plain `http://` origins, which means the token never returns and every mutating request is answered with `403`. Browsers treat `localhost` as a secure context, so local development over `http://localhost` is unaffected. Only a setup served over plain HTTP under a real hostname - a LAN address, a staging box without a certificate - has to turn the attribute off in `z_settings.ini`:
-
-```ini
-csrf_secure = false
-```
-
-Do not ship that setting to production: without `Secure`, a single `http://` request to the same domain leaks the token in cleartext to anyone on the network path.
+Keep `host` on `https://` in production: without `Secure`, a single `http://` request to the same domain leaks the session and the token in cleartext to anyone on the network path.
 
 ## Limits of this release
 The check is scoped to `Z.Forms` and `Z.Request` so existing applications keep working without code changes. That leaves gaps:
 
 | Not covered | Consequence |
 | ----------- | ----------- |
-| Raw `<form method="post">` in application code | No marker, so no check unless the action constructs `new Csrf(enforce: true)` |
+| Raw `<form method="post">` in application code | No marker, so no check unless the action constructs `CSRF::enforce()` and the form embeds `CSRF::field()` |
 | Actions reading `getPost()` without `hasFormData()` / `isAction()` | Nothing forces the marker, so nothing forces the check |
 | State-changing actions reachable via `GET` | Safe methods are never checked |
 | Custom `fetch()` / `$.ajax()` outside `Z.Request` | Must attach the header itself, otherwise it receives a `403` |
@@ -73,4 +76,15 @@ fetch(url, {
 });
 ```
 
-`Z.Request.csrfToken()` returns `null` when the browser holds no cookie. On a page the framework rendered that only happens when the cookie was rejected, which is the `csrf_secure` case described above.
+`Z.Request.csrfToken()` returns `null` when the browser holds no cookie. On a page the framework rendered that only happens when the cookie was rejected, which means the `host` setting says `https://` while the page is actually served over plain `http://`.
+
+## When a legitimate request is rejected
+Z.js reads the cookie at the moment it sends, so header and cookie always agree and a well-configured deployment never sees a `403` for its own requests. A rejection therefore signals a deployment problem, not a user error, and Z.js deliberately gives it no special treatment: `Z.Request` handlers are simply never called and `Z.Forms` only re-enables its button, so look at the network tab. Every response issues a fresh cookie, so a page reload recovers all of these:
+
+| Scenario | Cause |
+| -------- | ----- |
+| `host` says `https://` but the app is served over plain `http://` | The `Secure` cookie is never stored, no header can be sent; make `host` match the real scheme |
+| Cookie missing at send time | Cleared by the user, blocked by a browser policy, or a tab left open past the 30-day lifetime |
+| Header stripped in transit | A proxy or WAF that drops unknown `X-` headers; allow `X-CSRF-Token` |
+| Page on one subdomain posting to another | The token is host-only by design, and a cross-origin custom header also needs CORS; each host has to serve its own pages |
+| Cookie planted by a sibling subdomain | A `z_csrf` cookie with a `Domain` attribute that does not match the issued shape is replaced on the next response |
