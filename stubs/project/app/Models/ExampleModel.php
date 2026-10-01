@@ -4,7 +4,9 @@
 
         public function getAll(): array {
             $sql = "SELECT *
-                    FROM `example`";
+                    FROM `example`
+                    WHERE active = 1";
+
             return $this->exec($sql)->resultToArray();
         }
 
