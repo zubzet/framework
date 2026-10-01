@@ -17,6 +17,7 @@
         <div class="mb-2">
             You are missing the verification mail? Send Again!
             <form action="" method="POST">
+                {!! \ZubZet\Framework\Security\CSRF::field() !!}
                 <div class="input-group">
                     <input name="email" id="input-email" class="form-control" type="email" placeholder="Your Email">
                     <div class="input-group-append">

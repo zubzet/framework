@@ -18,6 +18,7 @@
 @section("content")
 	<div style="max-width: 1000px; margin: auto">
         <form action="" method="post" id="form">
+            {!! \ZubZet\Framework\Security\CSRF::field() !!}
             <div class="form-icons">
                 <h2>Password reset</h2>
 
