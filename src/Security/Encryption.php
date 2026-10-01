@@ -29,17 +29,17 @@
             "aes-256-gcm" => AesGcmCipher::class,
         ];
 
-        public static function encrypt(string $plaintext): string {
+        public static function encryptSecret(string $plaintext): string {
             $payload = self::cipher(self::DEFAULT_CIPHER)->encrypt(self::key(self::DEFAULT_CIPHER), $plaintext);
             return self::MARKER . ":" . self::DEFAULT_CIPHER . ":" . self::base64UrlEncode($payload);
         }
 
         /**
-         * Decrypt a value created by encrypt().
+         * Decrypt a value created by encryptSecret().
          *
          * @throws DecryptionException When the key is wrong or the value is malformed or modified
          */
-        public static function decrypt(string $encrypted): string {
+        public static function decryptSecret(string $encrypted): string {
             $parts = explode(":", $encrypted, 3);
             if(3 !== count($parts) || self::MARKER !== $parts[0]) {
                 throw new DecryptionException("The value is not in a known encryption format.");

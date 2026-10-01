@@ -178,7 +178,7 @@
              * @return string Encrypted value, safe to store as text
              */
             function encryptSecret(string $plaintext): string {
-                return Encryption::encrypt($plaintext);
+                return Encryption::encryptSecret($plaintext);
             }
         });
 
@@ -191,7 +191,7 @@
              * @return string The original plaintext
              */
             function decryptSecret(string $encrypted): string {
-                return Encryption::decrypt($encrypted);
+                return Encryption::decryptSecret($encrypted);
             }
         });
 

@@ -17,7 +17,7 @@
         }
 
         public function action_roundTripEmpty(Request $req, Response $res) {
-            return $res->json(["matches" => "" === Encryption::decrypt(Encryption::encrypt(""))]);
+            return $res->json(["matches" => "" === Encryption::decryptSecret(Encryption::encryptSecret(""))]);
         }
 
         public function action_roundTripAllBytes(Request $req, Response $res) {

@@ -43,8 +43,8 @@ The same methods are available on the `ZubZet\Framework\Security\Encryption` cla
 ```php
 use ZubZet\Framework\Security\Encryption;
 
-$encrypted = Encryption::encrypt($secretKey);
-$secretKey = Encryption::decrypt($encrypted);
+$encrypted = Encryption::encryptSecret($secretKey);
+$secretKey = Encryption::decryptSecret($encrypted);
 ```
 
 Every call to `encryptSecret()` uses a fresh random IV, so encrypting the same value twice gives two
