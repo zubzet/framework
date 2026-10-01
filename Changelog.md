@@ -35,6 +35,7 @@ These todos should be as temporary as possible:
 1. Changed - Dependency constraints modernized: `symfony/filesystem` moves off the exact `v6.0.19` pin to `^6.0 || ^7.0` (PHP 8.0 keeps resolving 6.0, newer PHP gets maintained releases), `symfony/console` normalizes to `^6.0 || ^7.0` (same resolution, consistent style), `components/jquery` moves from `3.5.*` to `3.7.*` (jQuery 3.5.1 from 2020 to 3.7.1), and `katanaphp/blade` moves from a commit-pinned integration branch to the tagged release `^0.2` now that the upstream maintainer merged the integration work. **Migrator note:** the jQuery bump is the only consumer-visible change; apps overriding the bundled jQuery are unaffected
 1. Changed - The declared PHP floor is `>=8.0.2` instead of `>=8.0`, matching what actually installs (symfony 6.0 requires 8.0.2, so 8.0.0/8.0.1 never resolved)
 1. Fixed - `db:status` returned exit code 0 while the migration table was locked and 1 while it was unlocked. It now exits with 0 when unlocked and 1 when locked, so `db:status && db:migrate` works as a guard. **Migrator note:** scripts that relied on the inverted exit code have to be flipped
+1. Fixed - An unset `loginTimeoutSeconds` gave sessions a lifetime of 0 instead of the documented 7 days, and the login cookie set by `$res->loginAs()` expired the moment it was set. Both now fall back to 7 days
 
 ## v1.2.0
 1. Added DEV Changelog
