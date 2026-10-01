@@ -249,7 +249,7 @@ describe('Database/Connection', () => {
                 // separate connection that must carry the same settings.
                 // Reporting the lock status at all means that connection was
                 // established; without TLS it dies in the driver instead.
-                // db:status exits non-zero whenever the lock is open, so the
+                // db:status exits non-zero while the table is locked, so the
                 // output is what is asserted on, not the exit code.
                 cy.exec('docker exec application php index.php db:status', {
                     timeout: 60000,
