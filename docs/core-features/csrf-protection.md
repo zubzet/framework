@@ -88,12 +88,11 @@ fetch(url, {
 `Z.Request.csrfToken()` returns `null` when the browser holds no cookie. On a page the framework rendered that only happens when the cookie was rejected, which means the `host` setting says `https://` while the page is actually served over plain `http://`.
 
 ## When a legitimate request is rejected
-Z.js reads the cookie at the moment it sends, so header and cookie always agree and a well-configured deployment never sees a `403` for its own requests. A rejection therefore signals a deployment problem, not a user error, and Z.js deliberately gives it no special treatment: `Z.Request` handlers are simply never called and `Z.Forms` only re-enables its button, so look at the network tab. Every response issues a fresh cookie, so a page reload recovers all of these:
+Z.js reads the cookie at the moment it sends, so header and cookie always agree and a well-configured deployment never sees a `403` for its own requests. A rejection therefore signals a deployment problem, not a user error, and Z.js deliberately gives it no special treatment: `Z.Request` handlers are simply never called and `Z.Forms` only re-enables its button, so look at the network tab. The usual causes:
 
 | Scenario | Cause |
 | -------- | ----- |
 | `host` says `https://` but the app is served over plain `http://` | The `Secure` cookie is never stored, no header can be sent; make `host` match the real scheme |
-| Cookie missing at send time | Cleared by the user, blocked by a browser policy, or a tab left open past the 30-day lifetime |
+| Cookie missing at send time | Cleared by the user, blocked by a browser policy, or a tab left open past the 30-day lifetime; the next response issues a new one, so a page reload recovers |
 | Header stripped in transit | A proxy or WAF that drops unknown `X-` headers; allow `X-CSRF-Token` |
 | Page on one subdomain posting to another | The token is host-only by design, and a cross-origin custom header also needs CORS; each host has to serve its own pages |
-| Cookie planted by a sibling subdomain | A `z_csrf` cookie with a `Domain` attribute that does not match the issued shape is replaced on the next response |
