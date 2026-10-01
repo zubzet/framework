@@ -1,6 +1,7 @@
 <?php
     namespace ZubZet\Framework\Support\Commands;
 
+    use Composer\InstalledVersions;
     use RecursiveIteratorIterator;
     use RecursiveDirectoryIterator;
     use Symfony\Component\Console\Command\Command;
@@ -10,12 +11,6 @@
 
     final class Install extends Command {
 
-        // The project template, copied as is into the project root.
-        private const STUBS = __DIR__ . "/../../../stubs/project";
-
-        // Test only: the local checkout via path repository, switch back to "zubzet/framework" once merged.
-        private const PACKAGE = "zubzet/framework:*@dev";
-
         protected function configure(): void {
             $this->setName("install");
             $this->setDescription("Builds a new ZubZet project.");
@@ -24,49 +19,72 @@
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
-            $path = rtrim((string) $in->getArgument("path"), "/");
-            if(!is_dir($path)) {
+            $path = (string) $in->getArgument("path");
+
+            // Project folder: must exist and be writable
+            $project = realpath($path);
+            if($project === false || !is_dir($project)) {
                 $out->writeln("<error>Folder does not exist: {$path}</error>");
                 return Command::FAILURE;
             }
 
-            // SELF_FIRST: folders come before their contents, so they exist when the files are copied.
-            $stubs = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(self::STUBS, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST);
-            foreach($stubs as $stub) {
-                $file = substr($stub->getPathname(), strlen(self::STUBS) + 1);
-
-                if(file_exists("{$path}/{$file}")) {
-                    $out->writeln("exists:  {$file}");
-                    continue;
-                }
-
-                $created = $stub->isDir() ? mkdir("{$path}/{$file}") : copy($stub->getPathname(), "{$path}/{$file}");
-                if(!$created) {
-                    $out->writeln("<error>failed:  {$file}</error>");
-                    return Command::FAILURE;
-                }
-                $out->writeln("<info>created: {$file}</info>");
-            }
-
-            chmod("{$path}/zubzet", 0755);
-            chmod("{$path}/project.sh", 0755);
-
-            // The caller's COMPOSER_VENDOR_DIR points at the framework's vendor, not the new project's.
-            $composer = "env -u COMPOSER_VENDOR_DIR composer --no-interaction --working-dir=" . escapeshellarg($path);
-
-            // Test only: resolve the framework from this checkout instead of Packagist.
-            $framework = realpath(__DIR__ . "/../../..");
-            $out->writeln("<info>composer config repositories.zubzet path {$framework}</info>");
-            passthru("{$composer} config repositories.zubzet path " . escapeshellarg($framework), $exitCode);
-            if($exitCode !== 0) {
-                $out->writeln("<error>composer config failed</error>");
+            if(!is_writable($project)) {
+                $out->writeln("<error>Folder is not writable: {$project}</error>");
                 return Command::FAILURE;
             }
 
-            $out->writeln("<info>composer require " . self::PACKAGE . "</info>");
-            passthru("{$composer} require " . escapeshellarg(self::PACKAGE), $exitCode);
+            // Project template: resolved through Composer, so it does not depend on where this file lives
+            $template = realpath(InstalledVersions::getInstallPath("zubzet/framework") . "/stubs/project");
+            if($template === false) {
+                $out->writeln("<error>Project template not found in the zubzet/framework package</error>");
+                return Command::FAILURE;
+            }
+
+            // Copy the template, SELF_FIRST: folders come before their contents, so they exist when the files are copied
+            $entries = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($template, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST,
+            );
+
+            foreach($entries as $entry) {
+                $relativePath = substr($entry->getPathname(), strlen($template) + 1);
+                $target = "{$project}/{$relativePath}";
+
+                // Never overwrite, files already in the project stay untouched
+                if(file_exists($target)) {
+                    $out->writeln("exists:  {$relativePath}");
+                    continue;
+                }
+
+                $created = $entry->isDir() ? mkdir($target) : copy($entry->getPathname(), $target);
+                if(!$created) {
+                    $out->writeln("<error>failed:  {$relativePath}</error>");
+                    return Command::FAILURE;
+                }
+
+                $out->writeln("<info>created: {$relativePath}</info>");
+            }
+
+            // copy() does not keep the executable bit
+            foreach(["zubzet", "project.sh"] as $script) {
+                if(chmod("{$project}/{$script}", 0755)) continue;
+
+                $out->writeln("<error>Could not make {$script} executable</error>");
+                return Command::FAILURE;
+            }
+
+            // Require the framework, the caller's COMPOSER_VENDOR_DIR points at the framework's vendor, not the new project's
+            $out->writeln("<info>composer require zubzet/framework</info>");
+            passthru("env -u COMPOSER_VENDOR_DIR composer require zubzet/framework --no-interaction --working-dir=" . escapeshellarg($project), $exitCode);
+
+            // 127: env could not find the composer binary
+            if($exitCode === 127) {
+                $out->writeln("<error>Composer is required but was not found in your PATH.</error>");
+                return Command::FAILURE;
+            }
+
             if($exitCode !== 0) {
-                $out->writeln("<error>composer require failed</error>");
+                $out->writeln("<error>composer require failed, run it again inside {$project}</error>");
                 return Command::FAILURE;
             }
 
