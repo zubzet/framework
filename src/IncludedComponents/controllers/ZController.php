@@ -24,12 +24,12 @@
             $req->checkPermission("admin.maintenance");
 
             if($req->isAction("bypass-maintenance")) {
-                $res->setCookie(
-                    MaintenanceHandler::$COOKIE_KEY,
-                    "true",
-                    time() + TIMESPAN_DAY_1,
-                    $req->getRootFolder(),
-                );
+                $res->setCookie(MaintenanceHandler::$COOKIE_KEY, "true", [
+                    "expires" => time() + TIMESPAN_DAY_1,
+                    "path" => $req->getRootFolder(),
+                    "secure" => $res->cookieSecure(),
+                    "samesite" => "Lax",
+                ]);
                 return $res->success();
             }
 
