@@ -127,6 +127,26 @@ describe('CSRF protection', () => {
         });
     });
 
+    describe('withoutCsrf()', () => {
+        it('exempts the routes of a group', () => {
+            post('/csrf-exempt/group', {}).its('status').should('eq', 200);
+        });
+
+        it('exempts a single route', () => {
+            post('/csrf-exempt-route', {}).its('status').should('eq', 200);
+        });
+
+        it('exempts convention paths under a group prefix', () => {
+            post('/CsrfProbe/exempt', {}).its('status').should('eq', 200);
+        });
+
+        it('leaves other routes to the same action checked', () => {
+            token();
+
+            post('/csrf-checked-route', {}).its('status').should('eq', 403);
+        });
+    });
+
     describe('the bundled login', () => {
         // Login CSRF: a cross-site form posting valid credentials must not start a session
         it('does not log in a forged post without the header', () => {

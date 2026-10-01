@@ -10,7 +10,8 @@
      * in the header.
      *
      * The Router constructs the object to issue the token. Dispatch calls
-     * `CSRF::verify()` before the middlewares and the action of a route run.
+     * `CSRF::verify()` before the middlewares and the action of a route run,
+     * unless the route or one of its groups opted out with `withoutCsrf()`.
      *
      * The cookie is host-only on purpose, even under
      * `login_scope_allow_subdomains` - see docs/core-features/csrf-protection.
