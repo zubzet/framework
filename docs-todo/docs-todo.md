@@ -1,0 +1,3987 @@
+# Documentation To-Do List - ZubZet Framework (full)
+
+Everything in the framework that should be documented, derived from the **source code only** (`src/`, `web/Z.js`, bundled components, CLI, schema, tooling) and cross-checked against the end-to-end tests. Items already covered by the documentation (`docs/` on `main`) are ticked `[x]`; the rest are open `[ ]`.
+
+- Snapshot: branch `main`, commit `79f5fc7`, generated 2026-10-01. Open pull requests are listed separately in section 20.
+- Size: 3139 items in sections 1-19, of which 253 are ticked and 2886 open, plus 791 items for open pull requests.
+- Hierarchy: topic -> sub-topic -> detail. Every item is one thing to look for in the documentation. `Title: sentence` means the title names the thing and the sentence says what must be covered.
+- Status tags on open items: `[partial]` = the docs cover the topic but miss something concrete; `[outdated]` = the docs say something that contradicts the code; `[on develop]` = already documented in the newer, unpublished docs on the `develop` branch. Untagged open items are not documented at all.
+- Other tags: `[internal]` = only relevant for contributors; `[deprecated]` = legacy behaviour; `[docs in PR]` / `[WIP]` / `[changes existing behaviour]` appear in section 20 only.
+- Priority markers on open items (filter with grep or search): `//urgent//`, `//important//`, `//should-do//`, `//nice-to-have//`, `//extra-effort//`, `//optional//` (highest to lowest). Parents carry no marker; ticked items need none. `docs-todo.by-priority.md` lists the open items grouped by marker.
+- Priority meaning: `//urgent//` = the docs are wrong or misleading today, or a missing fact risks data loss, a security hole or a broken setup; `//important//` = core features every project uses; `//should-do//` = regular user-facing details and edge cases; `//nice-to-have//` = useful depth; `//extra-effort//` = worthwhile but costly (large reference sections, guides); `//optional//` = internal or rarely needed.
+- Ticks were set by comparing each item with the published docs; items are ticked only when the docs state the specific fact. The generated phpDoc API reference is not part of the repository and was not considered.
+- Companion files: `docs-todo.open.md`, `docs-todo.by-priority.md`, `docs-todo.annotated.md` (with `{src: ...}` references) and `docs-todo.docs-drift.md` (partial and outdated documentation with doc page and reason).
+
+## Contents
+
+- 1. Installation & Project Structure (124 items, 113 open)
+- 2. Configuration (194 items, 182 open)
+- 3. Application Lifecycle & Bootstrap (74 items, 61 open)
+- 4. Routing (131 items, 126 open)
+- 5. Controllers & Models (79 items, 75 open)
+- 6. Request & Response (169 items, 159 open)
+- 7. Views, Layouts & Mail (162 items, 154 open)
+- 8. Helpers & Utilities (105 items, 100 open)
+- 9. CLI & Console Commands (184 items, 158 open)
+- 10. Database & Query Builder (244 items, 233 open)
+- 11. Migrations & Seeding (159 items, 144 open)
+- 12. Authentication, Sessions & Passwords (221 items, 205 open)
+- 13. Permissions, Roles, Groups & Organizations (179 items, 160 open)
+- 14. Included Pages & Admin Dashboard (198 items, 193 open)
+- 15. Forms, Validation & File Uploads (170 items, 158 open)
+- 16. Frontend Integration (266 items, 240 open)
+- 17. Logging, Error Handling & Debug Bar (189 items, 174 open)
+- 18. Maintenance Mode & Asset Proxy (84 items, 58 open)
+- 19. Testing, CI & Contributing (207 items, 193 open)
+- 20. Open Pull Requests (791 items, all open)
+
+## 1. Installation & Project Structure
+- [ ] Requirements
+  - [ ] PHP runtime
+    - [x] PHP version range: `composer.json` requires `php` `>=8.0 <8.6`, so PHP 8.0 to 8.5 are supported and 8.6 is excluded.
+    - [ ] `ext-mysqli` with `mysqlnd`: every query uses `mysqli_stmt::get_result()`, yet `composer.json` declares no `ext-mysqli` requirement. //important//
+    - [ ] `ext-mbstring`: `Helpers` uses `mb_strtolower`, `mb_strlen` and `mb_substr` without a declared requirement. //should-do//
+    - [ ] `ext-fileinfo`: required transitively by `league/mime-type-detection`, which the asset proxy uses for MIME detection. //should-do//
+    - [ ] `ext-ctype`, `ext-filter`, `ext-hash`: required transitively by PHPMailer, the library behind `Response::sendEmail()`. //nice-to-have//
+    - [ ] `ext-openssl`: only suggested by PHPMailer, but relevant because `mail_security` defaults to `tls`. //should-do//
+    - [ ] `ext-dom`, `ext-libxml`, `ext-xmlwriter`: required transitively by `phpunit/php-code-coverage`, which is a runtime (non-dev) dependency. //nice-to-have//
+    - [ ] Argon2 support: new password hashes use `password_hash` with `PASSWORD_ARGON2ID`, so the PHP build must provide Argon2id. [partial] //important//
+    - [ ] Coverage driver: Xdebug or PCOV is only needed while a coverage session file exists. //nice-to-have//
+  - [ ] Database server
+    - [ ] MySQL or MariaDB only: the runtime link is `mysqli`, the query-builder driver is `Cake\Database\Driver\Mysql`, and no other SQL dialect is wired up. [partial] //important//
+    - [ ] Migration tooling is MySQL-bound: the DBAL driver is hard-coded to `mysqli` and the platform to `MySQL80Platform`. //should-do//
+    - [ ] MariaDB-style syntax: bundled migrations use `ADD COLUMN IF NOT EXISTS`, `ADD INDEX IF NOT EXISTS` and `DROP COLUMN IF EXISTS`, and the e2e stack runs `mariadb:10.5.22`. [partial] //urgent//
+    - [ ] PHP 8.0 versus 8.1+ mysqli errors: code handles both `false` returns and `mysqli_sql_exception`, never calls `mysqli_report()` and avoids `mysqli::ping()`. //nice-to-have//
+  - [ ] Web server
+    - [ ] Apache rewrite: the shipped rule is an Apache `.htaccess`, which needs `mod_rewrite` and `AllowOverride All`; other servers need an equivalent rule. [partial] //important//
+  - [x] Composer
+    - [x] Dependency model: the framework is consumed as a Composer dependency of the project and loaded through Composer's `autoload.php`.
+- [ ] Creating and updating a project
+  - [ ] Creating a project
+    - [x] Starter skeleton: new projects start from the separate repository `zubzet/zubzet`, not from this repository.
+    - [x] Repository role: this repository hosts only the framework core that ships as a Composer dependency inside every project.
+    - [ ] Reference consumer project: `tests/e2e/` shows a complete project with `index.php`, `webroot/`, `z_config/`, `app/` and a `composer.json`. [partial] //should-do//
+    - [ ] Required first settings: the INI must define `host`, `rootDirectory` and `showErrors` or boot fails (see Configuration). [partial] //urgent//
+  - [ ] Updating a project
+    - [ ] Version source: the package has no `version` key in `composer.json`, so versions come from git tags such as `v1.2.0`. [partial] //nice-to-have//
+    - [ ] Installed version lookup: `Composer\InstalledVersions::getPrettyVersion('zubzet/framework')` supplies the version `info:startup` prints, with fallback `unknown`. [partial] //nice-to-have//
+    - [x] Schema updates: bundled framework migrations run together with app migrations through `db:migrate`, unless `--exclude-external` is passed.
+    - [ ] Changelog scope: `Changelog.md` states that it is not a substitute for upgrade documentation. //nice-to-have//
+- [ ] Composer package `zubzet/framework`
+  - [ ] Package metadata
+    - [ ] Identity: name `zubzet/framework`, license `Apache-2.0` and `support.wiki` `https://zubzet.com/docs`. //nice-to-have//
+    - [ ] Autoloading: PSR-4 namespace `ZubZet\Framework\` maps to `src/`, and `src/Aliases.php` is loaded through `autoload.files`. //should-do//
+    - [ ] No dev tooling: `composer.json` has no `require-dev`, `scripts` or `bin`, so the CLI is only reachable as `php index.php <command>`. [partial] //important//
+  - [ ] Runtime dependencies (all in `require`)
+    - [ ] `cakephp/database` `^4.5`: query builder and value binder wrapped by `CanBuildQuery` and `Connection`. [partial] //should-do//
+    - [ ] `nikic/fast-route` `^1.3`: route dispatcher behind `Route` and `Router`, which replaced Slim in 1.2.0. [partial] //should-do//
+    - [ ] `phpmailer/phpmailer` `^6.7`: e-mail sending inside `Response`. //should-do//
+    - [ ] `symfony/console` `7.* || 6.*`: the console application behind `php index.php`. //should-do//
+    - [ ] `doctrine/dbal` `^3.10 || ^4.4`: schema introspection and SQL generation for PHP migrations and the migration model. [partial] //should-do//
+    - [ ] `monolog/monolog` `^2.11`: logging backend used by the `Logger` classes. [partial] //should-do//
+    - [ ] `phpunit/php-code-coverage` `9.*`: required at runtime because `Testing\Coverage` ships inside `src/`. //nice-to-have//
+    - [ ] `symfony/filesystem` pinned exactly to `v6.0.19`: used by `Collector::cleanup()` to delete coverage data. //optional//
+    - [ ] `league/mime-type-detection` `^1.16`: MIME detection of served assets. [partial] //nice-to-have//
+    - [ ] `filp/whoops` `^2.18.4`: pretty error page used by `WhoopsHandler`. [partial] //nice-to-have//
+    - [ ] `php-debugbar/php-debugbar` `^1.23.6`: debug bar used by `DebugBarBridge`. [partial] //nice-to-have//
+    - [ ] `components/jquery` `3.5.*`, `components/bootstrap` `4.6.*`, `components/font-awesome` `6.5.*`: frontend libraries mounted by the asset proxy instead of being vendored. [partial] //should-do//
+    - [ ] Removed dependencies: Slim and `zubzet/password-hash-utilities` are no longer listed, matching the 1.2.0 changelog. [partial] //should-do//
+  - [ ] Composer dist archive
+    - [ ] Needed at runtime: only `src/` and `web/` are needed; `web/Z.js` is served through the asset proxy as `/_zubzet/asset-proxy/Z.js`. [partial] //nice-to-have//
+    - [ ] `export-ignore` list: `/tests`, `/.github`, `/.vscode`, `/.gitattributes`, `/.gitignore`, `/mkdocs.yml`, `/AGENTS.md`, `/TODO` and `/composer.lock` are left out of the archive. //optional//
+    - [ ] Files that stay in the archive: `src/`, `web/`, `docs/`, `Changelog.md`, `README.md`, `LICENSE` and `composer.json` are not export-ignored. //optional//
+- [ ] Application directory layout (relative to the project root)
+  - [ ] Working directory rule: all default paths are relative to the process working directory, so entry scripts must `chdir()` to the project root before boot. [partial] //important//
+  - [ ] `index.php`: project-root entry script that boots the framework for HTTP requests and for CLI use. [partial] //important//
+  - [x] `webroot/`: document root served by the web server, holding the entry script `index.php` and `.htaccess`.
+  - [ ] `webroot/assets/`: plain static files; bundled layouts link `{root}assets/img/favicon.png` and login views link `{root}assets/css/loadCircle.css` here, not through the asset proxy. [partial] //should-do//
+  - [ ] `webroot/uploads/`: upload target of the e2e project, which sets `uploadFolder = webroot/uploads/` and git-ignores `uploads`. //nice-to-have//
+  - [ ] `app/Controllers/`: default `z_controllers` directory holding the `<Name>Controller.php` files, one flat directory. [partial] //important//
+  - [ ] `app/Models/`: default `z_models` directory holding the `<Name>Model.php` files, optionally with lower-case sub-folders. [partial] //important//
+  - [ ] `app/Views/`: default `z_views` directory holding views, mail templates and the `layout/` sub-folder, with further sub-folders allowed. [partial] //important//
+  - [ ] `app/Views/layout/`: layouts live here, matching the bundled `layout/default_layout.php`, `layout/min_layout.php`, `layout/empty.php` and `layout/mail_layout.php`. [partial] //should-do//
+  - [x] `app/Views/maintenance.html`: optional custom maintenance page, looked up at the hard-coded path `app/Views` before the bundled file.
+  - [ ] `app/Routes/`: default `routes` directory whose top-level `*.php` files are `require_once`d when the route dispatcher is built. [partial] //important//
+  - [ ] `app/Database/migrations/`: migration files read by `db:migrate` and `db:sync`, created with mode 0755 when missing. [partial] //important//
+  - [ ] `app/Database/seed/`: seed files read by `db:seed`, with sub-folders usable as selectors, created with mode 0755 when missing. [partial] //important//
+  - [ ] `z_config/z_settings.ini`: required settings file at the default `config_file` path, read without an existence check. [partial] //important//
+  - [ ] `z_config/z_automated_setting.ini`: framework-written runtime settings file (`config_automated_file`), loaded after the normal settings when it exists. //should-do//
+  - [ ] `.coverage.session` and `.coverage/`: coverage session file and data directory created in the project root by the coverage commands. [partial] //nice-to-have//
+  - [ ] `vendor/` location [internal]: the e2e entry scripts read `autoload.php` from the directory in `COMPOSER_VENDOR_DIR`, falling back to `./`, which is a test-app convention rather than framework behaviour. //optional//
+  - [ ] Overridable path attributes: `z_controllers`, `z_models`, `z_views`, `routes`, `config_file` and `config_automated_file` are plain attributes that same-named settings overwrite. //should-do//
+- [ ] Framework-provided components behind the app layout
+  - [ ] `z_framework_root`: the framework `src/` directory, used to locate bundled controllers, models, routes, views, assets and migrations. //nice-to-have//
+  - [ ] `src/IncludedComponents/controllers/`: `ErrorController`, `IndexController`, `LoginController` and `ZController` are used when the app has no controller file of that name. [partial] //should-do//
+  - [ ] `src/IncludedComponents/models/`: `z_*Model` classes are used when the app has no model file of that name; an app file wins on a name clash. [partial] //should-do//
+  - [ ] `src/IncludedComponents/routes/`: framework route files such as `DefaultRoutes.php` are loaded after the app route files. [partial] //should-do//
+  - [ ] `src/IncludedComponents/views/`: bundled views, layouts and mail templates act as fallback; an app file with the same relative path takes precedence. [partial] //should-do//
+  - [ ] `src/IncludedComponents/assets/`: bundled `css/loadCircle.css`, `js/popper.min.js` and `js/bs-custom-file-input.js`, registered as an asset-proxy source. //nice-to-have//
+  - [ ] `src/IncludedComponents/database/Migration/`: nine framework-owned ("external") migrations from `2021-02-04_zubzet.sql` to `2026-05-30_password_scheme.sql` run together with the app migrations. [partial] //should-do//
+  - [ ] `web/Z.js`: the only file in the package `web/` directory, registered as an asset-proxy source through `z_frontend_root`. [partial] //should-do//
+- [ ] Entry points
+  - [ ] Project `index.php`
+    - [ ] Boot sequence: calls `chdir(realpath(__DIR__))`, requires `<vendor>/autoload.php`, then runs `new z_framework()` and `->execute()`. [partial] //important//
+    - [ ] Class alias: `z_framework` is an alias of `ZubZet\Framework\ZubZet`. //should-do//
+    - [ ] Header comment: the file is meant to be copied into the project root, with a `.htaccess` redirecting all non-static requests to it. //nice-to-have//
+    - [ ] Error display in the e2e script: it also sets `display_errors` and `display_startup_errors` to 1 and `error_reporting(E_ALL)`. //optional//
+    - [ ] One script for web and CLI: `php index.php <command>` reaches the console through `ZubZet::execute()`. [partial] //important//
+  - [ ] `webroot/index.php`
+    - [x] Role: web entry point marked "do not change" that changes the working directory to the project root first.
+    - [ ] Script lookup order: it `require_once`s `index.php`, `zubzet.php` and `zubzet` in that order and stops at the first missing file. [partial] //should-do//
+    - [ ] Missing `index.php` gotcha: because the loop stops at the first missing file, an absent `index.php` ends in the failure response even if `zubzet.php` exists. //nice-to-have//
+    - [x] Failure mode: when no entry script was loaded it sends HTTP 500 with body `No entry script found.` and calls `exit(1)`.
+- [ ] Web root behaviour
+  - [ ] Rewrite rule: `RewriteCond %{REQUEST_FILENAME} !-f` with `RewriteRule . index.php [L,QSA]` sends every non-file request to `webroot/index.php` and keeps the query string. [partial] //important//
+  - [ ] Static files: existing files such as `accessible.txt` and `assets/assets.txt` are served by the web server directly and bypass PHP. //should-do//
+  - [ ] Directories: a request for the directory `/assets` is rewritten to the framework and answers 404 even though the vhost sets `Options Indexes`. //nice-to-have//
+  - [ ] Files outside the web root: `/app/Controllers/AdminController.php`, `/composer.json` and `/z_config/z_settings.ini` answer 404 because only `webroot/` is the DocumentRoot. [partial] //urgent//
+  - [ ] PHP files inside `webroot/`: they are executed directly by the web server, as `webroot/collision.php` shows, so only the entry script should live there. //should-do//
+  - [ ] Virtual host settings: DocumentRoot `/var/www/html/webroot`, `Options Indexes FollowSymLinks`, `AllowOverride All` and `Require all granted`. //should-do//
+- [ ] File and class naming conventions
+  - [ ] Controllers
+    - [ ] File and class: `app/Controllers/<Name>Controller.php` holds the global-namespace class `<Name>Controller`, found as `ucfirst(<first URL segment>) . 'Controller'`. [partial] //important//
+    - [ ] Case rule: only the first letter of the URL segment is upper-cased, so file names must match that form on case-sensitive file systems. [outdated] //urgent//
+    - [ ] Action methods: public `action_<name>` with the lower-cased URL segment, and `action_index` when no second segment exists. [partial] //important//
+    - [ ] Base class: controllers may extend `z_controller`, an alias of `ZubZet\Framework\Core\Controller`. [partial] //important//
+  - [ ] Models
+    - [ ] File and class: `app/Models/<Name>Model.php` holds the global-namespace class `<Name>Model`, loaded by `model("<Name>")` which appends `Model` automatically. [partial] //important//
+    - [ ] Sub-folders: dot notation `Sub.Name` maps to `app/Models/sub/NameModel.php` with lower-cased folders and the last part as class name. //should-do//
+    - [ ] Base class: models extend `z_model`, an alias of `ZubZet\Framework\Core\Model`. [partial] //important//
+  - [ ] Views and layouts
+    - [ ] View files: views live in `app/Views/` and are addressed relative to it with `.php` optional. [partial] //important//
+    - [ ] Layout files: layouts sit in `app/Views/layout/` as `<name>_layout.php`, and the default layout is `layout/default_layout.php`. [partial] //should-do//
+    - [ ] Mail layouts: `sendEmail()` strips `.php` and `_layout` from the given name and re-appends `_layout.php`. [partial] //should-do//
+    - [ ] Mail template names: bundled `email_verify.php` and `email_too_many_logins.php` exist, while `email_password_reset.php` must be provided by the app. //urgent//
+  - [ ] Routes: every top-level `app/Routes/*.php` file is loaded and the file name carries no meaning. [partial] //important//
+  - [ ] Migrations and seeds
+    - [ ] Migration file names: `YYYY-MM-DD[_<integer version>]_<Name>.sql` or `.php`, with a year of 2000 or later and a non-empty name. [partial] //important//
+    - [x] PHP migration class: the file `2025-11-15_test.php` must declare the class `Migration_2025_11_15_test` (dashes become underscores).
+    - [ ] PHP seed class: the class name must equal the seed file name without extension. [outdated] //urgent//
+  - [ ] Framework prefix `z_`: marks framework-owned names such as `z_config/`, `z_settings.ini`, `z_automated_setting.ini`, `z_*Model` classes, `z_migration_lock` and `z_version`. [partial] //should-do//
+  - [ ] Namespaces: framework code uses `ZubZet\Framework\...` while app controllers, models and migration classes are global-namespace classes loaded by `include_once` or `require_once`, not PSR-4. //should-do//
+  - [ ] Test-only naming [internal]: probe controllers in the e2e app are named `*ProbeController` and expose `action_*` endpoints for Cypress. //optional//
+## 2. Configuration
+- [ ] Loading settings
+  - [ ] Settings file
+    - [ ] INI location: `z_config/z_settings.ini`, relative to the working directory, held in the built-in key `config_file`. [partial] //important//
+    - [ ] `config_file` is not relocatable: it is read before the INI, constructor parameters or environment overrides are applied. //nice-to-have//
+    - [ ] Parsed on every request: `loadConfiguration()` runs inside the `ZubZet` constructor with no cache, so INI edits apply to the next request. //should-do//
+    - [ ] `loadConfiguration(string $frameworkRoot, array $params)`: public method of the `Configuration` trait; `$frameworkRoot` becomes `z_framework_root`. [partial] //nice-to-have//
+    - [ ] Required keys: `rootDirectory` (may be empty), `host` and `showErrors` must exist or boot fails with `InvalidArgumentException`. //urgent//
+    - [ ] Key style: keys are case-sensitive and mix camelCase (`showErrors`) and snake_case (`logger_level`), e.g. `maxLoginTriesTimespan` versus `forgotPasswordTimeSpan`. //should-do//
+    - [x] Custom values: any extra INI key (e.g. `custom_value = TestValue`) is stored and readable through the same calls as built-in settings.
+  - [ ] INI syntax
+    - [ ] Parser: PHP `parse_ini_string()` in normal mode without sections, so `[section]` headers are ignored and all keys are flat. //should-do//
+    - [ ] Value normalisation: `true`, `on` and `yes` become `1`; `false`, `off`, `no`, `none`, `null` and empty become an empty string; numbers stay strings. //important//
+    - [ ] Quoted values: a double-quoted `true` stays the literal text `true`, which matters for settings compared with the string `true`. //important//
+    - [ ] No inline comments: `;` and `#` inside a value are kept literally, so a trailing `; comment` becomes part of the value. //urgent//
+    - [ ] Full-line comments: lines starting with `;` or `#` are ignored as long as they contain no `=`. //should-do//
+    - [ ] Commented-out `;key=value` lines: they create a junk setting whose key keeps the placeholder `-----semicolon-----` (or `-----hashtag-----`). //nice-to-have//
+  - [ ] Order of precedence
+    - [ ] Layers: built-in defaults, INI, constructor `$params`, `CONFIG_*` environment variables, derived `rootFolder` and `root`, then the automated settings file; later wins. //important//
+    - [ ] Constructor parameters: `new z_framework(array $params)` overrides INI values in code, but only for keys that already exist; unknown keys are silently ignored. //should-do//
+    - [ ] Declared properties as parameters: a public property such as `maxReroutes` already exists on the object, so `$params` can set it too. //nice-to-have//
+  - [ ] Environment variable overrides
+    - [ ] `allow_env_config`: absent means off; set `allow_env_config = true` in the INI (or via `$params`) to honour `CONFIG_*` variables. [partial] //important//
+    - [ ] Truthiness of `allow_env_config`: any non-empty string other than `0` enables it, including the text `false` coming from a quoted INI value. //important//
+    - [ ] Variable name: `CONFIG_` plus the upper-cased key, e.g. `CONFIG_DBHOST`, `CONFIG_MAIL_SMTP`, `CONFIG_ASSETVERSION`, `CONFIG_FORGOTPASSWORDTIMESPAN`. [partial] //important//
+    - [ ] Existing keys only: a variable is ignored unless the key already exists from built-ins or the INI, so declare placeholders such as `dbpassword = env`. //urgent//
+    - [ ] Missing-key example: `CONFIG_MAIL_PORT` has no effect while `mail_port` is absent from the INI, as in the e2e project. //nice-to-have//
+    - [ ] Raw strings: values skip INI normalisation, so `CONFIG_LOGGER_ENABLED=false` stays the truthy string `false`; use `0` or an empty value. //urgent//
+    - [ ] Empty values: a variable set to an empty string overrides with an empty string (e.g. `CONFIG_ROOTDIRECTORY=`); only unset variables are skipped. //should-do//
+    - [ ] Built-in keys too: `z_*` path keys and `config_automated_file` can be overridden (e.g. `CONFIG_Z_VIEWS`), but `config_file` is already read by then. //nice-to-have//
+    - [ ] Timing and source: values come from `getenv()` and are applied after the INI and `$params` but before `rootFolder` and `root` are derived. //nice-to-have//
+  - [ ] Derived settings
+    - [ ] `rootFolder`: a slash plus `rootDirectory` trimmed of slashes and backslashes, so `/` when empty and `/sub/dir` otherwise, with no trailing slash. //should-do//
+    - [ ] `root`: `host`, a slash and the trimmed `rootDirectory`, so `http://host/` when the directory is empty. //should-do//
+    - [ ] `rootFolder` uses: it is the link prefix `$opt["root"]` in views, the default prefix of `rerouteUrl()` (used by logout and login-as) and the path of the maintenance bypass cookie. //important//
+    - [ ] Computed once per boot: later runtime changes to `host` or `rootDirectory` do not recompute them. //nice-to-have//
+  - [ ] Automated settings
+    - [ ] File `z_config/z_automated_setting.ini`: framework-generated key=value file starting with the header `; This file is auto-generated by the framework to store runtime data. Do not edit this file manually.` //nice-to-have//
+    - [ ] Key prefix: `AutomatedSettings::set('host_working_directory', ...)` stores the key `automated_host_working_directory`; read it with `config()`. [partial] //should-do//
+    - [ ] Loaded last: its keys are applied after INI, params and environment, and are added even when not declared before. //nice-to-have//
+    - [ ] Write behaviour: every `set()` rewrites the whole file (header plus all keys) with unquoted values and no locking. //nice-to-have//
+    - [ ] Parsing: the file is read with plain `parse_ini_string()` without the comment-placeholder handling used for the main INI. //optional//
+    - [ ] Internal API [internal]: the `AutomatedSettings` class is marked `@internal`, and `info:startup --pwd` is its only writer in the framework. [partial] //optional//
+    - [ ] `AutomatedSettings::load(array $settings)` [internal]: Seeds the in-memory automated settings from the parsed file at boot, so a later `set()` rewrites the file with all earlier keys intact. //optional//
+  - [ ] Load failures
+    - [ ] Missing INI file: `file_get_contents()` warns, then boot throws `InvalidArgumentException` because `rootDirectory` is missing. //should-do//
+    - [ ] INI syntax error: `parse_ini_string()` returns false and boot dies with a `TypeError` from `overwriteAttributes()`, before exception handling is installed. //urgent//
+    - [ ] Unset key read: throws `InvalidArgumentException` with `The attribute '<name>' does not exist in the attribute store (yet).` //should-do//
+- [ ] Reading settings in code
+  - [ ] `getBooterSettings($key = null, $useDefault = true, $default = null)`
+    - [ ] Availability: public on `ZubZet`, `Request` and `Response`, with the same semantics as the global `config()` helper. [partial] //important//
+    - [ ] No key: an empty `$key` returns the complete settings array, including database and mail credentials. [partial] //important//
+    - [ ] Missing key: returns `$default` when `$useDefault` is truthy, otherwise throws `InvalidArgumentException` with `The setting '<key>' does not exist!` [partial] //important//
+    - [ ] Positional pitfall: the second positional argument is `$useDefault`, so pass defaults by name (`default: 5`). [partial] //urgent//
+    - [ ] Null values count as set: existence is tested with `array_key_exists`, so a key stored as null is returned instead of the default. //nice-to-have//
+  - [ ] Property access: `zubzet()->key` reads and writes settings through `HasDynamicAttributes`, and a missing key throws. //should-do//
+  - [ ] `zubzet()->settings`: virtual property returning the complete settings store. //nice-to-have//
+  - [ ] Runtime changes: `zubzet()->host = ...` affects only the current request and does not recompute `root` or `rootFolder`. //should-do//
+  - [ ] Lazy readers: most settings are read at use time, but `Connection` copies its settings once in its constructor and the logger reads them when a channel is first created. //nice-to-have//
+- [ ] Setting reference
+  - [ ] Application URL and routing
+    - [ ] `host`
+      - [ ] Definition: required, no default; public base URL with scheme and optional port and no trailing slash, e.g. `http://localhost:4000`. [partial] //important//
+      - [ ] Absolute URL source: `Request::getCurrentURL()` returns `host` plus `REQUEST_URI` and ignores the incoming Host header. //should-do//
+      - [ ] Domain helper: `Request::getDomain()` returns `host` without scheme, slashes and port. //should-do//
+      - [ ] Other uses: it builds `root`, the view options `host` and `absRoot`, the mail `application_root` and the password-reset link. //should-do//
+    - [ ] `rootDirectory`
+      - [ ] Definition: required but may be empty; sub-path the app is served from, best written without leading or trailing slash. //important//
+      - [ ] Derived values: feeds `rootFolder` and `root` after trimming slashes and backslashes. //should-do//
+      - [ ] URL stripping: `Request::getUrlParts()` drops as many leading segments as the untrimmed value has `/`-separated parts, so surrounding slashes over-strip. //important//
+      - [ ] Routing split: convention routing sees the stripped path while explicit routes match the raw `REQUEST_URI`. //should-do//
+    - [ ] `defaultIndex`
+      - [ ] Default: `DashboardController` (code default when the key is unset); the controller class run with `action_index` when the URL has no path segments. [outdated] //urgent//
+      - [ ] Bundled option: setting `IndexController` selects the bundled controller that renders `index.php`. //important//
+      - [ ] Missing controller file: the request ends in the 404 error route. //should-do//
+  - [ ] Paths and framework roots
+    - [ ] `z_controllers`: default `app/Controllers/`; directory searched first for `<Name>Controller.php`, flat, with a trailing slash required. [partial] //should-do//
+    - [ ] `z_models`: default `app/Models/`; directory searched first for `<Name>Model.php` by `model()`, with a trailing slash required. [partial] //should-do//
+    - [ ] `z_views`: default `app/Views/`; base directory for views, layouts and mail templates, so app files such as `404.php` or `index.php` shadow bundled ones. [partial] //should-do//
+    - [ ] `routes`: default `app/Routes/`; every top-level `*.php` file in it is included once when the route dispatcher is first built. [partial] //should-do//
+    - [ ] `config_automated_file`: default `z_config/z_automated_setting.ini`; target of the automated settings and, unlike `config_file`, changeable via INI, params or env. //nice-to-have//
+    - [ ] `z_framework_root`: absolute path of the framework `src/` directory with trailing separator; base of `IncludedComponents/`. //nice-to-have//
+    - [ ] `z_frontend_root`: absolute `realpath()` of the package `web/` directory, mounted by the asset proxy. //nice-to-have//
+  - [ ] Error handling and environment
+    - [ ] `showErrors`
+      - [ ] Definition: required, no default; value `0`, `1` or `2` (class `BehaviorOption`), applied by `setExceptionBehavior()` at boot. [partial] //important//
+      - [ ] `0` (`NONE`): `display_errors` off and `error_reporting(0)`, so PHP errors are neither shown nor logged; action exceptions become the `error/500` route. [outdated] //important//
+      - [ ] `1` (`EXCEPTIONS`): `display_errors` on and `error_reporting(E_ALL)`; PHP errors are logged and left to PHP's handler; action exceptions are rethrown. [partial] //important//
+      - [ ] `2` (`ALL`): every reportable PHP error is logged and turned into an `ErrorException`; `display_errors` and `error_reporting` stay untouched. [partial] //important//
+      - [ ] Invalid value: another number throws `InvalidArgumentException` with `Invalid exception behavior option: <value>`, while a non-numeric value raises a `TypeError`. //nice-to-have//
+      - [ ] Runtime override: `zubzet()->setExceptionBehavior(?int $state)` replaces the setting for the current request. //should-do//
+    - [ ] `execution_type`
+      - [x] Default: none in the settings, the code assumes `prod` when unset; the value `test` enables Whoops error pages and the debug bar, any other value disables both.
+      - [ ] Startup banner: `info:startup` prints the value as `Environment`. [partial] //nice-to-have//
+  - [ ] Database
+    - [ ] `dbhost`: no default; MySQL/MariaDB host passed to `mysqli` and used as host of the Doctrine DBAL connection for PHP migrations; the e2e stack sets `database:3306`. //important//
+    - [ ] `dbusername`: no default; database user of the runtime connection, required non-empty. //important//
+    - [ ] `dbpassword`: no default; database password, required non-empty, so password-less accounts are rejected. //urgent//
+    - [ ] `dbname`
+      - [ ] Definition: no default; schema selected on connect, required non-empty. //important//
+      - [x] Seeding: `db:seed` without `--skip-migrations` drops and recreates this database before migrating.
+    - [ ] Required for connecting: a missing or empty `dbhost`, `dbusername`, `dbpassword` or `dbname` throws `RuntimeException` (`Database connection requires valid configuration. Missing or empty config key(s): ...`) at the first query. //urgent//
+    - [ ] Read at boot: `Connection` copies these settings in its constructor, so later runtime changes are not picked up and the connection is opened lazily. //nice-to-have//
+    - [ ] DBAL schema connection: `dbhost`, `dbname`, `dbusername`, `dbpassword` and `dbport` also configure the Doctrine DBAL connection used by the migration commands. [on develop] //should-do//
+    - [ ] `dbport`: no default; only used by the Doctrine DBAL connection of PHP migrations, the runtime `mysqli` connection ignores it. //urgent//
+    - [ ] `dbusername_elevated` and `dbpassword_elevated`: no default; when both are non-empty the migrate, seed, status, sync, unlock and hashing-migration commands switch to them via `switchUser()`. [partial] //important//
+    - [ ] `db_connection_timeout`
+      - [ ] Default: `900` seconds; a connection is only pinged, and reconnected if dead, when older than this and idle for this long. //should-do//
+      - [ ] Validation: a non-numeric value throws `InvalidArgumentException` (`Config key 'db_connection_timeout' must be numeric, got: '<value>'`) when the connection object is created at boot. //nice-to-have//
+      - [ ] Value `0`: every query first sends a `SELECT 1` ping, since neither freshness check can pass. //nice-to-have//
+      - [ ] Deprecated heartbeat: the value also feeds `heartbeat()` as `max(1, db_connection_timeout - $timeoutBuffer)`. //nice-to-have//
+  - [ ] Logging
+    - [ ] `logger_enabled`
+      - [x] Default: `true`; a falsy value attaches a `NullHandler` so every log record is discarded and no processor is attached.
+      - [ ] Falsy values: `false`, `off`, `no`, `0` and empty in the INI; an env value `false` stays truthy. [partial] //should-do//
+    - [ ] `logger_type`
+      - [ ] Default: `database`; selects the log backend, matched case-sensitively. [partial] //important//
+      - [ ] `database`: writes through `DatabaseLogger` and the `z_logger` model. [partial] //should-do//
+      - [ ] `stream`: writes JSON lines through `StreamLogger` to `logger_stream_url`. [partial] //should-do//
+      - [ ] Invalid value: throws `InvalidArgumentException` (`Invalid logger type: <type>, Use database or stream in your config`). //should-do//
+    - [ ] `logger_level`
+      - [ ] Default: `notice`; minimum level as a Monolog name (`debug`, `info`, `notice`, `warning`, `error`, `critical`, `alert`, `emergency`, case-insensitive) or a number such as `300`. [outdated] //important//
+      - [ ] Applied to: the log handler and the `BacktraceProcessor` that adds file, line and class introspection. //nice-to-have//
+      - [ ] Invalid value: Monolog throws `InvalidArgumentException` (`Level ... is not defined`). //nice-to-have//
+    - [ ] `logger_stream_url`: default `php://stderr`; only read for the `stream` type, a stream or file path (relative paths resolve against the working directory), e.g. `z_config/app.log`. [partial] //should-do//
+    - [ ] `logger_slow_request_ms`
+      - [ ] Default: `1000`; requests at least this slow are logged as a `SLOW_REQUEST` warning at shutdown. [partial] //should-do//
+      - [ ] Disable: a negative or non-numeric value turns the check off. //should-do//
+      - [ ] Skipped when: the request ended in an uncaught exception; duration is measured from `REQUEST_TIME_FLOAT`. //nice-to-have//
+    - [ ] `logger_slow_query_ms`
+      - [ ] Default: `300`; queries taking at least this many milliseconds (`>=`, so `0` logs every query) are logged as a `SLOW_QUERY` warning with duration and SQL. [partial] //should-do//
+      - [ ] No disable value: only a `null` value skips the check, which an INI file cannot produce, so use a high threshold instead. //should-do//
+    - [ ] Read once per channel: logger settings are applied when a channel's logger is first created in a request, later changes in the same request are not applied. [partial] //nice-to-have//
+  - [ ] Mail
+    - [ ] `mail_smtp`: no default; SMTP host passed to PHPMailer `Host`, and SMTP mode with `SMTPAuth` is always used. [partial] //important//
+    - [ ] `mail_user`: no default; SMTP username and fallback sender address. //important//
+    - [ ] `mail_password`: no default; SMTP password. //important//
+    - [ ] `mail_from`
+      - [ ] Definition: no default; sender address with `pageName` as display name, falling back to `mail_user` only when the key is absent. //important//
+      - [ ] Validation: a sender that is not a valid address throws `Exception` (`mail_user '<from>' is not a valid mail. Try using mail_from instead.`). //should-do//
+      - [ ] Empty value: an empty `mail_from` does not fall back to `mail_user`. //nice-to-have//
+    - [ ] `mail_security`: default `tls`; passed to PHPMailer `SMTPSecure`, and an empty value (e.g. INI `false`) sets no explicit encryption. [partial] //important//
+    - [ ] `mail_port`: no default; passed to PHPMailer `Port`, which falls back to port 25 when empty. //important//
+    - [ ] `anonymous_language`: no default; language used by `sendEmailToUser()` when the user's language row has no value, and mails fall back to `en` if still null. [partial] //should-do//
+  - [ ] Authentication and sessions
+    - [ ] `loginTimeoutSeconds`
+      - [ ] Definition: seconds a login lasts; sets the expiry of the `z_login_token` cookie in `loginAs()` and the base lifetime in `Session::expiresAt()`. [partial] //important//
+      - [ ] No effective default: unset evaluates to 0 because `config('loginTimeoutSeconds', TIMESPAN_DAY_7)` passes the fallback as `$useDefault`. [outdated] //urgent//
+      - [ ] Cookie expiry: `time() + intval(value)` is fixed at login (unset means an already expired cookie) and not re-issued when a session is extended. //urgent//
+      - [x] Extended sessions: the session's `extended_seconds` value is added on top of the base lifetime, counted from `z_logintoken.created`.
+    - [ ] `maxLoginTriesTimespan`
+      - [ ] Definition: relative time string such as `3 minutes`, prefixed with `-` for `strtotime()`; the window in which `z_logintry` rows count. //important//
+      - [ ] Unset: the window start becomes 1970-01-01, so every recorded try counts. //urgent//
+    - [ ] `maxLoginTriesPerTimespan`
+      - [ ] Definition: integer; the login is blocked when the tries inside the window are strictly greater than this value. //important//
+      - [ ] Unset: null blocks as soon as a single try is recorded in the window. //urgent//
+    - [ ] `forgotPasswordTimeSpan`: relative time string such as `60 minutes`; `z_password_reset` codes newer than this window are valid, and unset means codes never expire. //urgent//
+    - [ ] `registerRoleId`: role id assigned to accounts created through the signup page; ignored when empty or not numeric. //important//
+    - [ ] `registerRoleIdSecondary`: used instead of `registerRoleId` when the signup POST field `userRoleType` is `Secondary`; other values fall back to `registerRoleId`. //should-do//
+    - [ ] `login_scope_allow_subdomains`
+      - [ ] Definition: default off; only the exact string `true` makes the login cookie domain `.<getDomain()>`, anything else gives a host-only cookie. //important//
+      - [ ] INI pitfall: a bare `true` is normalised to `1` and does not match, so double-quote the value; an env var `true` works. //urgent//
+    - [ ] `login_scope_allow_subdomains_delete_domainscope_name`
+      - [ ] Definition: no default; when set, an expiring `z_login_token` cookie for that domain scope is also sent on login and logout. //should-do//
+      - [ ] Purpose: cleans up old cookies after switching `login_scope_allow_subdomains`. //nice-to-have//
+      - [ ] Null check only: an empty value still emits a delete header for the host-only cookie and can cancel the fresh login cookie. //important//
+  - [ ] Rendering, assets and uploads
+    - [ ] `pageName`
+      - [ ] Definition: no default; default view `title` option, mail sender display name and prefix of the sign-up mail subject (`<pageName> - Sign Up`). //important//
+      - [ ] Sign-up mail needs it: that call reads `pageName` with a falsy `$useDefault`, so a missing key throws `InvalidArgumentException`. //urgent//
+      - [ ] Startup banner: `info:startup` prints it next to the framework version. [partial] //nice-to-have//
+    - [ ] `assetVersion`: no default; appended as `?v=<value>` by `generateResourceLink()`, `dev` uses the current timestamp to bust caches, and an unset value yields an empty `?v=`. //should-do//
+    - [ ] `uploadFolder`
+      - [ ] Default: `uploads/`; directory for files saved by the form-based `Response` insert and update helpers, relative to the working directory and created with `mkdir` mode 0755 if missing. [outdated] //important//
+      - [ ] Trailing slash needed: the generated file name is appended directly to the folder string. [partial] //urgent//
+  - [ ] Maintenance
+    - [ ] `maintenance_mode`
+      - [ ] Definition: default `disabled`; accepts `disabled`, `soft`, `enabled` or `full` (case-insensitive) and falls back to `disabled` for anything else. [partial] //important//
+      - [ ] Invalid values: include the INI word `off`, which normalises to an empty string and therefore means `disabled`. //should-do//
+      - [x] `soft`: visitors holding a cookie named `maintenance` pass, everyone else gets the maintenance page.
+      - [x] `enabled`: blocks all web requests including cookie holders and the `/z` admin panel, while CLI runs still pass.
+      - [x] `full`: blocks web and CLI requests.
+      - [x] Blocked response: HTTP 503 with `Retry-After: 300`; CLI prints `Service Unavailable` to stderr and exits with code 1.
+      - [x] Template lookup: the hard-coded path `app/Views/maintenance.html` (not `z_views`), then the bundled file; templates containing `<?php` are ignored.
+      - [ ] Read per request: the mode is evaluated on every request by the gate, so editing it takes effect immediately; `CONFIG_MAINTENANCE_MODE` works only with `allow_env_config`. [partial] //should-do//
+      - [ ] Bypass cookie: the admin panel button sets the cookie `maintenance` (value `true`) for one day on the `rootFolder` path, and only `soft` mode honours it. [partial] //important//
+      - [x] Admin panel reflection: `/z/maintenance` only displays the mode and never writes it, so change it in the settings.
+  - [ ] Development tools
+    - [ ] `development_editor`
+      - [ ] Default: `vscode`; URL scheme used by Whoops open-in-editor links (`<editor>://file/<host path><relative file>:<line>`). [partial] //nice-to-have//
+      - [ ] Requires: `execution_type` `test` plus `automated_host_working_directory`. [partial] //nice-to-have//
+    - [ ] `debugbar_hide_internal_queries`: default `true`; hides queries issued by models using `IsInternalModel` (bundled `z_*` models except `z_organizationModel`) in the debug bar queries tab; `false` shows them. [partial] //should-do//
+    - [ ] `automated_host_working_directory`
+      - [x] Definition: automated setting written by `info:startup --pwd`; host-side project path used to rewrite container paths in Whoops editor links.
+      - [ ] Absent: no editor links are configured. [partial] //optional//
+## 3. Application Lifecycle & Bootstrap
+- [ ] Request lifecycle overview
+  - [ ] Entry script pattern: after `chdir()` and the Composer autoload the script runs `new z_framework()` and then `->execute()`, which is the last bootstrap step. //important//
+  - [ ] Two phases: the constructor boots all services, then `execute()` dispatches to explicit routes, convention routing or the console. [partial] //should-do//
+  - [ ] Router on the singleton: `ZubZet` uses the `Router` trait, so `execute()`, `executePath()`, `executeControllerAction()`, `reroute()`, `$maxReroutes` and `$reroutes` live on `zubzet()`. //should-do//
+  - [ ] Per-request work before a controller: boot sequence, route file execution (no route cache) and, for convention URLs, group middleware. //should-do//
+- [ ] `ZubZet` class (alias `z_framework`)
+  - [ ] Constructor `__construct(array $params = [])`: runs the full boot sequence below, and `$params` override existing settings. [partial] //should-do//
+  - [ ] Latest instance holder [internal]: `ZubZet::$instance` is set at the very start of the constructor and overwritten by every new instance. [partial] //optional//
+  - [ ] Public properties: `$z_db` (`Connection`), `$user` (`User`), `$req` (`Request`), `$res` (`Response`), `$requestStack` and `$responseStack`. //should-do//
+  - [ ] `$assetProxy` [internal]: the `AssetProxy` instance created during boot, typed and uninitialised until then. [partial] //optional//
+  - [ ] Composed traits: `Router`, `Configuration`, `CanRetrieveModel`, `ExceptionBehavior` and `CanRetrieveBooterSettings`, whose public methods are callable on `zubzet()`. [partial] //should-do//
+  - [ ] `setRequestResponse(Request $request, Response $response)`: sets `$req` and `$res` and appends both to `$requestStack` and `$responseStack`. //nice-to-have//
+  - [ ] `replaceRequest(Input $newState)`: wraps a new `Message\Input\State` in a fresh `Request`, makes it `$req` (empty `store`, `urlParameters` and `urlParts`) and pushes it on `$requestStack`; `$res` is unchanged. //nice-to-have//
+- [ ] Boot sequence of `new ZubZet()` (in this order)
+  - [ ] Coverage collector: `Collector::initialize()` runs first, only starts coverage when a `.coverage.session` file exists and then registers a shutdown function that writes the data. [outdated] //should-do//
+  - [x] Instance registration: `self::$instance = $this` happens before anything can call `zubzet()`.
+  - [x] `new GlobalReferences` [internal]: the first autoload of `Support/GlobalReferences.php` declares the global reference functions with the conflict guard.
+  - [ ] `new Constants` [internal]: the first autoload of `Core/Constants.php` defines the global constants; the class itself is empty. [partial] //optional//
+  - [x] Configuration: `loadConfiguration(__DIR__ . DIRECTORY_SEPARATOR, $params)` builds the settings store.
+  - [x] Maintenance gate: `MaintenanceHandler::gate()` runs right after configuration, before logger, error handling and database exist, and may end the request.
+  - [x] Slow request hook: `LoggerFactory::handleSlowRequest()` registers a shutdown function that logs slow requests.
+  - [x] Error handling: `setExceptionBehavior()` creates the Whoops handler when `execution_type` is `test`, applies `showErrors` and installs the PHP error and exception handlers.
+  - [ ] Asset proxy: `new AssetProxy` registers the bundled `IncludedComponents/assets/`, `z_frontend_root` and the bundled packages as asset sources. [partial] //should-do//
+  - [ ] `new Helpers` [internal]: the autoload declares the pure helper functions, so they exist only after the steps above. //optional//
+  - [ ] Request and response: `setRequestResponse(new Request(Input::fromRequest()), new Response())` snapshots the superglobals and request body. [partial] //should-do//
+  - [ ] Database object: `new Connection` becomes `$z_db`; it reads its settings now but connects lazily on the first query. [on develop] //should-do//
+  - [x] Debug bar: `DebugBarBridge::bootstrap()` starts the debug bar only when `execution_type` is `test` and registers its resources with the asset proxy.
+  - [ ] Debug bar base URL: it is hard-coded to `/_zubzet/asset-proxy` without the `rootDirectory` prefix. //nice-to-have//
+  - [ ] User identification: `new User` resolves the requester from the `z_login_token` cookie before routing. //should-do//
+  - [ ] After the constructor: the entry script calls `execute()` to start routing. //nice-to-have//
+- [ ] Early-exit gates and boot-time failures
+  - [x] Maintenance gate
+    - [x] Early exit: the gate sends a 503 page (or a CLI stderr message) and calls `exit` before any other bootstrap step runs.
+    - [x] No dependencies: it depends only on the loaded configuration, needing no logger, exception handler or database, and an unresolvable mode falls through to `disabled`.
+    - [x] Side effects: blocked requests never reach logger setup, so they log no `SLOW_REQUEST` and need no database.
+    - [x] CLI and cookie bypass: CLI runs pass in every mode except `full`, and the `maintenance` cookie passes only in `soft`.
+  - [ ] Failures before error handling: errors thrown by configuration or the maintenance gate occur before `setExceptionBehavior()` installs handlers, so Whoops and the logger do not see them. [partial] //should-do//
+  - [ ] Function conflict: defining a guarded helper function before boot throws `RuntimeException` from the `GlobalReferences` autoload. [partial] //nice-to-have//
+  - [ ] Coverage without driver: an active `.coverage.session` without Xdebug or PCOV throws `RuntimeException` naming the session file. //nice-to-have//
+- [ ] Execution contexts and environments
+  - [ ] Web versus CLI detection: `isCli()` and `Request::isCli()` test `php_sapi_name() === 'cli'`. [partial] //should-do//
+  - [ ] CLI effects: without a matching FastRoute route a CLI run is handed to the Symfony Console application, and the maintenance gate lets CLI pass unless mode is `full`. [partial] //should-do//
+  - [ ] Full boot for CLI: the whole constructor (configuration, gate, logger, database object, debug bar, user) runs before a command executes. [on develop] //should-do//
+  - [x] Execution types: `execution_type` `test` is the only value with an effect, enabling Whoops and the debug bar, while any other value behaves like `prod`.
+- [ ] Shared request state
+  - [ ] Creation order: `Request` and `Response` are built after configuration, gate, slow-request hook, exception behaviour, asset proxy and `Helpers`, but before the `Connection`, debug bar and `User`. [partial] //nice-to-have//
+  - [ ] Current objects: `zubzet()->req` and `zubzet()->res` hold the current `Request` and `Response`, which are what `request()` and `response()` return. [partial] //should-do//
+  - [ ] Stacks: `$requestStack` and `$responseStack` collect every `Request` and `Response` created in the process, with one extra `Request` per reroute. //nice-to-have//
+  - [ ] Input snapshot: `Input\State::fromRequest()` copies the superglobals once, so later writes to `$_GET`, `$_POST`, `$_COOKIE` or `$_SESSION` are invisible to `Request`. [partial] //should-do//
+  - [ ] One shared `Response`: a single instance is handed to controller constructors, route middleware and actions, so its default-layout stack lasts the whole request. [partial] //should-do//
+- [ ] Database and session bootstrap
+  - [ ] Lazy connection: constructing `Connection` opens no socket, so apps with missing or wrong database settings still boot and only fail on the first query. [on develop] //should-do//
+  - [ ] `db()` before boot: until `ZubZet::$z_db` is set, `db()` throws `NotInstantiatedException` unless called with `allowUnsetConnection: true`. //nice-to-have//
+  - [ ] Anonymous requests: without a `z_login_token` cookie the user becomes anonymous without any database query. //nice-to-have//
+  - [ ] Authenticated requests: a cookie costs a token lookup, an optional invalidation of an expired session and a `z_user` lookup. //nice-to-have//
+- [ ] Class aliases in `src/Aliases.php`
+  - [ ] Loading: declared with `class_alias()` through Composer `autoload.files`, so they exist before `ZubZet` is constructed. //nice-to-have//
+  - [ ] `z_framework`: alias of `ZubZet\Framework\ZubZet`, used as `new z_framework()` in the entry script. //should-do//
+  - [ ] `z_db`: alias of `Database\Connection`. //should-do//
+  - [ ] `z_controller`: alias of `Core\Controller`, the base class of app controllers. [partial] //should-do//
+  - [ ] `z_model`: alias of `Core\Model`, the base class of app models. [partial] //should-do//
+  - [ ] `RequestResponseHandler`: alias of `Message\RequestResponseHandler`. //nice-to-have//
+  - [ ] `Request`: alias of `Message\Request`, used to type-hint action arguments. [partial] //should-do//
+  - [ ] `Response`: alias of `Message\Response`. [partial] //should-do//
+  - [ ] `z_upload`: alias of `Form\Upload`. [partial] //should-do//
+  - [ ] `FormResult`: alias of `Form\Validation\Result`. //should-do//
+  - [ ] `FormField`: alias of `Form\Validation\Field`. [partial] //should-do//
+  - [ ] `Rest`: alias of `Support\Rest`. //should-do//
+  - [ ] `User`: alias of `Authentication\User` (the request user), not of `Authentication\Permission\User`. //should-do//
+  - [ ] Interchangeable with FQCNs: alias and fully qualified name work the same in controller signatures and in route-closure type hints (`is_a(..., true)` check). //should-do//
+  - [ ] Reserved global names: app code cannot declare its own global classes called `Request`, `Response`, `User`, `Rest`, `FormResult` or `FormField`. //should-do//
+- [ ] IDE support file `src/.phpstorm.meta.php`
+  - [ ] Purpose: PhpStorm and Intelephense metadata (`PHPSTORM_META`) so model lookups are typed; it is never executed at runtime. //nice-to-have//
+  - [ ] Mapping: `model()`, `ZubZet::getModel()`, `RequestResponseHandler::getModel()` and `Model::getModel()` map the string argument (via the `@Model` pattern) to the class `<argument>Model`. //nice-to-have//
+## 4. Routing
+- [ ] Request dispatch pipeline (`ZubZet::execute`)
+  - [ ] `execute(?array $customUrlParts = null)`
+    - [ ] Purpose: public entry that dispatches the current request. //nice-to-have//
+    - [ ] `$customUrlParts`: overrides `request()->urlParts`, so it only affects convention routing and `getUrlParts()`, not FastRoute matching which uses `REQUEST_URI`. //nice-to-have//
+  - [ ] Dispatch order: explicit routes (FastRoute) are tried first, convention routing or the CLI console is the fallback. [partial] //important//
+  - [ ] Inputs: HTTP method from `REQUEST_METHOD` (default `GET`) and path from `REQUEST_URI` (default `/`); no method-override parameter is supported. //should-do//
+  - [ ] URI normalisation: the query string is cut, `rawurldecode()` is applied and trailing slashes are stripped except for `/`. //should-do//
+  - [ ] No 405 responses: `NOT_FOUND` and `METHOD_NOT_ALLOWED` both fall through to convention routing, so a wrong HTTP verb never produces a 405. //should-do//
+  - [ ] Dispatcher construction: built lazily once per request with `FastRoute\simpleDispatcher`, so there is no route cache and route files run on every request. //should-do//
+  - [ ] Route conflicts: duplicate or shadowed routes and bad optional segments raise a FastRoute `BadRouteException` while the dispatcher is built. //should-do//
+  - [ ] Route file loading
+    - [ ] Load order: `glob($routes . "/*.php")` user files load first, then framework `IncludedComponents/routes/*.php`, each via `require_once`. [partial] [on develop] //important//
+    - [ ] File selection: only top-level `.php` files are loaded, any file name works, order is glob (alphabetical) order, and sub-directories are not scanned. [partial] [on develop] //important//
+  - [ ] CLI requests
+    - [ ] Dispatch: the dispatcher still runs with `GET /` defaults, and unmatched requests start the console `Application` with `$_SERVER['argv']` instead of convention routing. //nice-to-have//
+    - [ ] Gotcha: an explicit route matching `GET /` runs instead of the console, and convention-group middleware never runs in CLI. //nice-to-have//
+- [ ] Convention routing (`executePath`)
+  - [x] URL scheme: `/{controller}/{action}/{parameter...}` is mapped to `<Controller>Controller` and `action_<action>`.
+  - [ ] Controller name: `ucfirst(segment 1) . 'Controller'` with the case otherwise preserved, so the file name is case-sensitive on Linux. [outdated] //urgent//
+  - [ ] Action name: `action_` plus `strtolower(segment 2)`; PHP method names are case-insensitive, so `/Core/Parameters1` reaches `action_parameters1` and `action_Parameters1`. //important//
+  - [ ] Empty path: runs the `defaultIndex` controller (default `DashboardController`) with `action_index`, and a missing segment 2 also means `action_index`. [outdated] //urgent//
+  - [ ] Name translation
+    - [ ] Replacements: for controller and method `-` becomes `_`, `.` becomes `§2E` and lowercase `ä`, `ö`, `ü` become `ae`, `oe`, `ue`. //should-do//
+    - [ ] Decoding order: percent-encoded input is `urldecode()`d first and `ucfirst` runs before the umlaut replacement, so `/ärzte` resolves to `aerzteController`. //nice-to-have//
+    - [ ] Examples: `/data/file.json` maps to the method `action_file§2Ejson` and `/my-page` maps to `My_pageController`. //should-do//
+  - [ ] Controller file resolution
+    - [ ] Lookup order: `z_controllers/<Controller>.php` first, then bundled `IncludedComponents/controllers/<Controller>.php`, loaded with `include_once`. [on develop] //should-do//
+    - [ ] Shadowing: app controllers shadow the bundled `ErrorController`, `IndexController`, `LoginController` and `ZController` of the same name. //should-do//
+    - [ ] No sanitising: the `urldecode()`d URL segment is concatenated into the file path and `include_once`d without further checks. //urgent//
+  - [ ] URL parameters
+    - [ ] Reading: further URL segments are read with `Request::getParameters()`, `getReadableParameter()` and `getUrlParts()`. [partial] //important//
+    - [ ] Fallback offset: with `action_fallback` the action segment itself is a parameter, hence offset `-1` in `getParameters()` and `getReadableParameter()`. [partial] //should-do//
+  - [ ] `action_fallback`: called when `action_<name>` does not exist; if absent too, the 404 page is shown. [partial] //important//
+  - [ ] HTTP method is not checked: any verb reaches any `action_*` method. //important//
+  - [ ] Method visibility: only `action_`-prefixed names are built from URLs, but `method_exists()` also matches non-public methods, which then fail with a PHP `Error` the router does not catch. //nice-to-have//
+  - [ ] `executePath(array $parts)`
+    - [ ] Purpose: public, sets `request()->urlParts` to `$parts` and runs the mapping above; extra parts become parameters. //should-do//
+    - [ ] Bypass: direct calls (CLI `run`, `Request::checkPermission()`, error pages) skip explicit routes and group middleware. //important//
+- [ ] Explicit routes (`ZubZet\Framework\Routing\Route`)
+  - [ ] Usage: route files call the static facade after `use ZubZet\Framework\Routing\Route;`. [partial] //important//
+  - [ ] HTTP verb helpers
+    - [ ] Signature: `Route::get`, `post`, `put`, `patch`, `delete`, `options` and `any` take `(string $endpoint, array|callable $action, array $arguments = [])` and return a `PendingRoute`. [partial] //important//
+    - [ ] `Route::any()`: registers GET, POST, PUT, PATCH, DELETE, OPTIONS and HEAD. [partial] //should-do//
+    - [ ] `Route::define(string $method, string $endpoint, array|callable $action, array $arguments = [])`: registers any verb string, upper-cased, and also accepts `ANY`. [partial] //should-do//
+    - [ ] No HEAD helper: `Route::head()` does not exist and `Route::get()` does not register HEAD; use `any()` or `define('head', ...)`. //should-do//
+  - [ ] Endpoint syntax: FastRoute standard `{name}` (regex `[^/]+`), `{name:regex}` and optional trailing `[...]` segments. [partial] //important//
+  - [ ] Endpoint normalisation: group prefixes and endpoint are concatenated, a leading slash is added, repeated slashes collapse and the trailing slash is removed; empty becomes `/`. //should-do//
+  - [ ] Registration timing: routes and groups register in the destructor of `PendingRoute` and `PendingGroup`, so the fluent chain must end the statement and its result should not be stored in a variable. //important//
+  - [ ] Route precedence: explicit routes always win over convention routing, and user route files load before the bundled `DefaultRoutes.php`. [partial] [on develop] //important//
+- [ ] Route actions
+  - [ ] Controller action tuple `[Controller::class, 'method']`
+    - [ ] Execution: runs through `executeControllerAction()` with `($req, $res, ...$arguments)`. [partial] //should-do//
+    - [ ] Method name: any public method works, the `action_` prefix is not required for explicit routes. [partial] //important//
+    - [ ] Controller class: must be a global-namespace class stored as `<Class>.php` in `z_controllers` (or the bundled controllers), because lookup is by file name. //important//
+    - [ ] Missing method: falls back to the controller's `action_fallback`, else the 404 page. //should-do//
+    - [ ] Name translation: method and class names pass the same translation as convention routing (`-` to `_`, `.` to `§2E`, `ä`/`ö`/`ü` to `ae`/`oe`/`ue`). //nice-to-have//
+    - [ ] Callable tuples: a tuple that PHP considers callable (for example a static method of an already loaded class) is treated as a closure instead of a controller action. //nice-to-have//
+  - [ ] Closure or callable action
+    - [ ] Parameter resolution: parameters are resolved by type, so any of 0 to 3 parameters work in any order. //important//
+    - [ ] `array`-typed parameter: receives the route variables (for example `$args['assetPath']`). //should-do//
+    - [ ] `Request` or `Response` typed parameter: alias or FQCN receives `request()` or `response()`. //should-do//
+    - [ ] Other parameters: they get their default value, else `null`; union types and untyped parameters are not resolved. //should-do//
+    - [ ] Limits: static `$arguments` are ignored for closures, and `$req->getRouteParameter()` is not populated by the closure stage itself. //should-do//
+    - [ ] Middleware on closures: a closure route can still carry controller-tuple middleware and afterware. //nice-to-have//
+- [ ] Static arguments
+  - [x] Where they are given: the third parameter of the verb helpers and the second parameter of `middleware()` and `afterMiddleware()` are spread after `$req, $res`.
+  - [ ] Stage scope: arguments belong to one stage only, so action, middleware and afterware each receive their own list. [partial] //should-do//
+  - [ ] Named arguments: a string-keyed arguments array is spread as named arguments (PHP spread semantics). //should-do//
+- [ ] Route parameters
+  - [ ] `{name}` placeholders: passed as `$args` and stored in `$req->urlParameters` before every controller stage (action, middleware, afterware). [partial] //important//
+  - [ ] `Request::getRouteParameter($key = null)`: returns the whole associative array, one value, or `null` when the key is missing. [partial] //important//
+  - [ ] Per-stage reset: parameters are reset on every stage, and convention routing and fallback group middleware always see an empty array. //should-do//
+  - [ ] Group prefix placeholders: `{userId}` style placeholders in prefixes (e.g. `/accept-afterware-parameters/{userId}/{postId}`) reach the group's middleware, afterware and routes. [partial] //should-do//
+  - [ ] Decoding: values are matched after `rawurldecode()`, so an encoded `%2F` can span segments and values are already decoded. //should-do//
+- [ ] Route groups
+  - [ ] `Route::group(string $prefix = "", ?callable $callback = null)`: returns a `PendingGroup` that accepts `->middleware()` and `->afterMiddleware()`. [partial] //important//
+  - [ ] Nesting: prefixes of nested groups are concatenated in order and middleware of all enclosing groups are inherited by contained routes. [partial] //important//
+  - [ ] Group without callback: `Route::group()->middleware(...)` registers no routes but protects convention-routed URLs under the prefix; an empty prefix matches every URL. //important//
+  - [ ] Callback timing: the group callback runs when the `PendingGroup` is destroyed, i.e. after the fluent `middleware()` calls were collected. //nice-to-have//
+- [ ] Middleware and afterware
+  - [ ] Registration
+    - [ ] Signatures: `->middleware(array $middleware, array $arguments = [])` and `->afterMiddleware(array $afterMiddleware, array $arguments = [])` accept only `[Controller::class, 'method']` arrays, never closures. [partial] //important//
+    - [ ] Repeated calls: they accumulate and run in call order. //nice-to-have//
+  - [ ] Middleware contract
+    - [x] Return value: must return exactly `true` (strict `!== true`) to continue, any other return value including `null` stops the request.
+    - [ ] Blocking response: a blocking middleware sets no status code and renders nothing by itself, so it must produce its own response. //important//
+  - [ ] Execution order for an explicit route: group middleware (outer to inner), route middleware, action, route afterware, group afterware (inner to outer). [partial] //important//
+  - [ ] Afterware: return values are ignored, and it does not run when a middleware blocked the request or when the action ends the script with `exit` (for example `generateRest()`, `rerouteUrl()`). [partial] //should-do//
+  - [ ] Controller instances: every stage resolves through `executeControllerAction()`, creating a fresh controller instance per stage while `Request` and `Response` are shared. //should-do//
+  - [x] Request state changes: a middleware may change state such as `$res->setDefaultLayout()` before the action renders.
+- [ ] Group middleware for convention-routed URLs (fallback matching)
+  - [ ] Mechanism: every group is stored in public static `Route::$storedPrefixedGroups`, keyed by its full concatenated prefix, and consulted only when no explicit route matched. //nice-to-have//
+  - [ ] Matching rule
+    - [ ] Comparison: the current path (`'/' . implode('/', urlParts)`) equals the prefix or starts with `prefix . '/'`; comparison is case-sensitive and the prefix is used unnormalised. //should-do//
+    - [ ] Unmatchable prefixes: prefixes with a trailing slash, no leading slash or `{placeholders}` never match convention URLs. //urgent//
+  - [ ] Order: all matching groups, outer first, run their middleware, then the controller action, then afterware in the same outer-to-inner order. //should-do//
+  - [ ] Blocking: a middleware returning anything but `true` ends the script with `exit`, unlike explicit routes which just return. //should-do//
+  - [ ] Nested groups: a nested group stores only its own middleware, and the parent matches separately. //should-do//
+  - [ ] Duplicate prefixes: two groups with the same full prefix overwrite each other for fallback matching, and the later one wins. //urgent//
+- [ ] Bundled default routes
+  - [ ] `GET /_zubzet/asset-proxy/{assetPath:.+}`
+    - [ ] Handler: closure route inside group `/_zubzet` that calls `zubzet()->assetProxy->serve($args['assetPath'])`. [partial] //nice-to-have//
+    - [ ] Reserved prefix: `/_zubzet` is reserved; the route registers after user routes, so a conflicting user route raises `BadRouteException`. [on develop] //should-do//
+- [ ] Controller instantiation and invocation
+  - [ ] Call shape: `new $controller($req, $res)` per call, then `$obj->{$method}($req, $res, ...$arguments)`, and the return value is passed back to the caller. //should-do//
+  - [ ] Current request: `$req` is `zubzet()->req` at call time, so it is the replaced instance after a `reroute()`. //nice-to-have//
+- [ ] Not-found and error behaviour
+  - [ ] 404: `executePath(["error", "404"])` runs when the controller file does not exist, or when neither the method nor `action_fallback` exists. //important//
+  - [ ] 500 on include: `executePath(["error", "500"])` runs when including the controller file throws an `\Exception`, regardless of `showErrors`. //should-do//
+  - [ ] Action exceptions: exceptions thrown while constructing or running the action are rethrown when `showErrors != 0` and show the 500 page when it is 0; PHP `Error`s are never caught. //important//
+  - [ ] Middleware stage ending in an error page: it returns `null` and therefore blocks the request. //nice-to-have//
+  - [ ] Bundled `ErrorController`
+    - [ ] Actions: `action_403`, `action_404` and `action_500` set the matching HTTP status with `http_response_code()` and render `403.php`, `404.php` or `500.php` in `layout/min_layout.php`. //important//
+    - [ ] Overriding: an app `ErrorController` replaces it, and it should define all three actions. //should-do//
+  - [ ] Reroute limit
+    - [ ] Counter: every `executePath()` call increments `$reroutes`; exceeding `$maxReroutes` (public property, default `10`) ends with `die("Error: Too many reroutes. Please contact the webmaster.")`. //should-do//
+    - [ ] Typical cause: an app `ErrorController` that lacks `action_403`, `action_404` or `action_500` re-requests the 404 page repeatedly. //should-do//
+    - [ ] Not a setting: `$maxReroutes` is a plain property that can be set in code or via the constructor parameters. //nice-to-have//
+    - [ ] Explicit-route loops: `reroute()` does not increment `$reroutes`, so reroute loops between explicit routes are not limited by it. //nice-to-have//
+- [ ] Internal rerouting, aliases and virtual links
+  - [ ] `ZubZet::reroute(array $parts)`
+    - [ ] Mechanism: clones the input state with `REQUEST_URI` and `REDIRECT_URL` set to `/<parts>` (query string kept), replaces the request and calls `execute()` again. //should-do//
+    - [ ] Re-entry: because it re-enters `execute()`, explicit routes and group middleware apply to the rerouted path, and `argv` is rewritten for CLI. //should-do//
+  - [ ] `Response::reroute($path, $alias, $final)`: the controller-facing wrapper, see Request & Response for its parameters. [partial] //should-do//
+  - [x] Alias mode: `alias: true` overlays the given path onto the current URL parts by index and keeps the remaining parts as parameters, creating virtual links.
+  - [ ] Example: `AdvancedController::action_aliases` reroutes `["core","action"]` with `alias: true` and behaves the same over HTTP and CLI `run`. //nice-to-have//
+- [ ] Routing internals [internal]
+  - [ ] Public statics: `Route::init`, `performGroup`, `performRoute` and `performStoredGroupsMatchingPrefix` are public only for the `Pending*` classes. [internal] //optional//
+  - [ ] Builder objects: `PendingAction`, `PendingRoute`, `PendingGroup`, `PendingRoutingState` and trait `HttpMethod` form the fluent builder. [internal] //optional//
+  - [ ] `PendingAction::getAction()` [internal]: Returns the stored controller tuple or callable of a pending route, group, middleware or afterware, whose `$arguments` hold the static arguments. //optional//
+  - [ ] Capture timing: the route handler closure captures the effective middleware at registration time, so group state is resolved when the route destructs. [internal] //optional//
+## 5. Controllers & Models
+- [ ] Controllers
+  - [ ] Base class
+    - [ ] `ZubZet\Framework\Core\Controller` (alias `z_controller`): base class for app controllers, but extending it is optional (bundled `ErrorController` does not). //important//
+    - [ ] Minimal surface: the base class defines no constructor, properties or lifecycle hooks, only `makeFood()` and `makeCEDFood()`. //should-do//
+    - [ ] No per-controller options: behaviour is driven purely by file, class and method naming conventions. //nice-to-have//
+  - [ ] Placement and naming
+    - [ ] File and class: `app/Controllers/<Name>Controller.php` holds the global-namespace class `<Name>Controller`, in one flat directory. [partial] //important//
+    - [ ] Overriding bundled controllers: an app controller with the name of a bundled one (`ErrorController`, `IndexController`, `LoginController`, `ZController`) shadows it. //should-do//
+  - [ ] Constructor
+    - [ ] `__construct(Request $req, Response $res)`: optional, runs before every action and every middleware or afterware stage on a fresh instance. //important//
+    - [ ] Typical uses: a CLI gate with `checkPermission("console")` or `setDefaultLayout()` for all actions of the controller. [partial] //should-do//
+  - [ ] Action methods
+    - [ ] Signature: `public function action_<name>(Request $req, Response $res, ...$staticArguments)`, reached by URL as `/<controller>/<name>`. [partial] //important//
+    - [x] `action_index`: default action when the URL has no action segment.
+    - [ ] `action_fallback`: catch-all for unknown actions of that controller, also used when an explicit route or middleware method is missing. [partial] //important//
+    - [ ] Return value: whatever the action returns is passed back to the router, and output is produced by echoing or rendering. //should-do//
+  - [ ] Middleware and afterware methods
+    - [ ] Shape: ordinary public controller methods with any name, taking `($req, $res, ...$arguments)`. [partial] //should-do//
+    - [x] Middleware result: a middleware method must return exactly `true` to let the request continue.
+  - [ ] Working with the framework from a controller
+    - [ ] Models: obtained with `$req->getModel()`, `$res->getModel()` or `model()`; the base controller has no `getModel()`. [partial] //important//
+    - [ ] Message objects: `Request` and `Response` arrive as action arguments and can be type-hinted with the global aliases. //should-do//
+  - [ ] Console discovery
+    - [ ] `ActionDiscovery`: lists public `action_*` methods declared directly on each controller class, so inherited ones are excluded. //nice-to-have//
+    - [ ] CLI relevance: only top-level files of `z_controllers` are scanned, which defines what `run <controller> <action>` accepts. [on develop] //should-do//
+  - [ ] Helper methods for forms
+    - [ ] `makeFood($table, $valueField, $textField, $optionalTextField = null)`
+      - [ ] Purpose: returns a JSON string of `[{"value","text"}]` for select and multi-select inputs. [partial] //should-do//
+      - [ ] `$optionalTextField`: appended to the text after a single space. //nice-to-have//
+      - [ ] Output encoding: plain `json_encode()` without hex flags, so embedding it in a `<script>` block is the caller's responsibility. //important//
+      - [ ] Consumer: the result is consumed by `ZFormInput.feedData()` in `Z.js`. //nice-to-have//
+    - [ ] `makeCEDFood($table, $fields, $escape = null)`
+      - [ ] Purpose: builds a hand-written JSON-like string `[{"dbId":"<id>","<field>":"<value>"},...]` for CED items. [partial] //should-do//
+      - [ ] Row id: each row needs an `id` column which becomes `dbId`. //nice-to-have//
+      - [ ] Escaping: values are not escaped unless an `$escape` callable `fn($value, $field)` is given. //important//
+      - [ ] Trailing comma: the string ends with a trailing comma (`},]`), which is not strict JSON. //nice-to-have//
+  - [ ] Bundled controllers
+    - [ ] `ErrorController`: plain class (no base class) with `action_403`, `action_404` and `action_500`; details are in Routing. //nice-to-have//
+    - [ ] `IndexController`: extends `z_controller`; its `action_index` renders `index.php` in `layout/default_layout.php`, selected by `defaultIndex = IndexController`. //should-do//
+    - [ ] `LoginController` and `ZController`: bundled login flow and admin panel controllers (documented in their own sections). [partial] //should-do//
+- [ ] Models
+  - [ ] Base class
+    - [ ] `ZubZet\Framework\Core\Model` (alias `z_model`): base class for app models; uses traits `CanBuildQuery` and `CanRetrieveModel`. [partial] //important//
+    - [ ] Naming: file `app/Models/<Name>Model.php` with global-namespace class `<Name>Model` (`getModel('<Name>')` appends `Model`). [partial] //important//
+    - [ ] Constructor `__construct(Connection $z_db, ZubZet $booter)`: called by the loader with `db()` and `zubzet()`; do not instantiate models manually. //should-do//
+    - [ ] Protected members: `$z_db`, `$booter` and `$lastInsertId` (declared but never written; use `getInsertId()`). //nice-to-have//
+  - [ ] Loading models (`model($model, $dir = null)` and `getModel(string $model, ?string $dir = null)`)
+    - [ ] Availability: trait `CanRetrieveModel` is used by `ZubZet`, `Request` and `Response` (via `RequestResponseHandler`) and `Model`, so models can load other models. [partial] //should-do//
+    - [ ] File and class naming: `<Name>Model.php` in `z_models` (default `app/Models/`) holding a class `<Name>Model` in the global namespace. [partial] //should-do//
+    - [ ] Dotted names: `model('admin.Users')` loads `<z_models>/admin/UsersModel.php`, with directory parts lower-cased and the last part's case kept as class name. //should-do//
+    - [ ] `$dir` override: replaces the model directory for the lookup, is concatenated directly so it must end with a directory separator, and is not part of the cache key. //nice-to-have//
+    - [ ] Lookup order: the app (or `$dir`) path first, then bundled `IncludedComponents/models/<Name>Model.php`, so an app file overrides a bundled `z_*` model. [on develop] //should-do//
+    - [ ] Bundled call quirk: bundled code passes `getZRoot()` (the `src/` directory) as `$dir`, which holds no model files, so those calls always fall through to the bundled model. //optional//
+    - [ ] Missing model: throws `Exception` with `Model: <Name>Model does not exist!` //should-do//
+    - [ ] Loading mechanics: the file is loaded with `require_once` and instantiated as `new <Class>(db(), zubzet())`, so class names must be unique even across sub-directories. //should-do//
+    - [ ] No sanitising: the model name is not validated, so never pass user input. //should-do//
+  - [ ] Instance cache
+    - [ ] Scope: one shared instance per model per request in the `StaticCache` bucket `model`, so constructor state and properties persist across calls. //should-do//
+    - [ ] Cache key: the name plus `Model` including any sub-directory path, excluding `$dir`, so the same name from two directories returns the first instance. //nice-to-have//
+  - [ ] Database convenience methods (delegating to the `Connection` in `$z_db`)
+    - [x] `exec(string|Query $query, $types = "", $params = null)`: runs a prepared statement with `?` placeholders and returns the connection for chaining (`->resultToArray()`).
+    - [ ] `exec()` with a CakePHP `Query`: runs it through `Connection::execQuery()` and ignores `$types` and `$params`. [partial] //should-do//
+    - [ ] Calling model tracking: `exec()` sets `callingModel` on the connection, which the debug bar uses to hide internal models. [partial] //nice-to-have//
+    - [ ] `getInsertId()`: insert id of the last query, not changed by internal logging. [partial] //important//
+    - [ ] `resultToArray()`: all rows of the last result as associative arrays; an initial array can be passed through. [partial] //important//
+    - [ ] `resultToLine()`: next row of the last result as associative array, `null` when exhausted. [partial] //important//
+    - [ ] `getFullTable($table, $fields = "*")`: runs `SELECT $fields FROM $table`, with both inserted unescaped. //important//
+    - [ ] `getTableWhere($table, $fields, $where)`: all three required and `$where` inserted unescaped, while optional `$types` and `$values` can still be passed through `func_get_args()`. //important//
+    - [ ] `countTableEntries($table)`: returns `COUNT(*)` of the table. //should-do//
+    - [ ] `getResult()`: raw `mysqli_result|bool|null` of the last query. //should-do//
+    - [x] `countResults()`: number of rows (`num_rows`) of the last result.
+    - [ ] `heartbeat($waitForTimeout = true)` [deprecated]: keep-alive ping, superseded since 1.2.0 by self-healing connections. //nice-to-have//
+    - [ ] Not exposed on `Model`: `mergeAsGroup()`, `checkIfUnique()` and `checkIfExists()` exist only on `Connection` (`db()`). //should-do//
+  - [ ] Query builder methods: `dbSelect`, `dbInsert`, `dbUpdate`, `dbDelete` and `getQueryBuilder` come from trait `CanBuildQuery`. [partial] //important//
+  - [ ] Internal model marker [internal]: trait `IsInternalModel` (`public bool $isInternalModel = true`) marks bundled `z_*` models, except `z_organizationModel`, as internal. [partial] //optional//
+  - [ ] Bundled models
+    - [ ] Available short names: `z_adminDashboard`, `z_file`, `z_general`, `z_logger`, `z_login`, `z_migration`, `z_organization`, `z_permission` and `z_user`, loaded as `model("z_user")`. //should-do//
+    - [ ] Base class: all bundled models extend `z_model`. //nice-to-have//
+    - [ ] `@internal` docblocks: class docblocks mark most bundled models as `@internal` (not `z_organizationModel`), although app code and tests call many methods directly. //nice-to-have//
+## 6. Request & Response
+- [ ] Request object (`ZubZet\Framework\Message\Request`, global alias `Request`)
+  - [ ] Construction and public state
+    - [ ] `new Request(Input\State $input)`: the promoted public `$input` holds the request snapshot and the parent constructor sets public `$booter` to `zubzet()`. //nice-to-have//
+    - [ ] `$req->input`: the raw `Input\State`, the only access path to `SERVER`, `SESSION`, `REQUEST` and `body`, which have no getters. [partial] //important//
+    - [ ] `$req->store`: public array meant to carry data across internal redirects, but `reroute()` installs a new `Request`, so it is empty afterwards. //should-do//
+    - [ ] `$req->urlParts`: public array caching the parsed path, set by the router; `unset($req->urlParts)` forces a re-parse. //nice-to-have//
+    - [ ] `$req->urlParameters`: public array of FastRoute placeholder values, overwritten by the router before every controller stage. //nice-to-have//
+    - [ ] Missing shortcuts: `getMethod()`, `getHeader()`, `isPost()` and `isAjax()` do not exist; read `$req->input->SERVER['REQUEST_METHOD']` or `['HTTP_*']` keys directly. //important//
+  - [ ] Input retrieval (trait `CanRetrieveFromInput`)
+    - [ ] `getGet(?string $key = null, mixed $default = null)`: returns the whole `GET` array without a key, else the value, or `$default` when the key is unset or null. [partial] //important//
+    - [ ] `getPost(?string $key = null, mixed $default = null)`: same contract for `POST`, with `<#decURI#>` prefixed values already decoded by `Input\State::fromRequest()`. [partial] //important//
+    - [ ] `getFile(?string $key = null, mixed $default = null)`: returns the raw `$_FILES` entry (`name`, `type`, `tmp_name`, `error`, `size`), or the whole array without a key. [partial] //important//
+    - [ ] `getFiles()`: alias of `getFile()` without a key, returning the full files array. //should-do//
+    - [ ] `getCookie(?string $key = null, mixed $default = null)`: same contract for cookies, and reflects removals made earlier in the request by `unsetCookie()`. [partial] //important//
+    - [ ] `getCookies()`: alias of `getCookie()` without a key, returning all cookies. //should-do//
+    - [ ] `getFile` default: `getFile($key, $default)` returns `$default` when no file was uploaded under that key, like `getGet`, `getPost` and `getCookie`. [partial] //should-do//
+  - [ ] Request body
+    - [ ] `getBody()`: returns the raw `php://input` string typed `?string`, and `null` (not an empty string) when the body is empty or exactly `"0"`. //important//
+    - [ ] `getJson()`
+      - [ ] Decoding: decodes the body with `json_decode(..., true)` into associative arrays and returns `null` for an empty body. //important//
+      - [ ] Invalid JSON: throws `\JsonException` because `JSON_THROW_ON_ERROR` is always set, and the `Content-Type` header is not checked. //should-do//
+  - [ ] Form and sub-action detection (client protocol of Z.js)
+    - [ ] `hasFormData()`: true when POST contains the key `isFormData`, which Z.js forms always send (`isFormData=true` or FormData value `1`). [partial] //important//
+    - [ ] `isAction(string $type)`
+      - [ ] Comparison: loosely compares POST `action` with `$type`; `Z.Request.action()` and `Z.Request.root()` send that field and a GET `action` is ignored. [partial] //important//
+      - [ ] Empty-action edge case: with no posted `action`, `isAction("")` is true because `null == ""`. //should-do//
+  - [ ] URL and path information
+    - [ ] `getUrlParts()`
+      - [ ] Result: returns the path segments of `REQUEST_URI` (query dropped, outer `/` trimmed, split on `/`) as an array, `[]` for the root. //should-do//
+      - [ ] Root directory stripping: the first `count(explode("/", config("rootDirectory")))` segments are removed without checking they match the real folder. //should-do//
+      - [ ] Raw segments: segments are not URL-decoded and double slashes produce empty segments. //should-do//
+      - [ ] Caching: the result is cached in `$urlParts`, and an unparsable URI (`parse_url` failure) yields an empty path. //nice-to-have//
+    - [ ] `getParameters($offset = 0, $length = null, $val = null)`
+      - [x] Purpose: returns URL segments after the leading controller and action pair.
+      - [x] Offset: skips `2 + $offset` leading segments, and `-1` is documented for `action_fallback` where the action name is itself a parameter.
+      - [ ] `$length = 1`: returns the single string, or `false` (not `null`) when absent. [partial] //should-do//
+      - [ ] `$length = 1` with `$val`: returns a boolean from a loose `==` comparison. [partial] //should-do//
+      - [ ] Other lengths: any other `$length` returns `array_slice($params, 0, $length)`, and `null` returns all remaining segments. [partial] //should-do//
+      - [ ] Fixed shift: it always shifts two segments, so routes with a different shape should use `getRouteParameter()` instead. //important//
+    - [ ] `getReadableParameter($offset = 0)`
+      - [ ] Purpose: splits an SEO slug like `this-is-some-text-64` at the last `-` into `['id' => '64', 'text' => 'this-is-some-text']`. //should-do//
+      - [ ] Edge cases: a slug without dash returns the whole value as `id` and an empty `text`, and a missing parameter gives two empty strings. //should-do//
+    - [x] `getRouteParameter($key = null)`: returns FastRoute placeholder values, see Routing for details.
+    - [ ] `getCurrentURL()`: returns `config("host")` followed by the raw `REQUEST_URI` including the query string. //should-do//
+    - [ ] `getRoot()`: returns `config("root")`, the host plus root directory, which is also exposed to JS as `Z.Request.rootHost`. //should-do//
+    - [ ] `getRootFolder()`: returns `config("rootFolder")`, the root path such as `/`, used as redirect and link prefix. //should-do//
+    - [ ] `getDomain()`: returns the configured `host` without scheme, slashes, port or path (cut at the first `:`), e.g. `api.example.com` from `https://api.example.com:8443/`. //nice-to-have//
+  - [ ] Client and request information
+    - [ ] `ip()`
+      - [ ] Source order: returns the first available of `HTTP_CLIENT_IP`, `HTTP_X_FORWARDED_FOR`, `REMOTE_ADDR` and then `getenv()` variants. //should-do//
+      - [ ] Spoofable: client-controlled headers win over `REMOTE_ADDR`, and a comma separated `X-Forwarded-For` list is returned unsplit. //important//
+      - [ ] No server data: when no `SERVER` key exists, `getenv()` returns false and the `?string` return coerces it to an empty string rather than `null`. //nice-to-have//
+      - [ ] Login alert use: the too-many-logins mail validates it with `FILTER_VALIDATE_IP` before using it. //nice-to-have//
+    - [ ] `referer()`: returns `HTTP_REFERER` or `null` when the header is absent. //should-do//
+    - [ ] `userAgent()`: returns `HTTP_USER_AGENT` verbatim or `null`. //should-do//
+    - [ ] `getExecutionTime()`: returns seconds as float since `REQUEST_TIME_FLOAT`, or `null` when that server value is missing. //should-do//
+    - [ ] `isCli()`: returns the global `isCli()` result (`php_sapi_name() === "cli"`). [partial] //nice-to-have//
+    - [x] `getRequestingUser()`: returns the global `user()` object of the current request.
+  - [ ] Permission gates (documented with the permission system)
+    - [ ] `checkPermission(string $permission, bool $boolResult = false, bool $includeSuperUser = false)`: sends anonymous users to `login/index`, others without the permission to `error/403`, or returns false when `$boolResult` is true. [outdated] //important//
+    - [ ] `checkSuperPermission(string $permission, bool $boolResult = false)`: same check that also accepts the permission of the user who is logged in as someone else. //important//
+    - [ ] Gate exit: a failing check without `$boolResult` renders the error or login route and calls `exit`. [partial] //important//
+    - [ ] Pseudo permission `console`: returns true in CLI, and over HTTP sends the 403 page and exits (or returns false with `$boolResult`). //important//
+  - [ ] Mixed-in capabilities: `Request` also uses the form validation traits `CanValidateForm` and `CanValidateMultiForm`, plus model and settings retrieval, covered in their own sections. //nice-to-have//
+  - [ ] Members inherited from `RequestResponseHandler`
+    - [ ] `$booter`: public property holding the `ZubZet` singleton on both `Request` and `Response`. //nice-to-have//
+    - [ ] `getZViews()`: returns the `z_views` directory (relative `app/Views/` by default). //nice-to-have//
+    - [ ] `getZRoot()`: returns the framework root directory (`z_framework_root`, the absolute `src/` path with trailing slash). //nice-to-have//
+    - [ ] `getModel()` and `getBooterSettings()`: mixed in via traits (see Controllers & Models and Configuration). [partial] //nice-to-have//
+- [ ] Response object (`ZubZet\Framework\Message\Response`, global alias `Response`)
+  - [ ] Construction and state
+    - [ ] `new Response()`: creates the placeholder `Output\State` in public `$output` and sets `$booter`; one instance serves the whole request, including reroutes. //nice-to-have//
+    - [ ] `Output\State` [internal]: empty class with no members, reserved as the output counterpart of `Input\State`. //optional//
+    - [ ] Mixed-in traits: `CanRenderView`, `HandlesDefaultLayout`, `CanRetrieveModel` and `CanRetrieveBooterSettings`. //nice-to-have//
+    - [ ] File-level `$opt = []` in `Response.php` [internal]: leftover documented as holding rendering options, unrelated to the `$opt` passed to views. //optional//
+  - [ ] Exit semantics
+    - [ ] Methods that end the script: `success()`, `error()`, `formErrors()`, `generateRest()` (default), `generateRestError()`, `rerouteUrl()` and `logout()` end with `exit`, so later code does not run. [partial] //important//
+    - [ ] Methods that keep running: `json()`, `render()`, `setCookie()`, `unsetCookie()` and a non-final `reroute()` return normally. [partial] //should-do//
+  - [ ] Rerouting and redirects
+    - [ ] `reroute($path = [], $alias = false, $final = false)`
+      - [ ] Purpose: server-side internal reroute to another controller and action path without an HTTP redirect, so the browser URL stays. //important//
+      - [ ] Non-alias mode: calls `zubzet()->reroute($path)`, which forks the input state with the new path, swaps in a new `Request` and re-dispatches (FastRoute routes first, then convention routing). //should-do//
+      - [x] Alias mode: `$alias = true` replaces only the leading URL segments by the given `$path` entries and keeps the remaining ones, so `/advanced/aliases/x` can act as `/core/action/x`.
+      - [ ] `$final`: `true` calls `exit` after the rerouted action finished, otherwise the calling action continues after `reroute()` returns. //should-do//
+      - [ ] New request state: the new `Request` has the same GET, POST, cookies and body but empty `store` and `urlParameters`. //should-do//
+      - [ ] Reroute limit: reroutes that land on convention routing count toward `ZubZet::$maxReroutes` (10), and exceeding it dies with `Error: Too many reroutes. Please contact the webmaster.` //nice-to-have//
+    - [ ] `rerouteUrl($url = "", $root = null)`
+      - [ ] Behavior: sends a `location:` header (PHP's implicit 302) and exits, used for client-side redirects. //important//
+      - [ ] Root prefix: `$root` defaults to the `rootFolder` setting and the header is `$root . $url` with no slash normalisation, so `rerouteUrl("/x")` with an empty root directory yields `//x`. //urgent//
+      - [ ] External targets: pass `$root = ""` to redirect to an absolute or external URL. //important//
+  - [ ] Cookies
+    - [ ] `setCookie(...)`
+      - [ ] Behavior: pass-through to PHP `setcookie(...func_get_args())` without declared parameters, so only positional arguments (or the options-array form) work. [partial] //important//
+      - [ ] No security defaults: Secure, HttpOnly and SameSite are only set if passed (the e2e probe uses `time()+3600, '/', '', false, true`). //urgent//
+      - [ ] Not readable in the same request: it does not update `$req->input->COOKIE`, so `getCookie()` only sees the cookie on the next request. //should-do//
+    - [ ] `unsetCookie(string $name, string $path = "/", string $domainScope = "")`
+      - [ ] Behavior: removes the entry from `$req->input->COOKIE` and sends an expired cookie (empty value, expires `1`). [partial] //should-do//
+      - [ ] Matching scope: path and domain must match the original cookie, and the Expires format differs by PHP version (`01-Jan-1970` up to 8.1, `01 Jan 1970` from 8.2) while `Max-Age=0` is stable. //should-do//
+  - [ ] JSON and API responses
+    - [ ] `json(mixed $data, int $encodingOptions = 0)`
+      - [x] Behavior: sets `Content-Type: application/json` (no charset), echoes `json_encode($data, $encodingOptions | JSON_THROW_ON_ERROR)` and does not exit.
+      - [ ] Unencodable data: for example a resource throws `\JsonException`, after the header was already sent. [partial] //should-do//
+      - [ ] Status: it returns void and sets no HTTP status code. //should-do//
+    - [ ] `generateRest(array $payload, bool $die = true)`: echoes a pretty-printed `Rest` envelope (`meta` plus payload keys) and exits unless `$die` is false. [outdated] //important//
+    - [ ] `generateRestError($code, $message)`: logs a `REST_ERROR` warning, then outputs only `{"error":{"code":...,"message":...}}` and exits, and the HTTP status stays 200. [partial] //important//
+    - [x] `error($message = "")`: sends `{"result":"error","message":...}` inside the REST envelope and exits.
+    - [ ] `success($payload = [])`: sends `{"result":"success", ...payload}` and exits; payload keys are merged after `result` and can override it. [partial] //important//
+    - [ ] `formErrors($errors)`: accepts any number of error arrays (non-arrays ignored), merges them and sends `{"result":"formErrors","formErrors":[...]}` then exits. [partial] //important//
+    - [ ] Result envelope consumed by Z.js: `result` is `success`, `error` or `formErrors`, and each form error entry holds `name`, `type` and optional `info`. [partial] //important//
+  - [ ] File uploads and form persistence
+    - [x] `upload()`: returns a new instance of the upload helper (alias `z_upload`) that handles type, size and storing of an uploaded file.
+    - [ ] `insertDatabase(string $table, Result $validationResult, array $fixed = [])`: runs a prepared INSERT from `$fixed` columns (typed `s`) and the validated form fields, skipping `noSave` fields, and returns the insert id. [partial] //important//
+    - [ ] `updateDatabase(string $table, string $pkField, string $pkType, $pkValue, Result $validationResult, array $fixed = [])`: runs a prepared UPDATE of the form fields and `$fixed` values filtered by the primary key. [partial] //important//
+    - [ ] `insertOrUpdateDatabase(...)`: selects the row by primary key, then updates it and returns `$pkValue` when found, otherwise inserts and returns the insert id. [partial] //should-do//
+    - [x] Array values: field values that are arrays (for example multi-select) are stored as JSON because mysqli cannot bind arrays.
+    - [ ] Upload step: file fields are uploaded first; a field without a posted file is flagged `noSave`, an upload error answers `error("Upload error: <code>")`, otherwise the field value becomes the stored file id. [partial] //important//
+    - [ ] Upload rules used: `fileMaxSize` and `types` of the field rules are passed to the upload, and the target folder comes from the `uploadFolder` setting. [outdated] //important//
+    - [ ] `doCED($table, $validationResult, $fix = [])`: applies posted Create-Edit-Delete items, where `create` inserts, `edit` updates by `id`, `delete` sets `active = 0` and anything else calls `error()`. [partial] //should-do//
+    - [ ] CED caveats: it returns early when `doNothing` is set, addresses rows by `id` only and inserts table and field names unescaped. //important//
+  - [ ] Login and session helpers
+    - [ ] `loginAs(int $userId, ?int $user_exec = null)`
+      - [ ] Behavior: creates a session via the `z_login` model, sets the `z_login_token` cookie and logs `USER_LOGGED_IN` (or `USER_LOGGED_IN_ANOTHER` when sudoing). [partial] //important//
+      - [ ] Cookie parameters: path `/`, domain from `getCookieDomainScope()` and expiry `time() + loginTimeoutSeconds`, set through `setCookie` without HttpOnly. //urgent//
+      - [ ] Executing user: `$user_exec` defaults to `$userId`, and a differing value records who is logged in as someone else. [partial] //should-do//
+    - [ ] `logout()`
+      - [ ] Behavior: invalidates the session token, deletes the old-scope cookie, logs `USER_LOGGED_OUT`, then either re-logs the executing user (when sudoed) or unsets `z_login_token`, and finally redirects to the root. //important//
+      - [ ] Not logged in: it just redirects with `rerouteUrl()`. //nice-to-have//
+    - [ ] `getCookieDomainScope()`: returns `.<domain>` when `login_scope_allow_subdomains` equals the string `true`, otherwise an empty string. //should-do//
+  - [x] Rendering and mail: `render()`, default layouts, `sendEmail()` and `sendEmailToUser()` are covered in the Views, Layouts & Mail section.
+  - [ ] Not wrapped by Response: no helpers exist for HTTP status codes, custom headers, downloads or plain redirect codes; use PHP `http_response_code()` and `header()` directly. //should-do//
+- [ ] Input state (`ZubZet\Framework\Message\Input\State`)
+  - [ ] Properties
+    - [ ] Public typed properties: `$SERVER`, `$GET`, `$POST`, `$FILES`, `$REQUEST`, `$SESSION`, `$COOKIE`, `$body` and `$previous` have no defaults, so a manually created `new State()` must assign them before use. //nice-to-have//
+    - [ ] Naming: property names without leading underscore are what other code reads, for example `request()->input->GET`. //nice-to-have//
+  - [ ] `State::fromRequest()`
+    - [ ] Purpose: builds the state once at boot from the superglobals and `php://input`. //nice-to-have//
+    - [ ] Plain copies: `SERVER`, `GET`, `FILES`, `REQUEST`, `SESSION` and `COOKIE` are copies of the PHP superglobals. //nice-to-have//
+    - [ ] `<#decURI#>` prefix: POST values starting with it are recursively replaced by their `rawurldecode`d remainder (Z.js sends fields that way), and `$_POST` itself is modified. [partial] //should-do//
+    - [ ] `REQUEST` snapshot: it is copied before the POST decoding, so it can still contain undecoded `<#decURI#>` values. //nice-to-have//
+    - [ ] `body`: `file_get_contents('php://input')` or `null` when that is falsy (empty or `"0"`). //nice-to-have//
+  - [ ] `State::fromOverwrite(State $input, array $overwriteData = [])`
+    - [ ] Purpose: clones the state, links `previous` by reference to the source and merges overrides; used by `Router::reroute()`. //nice-to-have//
+    - [ ] Override shape: `$overwriteData` is keyed by property name (`GET`, `POST`, `SERVER`...) and merged per key into the existing array, leaving other keys untouched. //nice-to-have//
+    - [ ] Unknown property: an unknown name throws `InvalidArgumentException` with `OverwriteData includes unknown type: '<name>'.` //nice-to-have//
+    - [ ] `REQUEST` not refreshed: overwriting `GET`, `POST` or `COOKIE` this way does not refresh `REQUEST`. //nice-to-have//
+    - [ ] Isolation: changes to the clone do not leak into the source, while `previous` sees later changes to the source. //nice-to-have//
+  - [ ] Withers (each mutates the state in place and returns `$this`, so fork with `fromOverwrite()` first)
+    - [ ] `withUrl(string $url)`
+      - [ ] Behavior: applies scheme, host, query and path of a URL in that order; fragment, user and port are ignored. //extra-effort//
+      - [ ] Scheme: sets `REQUEST_SCHEME` and sets `HTTPS` to `on` (https) or `off`. //extra-effort//
+      - [ ] Host and query: host sets `HTTP_HOST` without port, the query replaces `GET` through `withGet()` and the path goes through `withPath()`. //extra-effort//
+      - [ ] Missing parts: parts missing in the URL keep their previous value, including an old query string in `REQUEST_URI`. //extra-effort//
+    - [ ] `withPath(string $path)`: sets `REQUEST_URI` to `/<path>` plus the existing `QUERY_STRING` and `REDIRECT_URL` to `/<path>`; leading slashes are stripped. //extra-effort//
+    - [ ] `withGet(array $get = [])`: replaces `GET` wholesale and rewrites `QUERY_STRING` (via `http_build_query`) and the query part of `REQUEST_URI`. //extra-effort//
+      - [ ] Empty and missing parts: an empty array clears `QUERY_STRING` and the query of `REQUEST_URI`, and a state without `REQUEST_URI` is treated as an empty path. //extra-effort//
+    - [ ] `withPost(array $post = [])`: replaces `POST` and refreshes `REQUEST`. //extra-effort//
+    - [ ] `withCookies(array $cookie = [])`: replaces `COOKIE` and refreshes `REQUEST`. //extra-effort//
+    - [ ] `withFiles(array $files = [])`: replaces `FILES` wholesale. //extra-effort//
+    - [ ] `withSession(array $session = [])`: replaces the state's `SESSION` copy only, not `$_SESSION`. //extra-effort//
+    - [ ] `withBody(string $body)`: sets the raw body string. //extra-effort//
+    - [ ] `withMethod(string $method)`: sets `SERVER['REQUEST_METHOD']` verbatim without case normalisation. //extra-effort//
+    - [ ] `withReferer(string $referer)`: sets `SERVER['HTTP_REFERER']` verbatim. //extra-effort//
+    - [ ] `withPreviousAsReferer()`
+      - [ ] Behavior: builds `scheme://host/path` from the `previous` state's `REQUEST_SCHEME`, `HTTP_HOST` and `REQUEST_URI` as referer. //extra-effort//
+      - [ ] Failure: throws `LogicException` when there is no previous state or its `HTTP_HOST` or `REQUEST_SCHEME` is empty. //extra-effort//
+      - [ ] Referer shape: the referer keeps the previous query string because it uses `REQUEST_URI`, and a previous state without `REQUEST_URI` yields only `scheme://host`. //extra-effort//
+    - [ ] `withArgs(array $args)`: keeps `argv[0]` and `argv[1]` and replaces the remaining console arguments; `Router::reroute()` calls it with the new path parts. //extra-effort//
+    - [ ] Runtime use: only `fromOverwrite()`, `withPath()` and `withArgs()` are used by framework runtime code, the other withers are exercised only by e2e probes. //nice-to-have//
+  - [ ] `updateRequest()` [internal]: private, recomputes `REQUEST` as `array_merge(GET, POST, COOKIE)`, so cookies beat POST beats GET on key collisions and numeric keys are renumbered. //optional//
+## 7. Views, Layouts & Mail
+- [ ] View file format
+  - [ ] View file contract
+    - [x] Return value: a view `return`s an array with optional `head` and `body` closures that both receive `$opt`.
+    - [ ] `body` key: closure printing the page content, replaced by an empty closure when missing. [partial] //important//
+    - [ ] `head` key: closure printing extra `<head>` markup, replaced by an empty closure when missing. [partial] //important//
+    - [ ] Include timing: view and layout files are `include`d inside `render()`, so their top-level code runs before `generateResourceLink` and `echo` are added to `$opt`. //should-do//
+    - [ ] No auto-escaping: output is never escaped automatically, and the bundled views and mail templates echo `$opt` values raw. //urgent//
+  - [ ] Layout file contract
+    - [x] Return value: a layout `return`s `["layout" => function($opt, $body, $head)]` and decides where `$body($opt)` and `$head($opt)` are called.
+    - [ ] Dropped head: a layout that never calls `$head($opt)` drops the view's `head` output, as `layout/empty.php` and `layout/mail_layout.php` do. //should-do//
+    - [ ] Wrong file type: a file without a `layout` key used as layout (for example a view) fails with an undefined array key error. //should-do//
+  - [ ] Location: views live below the `z_views` directory (default `app/Views/`), sub-folders are allowed and a view is addressed relative to it. [partial] //important//
+- [ ] Rendering a view (`Response::render`)
+  - [ ] Signature `render($document, $opt = [], $options = [])`
+    - [x] Purpose: renders a view inside a layout and echoes the result; it is also reachable through the global `view()`.
+    - [ ] `$document`: view path relative to the views directory with `.php` optional. [partial] //important//
+    - [ ] `$opt`: associative array whose keys are available as `$opt[...]` in the view and layout closures. [partial] //important//
+    - [ ] `$options` as array: only the key `layout` is read and any other key is ignored. [partial] //important//
+    - [ ] `$options` as plain string [deprecated]: legacy shorthand for `["layout" => $string]` that bundled controllers still use. [partial] //nice-to-have//
+  - [x] Layout precedence: the `layout` option, then the instance default, then the global default, then `layout/default_layout.php`.
+  - [ ] Output handling: the layout output is buffered and echoed once at the end of the call, and `render()` returns nothing. //should-do//
+  - [ ] No status or exit: `render()` sets no HTTP status or header and does not exit, so the 500 fallback view is still sent with the current status. //should-do//
+  - [ ] Missing view: silently replaced by the bundled `500.php` view inside the chosen layout, and no exception is thrown. //important//
+  - [ ] Missing layout: resolves to `500.php`, which has no `layout` key, so the call fails instead of rendering. //should-do//
+  - [ ] Side effects: every render logs a `RENDER` entry on the `zubzet` logger (silently skipped if logging throws) and adds a template entry to the debug bar. [partial] //should-do//
+  - [ ] Values injected into `$opt` by `render()`
+    - [ ] `response` and `request`: the current `Response` and `Request` objects. [on develop] //should-do//
+    - [ ] `root`: the configured root folder (leading slash, derived from `rootDirectory`) used as URL prefix for links. [on develop] //important//
+    - [ ] `host`: the `host` setting value. //should-do//
+    - [ ] `absRoot`: `host` directly followed by the root folder. //should-do//
+    - [ ] `title`: set to the `pageName` setting when the caller passed no `title` (checked with `isset`). //should-do//
+    - [ ] `user`: the current request's `User` object, overwriting any caller-supplied `user` key. [partial] //should-do//
+    - [ ] `layout_essentials_head` and `layout_essentials_body`: closures that print the framework essentials inside a layout. [partial] //important//
+    - [ ] `generateResourceLink` and `echo`: helper closures added after the view and layout files are included. [partial] //should-do//
+    - [ ] Overwrite rule: injected keys overwrite caller values except `title`, so `user`, `request`, `response`, `root`, `host`, `absRoot` and `echo` cannot be passed in. //should-do//
+  - [ ] Helper closures in `$opt`
+    - [ ] `$opt["echo"]($val)`: prints `nl2br(htmlspecialchars($val))`, an escaping helper that also turns newlines into `<br />`. //important//
+    - [ ] `$opt["generateResourceLink"]($url, $root = true)`: echoes the root folder, `$url` and a `?v=` cache-busting query, and it prints instead of returning. [partial] //important//
+    - [ ] `$root = false`: omits the root folder prefix. //should-do//
+- [ ] View resolution
+  - [ ] `CanRenderView::resolvePath(string $document, bool $throwOnError = false)` [internal]
+    - [ ] Purpose: public static lookup returning the file path of a view or layout. //nice-to-have//
+    - [ ] Name handling: trailing whitespace is trimmed and `.php` is appended unless the name already ends with it. //nice-to-have//
+    - [ ] Lookup order: the user views directory (`z_views`, default `app/Views/`) first, then the framework's `IncludedComponents/views/`. [on develop] //important//
+    - [ ] User override: a file with the same relative path in the views directory replaces the bundled view or layout, such as `login.php` or `layout/default_layout.php`. [on develop] //important//
+    - [ ] Prefixed paths: paths that already start with the views directory or the framework views root are not prefixed again, so an absolute framework path bypasses a user override. //nice-to-have//
+    - [ ] Not found, non-throwing: returns the path of the bundled `500.php` when `$throwOnError` is false. //nice-to-have//
+    - [ ] Not found, throwing: throws `ViewNotFoundException` with message "View file for '<name>.php' not found. Is the path correct?" when `$throwOnError` is true. //nice-to-have//
+  - [ ] `ViewNotFoundException`: `\RuntimeException` subclass in `ZubZet\Framework\Rendering`, thrown only by throwing lookups such as the layout lookup of `sendEmail()`. //nice-to-have//
+- [ ] Default layout stacks (`HandlesDefaultLayout` trait used by `Response`)
+  - [x] Resolution order: when `render()` gets no layout it uses the top of the instance stack, then the top of the global stack, then `layout/default_layout.php`.
+  - [ ] Instance scope methods
+    - [ ] `setDefaultLayout(string $layout)`: clears the instance stack and installs `$layout` as its only entry. [partial] //important//
+    - [x] `pushDefaultLayout(string $layout)`: pushes a layout on top of the instance stack.
+    - [ ] `popDefaultLayout()`: removes and returns the top entry so the previous default applies again. [partial] //should-do//
+    - [ ] Scope lifetime: the stack belongs to the request's single `Response`, so it spans controller constructor, route middleware and actions. //should-do//
+  - [ ] Global scope methods (static, request-wide)
+    - [ ] `Response::setGlobalDefaultLayout(string $layout)`: clears the global stack and installs `$layout` as its only entry. [partial] //should-do//
+    - [ ] `Response::pushGlobalDefaultLayout(string $layout)`: pushes a layout on top of the global stack. [partial] //should-do//
+    - [ ] `Response::popGlobalDefaultLayout()`: removes and returns the top global entry. [partial] //should-do//
+  - [ ] Underflow: popping an empty stack throws `\UnderflowException` ("popDefaultLayout called on an empty stack - every push must be matched by a single pop.", same for `popGlobalDefaultLayout`). //should-do//
+  - [ ] LIFO nesting: push and pop nest in LIFO order and every push must be matched by exactly one pop. [partial] //should-do//
+  - [ ] `resolveDefaultLayout()`: protected method computing the effective default layout, instance stack first. [partial] //nice-to-have//
+  - [ ] Where to set a default: a controller `__construct(Request $req, Response $res)`, a route `middleware` callback or action code. [partial] //should-do//
+  - [ ] Bundled use: `ZController` installs `layout/z_admin_layout.php` with `setDefaultLayout()` in its constructor. //nice-to-have//
+  - [ ] Layout names: resolved like view paths, so `layout/new_layout` works without `.php`. //should-do//
+- [ ] Bundled layouts (`src/IncludedComponents/views/layout/`)
+  - [ ] `layout/default_layout.php`
+    - [ ] Role: full HTML5 page and the framework default layout. [partial] //should-do//
+    - [ ] Head content: favicon link `{root}assets/img/favicon.png`, charset, `<title>` from `$opt["title"]`, `x-ua-compatible` and viewport meta, essentials head, then `$head($opt)`. //nice-to-have//
+    - [ ] Body order: essentials body first, then `$body($opt)`. //nice-to-have//
+    - [ ] Fixed markup: `<html>` carries `class="no-js"` and a fixed `lang="en"`. //nice-to-have//
+    - [ ] Unescaped title: `$opt["title"]` is printed unescaped. //important//
+  - [ ] `layout/min_layout.php`
+    - [ ] Role: "A minimum layout" with the same head as the default, used by the login pages and the 403, 404 and 500 pages. //should-do//
+    - [ ] Body order: differs from the default, `$body($opt)` first and essentials body last. //nice-to-have//
+  - [ ] `layout/empty.php`: prints only `$body($opt)`, with no `<html>`, head or essentials, intended for AJAX partials and raw fragments. //should-do//
+  - [ ] `layout/mail_layout.php`: prints only `$body($opt)` with no HTML wrapper and is the default layout of `sendEmailToUser()`. //should-do//
+  - [ ] Overriding: a same-named file in `app/Views/layout/` replaces any bundled layout. [partial] //should-do//
+  - [ ] Favicon: `{root}assets/img/favicon.png` is a static file the app has to supply, because the asset proxy does not serve it. //should-do//
+- [ ] Layout essentials (`layout/layout_essentials.php`)
+  - [ ] Loading: included with `include_once` on every `render()`, and defines the global functions `essentialsHead()` and `essentialsBody()` [internal]. //optional//
+  - [ ] `$opt["layout_essentials_head"]($opt, $customBootstrap = false)`
+    - [ ] Output: prints the framework assets and client config for the `<head>`. //should-do//
+    - [ ] Scripts: jQuery, Popper, Bootstrap JS, `bs-custom-file-input` and `Z.js`, all through `generateResourceLink` on `_zubzet/asset-proxy/...` URLs. [partial] //should-do//
+    - [ ] Styles: `bootstrap.min.css` plus the Font Awesome files `all`, `brands`, `v4-shims` and `fontawesome` under `css/font-awesome/`. [partial] //should-do//
+    - [ ] Client config: an inline script sets `Z.Request.rootPath`, `Z.Request.rootHost` and `Z.Request.absRoot` from `root`, `getRoot()` and `absRoot`. //should-do//
+    - [ ] `$customBootstrap = true`: skips only the Bootstrap JS tag, and `bootstrap.min.css` is still printed. //should-do//
+    - [ ] Extra markup: it also prints its own `<meta charset>` and viewport meta, plus the debug bar head markup when the debug bar is enabled. //nice-to-have//
+    - [ ] Call order: bundled layouts call it before `$head($opt)` so view heads can rely on jQuery and `Z`. //should-do//
+  - [ ] `$opt["layout_essentials_body"]($opt)`
+    - [ ] Output: prints the login token watcher and the debug bar markup. [partial] //should-do//
+    - [ ] Token watcher: for logged-in users a script checks every 1000 ms for `z_login_token` in `document.cookie` and reloads the page when it is gone. //should-do//
+    - [ ] Cookie readability: the watcher relies on `z_login_token` being readable from JavaScript, so that cookie is set without `httponly`. //important//
+  - [ ] Omitting them: a custom layout that skips these two calls loses jQuery, Bootstrap, Font Awesome, `Z.js`, the token watcher and the debug bar. [partial] //should-do//
+- [ ] Bundled views
+  - [ ] Error pages `403.php`, `404.php`, `500.php`: self-styled views (head `<style>` plus body) with a link back to `$opt["root"]`, rendered by `ErrorController` in `layout/min_layout.php`. //should-do//
+  - [ ] `500.php` as fallback: it doubles as the view returned for unresolvable views and layouts, and being a view it has no `layout` key. //nice-to-have//
+  - [ ] `index.php`: placeholder page with the headline "Replace this title" and a notice to replace it by creating `z_views/index.php`. //nice-to-have//
+  - [ ] Template credit: the error views carry a comment crediting a Colorlib template. //optional//
+  - [ ] Other bundled views: `login*.php`, `administration/*.php` and `database/*.php` belong to the login flow and admin panel sections. //nice-to-have//
+- [ ] Bundled admin layout `layout/z_admin_layout.php`
+  - [ ] Activation: `ZController::__construct` calls `$res->setDefaultLayout("layout/z_admin_layout.php")`, so every panel render uses it unless a layout is passed. //nice-to-have//
+  - [ ] Layout file contract: returns `["layout" => function($opt, $body, $head)]` and calls `$opt["layout_essentials_head"]($opt)`, `$head($opt)`, `$body($opt)` and `$opt["layout_essentials_body"]($opt)`. //nice-to-have//
+  - [ ] `$opt` keys read: `root`, `title`, `user`, `wideContent`, `layout_essentials_head` and `layout_essentials_body`. //nice-to-have//
+  - [ ] Option `wideContent`: default false when unset; `true` swaps the content wrapper class `content` (max-width 1000px) for `content-fluid`, and only `database/rows.php` sets it. //nice-to-have//
+  - [ ] Fixed markup: the page language is hard-coded `en` and the favicon is `{root}assets/img/favicon.png`, which the app must provide in its web root. //nice-to-have//
+  - [ ] Frontend dependencies: relies on jQuery, Bootstrap 4 classes, Font Awesome icons and `Z.js`, delivered through `layout_essentials_head` and the asset proxy. //nice-to-have//
+  - [ ] Permission-gated sidebar: entries are shown according to `$opt["user"]->checkPermission(...)` and the sidebar ends with "Go back" and "Logout" links. //nice-to-have//
+  - [ ] Responsive sidebar: the `#navbar` list collapses at 992px using Bootstrap collapse and re-expands when the viewport grows. //optional//
+  - [ ] Logo easter egg: Ctrl+J toggles an animated logo and remembers the choice in `localStorage` key `z_admin_logo_visible`. //optional//
+  - [ ] Overriding: view resolution checks the app views directory first, so a same-named file such as `layout/z_admin_layout.php` or `administration/dashboard.php` replaces the bundled one. //should-do//
+- [ ] Mail
+  - [ ] `Response::sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email", array $attachments = [])`
+    - [ ] Purpose: renders a view into a mail layout and sends it as HTML mail over SMTP, returning true or false. [partial] //important//
+    - [x] `$to`: a single recipient address added with PHPMailer `addAddress()`.
+    - [ ] `$subject` as string: encoded as pre-encoded UTF-8 base64 word `=?utf-8?b?...?=`. [partial] //should-do//
+    - [ ] `$subject` as array: keyed by language with keys lowercased, the lowercased `$lang` entry is used with fallback to the `en` entry. [partial] //should-do//
+    - [ ] Missing `en` key: an array without a matching key and without `en` triggers an undefined-key warning, so an `en` entry is effectively required. //should-do//
+    - [ ] `$document`: mail template path resolved like any view with `.php` optional, rendered with `render()` which silently falls back to the framework `500.php` view when the file is missing. [partial] //should-do//
+    - [ ] `$lang`: language id such as `en`, `EN` or `DE_Formal`, lowercased (`DE_Formal` becomes `de_formal`), and `null` becomes `en`. [partial] //should-do//
+    - [ ] Language in the template: it is exposed as `$opt["overwrite_lang"]` (lowercased) so a template can pick translated text. //should-do//
+    - [ ] `$options`: array merged into the template's `$opt` together with all render-injected keys. [partial] //should-do//
+    - [ ] `application_root`: added by `sendEmail()` as the `host` setting plus root folder, for building absolute links. //should-do//
+    - [ ] User in mails: `$opt["user"]` inside a mail is the user of the current request, not the recipient. //should-do//
+    - [ ] `$attachments`: array of file contents (not paths), string keys become file names, added with `addStringAttachment()`. [partial] //should-do//
+    - [ ] Return value: `true` on success and `false` when PHPMailer throws. //important//
+    - [ ] Failure behaviour: prints "Message could not be sent. Mailer Error: <ErrorInfo>" into the response output, throws nothing and logs nothing. //important//
+    - [ ] Limits: one recipient string, no CC, BCC or reply-to, and sending is synchronous with no queue or retry. //should-do//
+    - [ ] Render side effects: mail templates render through `render()`, so they also produce the render log entry and a debug bar template entry. //optional//
+  - [ ] Mail layout selection (`$layout`, default `email`)
+    - [ ] Name normalisation: every `.php` and every `_layout` is removed and `_layout` appended, so `mail`, `mail_layout` and `layout/mail_layout.php` name the same layout. [partial] //should-do//
+    - [ ] Lookup: `{views}/{name}_layout.php` first, otherwise `layout/` is prepended unless the name starts with `layout/`, then regular user-then-framework resolution. //nice-to-have//
+    - [ ] Throwing lookup: it uses `resolvePath($layout, true)`, so a missing layout throws `ViewNotFoundException` instead of falling back to the 500 view. //should-do//
+    - [ ] Default layout trap: the default `email` needs an app-provided `layout/email_layout.php` (or `email_layout.php`) because the framework only ships `layout/mail_layout.php`. //important//
+    - [ ] Default-layout stack ignored: `setDefaultLayout()` never applies to mails because a layout is always passed. //should-do//
+    - [ ] Layout contract: mail layouts follow the page layout contract and print `$body($opt)` and optionally `$head($opt)`. [partial] //should-do//
+    - [ ] Bundled passthrough: `layout/mail_layout.php` is a bare body passthrough, so styling or an HTML skeleton must come from an app layout. //should-do//
+    - [ ] Overriding: an app `layout/mail_layout.php` or views-root `mail_layout.php` replaces the bundled layout for the framework's own mails. //nice-to-have//
+  - [ ] Sending details
+    - [ ] Sender: the address is `mail_from`, falling back to `mail_user`, with `pageName` as sender name. [partial] //should-do//
+    - [ ] Sender validation: it must pass `FILTER_VALIDATE_EMAIL`, otherwise `\Exception` "mail_user '<value>' is not a valid mail. Try using mail_from instead." is thrown before sending. //should-do//
+    - [ ] SMTP transport: always PHPMailer in exception mode with `isSMTP()`, `SMTPAuth = true` and `SMTPDebug = 0`, never `mail()` or sendmail. [partial] //should-do//
+    - [ ] Connection settings read: `mail_smtp`, `mail_user`, `mail_password`, `mail_port` and `mail_security` (default `tls`), described in Configuration. [partial] //should-do//
+    - [ ] Message format: HTML body (`isHTML(true)`) with charset `UTF-8`. //nice-to-have//
+    - [ ] `AltBody`: the plain-text part is the rendered HTML with literal `<br>` turned into a line break and tags stripped by `strip_tags()`. //nice-to-have//
+  - [ ] `Response::sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail")`
+    - [ ] Purpose: loads a stored user by id and calls `sendEmail()`, returning its result. [partial] //important//
+    - [ ] Address: the `email` column of the `z_user` row loaded with `model("z_user")->getUserById()`. [partial] //should-do//
+    - [ ] Language: the `value` of the `z_language` row for the user's `languageId`, else the `anonymous_language` setting, else `en`. [partial] //should-do//
+    - [ ] Default layout: `mail`, resolving to the bundled `layout/mail_layout.php` unless overridden. //should-do//
+    - [x] Missing parameters: it has no `$lang` and no `$attachments` parameter.
+    - [ ] No email: throws `\Exception` "User with ID <id> has no email address." when the user's `email` is null. //should-do//
+    - [ ] Unknown id: the "User with ID <id> not found." branch tests `is_null()` but `getUserById()` returns `false`, so an unknown id surfaces as the no-email exception after an array-offset warning. //nice-to-have//
+  - [ ] Bundled mail templates
+    - [ ] `email_verify.php`: heading "Thank you for signing up!" plus a verification link built from `$opt["url"]`, echoed unescaped. //should-do//
+    - [ ] `email_verify.php` caller: sent by the sign-up and resend-verification flow with subject `<pageName> - Sign Up` and `url` = `root` setting + `login/verify/<token>`. //nice-to-have//
+    - [ ] `email_too_many_logins.php`: security warning with `$opt["date"]` and `$opt["ip"]`, both echoed unescaped. //should-do//
+    - [ ] `email_too_many_logins.php` caller: sent with subject array `DE_Formal` "Sicherheitsmeldung" and `en` "Security alert", and the `user` option passed by the controller is overwritten by `render()`. //nice-to-have//
+    - [ ] `email_password_reset.php`: not shipped; the forgot-password flow renders it with the option `reset_link`, so the app must provide the file. //urgent//
+    - [ ] Missing reset template: without that file the 500 fallback view silently becomes the mail body because `render()` does not throw. //urgent//
+    - [ ] Overriding: both bundled templates can be overridden by a same-named file in `app/Views/`. //should-do//
+## 8. Helpers & Utilities
+- [ ] Global reference functions
+  - [x] Availability: declared when `Support/GlobalReferences.php` is first autoloaded by `new GlobalReferences` inside the `ZubZet` constructor, so they cannot be called earlier.
+  - [ ] `zubzet()`: returns `ZubZet::$instance`, or throws `NotInstantiatedException` (`ZubZet (The framework itself)`) before the framework exists. [partial] //important//
+  - [ ] `model($model, $dir = null)`: proxy to `zubzet()->getModel()` returning the cached model instance; resolution rules are in Controllers & Models. [partial] //important//
+  - [ ] `request()`: returns `zubzet()->req`, or throws `NotInstantiatedException` (`Request`) when it is not a `Request`. [partial] //important//
+  - [ ] `response()`: returns `zubzet()->res` without an instance check. [partial] //important//
+  - [ ] `config($key = null, $useDefault = true, $default = null)`
+    - [ ] Purpose: proxy to `zubzet()->getBooterSettings()` for reading settings, whose semantics are described in Configuration. [outdated] //important//
+    - [ ] No key: returns the array of all settings, including credentials. [partial] //nice-to-have//
+    - [ ] Missing key: returns `$default` (null unless given) when `$useDefault` is truthy, otherwise throws `InvalidArgumentException`. [outdated] //urgent//
+    - [ ] Named default: write `config('key', default: 5)`, since the second positional parameter is `$useDefault`. [partial] //urgent//
+    - [ ] Argument order trap: `config("loginTimeoutSeconds", TIMESPAN_DAY_7)` passes the fallback as `$useDefault`, so it does not supply a default. [outdated] //urgent//
+  - [ ] `user()`: returns `zubzet()->user`, the request-scoped `ZubZet\Framework\Authentication\User`; check `isLoggedIn` to detect anonymous visitors. [partial] //important//
+  - [ ] `db(string $connection = 'default', bool $allowUnsetConnection = false)`
+    - [x] Purpose: returns `zubzet()->z_db`, the database proxy.
+    - [ ] Only `default` supported: any other name throws `InvalidArgumentException` (`Only the default connection is supported so far.`). [partial] //should-do//
+    - [ ] `$allowUnsetConnection`: returns null instead of failing when `z_db` is not set yet, which the database logger uses during boot. //nice-to-have//
+    - [ ] Not a connection: throws `NotInstantiatedException` (`Connection (Database)`) when `z_db` is not a `Connection`. //nice-to-have//
+  - [ ] `view(string $document, array $opt = [], array|string $options = [])`: shortcut for `response()->render()` with the same arguments, returning its result. [partial] //important//
+  - [x] `logger(?string $name = null)`: returns the cached or newly created channel logger via `LoggerFactory::getOrCreateLogger`, defaulting to `Logger::APP` (`app`).
+  - [x] `isCli()`: true when `php_sapi_name()` is `cli`, also used by the maintenance gate and `Request::isCli()`.
+- [ ] Function name conflict guard
+  - [x] Guarded functions: `zubzet`, `model`, `request`, `response`, `config`, `user`, `db`, `view`, `logger` and `isCli` are declared only through `FunctionConflictResolution::requireAndThen()`.
+  - [ ] Conflict error: an already existing function throws `RuntimeException` (`The function '<name>' is already defined, but is required by ZubZet`) with hints to remove the conflicting package. [partial] //should-do//
+  - [ ] Unguarded helpers: functions in `Helpers.php` use plain declarations, so a clash ends in PHP's fatal `Cannot redeclare`. //should-do//
+  - [ ] `FunctionConflictResolution::requireAndThen(string $name, callable $declaration)` [internal]: runs the declaration closure only when `function_exists($name)` is false. [partial] //optional//
+  - [ ] `FunctionConflictResolution::resolve(string|array $message)` [internal]: throws `RuntimeException`, joining array messages with newlines. //optional//
+  - [ ] `NotInstantiatedException`: `LogicException` in `ErrorHandling\GenericException` with the message `The requested instance '<target>' has not yet been setup.` //should-do//
+- [ ] Pure helper functions (`Helpers.php`)
+  - [ ] Availability: declared by the autoload of `new Helpers` late in the `ZubZet` constructor. [partial] //nice-to-have//
+  - [ ] `e(?string $value)`
+    - [ ] Purpose: escapes a value for HTML output and returns null for null. [on develop] //important//
+    - [ ] Tags stripped first: text between `<` and `>` is removed, so `1<2 and 3>2` becomes `12`. //should-do//
+    - [ ] Escaping flags: uses `htmlspecialchars()` defaults, which escape single quotes only on PHP 8.1 and newer. //important//
+  - [ ] `uecho($value)`: echoes the value after `strip_tags()` and `htmlspecialchars()`, without null handling. //should-do//
+  - [ ] `makeSlug($str)`
+    - [ ] Purpose: builds a URL slug by lower-casing, removing characters outside `A-Za-z0-9-_` and space, turning `_` and spaces into `-`, collapsing `--` and trimming `-` and `_`. //should-do//
+    - [ ] No transliteration: umlauts and `ß` are dropped, so `Größe` becomes `gre`. //should-do//
+  - [ ] `var_swap(&$x, &$y)`: swaps two variables by reference. //nice-to-have//
+  - [ ] `shortenStr($str, $maxlength = 10, $cutDescriptor = '...')`
+    - [ ] Purpose: word-aware truncation where the descriptor counts toward `$maxlength`, using multibyte string functions. //should-do//
+    - [ ] Trailing space: a string that fits is returned with a trailing space (`shortenStr('hi', 10)` gives `hi `). //nice-to-have//
+    - [ ] Long first word: it is cut mid-word and followed by the descriptor. //nice-to-have//
+    - [ ] Empty input: returns a single space. //nice-to-have//
+  - [ ] `emptyToNull(&$value)`: sets the variable to null in place when `empty()` is true or the value is the string `null`, so `0`, `'0'`, `''`, `false` and `[]` also become null. //should-do//
+  - [ ] `de_strtolower($string)`: lower-cases, then maps `Ä Ö Ü ß` to `ä ö ü ss`, relying on `strtolower()` (ASCII-only since PHP 8.2). //should-do//
+  - [ ] `getCaller($depth = 1)`
+    - [ ] Purpose: returns the function name `$depth` frames above the function that called `getCaller()`. //nice-to-have//
+    - [ ] Depth limit: only `0` (the direct caller) and `1` work, since the backtrace is limited to 3 frames; larger values warn and return null. //nice-to-have//
+- [ ] Global constants (defined by `Core/Constants.php`)
+  - [ ] Loading: defined with `const` in the global namespace when the empty `Constants` class is autoloaded during boot. [partial] //optional//
+  - [ ] Upload result codes: `UPLOAD_SUCCESS` (0), `UPLOAD_ERROR_TOO_BIG` (1), `UPLOAD_ERROR_WRONG_TYPE` (2), `UPLOAD_ERROR_NOT_MOVED` (3) and `UPLOAD_ERROR_NO_FILE` (4). //should-do//
+  - [ ] Megabyte sizes in bytes: `FILE_SIZE_1MB`, `FILE_SIZE_2MB`, `FILE_SIZE_5MB`, `FILE_SIZE_10MB`, `FILE_SIZE_20MB`, `FILE_SIZE_50MB`, `FILE_SIZE_100MB`, `FILE_SIZE_200MB` and `FILE_SIZE_500MB`. [partial] //extra-effort//
+  - [ ] Gigabyte sizes in bytes: `FILE_SIZE_1GB`, `2GB`, `5GB`, `10GB`, `20GB`, `50GB` and `100GB` are n times 1000 MiB (e.g. `FILE_SIZE_1GB` is 1048576000), not 1024 MiB. //should-do//
+  - [ ] Upload defaults: `Upload::image()`, `video()` and `audio()` default to `FILE_SIZE_2MB`, `FILE_SIZE_100MB` and `FILE_SIZE_10MB`. //should-do//
+  - [ ] Timespans in seconds: `TIMESPAN_DAY_1`, `2`, `3`, `7`, `10`, `14`, `20`, `21`, `30`, `60`, `90`, `180`, `182` and `365`. //extra-effort//
+  - [ ] `TIMESPAN_DAY_7`: 604800 seconds, which `Session::expiresAt()` intended as the `loginTimeoutSeconds` fallback but cannot apply because of the `config()` argument order. [outdated] //important//
+- [ ] `Rest` class (alias `Rest`)
+  - [ ] Purpose: builds and sends a pretty-printed JSON payload, and `Response::generateRest()` and `generateRestError()` wrap it. [outdated] //important//
+  - [ ] Constructor `__construct($data, $urlParts)`
+    - [ ] Envelope: builds a `meta` block (`endpoint` = `REST API`, `request` = URL parts joined by `/`, `timestamp` = `time()`) and merges the payload keys beside it. [partial] //should-do//
+    - [ ] Key collision: a payload key named `meta` overwrites the generated block. //nice-to-have//
+  - [ ] `execute($die = true)`
+    - [ ] Behavior: echoes `json_encode($data, JSON_PRETTY_PRINT)` and calls `exit` unless `$die` is false. [partial] //should-do//
+    - [ ] No headers: sets neither a `Content-Type` header nor an HTTP status code, unlike `Response::json()`. [partial] //important//
+    - [ ] Encoding failure: a `json_encode()` failure (e.g. invalid UTF-8) prints an empty body without an exception. //nice-to-have//
+  - [ ] `ShowError($code, $message)`: replaces the payload with an `error` object holding `code` and `message` (meta is dropped), then executes and exits. [partial] //should-do//
+- [ ] `StaticCache` (final class in `Support`)
+  - [ ] Scope: in-memory static store of type, key and value that lives for one PHP process, with no eviction, TTL or delete method. //nice-to-have//
+  - [ ] `set(string $type, string $key, mixed $value)`: stores the value and returns it. //optional//
+  - [ ] `get(string $type, string $key, bool $allowNull = false)`
+    - [ ] Behavior: returns the value or throws `InvalidArgumentException` unless `$allowNull` is true. //optional//
+    - [ ] Missing type: `The type '<type>' does not exist in the cache.` //optional//
+    - [ ] Missing key: `The key '<key>' does not exist in the cache.` //optional//
+  - [ ] `getOrNull(string $type, string $key)`: shorthand for `get()` with `$allowNull` set. //optional//
+  - [ ] `has(string $type, string $key)`: true when the entry is set. //optional//
+  - [ ] Null values: lookups use `isset`, so a stored null counts as missing. //optional//
+  - [ ] Buckets used by the framework: `model`, `logger`, `handler` (key `whoops`) and `console_actions_by_controller`. //nice-to-have//
+- [ ] `HasDynamicAttributes` trait
+  - [ ] Purpose: gives a class a private key/value store reachable as properties; `ZubZet` uses it through `Configuration` to hold all settings. //nice-to-have//
+  - [ ] `__set($name, $value)`: stores any value without validation. //optional//
+  - [ ] `__get($name)`: returns the value or throws `InvalidArgumentException` (`The attribute '<name>' does not exist in the attribute store (yet).`). //should-do//
+  - [ ] `__isset($name)`: true when the key exists, even if its value is null. //optional//
+  - [ ] `getAllAttributes()`: returns the whole store. //optional//
+  - [ ] `setAttributes(array $attributes)`: replaces the whole store. //optional//
+  - [ ] `overwriteAttributes(array $attributes)`: merges with `array_merge`, so incoming values win. //optional//
+  - [ ] Reserved name `dynamicAttributesStore`: reading it or calling `isset()` on it throws `InvalidArgumentException` (`The attribute store cannot be accessed directly.`). //optional//
+  - [ ] Virtual property `settings`: `__get('settings')` returns the whole store. //nice-to-have//
+  - [ ] Declared properties bypass it: real properties such as `ZubZet::$z_db` skip the magic methods until they are `unset()`. //optional//
+- [ ] Checkpoint utilities (`Support\Checkpoint`)
+  - [ ] Purpose: snapshot selected public properties of an object and restore them later. //nice-to-have//
+  - [ ] `Checkpointable` interface: requires `checkpointCurrentState(?array $properties = null, ?string $attributeClass = null): Checkpoint`, normally satisfied by `use CanCheckpoint`. //nice-to-have//
+  - [ ] `CanCheckpoint::checkpointCurrentState(?array $properties = null, ?string $attributeClass = null)`
+    - [ ] Result: returns a `Checkpoint` handle for the given or discovered property names. //extra-effort//
+    - [ ] `$properties`: explicit property names; when null they are discovered by reflection. //extra-effort//
+    - [ ] `$attributeClass`: limits discovery to properties carrying that attribute, e.g. `IncludeInCheckpoint::class`. //extra-effort//
+    - [ ] Default gotcha: with both arguments null every non-static property is discovered, not only `IncludeInCheckpoint` ones, because the explicit null overrides the method default. //nice-to-have//
+    - [ ] Visibility limit: only public properties can be captured, and a private or protected one makes the snapshot fail with an `Error`. //nice-to-have//
+  - [ ] `checkpointablePropertyNames(?string $attributeClass)`: protected helper listing non-static reflected properties, filtered by attribute when given. //optional//
+  - [ ] `#[IncludeInCheckpoint]` attribute: property-only marker that selects a property for attribute-filtered snapshots; static properties are never snapshotted. //extra-effort//
+  - [ ] `Checkpoint::restore()`
+    - [ ] Behavior: writes captured values back and `unset()`s properties that were uninitialised at snapshot time. //extra-effort//
+    - [ ] Unknown properties: names that do not exist on the target are skipped silently at snapshot time. //nice-to-have//
+    - [ ] Shallow capture: values are copied as-is, so objects are restored by handle rather than deep-copied. //nice-to-have//
+  - [ ] Framework use: `Connection` implements `Checkpointable` and `Interaction::$result`, `$insertId` and `$callingModel` carry `#[IncludeInCheckpoint]`, so slow-query logging can restore them. //optional//
+## 9. CLI & Console Commands
+- [ ] Running commands
+  - [x] Invocation: run `php index.php <command> [arguments] [options]` from the project root, e.g. `php index.php info:startup --pwd "$(pwd)"` or `docker exec application php index.php db:migrate` in the e2e stack.
+  - [ ] Working directory: relative paths such as `./app/Database/...` resolve against the working directory, so run from the project root. [partial] //important//
+  - [ ] CLI detection: the console starts only when `php_sapi_name() === "cli"` (`isCli()`, `Request::isCli()`) and no FastRoute route matched first. [partial] //should-do//
+  - [ ] Route precedence gotcha: in CLI the dispatcher falls back to method `GET` and URI `/`, so an explicit route matching `GET /` would run instead of any command. //nice-to-have//
+  - [ ] Console application: a Symfony `Application` named `ZubZet CLI` with no version, built by `ZubZet\Framework\Console\Application::bootstrap()` from `$_SERVER['argv']` via `ArgvInput`. //should-do//
+  - [ ] Full boot first: the complete framework constructor (configuration, maintenance gate, logger, database object, debug bar, user) runs before any command executes. [on develop] //should-do//
+  - [ ] Symfony built-ins: `php index.php` and `list` print the commands, `help <command>` shows usage, and the global options `-h`, `-q`, `-v|-vv|-vvv`, `-V`, `--ansi`, `--no-ansi` and `-n` apply. [partial] //important//
+  - [ ] Exit status: the command return value becomes the process exit status, using `Command::SUCCESS` (0), `Command::FAILURE` (1) or literal `0` and `1`. //important//
+  - [ ] Uncaught exceptions: Symfony's default `catchExceptions` prints them and exits with the exception code or 1. //should-do//
+  - [ ] Output markup: commands print Symfony style tags `<info>`, `<comment>` and `<error>`, and timestamps use `date("Y-m-d H:i:s")`. //nice-to-have//
+  - [x] Maintenance gate: CLI passes through in every maintenance mode except `full`, where `Service Unavailable` goes to stderr and the process exits 1.
+  - [x] Repeatable options: array options (`-i`, `-e`) are `VALUE_REQUIRED | VALUE_IS_ARRAY` and can be given multiple times, e.g. `-i production -i staging`.
+- [ ] Registering commands
+  - [ ] Fixed command list: `Application::bootstrap` registers exactly `RunCommand`, `Migrate`, `Status`, `Sync`, `Seed`, `UnlockMigration`, `HashingAlgorithmMigration`, `Startup`, `CoverageStart` and `CoverageStop`. //important//
+  - [ ] No app command discovery: `$automaticallyLoadedCommands` is an empty placeholder array, so apps cannot add their own Symfony commands and use controller actions with `run` instead. [partial] //important//
+  - [ ] Final classes: every built-in command class is declared `final`, so none can be extended. //nice-to-have//
+  - [ ] Command names: `run`, `info:startup`, `db:migrate`, `db:status`, `db:sync`, `db:seed`, `db:unlock-migration`, `auth:migrate-hashing`, `testing:coverage:start` and `testing:coverage:stop`. [outdated] //urgent//
+- [ ] Shared database behaviour of commands
+  - [ ] Elevated credentials switch: commands using the `DatabaseConnection` trait call `db()->switchUser()` with `dbusername_elevated` and `dbpassword_elevated` only when both are non-empty. [partial] //important//
+  - [ ] Timing of the switch: it runs inside `configure()` and `Application::bootstrap` constructs every command, so it applies to each CLI invocation including `run`. //should-do//
+  - [ ] Eager connect: `switchUser()` reconnects immediately, so with elevated credentials every CLI run opens the database connection while commands are constructed. //nice-to-have//
+  - [ ] Commands using the trait: `db:migrate`, `db:status`, `db:sync`, `db:seed`, `db:unlock-migration` and `auth:migrate-hashing`. //should-do//
+  - [ ] DBAL credentials gap: `DbalConnection::createDbalConnection()` assigns `$username` and `$password` only when the elevated credentials are empty, so they stay undefined otherwise. //urgent//
+  - [ ] DBAL connection parameters: `dbname`, `dbhost` and `dbport` with driver `mysqli`, a registered custom `timestamp` type, and `enum` and `vector` column types mapped to string. //nice-to-have//
+  - [ ] Bookkeeping tables: `db:migrate`, `db:sync` and `db:unlock-migration` first create `z_migration_lock` and `z_version` when they are missing. [partial] //should-do//
+  - [ ] Directory side effect: listing migration or seed files creates `./app/Database/migrations` or `./app/Database/seed` with mode 0755 when absent. [partial] //should-do//
+  - [ ] Invalid file names: a migration file name not matching `YYYY-MM-DD[_<version>]_<Name>` raises `InvalidArgumentException` before the command's own error handling. [partial] //should-do//
+  - [ ] Pending detection: a file counts as executed when its `name` (file name without date and version prefix, including extension) exists in `z_version`, not the full file name. //should-do//
+  - [ ] Environment filter source: `.sql` migrations always have environment `default` and cannot be marked skip or manual. [partial] //should-do//
+- [ ] Command `run`
+  - [x] Purpose: executes a controller action from the console, described as `Execute a controller action from the console`.
+  - [ ] Arguments
+    - [ ] `controller`: required controller name without the `Controller` suffix, such as `dashboard`. [partial] //important//
+    - [ ] `action`: optional action name without `action_`, default `index`. [partial] //important//
+    - [ ] `parameters`: optional array taking every remaining token, passed on as additional URL parts. [partial] //important//
+  - [ ] Case handling: `controller` and `action` are lower-cased before lookup, so matching is case-insensitive. //should-do//
+  - [ ] Unknown controller: prints `Unknown Controller:` and `Known Controllers: <comma list>`, then exits 1. //should-do//
+  - [ ] Unknown action: prints `Unknown Action for <controller>:` and `Known Actions: <comma list>`, then exits 1. //should-do//
+  - [ ] Fallback actions: a controller declaring `action_fallback` accepts any action name because `fallback` in its action list makes the action valid. [partial] //should-do//
+  - [ ] Execution: it calls `zubzet()->executePath([controller, action, ...parameters])`, so normal controller loading, `action_` resolution and the `maxReroutes` limit apply. //important//
+  - [ ] Parameter access: the extra tokens are readable inside the action with `$req->getParameters()`, e.g. `run core command test und so` yields `["test","und","so"]`. //important//
+  - [ ] Exit status and output: it returns 0 after dispatch, ignores the action's return value, and whatever the action echoes goes to stdout. //should-do//
+  - [ ] Action exceptions: they are rethrown while `showErrors` is not 0, otherwise the router executes `error/500`. //should-do//
+  - [ ] Rerouting from CLI: actions that call `$res->reroute()` behave the same via `run` as over HTTP. //nice-to-have//
+  - [ ] Discovery source (`ActionDiscovery::find`)
+    - [ ] Scanned directory: only the top level of `zubzet()->z_controllers` (`app/Controllers/`) is scanned, never sub-folders and never the framework controllers. [on develop] //should-do//
+    - [ ] Include side effect: every `*.php` file there is loaded with `include_once` on each scan, so top-level code in those files executes. //should-do//
+    - [ ] Class detection: the first newly declared class of each file is taken, and files declaring no new class (already loaded) are skipped. //nice-to-have//
+    - [ ] Controller name: the lower-cased class name with its last 10 characters (`Controller`) removed. //nice-to-have//
+    - [ ] Action list: public methods whose name starts with `action_` and that are declared in the class itself, so inherited actions are not listed. //should-do//
+    - [ ] Action names: lower-cased method name without the `action_` prefix. //nice-to-have//
+    - [ ] Caching: results are kept per directory in `StaticCache` under key `console_actions_by_controller` for the life of the process. //optional//
+  - [ ] CLI-only controllers
+    - [ ] Permission `console`: `$req->checkPermission("console")` returns true in CLI, and over HTTP sends the 403 page and exits, or returns false when `boolResult` is true. //important//
+    - [ ] Constructor gate: calling it from a controller `__construct` makes every action of that controller CLI-only. //urgent//
+    - [ ] HTTP behaviour: a request to such a controller answers 403 before the action runs. //should-do//
+- [ ] Command `info:startup`
+  - [ ] Purpose: prints information for the startup process of the framework, shown after the dev environment starts. [partial] //important//
+  - [ ] Option `--pwd`
+    - [x] Definition: value-required host working directory of the caller, which the e2e `npm run info` fills with `$(pwd)`.
+    - [ ] Persistence: a string value is stored as `automated_host_working_directory` in `z_config/z_automated_setting.ini` through `AutomatedSettings::set()`. [partial] //important//
+    - [ ] File format: the whole file is rewritten with a generated header comment and one `key=value` line per setting. //nice-to-have//
+    - [x] Consumer: the stored value feeds the Whoops editor link together with the `development_editor` setting.
+  - [ ] Output content: a brand line with framework version and `pageName`, an `Open:` line with `host`, then rows `Environment` (`execution_type`), `PHP Runtime` (`v` plus `PHP_VERSION`) and `Assets` (`v` plus `assetVersion`). [partial] //should-do//
+  - [ ] Fallback texts: missing `pageName`, `execution_type` or `assetVersion` print `Unknown. Set <key> in settings!`, a missing `host` prints `Unknown / Check docker-compose-base.yml`, and an unknown version prints `unknown`. //should-do//
+  - [ ] Footer hint: always prints the hard-coded line `run 'npm run stop' to stop the server`. //optional//
+  - [ ] Styling: output is forced decorated with ANSI colours even when piped, using custom styles `brand`, `version`, `label`, `url`, `muted` and `bar`. //nice-to-have//
+  - [ ] Exit status: always `Command::SUCCESS` (0). //nice-to-have//
+- [ ] Command `db:migrate`
+  - [x] Purpose: executes all outstanding database migrations (app plus bundled framework migrations), described as `Execute all outstanding database migrations.`
+  - [ ] Option `--environments-included` (`-i`)
+    - [x] Definition: repeatable, value-required environment names to include additionally, so only migrations in `default` or a listed environment run.
+    - [ ] Output: skipped files print `Skipping migration (not in included environments): <file>`. //should-do//
+  - [ ] Option `--environments-excluded` (`-e`): repeatable, value-required environment names whose migrations are skipped with `Skipping migration (in excluded environments): <file>`. [partial] //important//
+  - [ ] Option `--dry` (`-d`)
+    - [ ] Definition: runs without executing SQL, locking or recording `z_version` rows. [partial] //important//
+    - [ ] Messages: it still prints `Importing migration: <file>` and the `Table was locked.` and `Table was unlocked.` lines. //nice-to-have//
+    - [ ] PHP migrations: their `execute()` still runs in dry mode because it is needed to generate the SQL. //should-do//
+  - [ ] Option `--force` (`-f`)
+    - [x] Definition: optional value defaulting to true, so enabled when omitted or given without a value.
+    - [x] Disabling: any value that `FILTER_VALIDATE_BOOLEAN` reads as false, such as `--force=false` or `-f false`, turns it off.
+    - [ ] Effect: when enabled, skipped migrations only produce a warning, and when disabled they abort the run with exit 1. [partial] //important//
+  - [x] Option `--exclude-external`: leaves out framework migrations from `src/IncludedComponents/database/Migration`.
+  - [ ] Option `--enforce-external-timeline`: applies the skipped-migration check to framework migrations too, which is normally exempt. [outdated] //urgent//
+  - [ ] Execution flow
+    - [ ] Start and end lines: prints `Migration started at: <timestamp>` and ends with `Migration finished at: <timestamp> (took <n>s)` with two decimals. //nice-to-have//
+    - [ ] Lock check: when `z_migration_lock` holds a locked row it prints `Migrations are currently locked. Aborting import.` plus a hint and exits 1. [partial] //important//
+    - [ ] File sources and order: files come from `./app/Database/migrations` (recursive, `.sql` and `.php`) plus framework migrations, sorted together by date, version, then name. [partial] //important//
+    - [ ] Skipped detection: files not in `z_version` whose date is not after the last executed migration are warned about as `Warning: The following migrations were skipped:` with `- <name>` lines. [partial] //important//
+    - [ ] Date-only comparison: a pending file dated the same day as the last executed migration is also reported as skipped. //should-do//
+    - [ ] Abort on skipped: with `--force` disabled it prints `Aborting import due to skipped migrations. Use --force to ignore.` and exits 1. [partial] //important//
+    - [ ] Nothing pending: prints `No pending migrations found.` and exits 0 without locking. //should-do//
+    - [ ] Locking: outside dry mode it inserts an `is_locked` row into `z_migration_lock` before executing. [partial] //should-do//
+    - [ ] Skip flag: a migration marked skip prints `Skipping migration (marked to skip): <file>` and is recorded as executed outside dry mode. [partial] //important//
+    - [ ] Manual flag: a migration marked manual prints `Migration requires manual execution: <file>` and returns 0 at once, leaving the lock engaged until `db:sync` or `db:unlock-migration`. [partial] //important//
+    - [ ] SQL execution: each SQL buffer is split on `;` and every part runs through `db()->exec()`, so semicolons inside string literals break a statement. //important//
+    - [ ] Bookkeeping: after success `z_version` gets a row with `migration_name` (basename), `migration_date`, `migration_version` and the sha1 `file_hash`. [partial] //should-do//
+    - [ ] SQL failure: prints `Error importing <file>: <message>` and exits 1 without releasing the lock, and earlier migrations stay applied. [partial] //urgent//
+    - [ ] Other exceptions: an exception from reading or generating a migration prints `Migration import failed: <message>`, then still unlocks and exits 0. //urgent//
+    - [ ] Unlock: on success it removes the lock row and prints `Table was unlocked.` //nice-to-have//
+  - [ ] Exit codes: 1 when locked, when skipped migrations abort (`--force=false`) or when SQL fails; 0 otherwise, including the manual-migration stop. //important//
+- [ ] Command `db:status`
+  - [ ] Purpose: shows the current migration status, described as `Show the current migration status`, and takes no arguments or options. [partial] //important//
+  - [ ] Output: one line `Migration Lock Status: LOCKED` or `Migration Lock Status: UNLOCKED`; it does not list pending or executed migrations. [outdated] //important//
+  - [ ] Exit status: inverted, 0 (`Command::SUCCESS`) when the table is locked and 1 (`Command::FAILURE`) when it is unlocked. [partial] //urgent//
+  - [ ] No table creation: when `z_migration_lock` does not exist it reports `UNLOCKED`. //should-do//
+- [ ] Command `db:sync`
+  - [x] Purpose: synchronises migration state without executing SQL (marks pending migrations as executed in `z_version`), described as `Synchronize migration state without execution.`
+  - [x] Option `--start`: value-required lower date bound in format `YYYY-MM-DD`, inclusive.
+  - [ ] Option `--startVersion`: value-required lower version bound, only compared for files dated exactly on the start date and requiring `--start`. [partial] //important//
+  - [x] Option `--end`: value-required upper date bound in format `YYYY-MM-DD`, inclusive.
+  - [ ] Option `--endVersion`: value-required upper version bound, only compared for files dated exactly on the end date and requiring `--end`; its help text wrongly says "from which". [partial] //important//
+  - [ ] Options `--environments-included` (`-i`) and `--environments-excluded` (`-e`): repeatable environment filters with the same semantics and messages as `db:migrate`. [partial] //important//
+  - [ ] Option `--dry` (`-d`): lists what would be synchronised without writing `z_version` rows or unlocking. [partial] //important//
+  - [x] Option `--include-external`: also synchronises the bundled framework migrations, which are excluded by default (the opposite default of `db:migrate`).
+  - [ ] Behaviour
+    - [ ] Marking: every pending file passing the filters is recorded in `z_version` as executed without running its SQL, printing `Synchronizing migration: <file>`. [partial] //important//
+    - [ ] Flags ignored: `skip` and `manual` markers are not evaluated, so such migrations are simply marked as executed. //important//
+    - [ ] No lock check: it neither checks nor takes the migration lock. //should-do//
+    - [ ] Unlock side effect: outside dry mode it always removes the lock row and prints `Table was unlocked.`, which is the way out after a manual migration. [partial] //important//
+    - [ ] Skip messages: `Skipping migration (before start date)`, `(before start version)`, `(after end date)` and `(after end version)` followed by the file. //should-do//
+    - [ ] Debug line: skipping before the start version also prints an extra line `<version> <name> <startVersion>`. //nice-to-have//
+    - [ ] Nothing pending: prints `No pending migrations to synchronized found.` and still continues to the unlock step with exit 0. //should-do//
+  - [ ] Validation errors (exit 1)
+    - [ ] Version without date: `Cannot use start version without specifying a start date.` and `Cannot use end version without specifying an end date.` [partial] //should-do//
+    - [ ] Bad date format: `Invalid start date format. Expected format: YYYY-MM-DD.` and the matching end message, with strict round-trip comparison so `2005-1-1` is rejected. [partial] //should-do//
+    - [ ] Runtime failure: an exception while synchronising prints `Synchronization failed: <message>` and exits 1. //should-do//
+- [ ] Command `db:seed`
+  - [x] Purpose: executes a database seeding task (by default drops and recreates the database, runs `db:migrate`, then seeds), described as `Execute a database seeding task.`
+  - [x] Option `--skip-migrations` (`-s`): runs the seeding without the reset and migration step first.
+  - [ ] Option `--environments-included` (`-i`): repeatable path selectors, relative to `./app/Database/seed`, that are added back after the excludes are applied. [partial] //important//
+  - [x] Option `--environments-excluded` (`-e`): repeatable path selectors, relative to `./app/Database/seed`, that remove seed files or folders from the run.
+  - [ ] Destructive reset
+    - [x] Effect: without `-s` it runs `DROP DATABASE IF EXISTS` and `CREATE DATABASE` for the configured `dbname`, then runs `db:migrate`, wiping all data.
+    - [ ] Privileges: the drop and create run on the connection after the elevated-credentials switch, and `CREATE DATABASE` uses the bare name without backticks. //important//
+    - [ ] Nested migrate: it runs `db:migrate` in-process with default options, shares the output, ignores its result, and prints `Running migrations before seeding...`. [partial] //should-do//
+    - [ ] Exit status effect: the nested run calls `setAutoExit(false)` on the application, so the process exit status no longer reflects this command's return value. //should-do//
+  - [ ] Selector semantics
+    - [ ] Starting set: all `.sql` and `.php` files below `./app/Database/seed` (recursive, sorted by path), with the original order preserved. [partial] //should-do//
+    - [x] Order of filtering: excludes are applied first, then includes add files back, so an include wins over an exclude.
+    - [ ] Selector match: a selector matches an exact file path or any file below that folder, and empty selectors are ignored. [partial] //should-do//
+    - [ ] Include without exclude: `-i` alone does not narrow the run because every file starts selected. [outdated] //important//
+  - [ ] Execution
+    - [ ] SQL seeds: `.sql` files are concatenated into one buffer with `-- SEED FILE: <path>` markers and run as one multi-query. //should-do//
+    - [ ] PHP seeds: `.php` files first flush the SQL buffer, then run immediately through `SeedPHP::loadPhpSeed()` (class named like the file, `run()` method) and `db()->execQuery()`. [partial] //should-do//
+    - [ ] Final flush: buffered SQL runs after the last file under `Executing buffered SQL statements...` and is not wrapped in the per-file error handling. //nice-to-have//
+    - [ ] Messages: `Successfully executed seed file: <path>` per file, even for SQL that is only buffered at that point. //nice-to-have//
+    - [ ] Failure: a thrown error prints `Error executing seed file <path>: <message>` and returns 1. //should-do//
+  - [ ] Exit codes: 1 when a seed file throws, 0 otherwise. //should-do//
+  - [ ] Usage in the repository: `npm run seed`, `cy.dbSeed()` and both CI workflows call `php index.php db:seed` to prepare the e2e database. [partial] //optional//
+- [ ] Command `db:unlock-migration`
+  - [ ] Purpose: unlocks the migration table if it is locked, described as `Unlock the migration table if it is locked.`, and takes no arguments or options. [partial] //important//
+  - [ ] Table creation: it first creates the missing bookkeeping tables. //nice-to-have//
+  - [ ] Output when locked: removes the lock row and prints `Migration table unlocked.` [partial] //should-do//
+  - [ ] Output when not locked: prints `Migration table is not locked.` //should-do//
+  - [ ] Exit status: always 0. //should-do//
+- [ ] Command `auth:migrate-hashing`
+  - [x] Purpose: wraps every stored `legacy` password hash in a fresh Argon2id hash ("onion") so dormant accounts are protected at rest without needing plaintext; it is idempotent.
+  - [ ] Option `--dry` (`-d`): prints `Found N legacy password(s)…` and exits without writing anything (count only, no row list). //important//
+  - [ ] Selection: only `z_user` rows with `password_scheme = 'legacy'` and a non-empty `password` are processed, so passwordless (SSO or invite) rows are excluded. [partial] //should-do//
+  - [x] Effect per row: `onionWrapPassword()` replaces `password` with an Argon2id wrap of the legacy hash, sets `password_scheme` to `onion` and leaves `salt` untouched.
+  - [x] Idempotent: rows already `onion` or `native` are skipped, so re-running or running after some users logged in is safe.
+  - [ ] Output: `No legacy passwords to wrap. Nothing to do.`, a progress line `<done> of <total>` every 100 rows and at the end, then `Done: N row(s) wrapped.` //should-do//
+  - [ ] Exit status: always `Command::SUCCESS` (0), with no failure handling or transaction around the loop. //should-do//
+  - [ ] Prerequisite: needs the `2026-05-30_password_scheme.sql` migration (column `password_scheme`) to have run, which `db:migrate` does automatically. [partial] //should-do//
+  - [ ] Elevated credentials: uses them when `dbusername_elevated` and `dbpassword_elevated` are both set. //should-do//
+  - [ ] Concurrent change risk: the UPDATE matches by `id` only and does not re-check `password_scheme`, so a user changing or upgrading their password mid-run can be overwritten. //should-do//
+  - [x] Optional step: dormant legacy rows also upgrade themselves on the next successful login, so the command only protects accounts that never log in.
+- [ ] Command `testing:coverage:start`
+  - [x] Purpose: starts a session to collect coverage data, described as `Start a session to collect coverage data`.
+  - [ ] Mechanism: it writes a new `uniqid()` session id into the file `.coverage.session` in the working directory. //should-do//
+  - [ ] Success output: `Coverage collection successfully started as session '<id>'` with exit 0. //should-do//
+  - [ ] Already active: prints `Coverage collection is already active.` plus a hint to run `testing:coverage:stop` and exits 1. //should-do//
+  - [ ] Effect on requests: while the session file exists every web request and CLI call boots a coverage collector. [partial] //should-do//
+- [ ] Command `testing:coverage:stop`
+  - [x] Purpose: stops the coverage session and generates a report, described as `Stop the coverage collection session and generate a report`.
+  - [ ] Option `--cli` (`-c`): prints a coloured text report to stdout instead of an HTML report. [partial] //important//
+  - [ ] Default report: an HTML report written to `.coverage/report/`, announced as `Report generated at <dir>`. [partial] //should-do//
+  - [ ] No session: prints `No active coverage collection session.` plus a hint and exits 1. //should-do//
+  - [ ] No data: prints `No coverage data collected.`, cleans up the session and exits 0. //should-do//
+  - [ ] Report failure: prints `Failed to generate coverage report: <message>` and exits 1 without cleaning up the session. //should-do//
+  - [ ] Success: prints `Generating coverage report...` and `Coverage collection successfully ended.`, then removes the session file and data at shutdown. //should-do//
+  - [ ] Memory: merging many `.cov` files is heavy, and CI runs it as `php -d memory_limit=4G index.php testing:coverage:stop`. //nice-to-have//
+## 10. Database & Query Builder
+- [ ] Connection class (`ZubZet\Framework\Database\Connection`, alias `z_db`)
+  - [ ] Obtaining the connection
+    - [ ] Access points: `db()`, public `zubzet()->z_db` and protected `$this->z_db` inside models all return the one shared `Connection`. [partial] //important//
+    - [ ] Single logical connection: `db("other")` throws `InvalidArgumentException` "Only the default connection is supported so far."; no named or multi-connection registry exists. [partial] //should-do//
+    - [ ] Unset connection: `db(allowUnsetConnection: true)` returns `null` before the connection exists, otherwise `NotInstantiatedException` "Connection (Database)" is thrown. //nice-to-have//
+    - [ ] Creation time: `ZubZet::__construct` builds `new Connection` after configuration, maintenance gate and request/response setup, but before the debug bar and `User` identification. [partial] //nice-to-have//
+    - [ ] Extra instances: Additional `new Connection()` objects are independent, read config at construction, open their own `mysqli` link and are not registered with `db()`. //nice-to-have//
+    - [ ] Booted framework required: The constructor stores `zubzet()` in public `$booter`, so constructing a `Connection` before the framework exists throws `NotInstantiatedException`. //nice-to-have//
+  - [ ] Public state
+    - [ ] `$queryBuilderConnection`: `Cake\Database\Connection` created with only `driver => Mysql::class`, used purely to build and compile queries and never connected. [partial] //nice-to-have//
+    - [ ] `$lastConnect`, `$lastHeartbeat`, `$connectTimeout`: Typed `int` properties; the first two stay uninitialized until a connect or a successful query. //optional//
+    - [ ] Checkpoint support [internal]: `Connection` implements `Checkpointable`; `checkpointCurrentState()` snapshots `result`, `insertId` and `callingModel` (marked `#[IncludeInCheckpoint]`) and `restore()` resets them. //optional//
+  - [ ] Lazy connecting and configuration errors
+    - [ ] Lazy socket: The constructor reads config but opens no socket; `assertConnection()` connects on first `exec()`, `executeMultiQuery()` or `getDatabaseConnection()`. //should-do//
+    - [ ] Required config keys: `dbhost`, `dbusername`, `dbpassword` and `dbname` must be set, otherwise `RuntimeException` "Database connection requires valid configuration. Missing or empty config key(s): ..." names them. //urgent//
+    - [ ] Emptiness test: Presence uses `empty()`, so empty strings and `"0"` count as missing. //should-do//
+    - [ ] Timeout validation: A non-numeric `db_connection_timeout` throws `InvalidArgumentException` when the `Connection` is constructed (framework boot); the default is 900 seconds. //should-do//
+    - [ ] mysqli arguments: Only host, user, password and database are passed to `new \mysqli()`; port, socket and TLS options are not configurable. //important//
+    - [ ] Charset: `set_charset("utf8mb4")` runs after every connect and reconnect. //should-do//
+    - [ ] Connect failures: They are not wrapped, so a raw `mysqli_sql_exception` surfaces on PHP 8.1+. //should-do//
+  - [ ] Self-healing check `assertConnection()`
+    - [ ] Call sites: Public method run before every `exec()`, `executeMultiQuery()` and `getDatabaseConnection()`. //nice-to-have//
+    - [ ] Connect conditions: It connects when no handle exists or `connect_errno` is set. //nice-to-have//
+    - [ ] Skip window: It returns without pinging while less than `db_connection_timeout` seconds passed since `$lastConnect` or since `$lastHeartbeat`. //nice-to-have//
+    - [ ] Stale check: Otherwise it sets `$lastHeartbeat`, pings with `SELECT 1` and reconnects silently (nothing is logged) if the ping fails. //should-do//
+    - [ ] Not a maximum age: The timeout is an idle-ping threshold, so a healthy old connection is never replaced. [on develop] //should-do//
+    - [ ] Reconnect side effects: Session state such as temporary tables or variables is lost on reconnect, while credentials from `switchUser()` are kept. //should-do//
+    - [ ] Heartbeat refresh: Every successful `exec()` and `executeMultiQuery()` updates `$lastHeartbeat`. //optional//
+    - [ ] Ping implementation [internal]: Private `pingConnection()` uses `SELECT 1` instead of the deprecated `mysqli::ping()` and maps a dead link to `false`. //optional//
+  - [ ] Switching the database user
+    - [ ] `switchUser(string $user, string $password): void`: Stores the credentials and reconnects immediately; later automatic reconnects keep using them. //should-do//
+    - [ ] No restore function: Switch back by calling `switchUser()` again with the original credentials (the e2e probe does this). //should-do//
+    - [ ] Elevated credentials: Trait `DatabaseConnection::setDatabaseConnection()` calls `switchUser()` only when both `dbusername_elevated` and `dbpassword_elevated` are non-empty. [partial] //important//
+    - [ ] Commands using it: `db:migrate`, `db:status`, `db:sync`, `db:seed`, `db:unlock-migration` and `auth:migrate-hashing` call it from `configure()`. [partial] //should-do//
+    - [ ] Eager switch: All commands are constructed at CLI bootstrap, so the switch happens once per command for every CLI run, including unrelated commands. //should-do//
+    - [ ] Persistence: The elevated user stays active for the whole CLI process, so later `db()` queries and models use it too. //should-do//
+  - [ ] Second connection layer for schema tooling
+    - [ ] `createDbalConnection()`: Builds an independent Doctrine DBAL `mysqli` connection from `dbname`, `dbhost`, `dbport` and credentials, unrelated to `Connection`; the only place `dbport` is read. //nice-to-have//
+    - [ ] Connection lifetime: A new DBAL connection is created on every call, e.g. by `isLocked()`, `ensureMigrationTablesExist()` and each PHP migration parse. //optional//
+    - [ ] Elevated credential gotcha: `$username` and `$password` are only assigned when the elevated credentials are missing, so with both set they are undefined variables and DBAL gets `null`. //urgent//
+    - [ ] Type registration: Registers the custom `timestamp` type once per process (`Type::hasType` guard) and maps `enum` and `vector` column types to `string` when unmapped. //optional//
+    - [ ] Platform guard: Type mappings are applied only when `getDatabasePlatform()` exists (DBAL 4.x), checked with `method_exists`. //optional//
+  - [ ] Raw access and lifecycle
+    - [ ] `getDatabaseConnection(): \mysqli`: Returns the raw handle after `assertConnection()`, for features the wrapper lacks such as `select_db()`, `affected_rows` or `begin_transaction()`. //should-do//
+    - [ ] `disconnect()`: Closes the handle if one exists; it also runs from `__destruct()` and at the start of every `connect()`, and the closed handle is not unset. //should-do//
+    - [ ] `heartbeat($waitForTimeout = true, $timeoutBuffer = 30): bool` [deprecated]
+      - [ ] Purpose: Manual keep-alive since 1.2.0 superseded by self-healing connections; kept for existing worker loops. //nice-to-have//
+      - [ ] Throttle: Returns `true` without pinging when `$waitForTimeout` is true and the last heartbeat is younger than `max(1, timeout - timeoutBuffer)` seconds. //nice-to-have//
+      - [ ] No connection yet: Returns `false` instead of throwing when no handle was opened yet (lazy loading). //nice-to-have//
+      - [ ] Ping: Otherwise updates `$lastHeartbeat` and returns whether `SELECT 1` succeeded. //nice-to-have//
+- [ ] Executing SQL
+  - [ ] `exec()` prepared statements
+    - [x] Signature: Takes `($query, string $types = "", ...$values)` through `func_get_args()`, runs one prepared statement and returns the `Connection` for chaining.
+    - [x] Placeholders: Positional `?` only; `$types` uses `mysqli` `bind_param` letters (`i`, `d`, `s`, `b`) in value order.
+    - [ ] No arguments: A call with only a query binds nothing. //should-do//
+    - [ ] Binding mismatch: A wrong type string or value count throws a PHP 8 `ArgumentCountError` or `ValueError` from `bind_param()`, not a framework exception. //should-do//
+    - [ ] Prepare failure: Throws `\Exception` "SQL Error: <message>\nQuery: <sql>" with the `mysqli_sql_exception` chained as previous. //should-do//
+    - [ ] Execute failure: Throws `\Exception` "SQL Execution Error: <message>\nQuery: <sql>", for example for NULL into a NOT NULL column. //should-do//
+    - [ ] Success side effects: Sets `$insertId` and `$result` (`get_result()`), closes the statement, refreshes `$lastHeartbeat`, feeds the debug bar and may log `SLOW_QUERY`. [partial] //should-do//
+    - [ ] Result type: `$result` is a `mysqli_result` for SELECT but `false` for INSERT/UPDATE/DELETE, so result helpers must not be used after those. //should-do//
+    - [ ] Affected rows: There is no accessor; only the debug bar receives them, otherwise read `getDatabaseConnection()->affected_rows`. [partial] //should-do//
+    - [ ] Escaping: None beyond parameter binding, the query text is used exactly as written. [partial] //important//
+  - [ ] `execQuery(Cake\Database\Query $query)`
+    - [ ] Purpose: Compiles a query-builder object with `ZubZetValueBinder` and runs it through `exec()`, returning the `Connection`. [partial] //should-do//
+    - [ ] No bindings: Queries without bindings run via `exec($sql)` with no type string. //nice-to-have//
+    - [ ] Type mapping: Cake types `integer`, `biginteger`, `smallinteger` bind as `i`; `float`, `decimal` as `d`; `string`, `text`, `null` and everything else as `s`. //nice-to-have//
+    - [ ] Model tagging: It does not set `$callingModel`; only `Model::exec()` does, so direct calls reuse the previous tag. //optional//
+    - [ ] Seed use: PHP seed queues run through `db()->execQuery()` in `db:seed`. //nice-to-have//
+  - [ ] `executeMultiQuery(string $query, bool $throwOnFailure = true): bool`
+    - [ ] Purpose: Runs several raw SQL statements in one `multi_query` call without parameter binding. //should-do//
+    - [ ] Success: Drains and frees every result set, returns `true` and refreshes `$lastHeartbeat`. //nice-to-have//
+    - [ ] Failure: Throws `\Exception` "SQL Multi-Query Error: <message>\nQuery: <sql>" when `$throwOnFailure` is true, otherwise drains remaining results and returns `false`. //should-do//
+    - [ ] Bypasses `exec()`: It does not update `$result` or `$insertId` and is not shown in the debug bar or slow-query log. //should-do//
+    - [ ] Seed use: `db:seed` uses it to batch `.sql` seed files and to drop and recreate the database for the reset. //nice-to-have//
+- [ ] Result handling (trait `ZubZet\Framework\Database\Interaction`, used by `Connection`)
+  - [ ] Public state
+    - [ ] `$result`: `null|bool|\mysqli_result` of the last `exec()`, marked `#[IncludeInCheckpoint]`. //should-do//
+    - [ ] `$insertId`: Insert id read from the connection after the last `exec()`, marked `#[IncludeInCheckpoint]`. //should-do//
+    - [ ] `$callingModel`: Nullable `Model` that issued the query, used for debug bar tagging, marked `#[IncludeInCheckpoint]`. [partial] //optional//
+  - [ ] Result shapes and readers
+    - [ ] `getInsertId()`: Returns `$insertId`, which every `exec()` overwrites, SELECTs included. [partial] //important//
+    - [ ] `resultToArray($out = []): array`: Reads all remaining rows with `fetch_assoc()` and appends them to `$out`; the cursor is consumed. [partial] //important//
+    - [ ] Row shape: Rows are associative arrays keyed by column name and numeric columns arrive as native PHP numbers (e2e expects `val` as `30`). [partial] //should-do//
+    - [ ] `resultToLine(): ?array`: Returns the next row via `fetch_assoc()` or `null` when none is left, so it can drive a loop. [partial] //important//
+    - [ ] `mergeAsGroup($groupBy, $subElement = null)`: Groups all remaining rows into an array keyed by the `$groupBy` column value. //should-do//
+    - [ ] Group content: Each group holds full row arrays, or only the `$subElement` column values when that argument is set. //should-do//
+    - [ ] Group edge cases: An empty result returns an empty array and numeric-string group keys become integers. //should-do//
+    - [ ] `countResults()`: Returns `num_rows` of the last result and is only valid after a SELECT. [partial] //should-do//
+  - [ ] Table shortcut helpers
+    - [ ] `getFullTable($table, $fields = "*")`: Runs `SELECT $fields FROM $table` and returns all rows; table and fields are interpolated unescaped. //important//
+    - [ ] `getTableWhere($table, $fields = "*", $where = "", $types = "", $values = [])`: Runs `SELECT $fields FROM $table WHERE $where` and returns all rows. //important//
+    - [ ] `getTableWhere` binding: `$table`, `$fields` and `$where` are raw SQL; only `$values` are bound with `$types`. //should-do//
+    - [ ] `getTableWhere` default: The empty default `$where` yields `WHERE ` with nothing after it, which is a SQL syntax error. //should-do//
+    - [ ] `countTableEntries($table)`: Returns `COUNT(*)` of the table via `getFullTable()`, `0` for an empty table. //should-do//
+    - [ ] `checkIfUnique($table, $field, $value, $ignoreField = null, $ignoreValue = null): bool`: True when no row has `$field = $value`; table and field names are backtick-wrapped but not escaped. //should-do//
+    - [ ] `checkIfUnique` ignore pair: Adds `AND <ignoreField> <> ?` so the edited row is excluded, and both values are bound as string `s`. //nice-to-have//
+    - [ ] `checkIfUnique` null quirk: `$ignoreField` is tested with loose `== null`, and a `null` `$ignoreValue` makes the `<>` comparison match nothing, so the result is `true`. //nice-to-have//
+    - [ ] `checkIfExists($table, $field, $value): bool`: True when at least one row has `$field = $value`; names are unescaped and the value is bound as `s`. //should-do//
+    - [ ] Validation use: The form rules `unique` and `exist` call `checkIfUnique` and `checkIfExists`. //nice-to-have//
+- [ ] Model-level database API (`z_model`, base class `ZubZet\Framework\Core\Model`)
+  - [ ] `exec(string|Query $query, $types = "", $params = null): Connection`
+    - [ ] Tagging: Sets `callingModel` to the model, then forwards to `Connection::exec()` or `execQuery()`. [partial] //optional//
+    - [ ] Query objects: When `$query` is a `Cake\Database\Query`, `$types` and `$params` are ignored. [partial] //should-do//
+    - [ ] Chaining: It returns the `Connection`, so `resultToArray()`, `resultToLine()`, `mergeAsGroup()` or `getInsertId()` can follow directly. [partial] //important//
+  - [ ] Forwarding wrappers
+    - [ ] Wrapped methods: `getInsertId()`, `resultToArray()` (passes `$out`), `resultToLine()`, `getFullTable()`, `getTableWhere()`, `countTableEntries()`, `countResults()` and `getResult()`. [partial] //should-do//
+    - [ ] `getTableWhere()` arguments: It declares three parameters but forwards all arguments, so `$types` and `$values` work (used by `ZController`). //nice-to-have//
+    - [ ] `getResult()`: Returns the raw `$result` of the shared connection. //should-do//
+    - [ ] Not wrapped: `mergeAsGroup()`, `checkIfUnique()`, `checkIfExists()`, `executeMultiQuery()`, `execQuery()` and `switchUser()` must be called on `db()`, `$this->z_db` or the object returned by `exec()`. //should-do//
+  - [ ] `heartbeat($waitForTimeout = true)` [deprecated]: Forwards to `Connection::heartbeat()`. //nice-to-have//
+  - [ ] Shared result state: `result` and `insertId` are global per request, so a query from any model replaces the previous result. //important//
+  - [ ] `$lastInsertId` [internal]: Protected property declared on `Model` but never assigned by the framework. //optional//
+- [ ] Internal-model query tagging
+  - [x] Trait `ZubZet\Framework\Database\IsInternalModel`: Adds `public bool $isInternalModel = true;` to a model class.
+  - [ ] Bundled users of the trait: `z_fileModel`, `z_adminDashboardModel`, `z_userModel`, `z_permissionModel`, `z_loggerModel`, `z_loginModel`, `z_generalModel` and `z_migrationModel`; `z_organizationModel` does not use it. [partial] //optional//
+  - [x] Application models: They may `use IsInternalModel` to hide their queries; models without the property count as non-internal.
+  - [ ] Tag source: `Connection::$callingModel` is set only by `Model::exec()` and handed to `DebugBarBridge::collectQuery()` with every `exec()`. [outdated] //important//
+  - [ ] Stale tag: `callingModel` is never reset, so a later `db()->exec()`, `execQuery()` or the `Model::getFullTable()`, `getTableWhere()` and `countTableEntries()` wrappers reuse the previous tag (`null` at request start). [outdated] //important//
+  - [ ] Logger writes: `DatabaseLogger` inserts through `z_loggerModel::exec()`, so a log write outside the slow-query path leaves `z_logger` (internal) as the stale tag. //optional//
+  - [x] Effect: Tagging only matters for the debug bar, where internal queries are hidden unless `debugbar_hide_internal_queries` is turned off.
+- [ ] Query builder (CakePHP `cakephp/database` `^4.5`)
+  - [ ] Trait `ZubZet\Framework\QueryBuilder\CanBuildQuery`
+    - [ ] Availability: Provides `dbSelect()`, `dbInsert()`, `dbUpdate()`, `dbDelete()` and `getQueryBuilder()` to `z_model` subclasses and PHP seed classes; the base `Controller` does not use it. [partial] //important//
+    - [ ] `dbSelect($fields = [], $table = [], array $types = [])`: Returns a `Cake\Database\Query\SelectQuery`. [partial] //important//
+    - [ ] `dbSelect` table argument: `$table` may be a string, a string with alias (`"z_user u"`) or an array (`["u" => "z_user"]`). [partial] //should-do//
+    - [ ] `dbInsert(?string $table = null, array $values = [], array $types = [])`: Returns an `InsertQuery`; chain `->values([...])` for more rows. [partial] //important//
+    - [ ] `dbUpdate($table = null, array $values = [], array $conditions = [], array $types = [])`: Returns an `UpdateQuery`; add `->where([...])`. [partial] //important//
+    - [ ] `dbDelete(?string $table = null, array $conditions = [], array $types = [])`: Returns a `DeleteQuery`; add `->where([...])`. [partial] //important//
+    - [ ] `getQueryBuilder()`: Returns `db()->queryBuilderConnection` (the `Cake\Database\Connection`), shared by all models. [outdated] //important//
+  - [ ] Running a built query
+    - [ ] Execution path: Pass it to `$this->exec($query)` or `db()->execQuery($query)` and then use the result helpers. [partial] //important//
+    - [x] Cake `execute()` unusable: The builder connection is never connected, so Cake's own `execute()` is not wired to the configured database.
+    - [ ] Manual query objects: Multi-row inserts can use `new InsertQuery($this->getQueryBuilder())` with `into()`, `insert()` and repeated `values()`. //nice-to-have//
+  - [ ] Builder features exercised by the framework tests
+    - [ ] Conditions: `where()` with array conditions, operator suffixes in keys (`"u.email LIKE"`, `"u.id <"`, `"u.id IN"`) and nested `"OR"`/`"AND"` groups. [partial] //should-do//
+    - [ ] Joins: `join()` and `leftJoin()` with an alias to `table`, `conditions` and `type` (`LEFT`) arrays. [partial] //should-do//
+    - [ ] Paging and ordering: `limit()`, `offset()`, `page()`, `orderAsc()` and `orderDesc()`. [partial] //should-do//
+    - [x] List and group helpers: `whereInList()`, `group()` and `distinct()` are used by the bundled permission model.
+    - [ ] Pinned bind types: `where(function($exp) { $exp->eq($field, $value, "integer"|"float"|"string") })` pins the bind type. //nice-to-have//
+  - [ ] `ZubZetValueBinder` (extends `Cake\Database\ValueBinder`)
+    - [ ] Purpose: Makes Cake emit positional `?` placeholders so queries run as `mysqli` prepared statements. //nice-to-have//
+    - [ ] `placeholder(string $token): string`: Always returns `?`. //optional//
+    - [ ] `bind($param, $value, $type = null): void`: Appends `value`, `type` and `placeholder` entries in order and ignores the name. //optional//
+    - [ ] `generateManyNamed(iterable $values, $type = null): array`: Registers each value (used for `IN` lists) and returns `?` keyed like the input. //optional//
+    - [ ] Injection safeguard: Values containing `:word` text cannot shift bindings, covered by the `injectionTest` regression. //nice-to-have//
+    - [ ] Cake coupling [internal]: Depends on Cake internals (`_bindings`, `bindings()`, method signatures); an e2e compatibility probe guards upgrades. //optional//
+  - [ ] Identifier handling
+    - [ ] No auto-quoting: `quoteIdentifiers` is not set on the builder connection, so reserved words need manual backticks. //should-do//
+    - [ ] Untrusted identifiers: Values are bound, but table and column names are inserted as written and must never come from user input. //urgent//
+- [ ] Bundled `z_*` table reference (created by the bundled migrations)
+  - [ ] Conventions
+    - [ ] Primary keys: Every bundled table has `id` as `INT AUTO_INCREMENT PRIMARY KEY NOT NULL`. //extra-effort//
+    - [ ] Soft delete: Most tables carry `active` (`TINYINT(1) NOT NULL DEFAULT 1`, `INT` in `z_email_verify`) and are deactivated instead of deleted. [partial] //should-do//
+    - [ ] No relations declared: The migrations create no foreign keys and no unique key on `z_user_role`, `z_role_permission` or `z_user_permission`, so duplicate assignments are possible. //should-do//
+    - [ ] Link columns: `z_user.organizationId`, `z_organization.groupId`, `z_user_role.role`/`user` and similar columns are plain integers that reference rows only by convention. //nice-to-have//
+    - [ ] Idempotency: The base migration uses `CREATE TABLE IF NOT EXISTS` and `INSERT IGNORE`, so it can be re-run safely. [partial] //nice-to-have//
+  - [ ] `z_user` (user accounts)
+    - [ ] `organizationId`: `INT NULL DEFAULT NULL` placed after `id` with an index of the same name (since 2026-04-27); it points at `z_organization.id`. [partial] //extra-effort//
+    - [ ] `email`: `VARCHAR(255)`, NOT NULL at creation, nullable since 2025-11-06 with unique key `uq_user_email`; deactivated users keep their email, so it cannot be reused. //should-do//
+    - [ ] `password`: `VARCHAR(255) DEFAULT NULL` holding the stored hash (Argon2id for `native`, SHA-512 hex for `legacy`, Argon2id-wrapped for `onion`). [partial] //extra-effort//
+    - [ ] `password_scheme`: `VARCHAR(32) DEFAULT 'legacy'` with comment 'hashing scheme only'; values `native`, `legacy`, `onion` or NULL for passwordless rows (since 2026-05-30). [partial] //should-do//
+    - [ ] `password_scheme` writes: `z_userModel::add` inserts NULL and promotes it to `native` when a password is set. [partial] //extra-effort//
+    - [ ] `last_password_rehash_at`: `TIMESTAMP NULL`, set on every password change or rehash and backfilled from `created` for rows that have a password (since 2026-05-30). [partial] //extra-effort//
+    - [ ] `salt`: `VARCHAR(255) DEFAULT NULL`, per-row salt of `legacy`/`onion` hashes, set to NULL when the hash is upgraded to `native`. [partial] //extra-effort//
+    - [ ] `languageId`: `INT NOT NULL DEFAULT 0`, refers to `z_language.id` and is read by `Response::sendEmailToUser` to pick the mail language. //extra-effort//
+    - [ ] `created`: `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+    - [ ] `verified`: `TIMESTAMP NULL DEFAULT NULL`, e-mail verification time where NULL means the account is not activated. [partial] //should-do//
+    - [ ] `active`: `TINYINT(1) NOT NULL DEFAULT 1` after `verified` (since 2025-11-06), the soft-delete flag. [partial] //extra-effort//
+    - [ ] `updated`: `TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` after `active` (since 2025-11-06). //extra-effort//
+  - [ ] `z_user_role` (user to role and group assignments)
+    - [ ] `role`, `user`: `INT NOT NULL` referring to `z_role.id` and `z_user.id`; one active row per granted role or group. //extra-effort//
+    - [ ] `active`, `created`: `TINYINT(1) NOT NULL DEFAULT 1` and `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+  - [ ] `z_user_permission` (permissions assigned directly to a user, created 2025-11-06)
+    - [ ] `user`, `name`: `INT NOT NULL` and `VARCHAR(255) NOT NULL` holding the permission name; edited through the admin user page. //extra-effort//
+    - [ ] `active`, `created`: `TINYINT(1) NOT NULL DEFAULT 1` and `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+  - [ ] `z_role` (roles, and groups when `is_group` = 1)
+    - [ ] `name`: `VARCHAR(255) DEFAULT NULL` at creation, `NOT NULL DEFAULT '' UNIQUE` since 2026-03-23, shared by roles and groups. //extra-effort//
+    - [ ] `is_group`: `TINYINT(1) NOT NULL DEFAULT 0` after `name` (since 2026-03-23); 1 marks a group, which the roles page excludes and the groups page lists. //extra-effort//
+    - [ ] `active`, `created`: `TINYINT(1) NOT NULL DEFAULT 1` and `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+  - [ ] `z_role_permission` (permissions granted to a role or group)
+    - [ ] `role`, `name`: `INT NOT NULL` (`z_role.id`) and `VARCHAR(255) NOT NULL` permission name; edited through the role page. //extra-effort//
+    - [ ] `active`, `created`: `TINYINT(1) NOT NULL DEFAULT 1` and `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+  - [ ] `z_organization` (organizations, created 2026-04-27)
+    - [ ] `name`: `VARCHAR(255) NULL DEFAULT NULL`, not unique. [partial] //extra-effort//
+    - [ ] `groupId`: `INT NULL DEFAULT NULL` after `name` with no index; optional `z_role` group of the organization (since 2026-05-04). [partial] //extra-effort//
+    - [ ] `active`, `created`: `TINYINT(1) NOT NULL DEFAULT 1` and `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`. [partial] //extra-effort//
+  - [ ] `z_logintoken` (login sessions)
+    - [ ] `token`: `VARCHAR(255) NOT NULL` written as `bin2hex(random_bytes(20))` (40 hex characters) in plaintext. //should-do//
+    - [ ] `userId`, `userId_exec`: `INT NOT NULL` each; `userId_exec` is the executing user and differs from `userId` for login-as sessions. [partial] //extra-effort//
+    - [ ] `extended_seconds`: `INT NULL DEFAULT NULL` after `userId_exec`, extra session lifetime (since 2026-03-27). [partial] //extra-effort//
+    - [ ] `active`: `TINYINT(1) NOT NULL DEFAULT 1` after `extended_seconds`, set to 0 on invalidation (since 2026-03-27). [partial] //extra-effort//
+    - [ ] `created`: `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`, the base of the absolute session lifetime. [partial] //extra-effort//
+    - [ ] Row lifecycle: Rows are never deleted; logout, expiry, password change and `clearSessions()` only set `active = 0`. [partial] //should-do//
+  - [ ] `z_logintry` (failed login counter per user)
+    - [ ] `userId`, `timestamp`: `INT NOT NULL` and `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`; the time column is named `timestamp`, not `created`. //extra-effort//
+    - [ ] Row lifecycle: One row per wrong password for an existing verified account; rows are never purged or reset on success. //nice-to-have//
+  - [ ] `z_login_too_many_tries` (rate-limit alert guard)
+    - [ ] `userId`, `created`: `INT NOT NULL` and `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+    - [ ] Row lifecycle: One row per rate-limited attempt, used to throttle the security alert mail to one per 10 minutes. //nice-to-have//
+  - [ ] `z_password_reset` (password create/change/forgot codes)
+    - [ ] `userId`, `refId`: `INT NOT NULL` and `VARCHAR(255) NOT NULL`, the reset code in the format `ZIT-...`. //extra-effort//
+    - [ ] `reason`: `ENUM('create','change','forgot') NOT NULL`; the framework only ever writes `forgot`. //extra-effort//
+    - [ ] `active`, `created`: `TINYINT(1) NOT NULL DEFAULT 1` and `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+  - [ ] `z_email_verify` (e-mail verification tokens)
+    - [ ] `token`, `user`: `VARCHAR(255) NOT NULL` (`uniqid("v_")`) and `INT NOT NULL`; written by signup and verification resend. //extra-effort//
+    - [ ] `end`: `DATETIME NOT NULL` expiry, set to now plus one day by the code. //extra-effort//
+    - [ ] `active`, `created`: `INT NOT NULL DEFAULT 1` (INT, not TINYINT) and `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+  - [ ] `z_file` (uploaded file metadata)
+    - [ ] `reference`, `type`, `name`, `extension`: `VARCHAR(255) NOT NULL` each; `reference` is the unique ref that names the file on disk. //extra-effort//
+    - [ ] `size`: `INT NOT NULL`, widened to `BIGINT NOT NULL` on 2026-01-01 so large files fit. [partial] //extra-effort//
+    - [ ] `active`, `created`: `TINYINT(1) NOT NULL DEFAULT 1` and `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+  - [ ] `z_uniqueref` (registry of generated unique references)
+    - [ ] `ref`, `active`, `created`: `VARCHAR(255) NOT NULL`, `TINYINT(1) NOT NULL DEFAULT 1` and `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`. //extra-effort//
+    - [ ] Row lifecycle: There is no unique index on `ref`; `getUniqueRef()` enforces uniqueness itself and rows accumulate (every upload attempt and reset code adds one). //nice-to-have//
+  - [ ] `z_language` (language list)
+    - [ ] Columns: `name`, `nativeName`, `value` are `VARCHAR(255) NOT NULL` each; there are no `active` or `created` columns. //extra-effort//
+    - [ ] Seed rows: `INSERT IGNORE` adds id 1 English/English/`EN` and id 2 German/Deutsch/`DE`. //extra-effort//
+  - [ ] `z_interaction_log` (sink table of the database logger)
+    - [x] `userId`, `userId_exec`: `INT DEFAULT NULL` each, filled from `user()?->userId` and `user()?->execUserId`.
+    - [ ] `text`, `value`: `MEDIUMTEXT DEFAULT NULL`; `text` is the log message and `value` the JSON-encoded record. [partial] //extra-effort//
+    - [ ] `created`: `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()`. [partial] //extra-effort//
+    - [ ] Retention: No rotation or purge exists, so the table grows until the application deletes rows itself. //should-do//
+    - [ ] `categoryId` [deprecated]: `INT NOT NULL` column dropped on 2026-04-02. [partial] //optional//
+  - [ ] `z_interaction_log_category` [deprecated]
+    - [ ] History: Created in 2021-02-04 with `name` and `created`, seeded with 11 categories (`view`, `login`, `logout`, `user`, `PasswordResetRequest`, `PasswordReset`, `SecurityAlert`, `loginas`, `PasswordChanged`, `resterror`, `PasswordCreated`). //optional//
+    - [x] Removal: Dropped again with `DROP TABLE IF EXISTS` on 2026-04-02.
+  - [ ] Migration bookkeeping tables (created in code by `ensureMigrationTablesExist()`, not by SQL files)
+    - [ ] `z_migration_lock`: Lock table with `id` (`INT AUTO_INCREMENT` primary key), `is_locked` (`BOOLEAN` default 0, 1 means locked) and `locked_at` (`TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, informational). [partial] //extra-effort//
+    - [ ] `z_version`: One row per executed migration with `id`, `migration_name`, `migration_date`, `migration_version`, `file_hash` and `created`. [partial] //extra-effort//
+    - [ ] `z_version.migration_name`: `VARCHAR(255)`, the file basename including date, version and extension. //extra-effort//
+    - [ ] `z_version.migration_date`, `migration_version`: `DATE` from the filename (`Y-m-d`) and `INTEGER` (0 when absent). //extra-effort//
+    - [ ] `z_version.file_hash`: `VARCHAR(40)` sha1 of the file at execution time, written but never compared. //nice-to-have//
+    - [ ] `z_version.active`: `BOOLEAN` default true, never read by the framework. //extra-effort//
+    - [ ] `z_version.created`: `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`. //extra-effort//
+  - [ ] Bundled schema history (applied in date order together with application migrations)
+    - [ ] `2021-02-04_zubzet.sql`: Base schema with `CREATE TABLE IF NOT EXISTS` and `INSERT IGNORE`; also seeds `z_language` and the old log categories. [partial] //extra-effort//
+    - [ ] `2025-11-06_user_permissions.sql`: Adds `z_user_permission`; `z_user` gains `active`, `updated`, a nullable `email` and key `uq_user_email`; re-runnable. [partial] //extra-effort//
+    - [ ] `2026-01-01_file_size.sql`: Changes `z_file.size` from `INT` to `BIGINT`. [partial] //extra-effort//
+    - [ ] `2026-03-23_group.sql`: Adds `z_role.is_group` and makes `z_role.name` unique and NOT NULL; not re-runnable. //nice-to-have//
+    - [ ] `2026-03-27_session-handling.sql`: Adds `z_logintoken.extended_seconds` and `active`; not re-runnable. [outdated] //important//
+    - [x] `2026-04-02_deprecate_interactionlog.sql`: Drops `z_interaction_log_category` and `z_interaction_log.categoryId`; re-runnable.
+    - [x] `2026-04-27_organization.sql`: Adds `z_organization` and `z_user.organizationId` with its index; re-runnable.
+    - [ ] `2026-05-04_organization_role.sql`: Adds `z_organization.groupId`; not re-runnable. [partial] //extra-effort//
+    - [ ] `2026-05-30_password_scheme.sql`: Adds `password_scheme` and `last_password_rehash_at`, sets scheme NULL for passwordless rows and backfills the rehash time from `created`; idempotent. [partial] //extra-effort//
+## 11. Migrations & Seeding
+- [ ] Locations and discovery
+  - [ ] `./app/Database/migrations`: Application migration folder, created (`mkdir` mode 0755, recursive) when missing and then treated as empty. [partial] //important//
+  - [ ] Bundled migrations: `IncludedComponents/database/Migration` inside the framework holds the "external" migrations, is never auto-created and joins the same timeline unless `--exclude-external`. [partial] //important//
+  - [ ] `./app/Database/seed`: Seed folder, created automatically when missing. //important//
+  - [ ] Working directory: All `./app/...` paths resolve against the process working directory. [partial] //should-do//
+  - [ ] Recursive discovery: Subfolders are scanned and their names carry no meaning for migrations. //should-do//
+  - [ ] File types: Only `.sql` and `.php` files (extension matched case-insensitively) are collected; other files are ignored silently. [partial] //important//
+  - [ ] Discovery order: `getFiles()` sorts the full paths byte-wise before migrations are re-sorted by date, version and name. //nice-to-have//
+- [ ] Migration file naming and ordering
+  - [x] Pattern: `YYYY-MM-DD_name.sql|php` or `YYYY-MM-DD_<version>_name.sql|php`; the filename is split at `_` into date, optional version and name.
+  - [ ] Date format: The first segment must match `^\d{4}-\d{2}-\d{2}$` and is parsed with `DateTime::createFromFormat('!Y-m-d')`, anchoring the time to 00:00:00. [partial] //important//
+  - [ ] Calendar overflow: Impossible dates such as `2025-02-30` are accepted and roll over to `2025-03-02`, which is the date stored in `z_version`. //nice-to-have//
+  - [ ] Minimum year: Years before 2000 are rejected. //should-do//
+  - [ ] Version segment: The second segment counts as version only if it passes `FILTER_VALIDATE_INT`; without one the version is 0. [partial] //important//
+  - [ ] Version zero: A second segment of `0` is falsy, is not recognised as a version and stays part of the name. //should-do//
+  - [ ] Name: The remaining segments joined with `_` form the name and include the file extension (`2005-01-01_2_Syn_File.sql` has version 2 and name `Syn_File.sql`). //should-do//
+  - [ ] Execution order: Migrations run by date, then numeric version, then `strcmp` of the name. [partial] //important//
+  - [ ] Identity: A migration is identified by its `name` part only, so pending/executed matching ignores date and version and the same name on another date or version counts as already executed. //urgent//
+  - [ ] Basename collisions: `z_version.migration_name` stores the basename only, so equal basenames in different subfolders collide. //important//
+  - [ ] Bundled timeline: Application migrations touching `z_*` tables must be dated after the bundled migration creating them (the bundled timeline starts at `2021-02-04_zubzet.sql`). [partial] //important//
+  - [ ] Validation errors
+    - [ ] Failure behaviour: Errors are `InvalidArgumentException`s thrown while sorting, before any lock is taken; they abort the command and the message appears on stderr. [partial] //should-do//
+    - [ ] `Formatting error: '<file>'. Expected: YYYY-MM-DD_Name`: The filename contains no underscore. //should-do//
+    - [ ] `Syntax error: '<file>'. Date must be exactly YYYY-MM-DD.`: The first segment is not four-two-two digits. //should-do//
+    - [ ] `Syntax error: '<file>'. Invalid date format. Expected format: YYYY-MM-DD.`: `createFromFormat` failed. //should-do//
+    - [ ] `History error: The year <YYYY> is too far in the past.`: The year is below 2000. //should-do//
+    - [ ] `Name error: No name found in '<file>'.`: Nothing is left for the name, normally prevented by the extension. //nice-to-have//
+    - [ ] Stored names: Names read back from `z_version` are parsed with the same rules, so a malformed stored name also throws. //nice-to-have//
+- [ ] SQL migrations (`.sql`)
+  - [ ] Content buffering: The whole file is one buffer; an empty or whitespace-only file yields no statements but is still recorded as executed. //should-do//
+  - [ ] Execution: Content is split at every `;` and each trimmed statement runs separately through `db()->exec()` as a prepared statement. //important//
+  - [ ] Splitting limits: Semicolons inside string literals, procedure or trigger bodies break statements and `DELIMITER` is not supported. //important//
+  - [ ] No flags: SQL files cannot set skip, manual or an environment and always run in environment `default`. [partial] //should-do//
+- [ ] PHP migrations (`.php`)
+  - [ ] Class convention
+    - [x] Class name: `2025-11-15_test.php` must define the global-namespace class `Migration_2025_11_15_test` (`Migration_` plus the basename without extension with `-` replaced by `_`).
+    - [ ] Missing class: Throws `Migration class '<name>' not found in file '<path>'`. //should-do//
+    - [x] Base class: The class extends the abstract `ZubZet\Framework\Database\Migration\Migration` and implements `execute(): void`.
+    - [ ] Loading: The file is `require_once`d and `execute()` runs every time it is parsed. //should-do//
+    - [ ] Parse triggers: Parsing happens also in `--dry`, in `db:sync` and for skipped, manual or environment-excluded migrations. //should-do//
+  - [ ] Migration API (action recording)
+    - [ ] Constructor: Receives the DBAL `Schema` of the live database as `$fromSchema`, introspected right before the file runs. //should-do//
+    - [x] `tableCreate(string $name): Table`: Returns (by reference) a Doctrine `Table` to define columns, primary key and indexes and generates `CREATE TABLE` SQL.
+    - [ ] `tableAlter(string $name): Table`: Clones the existing table from `fromSchema` and unknown tables throw; the DBAL comparator diff becomes `ALTER TABLE` SQL and no change yields no SQL. [partial] //important//
+    - [x] `tableDrop(string $name)`: Records a `DROP TABLE` action.
+    - [x] `tableRename(string $oldName, string $newName)`: Records a rename-table action.
+    - [ ] `run(string $sql)`: Adds raw SQL at that position of the action order. [partial] //should-do//
+    - [ ] `getActions(): array` [internal]: Returns the recorded actions (`create`, `alter`, `drop`, `rename`, `run`) for the parser. //optional//
+    - [ ] Deferred generation: The table API only records actions; SQL is generated afterwards in call order and flattened into one statement list. [partial] //should-do//
+    - [ ] Single snapshot: The schema snapshot is taken once per file, so `tableAlter()` cannot target a table created or renamed earlier in the same file. //should-do//
+    - [ ] Dry-run limit: `--dry` also builds PHP migrations against the current schema, so alters of tables from earlier pending files can fail. //should-do//
+  - [ ] SQL generation
+    - [ ] Platform: `Platform::getPlatform()` always returns `MySQL80Platform` (its `match` only knows `mysqli` and `pdo_mysql`). //nice-to-have//
+    - [ ] Execution: Generated SQL runs like SQL files, also split at `;`. //should-do//
+    - [ ] Connection use: Every parse opens a new DBAL connection to introspect the schema. //optional//
+  - [ ] Column definitions
+    - [x] Doctrine API: Columns are defined with `Table::addColumn($name, $type, $options)`; option keys seen in the codebase are `autoincrement`, `length`, `notnull`, `default` and `columnDefinition`.
+    - [ ] Custom `timestamp` type: `ZubZet\Framework\Database\Migration\Type\TimeStamp` declares `TIMESTAMP` on MySQL and PostgreSQL platforms and `DATETIME` otherwise. [partial] //should-do//
+    - [ ] Defaults: The `timestamp` type adds no default value; use the `columnDefinition` option (for example `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`). [outdated] //important//
+- [ ] Migration flags (PHP migrations only, set inside `execute()`)
+  - [ ] Properties: Public `$skip` (false), `$manual` (false) and `$environment` (`"default"`) on the `Migration` base class. [partial] //should-do//
+  - [ ] `skip()`: `db:migrate` records the migration as executed without running its SQL (`Skipping migration (marked to skip): <file>`); nothing is recorded in `--dry`. [partial] //important//
+  - [ ] `setManual(bool $manual)`: `db:migrate` stops at this migration with `Migration requires manual execution: <file>` and exit code 0 after earlier migrations ran. [partial] //important//
+  - [ ] Manual workflow: Run the SQL by hand, then `db:sync` (limit it with `--end` and `--endVersion`), because `db:migrate` leaves the lock set. [partial] //important//
+  - [x] `setEnvironment(string $env)`: Tags the migration with a free-form environment name.
+  - [ ] Check order: Environment filters are evaluated first, then `skip`, then `manual`. //should-do//
+- [ ] Migration environments
+  - [x] Default behaviour: Without `-i` and `-e` every migration runs regardless of its environment.
+  - [ ] Include list `-i`: When given, only `default` plus the listed environments run; others print `Skipping migration (not in included environments): <file>`. [partial] //important//
+  - [ ] Exclude list `-e`: Listed environments print `Skipping migration (in excluded environments): <file>`; it is checked after `-i` and `default` can be excluded. [partial] //important//
+  - [ ] Skipped state: Environment-skipped migrations are not recorded, so they stay pending and may later appear in the skipped warning. //should-do//
+  - [x] `db:sync`: Applies the identical include and exclude logic.
+- [ ] Version tracking
+  - [ ] `markAsExecuted()`: Writes one `z_version` row per migration after its SQL succeeded, with basename, `Y-m-d` date, version and sha1 of the file. [partial] //should-do//
+  - [ ] No transaction: Migrations already recorded stay recorded when a later one fails. //important//
+  - [ ] Hash not compared: `file_hash` is never checked, so edits to an already executed migration are not detected. //should-do//
+  - [ ] Executed list: Built from the stored `migration_name` strings, not from the stored date or version columns. //nice-to-have//
+  - [ ] Read order: `getExecutedMigrations()` returns `z_version` rows by `migration_date` and `migration_version` descending, and a missing table (`mysqli_sql_exception`) yields an empty list. //nice-to-have//
+  - [ ] Bookkeeping tables: `db:migrate`, `db:sync` and `db:unlock-migration` create `z_migration_lock` and `z_version` on demand, while `db:status` does not. [partial] //should-do//
+- [ ] Migration locking
+  - [ ] Lock row: The lock is a `z_migration_lock` row with `is_locked` = 1; `lockMigrations()` inserts one and `unlockMigrations()` deletes all rows with `is_locked` = 1. [partial] //should-do//
+  - [ ] Missing table: `isLocked()` is false when the table does not exist. //nice-to-have//
+  - [ ] Locked abort: `db:migrate` aborts with `Migrations are currently locked. Aborting import.` (exit 1) plus a hint about parallel runs, manual migrations or manual unlock. [partial] //important//
+  - [ ] Not atomic: Lock check and insert are separate statements and there is no timeout or expiry. //should-do//
+  - [ ] When taken: The lock is only taken when migrations are pending and not in `--dry`, yet `Table was locked.` and `Table was unlocked.` are printed in dry mode too. //nice-to-have//
+  - [ ] Stuck lock: The lock stays set after a SQL error (exit 1) or a manual-migration stop (exit 0). [partial] //important//
+  - [ ] Clearing: Use `db:unlock-migration` or a non-dry `db:sync`; `db:sync` never checks the lock. [partial] //important//
+  - [ ] `db:unlock-migration`: Ensures the tables exist, prints `Migration table is not locked.` when nothing is locked, otherwise deletes the lock rows and prints `Migration table unlocked.` (exit 0 both ways). [partial] //important//
+  - [ ] `db:status`: Prints `Migration Lock Status: LOCKED|UNLOCKED` and its exit code is inverted (0 when locked, 1 when unlocked). [partial] //urgent//
+- [ ] `db:migrate` behaviour
+  - [ ] Flow: Print start, create bookkeeping tables, lock check, load executed and file migrations, skipped check, pending list, lock, run each file, unlock. //should-do//
+  - [ ] File set: Application migrations plus bundled migrations (unless `--exclude-external`), sorted by date, version and name. [partial] //important//
+  - [ ] Pending: A file is pending when its `name` is not among the executed names; with none the command prints `No pending migrations found.` and exits 0 without locking. //important//
+  - [ ] Skipped detection: Files dated on or before the latest executed migration but not recorded are listed under `Warning: The following migrations were skipped:`. [partial] //important//
+  - [ ] Bundled exemption: Bundled migrations are exempt from skipped detection (they still run when pending) unless `--enforce-external-timeline` is given. [outdated] //important//
+  - [ ] `--force` default: Enabled by default, so skipped files only produce a warning and are executed as pending in order. [outdated] //urgent//
+  - [ ] `--force=false`: Aborts with `Aborting import due to skipped migrations. Use --force to ignore.` (exit 1). [partial] //important//
+  - [ ] Force parsing: Any value that `FILTER_VALIDATE_BOOLEAN` does not read as true (`false`, `0`, `no`, `off`, unknown text) disables force. [partial] //should-do//
+  - [ ] `--dry`: Prints `Importing migration: <file>` per file without executing or recording. [partial] //important//
+  - [ ] Per-file output: `Importing migration: <file>` or one of the `Skipping migration (...)` lines. //nice-to-have//
+  - [ ] SQL error: Prints `Error importing <file>: <message>`, returns 1 and leaves the lock set. [partial] //important//
+  - [ ] Load or build error: An exception while loading or building a migration (for example a missing PHP class) prints `Migration import failed: <message>`, unlocks and still returns 0. //urgent//
+  - [ ] Final output: `Migration finished at: <time> (took <n>s)`. //nice-to-have//
+- [ ] `db:sync` behaviour
+  - [x] Purpose: Marks pending migrations as executed in `z_version` without running SQL, for adopting existing databases or after manual changes.
+  - [x] File set: Considers application migrations only; bundled ones are included with `--include-external`.
+  - [ ] Ignored mechanisms: It does not check the lock, ignores `skip` and `manual` flags and has no skipped-migration detection. //important//
+  - [ ] Option validation (stdout message, exit 1)
+    - [ ] `Cannot use start version without specifying a start date.`: `--startVersion` was given without `--start`. [partial] //should-do//
+    - [ ] `Invalid start date format. Expected format: YYYY-MM-DD.`: `--start` is not a real date in that format. [partial] //should-do//
+    - [ ] `Cannot use end version without specifying an end date.`: `--endVersion` was given without `--end`. [partial] //should-do//
+    - [ ] `Invalid end date format. Expected format: YYYY-MM-DD.`: `--end` is not a real date in that format. [partial] //should-do//
+  - [ ] Strict dates: Dates are parsed with `!Y-m-d` and the formatted result must equal the input, so overflow dates are rejected here. [partial] //should-do//
+  - [ ] Range rules: A migration is skipped when its date is before `--start` or after `--end`; on the boundary date `--startVersion` and `--endVersion` apply. [partial] //important//
+  - [ ] Version zero: A version of `0` is falsy, so `--startVersion 0` and `--endVersion 0` are ignored. //should-do//
+  - [ ] Skip lines: `Skipping migration (before start date|before start version|after end date|after end version): <file>`. //nice-to-have//
+  - [ ] Debug line quirk: A before-start-version skip also prints a stray `<version> <name> <startVersion></info>` line. //optional//
+  - [ ] Help text quirk: The `--endVersion` option description is a copy of the `--startVersion` text. //optional//
+  - [ ] Output: Prints `Synchronizing migration: <file>` per file; `--dry` skips recording and nothing pending prints `No pending migrations to synchronized found.` and continues. [partial] //should-do//
+  - [ ] Unlock: A non-dry run always ends by unlocking the migration table (`Table was unlocked.`). [partial] //should-do//
+  - [ ] Failure: Exceptions print `Synchronization failed: <message>` and return 1. //should-do//
+- [ ] Seeds (`db:seed`)
+  - [x] Default flow: Print start, drop and recreate the configured database, run `db:migrate` in-process, collect seed files, execute them and print finish.
+  - [ ] Destructive by default: All data is lost unless `--skip-migrations`, and DROP and CREATE DATABASE rights are needed (see elevated credentials). [partial] //urgent//
+  - [ ] Reset statements: Uses `DROP DATABASE IF EXISTS` on the backticked name but an unquoted `CREATE DATABASE <dbname>`, after switching to `information_schema`. //should-do//
+  - [ ] Nested migrate: `db:migrate` runs through the shared console application without options, so `-i` and `-e` are not forwarded and its exit code is ignored. [partial] //should-do//
+  - [ ] Auto exit: The reset calls `setAutoExit(false)` on the console application before the nested run. //optional//
+  - [ ] Not tracked: Seeds are not recorded, so running `db:seed --skip-migrations` twice inserts the data twice. //important//
+  - [ ] Seed files: `.sql` and `.php` files below `./app/Database/seed`, found recursively with no naming rule. [partial] //important//
+  - [ ] Execution order: Byte-wise sort of the full path, so folders and files run alphabetically (uppercase before lowercase, `10_` before `2_`) and numeric prefixes need zero padding. //should-do//
+  - [ ] Selectors: `-i` and `-e` take paths relative to the seed root, either a folder or a file including its extension, with no globbing. [partial] //important//
+  - [x] Filtering: Start with all files, remove those matching `-e`, then add back those matching `-i`, so includes win over excludes.
+  - [ ] Filter edge cases: `-i` alone changes nothing (it only re-adds excluded files) and an empty selector matches nothing. [outdated] //important//
+  - [ ] SQL seeds: Content is buffered with a `-- SEED FILE: <path>` marker and run through `executeMultiQuery()` (`multi_query`, no `;` splitting). //important//
+  - [ ] Buffer flushing: The buffer is flushed before each PHP seed and at the end (`Executing buffered SQL statements...`), which preserves file order. //nice-to-have//
+  - [ ] Empty SQL seeds: Whitespace-only SQL seed files are ignored. //optional//
+  - [ ] PHP seed class: The class name equals the filename without extension, lives in the global namespace, extends `ZubZet\Framework\Database\Migration\Seed` and is loaded with `require_once`. [outdated] //urgent//
+  - [ ] PHP seed loading: The class is instantiated without arguments and `run()` is called; there is no class-exists check and a duplicate class name across files is a fatal redeclare. //should-do//
+  - [x] `Seed::run()`: Abstract method that fills the queue.
+  - [ ] `Seed::insert($table, array $data)`: Queues one `dbInsert()` query. [outdated] //urgent//
+  - [ ] `Seed::addQuery(Query $query)`: Queues any CakePHP query (from `dbUpdate()`, `dbDelete()` or `dbSelect()`) and the public `$queries` array holds the queue. [partial] //important//
+  - [ ] Query builder access: Seeds use the `CanBuildQuery` trait (`dbSelect`, `dbInsert`, `dbUpdate`, `dbDelete`, `getQueryBuilder`). [partial] //should-do//
+  - [ ] Queue execution: Queued queries run after `run()` returns via `db()->execQuery()`, i.e. as prepared statements with bound values. //should-do//
+  - [ ] Success output: `Successfully executed seed file: <path>` is printed for SQL files when buffered, not when executed. //optional//
+  - [ ] Seed errors: An exception in a seed file prints `Error executing seed file <path>: <message>` and returns 1. //should-do//
+  - [ ] Error attribution: A failing SQL seed is blamed on the PHP file that flushed the buffer. //nice-to-have//
+  - [ ] Final flush: The last buffer flush is outside the try/catch, so an SQL error there is uncaught. //nice-to-have//
+  - [ ] Unsupported type: `Unsupported seed file type: <ext>. Only .sql and .php files are allowed.` is thrown but not reachable through discovery. //optional//
+- [ ] Internal classes [internal]
+  - [ ] `z_migration` model: Marked `@internal` and uses `IsInternalModel`; it is the backing model of all migration commands. //optional//
+  - [ ] `isLocked(): bool`: True when any `z_migration_lock` row has `is_locked` = 1. //optional//
+  - [ ] `ensureMigrationTablesExist(): void`: Creates `z_migration_lock` and `z_version` through DBAL when missing. [partial] //optional//
+  - [ ] `markAsExecuted(string $migration, $date, $version): void`: Inserts the `z_version` row and needs a readable file for `hash_file`. //optional//
+  - [ ] `getFiles(string $path, bool $setupPathIfNotExists = true): array`: Recursive `.sql` and `.php` list sorted by path; a missing folder is created or yields `[]`. //optional//
+  - [ ] `sortMigrations(array $files): array`: Parses names into `MigrationFile` objects ordered by date, version and name. //optional//
+  - [ ] `MigrationFile`: Value object (`filename`, `date`, `version`, `name`, `sqlBuffer`, `skip`, `manual`, `environment`) whose `extractData()` picks `MigrationSQL` or `MigrationPHP` by extension. //optional//
+  - [ ] `MigrationSQL::extractInformation()`: Fills the SQL buffer only. //optional//
+  - [ ] `MigrationPHP::extractInformation()`: Loads the class, introspects the schema, runs `execute()` and collects SQL, `skip`, `environment` and `manual`. //optional//
+  - [ ] `SeedPHP::loadPhpSeed()` and `SeedSQL::loadSqlFile()`: Load the queued queries of a PHP seed or the raw contents of an SQL seed. //optional//
+## 12. Authentication, Sessions & Passwords
+- [ ] Request user object (`ZubZet\Framework\Authentication\User`)
+  - [ ] Role: Request-scoped identity built once per request in the framework constructor, whose constructor calls `identify()` to read the session cookie. [partial] //important//
+  - [ ] Access points: `user()`, `$req->getRequestingUser()`, `$req->booter->user`, `$opt["user"]` inside views and the global alias `User`. [partial] //important//
+  - [ ] Two `User` classes: The alias `User` is this request user; the database record object is `Authentication\Permission\User` and must be imported with `use`. //important//
+  - [ ] Public properties
+    - [ ] `$isLoggedIn`: Bool, default false, true only when cookie, valid session and `z_user` row all resolve. //important//
+    - [ ] `$userId`: `?int` account the session acts as; null for anonymous visitors. //important//
+    - [ ] `$orgId`: `?int` copy of `z_user.organizationId`, named `orgId` for brevity; null when anonymous or without organization. //should-do//
+    - [ ] `$execUserId`: `?int` real user behind a login-as session, equal to `$userId` for normal logins. [partial] //important//
+    - [ ] `$fields`: The complete `z_user` row including `password`, `salt`, `password_scheme` and custom columns; an empty array when anonymous. //important//
+  - [ ] `identify()`
+    - [ ] Entry point: Public method run by the constructor that reads the `z_login_token` cookie and fills the properties. //nice-to-have//
+    - [ ] Anonymous cases: An empty cookie, unknown or inactive token, expired session, or a null `userId`/`userId_exec` all result in an anonymous request. //should-do//
+    - [ ] Lazy invalidation: An expired session is set to `active = 0` on this request and treated as anonymous. //nice-to-have//
+    - [ ] Partial state: `userId`, `execUserId` and the session token are set before the `z_user` row is loaded, so a missing row leaves `isLoggedIn` false but the ids populated. //nice-to-have//
+    - [ ] Deactivated users: The `z_user` lookup does not filter `active`, so a deactivated user with a live session stays logged in until the session ends. //urgent//
+    - [ ] Re-identification: Calling `identify()` again re-reads the cookie, and the anonymous branch only resets `isLoggedIn`. //optional//
+    - [ ] Boot-time query: Because the user is built at boot, any request with a login cookie triggers the first database connection early. //nice-to-have//
+  - [ ] `getSessionToken(): ?string`: Token of the current session, or null when anonymous. //should-do//
+- [ ] Session object (`ZubZet\Framework\Authentication\Session`)
+  - [ ] Role: Wrapper around one `z_logintoken` row extending `AuthenticationObject` with `HandleTrait` and `RetrievalTrait`. [partial] //should-do//
+  - [ ] Retrieval settings: Static `$dbTable` = `z_logintoken` and `$dbExpression` = `[]` define table and extra WHERE expression of the inherited finders. //nice-to-have//
+  - [ ] Constructor: `new Session(array $data)` expects a row with `id`, `userId`, `userId_exec`, `extended_seconds` and `created`. //nice-to-have//
+  - [ ] `Session::add(User $user, ?User $userExec = null): Session`: Creates the token row (`$userExec` defaults to `$user`) but sets no cookie. [partial] //important//
+  - [ ] `Session::byToken(string $token): ?Session`: Returns the active session or null for unknown or inactive tokens; an expired but not yet invalidated session is still returned. [partial] //important//
+  - [ ] `Session::byUser(User $user): array`: All `active = 1` sessions of a `Permission\User`, including expired ones not yet invalidated; empty array when none. [partial] //important//
+  - [ ] Inherited finders: `Session::all()`, `byId(int|string)` and `byIds(int ...$ids)` return only `active = 1` rows. [partial] //should-do//
+  - [ ] Getters: `token()`, `userId()`, `userIdExec()`, `extendedSeconds()` (null if never extended), `created()` (DB timestamp string), plus `id()` and `getAll()` return cached data without reloading. [partial] //should-do//
+  - [ ] Token format: Tokens are `bin2hex(random_bytes(20))` (40 hex characters) and stored in plaintext. //should-do//
+  - [ ] Expiry
+    - [ ] `expiresAt(bool $refresh = true): ?string`: Returns `created + loginTimeoutSeconds + extended_seconds` as `Y-m-d H:i:s`, so the lifetime is absolute from creation and not sliding. [partial] //important//
+    - [x] `isExpired(): bool`: True when the expiry time is not in the future.
+    - [ ] Missing default: `config("loginTimeoutSeconds", TIMESPAN_DAY_7)` passes the fallback as `$useDefault`, so an unset setting gives lifetime 0 instead of 7 days. [outdated] //urgent//
+    - [ ] Timezones: Expiry maths use PHP `strtotime()`/`time()` on the database `created` timestamp, so PHP and database timezones must agree. //should-do//
+  - [ ] Extension
+    - [x] `extend(int $seconds)`: Adds to `extended_seconds` cumulatively (null counts as 0) for the active row.
+    - [x] `setExtensionTime(int $seconds)`: Overwrites `extended_seconds` with the given value.
+    - [ ] Stale object: After either call the object is marked stale; `expiresAt()`, `isExpired()` and the next extension reload it, but getters such as `extendedSeconds()` stay old until `refresh()`. //nice-to-have//
+    - [ ] No revival: Extending only changes server-side validity and an expired session cannot be revived, because it is invalidated on first use and the UPDATE requires `active = 1`. //should-do//
+  - [ ] `invalidate()`: Sets `active = 0` and nulls the object, so any further call throws `InvalidArgumentException("Instance no longer exists")`. [partial] //important//
+- [ ] Login and logout on the Response
+  - [ ] `Response::loginAs(int $userId, ?int $user_exec = null)`
+    - [ ] Purpose: Creates a login token for `$userId` and sends it as cookie; `$user_exec` is the executing user and defaults to `$userId`. [partial] //important//
+    - [ ] Token creation: `z_login->createLoginToken($userId, $user_exec)` inserts a `z_logintoken` row with a 40 hex character random token. //nice-to-have//
+    - [ ] Cookie: Name `z_login_token`, expiry `time() + intval(loginTimeoutSeconds)`, path `/` and domain from `getCookieDomainScope()`. //important//
+    - [ ] Unset timeout: Without `loginTimeoutSeconds` the expiry is `time()`, so the browser drops the cookie at once. //urgent//
+    - [ ] Cookie flags: No `secure`, `httponly` or `samesite` flag is passed. //urgent//
+    - [ ] Old scope cleanup: Calls `deleteOldLoginCookieDomainScope()` after setting the cookie. //optional//
+    - [ ] Type check: `$userId` is typed `int`, so a non-numeric string (e.g. from a URL) throws a `TypeError`. //should-do//
+    - [ ] No guards: Performs no permission check, does not invalidate the user's other sessions (concurrent sessions are allowed) and does not change `user()` of the current request. //urgent//
+    - [ ] Logging: Writes `USER_LOGGED_IN` when user and exec user match, otherwise `USER_LOGGED_IN_ANOTHER`. [outdated] //important//
+  - [ ] `Response::getCookieDomainScope()`
+    - [ ] Subdomain scope: Returns `"." . $req->getDomain()` when `login_scope_allow_subdomains` equals the string `"true"`, otherwise an empty string for a host-only cookie. //important//
+    - [ ] Value format: An unquoted INI `true` is parsed by PHP as `1` and does not match; the value must be the string `true` (quoted or via env override). //urgent//
+  - [ ] `Response::logout()`
+    - [ ] Always redirects: Terminates with `rerouteUrl()` to the root folder; a not logged-in user is simply redirected. //important//
+    - [ ] Session invalidation: The database session of `$user->getSessionToken()` is invalidated through `z_login->invalidateSession()`; other sessions of the user stay active. //important//
+    - [ ] Cookie handling: Deletes the cookie of the configured legacy domain scope, then removes `z_login_token` with `unsetCookie("z_login_token", domainScope: getCookieDomainScope())`. //should-do//
+    - [ ] Logging: Writes `USER_LOGGED_OUT` with the user id. //nice-to-have//
+    - [ ] Login-as logout: When `userId != execUserId` it issues a new session for the executing user via `loginAs()` instead of deleting the cookie, so the admin returns to their own account. //important//
+  - [ ] `Response::unsetCookie(string $name, string $path = "/", string $domainScope = "")`: Removes the cookie from the request input and sends an expired cookie (timestamp 1). [partial] //important//
+  - [ ] `deleteOldLoginCookieDomainScope()` [internal]: Private helper that emits a delete header for `z_login_token` on `login_scope_allow_subdomains_delete_domainscope_name` to migrate old cookie scopes. //optional//
+- [ ] Impersonation (login as)
+  - [ ] Session shape: A login-as session has different `userId` and `userId_exec`; the admin `login_as` action passes the original `execUserId` so nested impersonation keeps the real identity. [partial] //should-do//
+  - [ ] Super checks: The differing `execUserId` is what `checkSuperPermission()` later uses. //should-do//
+  - [ ] Ending impersonation: Logging out while impersonating invalidates the impersonated session and logs the exec user in again with a fresh token. //should-do//
+- [ ] User account API (`Authentication\Permission\User`)
+  - [ ] `User::add(?string $email, ?string $password, ?DateTime $verified = null): ?User`
+    - [x] Behaviour: Inserts a `z_user` row (unverified unless `$verified` is given) and returns it via `byId`; a null password creates a passwordless invite or SSO account.
+    - [ ] Email: `$email` may be `null`; a duplicate email is rejected by the `uq_user_email` unique key. [partial] //should-do//
+    - [ ] Verified value: `$verified` is stored as `Y-m-d H:i:s`. //nice-to-have//
+    - [x] Scheme: New rows get `password_scheme` NULL until a password is set, then `native`.
+    - [ ] Logging: Logs `USER_CREATED` with `userId` and `email` on the `Logger::ZUBZET` channel. //nice-to-have//
+  - [ ] `User::byEmail(string $email): ?User`: Finds the active user with that non-NULL email, or null. [partial] //important//
+  - [ ] `User::byNotVerified(DateTime $since): array`: Active users whose `verified` is NULL or later than `$since`. [partial] //should-do//
+  - [ ] `$user->verify(?DateTime $date = null)`: Sets `verified` to the given date or now, overwriting an earlier value, and clears the object's fields. [partial] //important//
+  - [ ] `$user->isVerified(string $at = "NOW"): bool`: True when `verified` is set and not later than `$at` (any `strtotime` string), so future dates count as unverified now. [partial] //important//
+  - [x] `$user->verified(): ?string`: Returns the raw `verified` datetime string or null.
+  - [ ] `$user->email(): string`: Returns the cached email and throws a `TypeError` for users whose email is NULL because of the `string` return type. [outdated] //important//
+  - [ ] `$user->updateEmail(?string $email)`: Updates only active rows, accepts `null`, does no format validation, neither resets `verified` nor clears sessions, and clears the object's fields. [partial] //should-do//
+  - [x] `$user->updatePassword(string $password)`: Clears all of the user's sessions (including the current one), then stores an Argon2id hash with `password_scheme = native`, `last_password_rehash_at = now` and `salt = NULL`.
+  - [x] `$user->verifyPassword(string $password): bool`: Self-healing login check that verifies against the stored hash and transparently rewrites a stale hash on success.
+  - [ ] `verifyPassword` inputs: Reads `password`, `password_scheme` and `salt` from the object's fields; a NULL scheme never matches and a `legacy`/`onion` row without salt throws. //nice-to-have//
+  - [x] `$user->clearSessions()`: Sets every session of the user to `active = 0`.
+  - [ ] `$user->remove()`: Soft-deactivates the user (`active = 0`) and nulls the object, but does not clear sessions or reset codes. [partial] //urgent//
+  - [ ] Stale sessions: Existing sessions of a removed user still identify as logged in because `identify()` has no `active` filter. //urgent//
+  - [ ] Reload after mutation: `updateEmail`, `updatePassword`, `verify` and role/group changes clear the object's fields, so call `refresh()` or `User::byId()` before reading again. [partial] //important//
+  - [ ] Sensitive data: `getAll()` on a user returns the full row including password hash and salt, so it must not be output unfiltered. //urgent//
+- [ ] Bundled user model account API (`z_userModel`, internal)
+  - [ ] `getUserById($userid)`: Returns the `z_user` row or `false` and does not filter on `active`. //nice-to-have//
+  - [ ] `getUserByEmail($email)`: Returns the row or `false` and ignores rows whose `email` is NULL. //nice-to-have//
+  - [ ] `getUserList()`: Returns every `z_user` row with `active = 1` using `SELECT *`, so `password` and `salt` are included. //nice-to-have//
+  - [ ] `getCount()`: Counts all `z_user` rows through `countTableEntries`, inactive ones included. //optional//
+  - [ ] `updateAccountSettings($id, $email, $language)`: Updates `email` and `languageId` of one user and logs `ACCOUNT_UPDATED` with the `userId`. //nice-to-have//
+  - [ ] `add($email, $passwordString = null, $verified = null)`
+    - [ ] Result: Creates a user and returns the new insert id; `$verified` is a datetime string, null leaves the account unverified. //important//
+    - [ ] Password handling: A non-null `$passwordString` goes through `z_login::updatePassword`, which hashes with Argon2id and stores `password_scheme` `native`. //should-do//
+    - [ ] Length rule: `Password::hash` accepts 3 to 1024 bytes and throws `InvalidArgumentException("Invalid password length.")` otherwise. [partial] //should-do//
+    - [ ] Ordering gotcha: The row is inserted and `USER_CREATED` logged before hashing, so a rejected password leaves a user without password. //should-do//
+    - [ ] Null password: Omitting the password creates a passwordless account with `password_scheme` NULL. //should-do//
+  - [ ] `createVerifyToken($userId)`: Inserts a token from `uniqid("v_")` into `z_email_verify`, valid for one day (`+1 day`, not configurable), and returns it. //should-do//
+  - [ ] `verifyUser($token): bool`
+    - [ ] Result: Marks the user verified when the token is active and unexpired, deactivates the token and returns true; an empty token returns false immediately. //should-do//
+    - [ ] Lookup rule: A token also matches when its user is already verified, even if the token is inactive or expired. //nice-to-have//
+    - [ ] Re-stamp quirk: The shortcut reads `$result["verified"]` from a `zev.*` select where that column does not exist, so such tokens re-stamp `verified` (with an undefined-key warning). //optional//
+- [ ] Password hashing (`ZubZet\Framework\Authentication\PasswordHash\Password`, final)
+  - [ ] Constants: `NATIVE = "native"`, `LEGACY = "legacy"`, `ONION = "onion"`, `MIN_LENGTH_BYTES = 3` and `MAX_LENGTH_BYTES = 1024`. [partial] //should-do//
+  - [ ] `Password::hash(string $password): string`
+    - [ ] Algorithm: Argon2id (`PASSWORD_ARGON2ID`) at PHP's default cost; it needs a PHP build with Argon2id support. [partial] //should-do//
+    - [ ] Length rule: Throws `InvalidArgumentException("Invalid password length.")` outside 3-1024 bytes, measured with `strlen` (bytes, not characters). [partial] //should-do//
+    - [x] Maximum: The upper bound is a DoS guard; over-long passwords are rejected, never truncated.
+  - [ ] `Password::verify(string $password, string $stored, ?string $scheme = Password::NATIVE, ?string $salt = null): Verification`
+    - [ ] Early wrong: Returns wrong without hashing when `$stored` is empty or the password is shorter than 3 or longer than 1024 bytes. //nice-to-have//
+    - [x] Scheme `native`: Runs `password_verify` then `password_needs_rehash`, so a correct hash below the current Argon2id defaults is flagged for upgrade.
+    - [ ] Schemes `legacy` and `onion`: Need a non-empty `$salt` or `InvalidArgumentException("A legacy or onion hash requires a salt.")` is thrown; every correct match requests an upgrade. [partial] //should-do//
+    - [ ] Unknown scheme: An unknown or explicit null scheme returns wrong without throwing. //nice-to-have//
+  - [ ] `Password::onionWrap(string $legacyHash): string` [internal]: Wraps the stored SHA-512 hex in Argon2id with reduced cost (`memory_cost` 12288, `time_cost` 1, `threads` 1) to keep the up-to-26 verification attempts cheap. [partial] //optional//
+  - [ ] `Verification` result object (final, immutable)
+    - [x] `isCorrect(): bool`: Whether the password matched.
+    - [ ] `isUpgradeNeeded(): bool`: True when the match is correct but the stored hash is stale or legacy. [partial] //should-do//
+    - [x] `upgradePassword(): string`: Hashes the kept plaintext into a fresh native hash on demand and throws `LogicException` if no upgrade is pending, so guard with `isUpgradeNeeded()`.
+    - [ ] Factories [internal]: Static `createWrong()`, `createCorrect()` and `createCorrectWithUpgrade(string $password)` build instances; the constructor is private. //optional//
+  - [ ] `LegacyHash` [internal] [deprecated]
+    - [ ] Purpose: Verify-only shim for the retired `zubzet/password-hash-utilities` "0.9" plus SHA-512 scheme, kept until no `legacy` or `onion` rows remain. [partial] //nice-to-have//
+    - [ ] Pepper search: Tries all 26 pepper characters `a`-`z` (the pepper was never stored) without early exit to keep timing uniform. //optional//
+    - [ ] Comparison: Raw SHA-512 hex is compared with `hash_equals`; a stored value starting with `$argon2` is treated as an onion and checked with `password_verify`. //optional//
+- [ ] Password schemes and self-healing
+  - [x] `native`: `password` is an Argon2id `password_hash()` string and `salt` is NULL.
+  - [ ] `legacy`: `password` is the raw SHA-512 hex and `salt` is the per-row salt. [partial] //should-do//
+  - [x] `onion`: `password` is an Argon2id hash of the legacy SHA-512 hex, produced by `auth:migrate-hashing`, and `salt` is kept.
+  - [x] Rehash on login: A successful login with a legacy, onion or below-cost native hash rewrites it via `z_login::upgradeStoredHash()` (scheme `native`, `last_password_rehash_at` now, `salt` NULL).
+  - [ ] Bulk wrap: `getLegacyPasswords()` selects `legacy` rows with a non-empty hash and `onionWrapPassword()` rewrites them as `onion` keeping the salt. [partial] //nice-to-have//
+  - [ ] `z_loginModel::checkPassword(string $password, string $hash, ?string $salt = null, ?string $scheme = null): bool` [deprecated]: Pure verify without upgrade; a null scheme is inferred as `native` for an empty salt, else `legacy`. //nice-to-have//
+  - [ ] Old call shape: The 3-argument call `checkPassword($pw, $hash, $salt)` is kept for consumer compatibility. //optional//
+  - [ ] Length limits per entry point: Signup allows 3-64 characters via form validation, the reset action has no server rule beyond `Password::hash` (3-1024 bytes) and `login_reset.php` has client-side `minlength="4"`. //should-do//
+- [ ] Built-in login flows (`LoginController`, extends `z_controller`)
+  - [ ] Endpoints: `login`, `login/logout`, `login/signup`, `login/forgot_password`, `login/reset/<code>`, `login/verify/<token>`, `login/create_password` and `login/change_password`. //important//
+  - [ ] Hyphen alias: `login/forgot-password` also works because the router converts `-` to `_` in action names. //should-do//
+  - [ ] Response shape: Pages render with `layout/min_layout.php` and JSON actions answer `{"result":"success"|"error","message":...}` plus a `meta` block with HTTP status 200. [partial] //should-do//
+  - [ ] Login `action_index`
+    - [ ] Rendering: Shows `login.php` (title `Login `) unless the POST contains `name`, then authenticates. //should-do//
+    - [ ] `noLayout`: The GET parameter is passed to the view as option `noLayout`; the shipped views do not use it. //optional//
+    - [ ] POST fields: `name` (the email) and `password`; an empty-string `name` still counts as submitted. //important//
+    - [ ] Check order: Account lookup via `User::byEmail`, activation check, rate limit, password check, then `loginAs()` and `{"result":"success"}`. //should-do//
+    - [ ] Unknown email: Returns `Username or password is wrong` (same text as a wrong password) and records no try. //should-do//
+    - [ ] Unverified account: Returns an HTML message with a link to `login/verify` before the password is checked, which reveals that the account exists. //should-do//
+    - [ ] Wrong password: Records a `z_logintry` row and returns `Username or password is wrong`. //should-do//
+    - [ ] Missing password: A POST with `name` but without `password` for an existing verified user passes null to `verifyPassword(string)`, which throws a `TypeError`. //nice-to-have//
+    - [ ] Success: Does not clear earlier `z_logintry` rows and does not end the user's other sessions. //should-do//
+    - [ ] Not-activated message: the error reads `Your account is not activated yet. Check your mails or click <a href='<rootFolder>login/verify'>here</a> to resend the activation.` //nice-to-have//
+  - [ ] Login rate limiting
+    - [ ] Scope: Per user account, not per IP; counts `z_logintry` rows since `now - maxLoginTriesTimespan` and blocks when the count is greater than `maxLoginTriesPerTimespan`. //important//
+    - [ ] Missing settings: Both settings are read without defaults, so unset values make `strtotime('-')` fail and the limit meaningless. //urgent//
+    - [ ] Check order: The check runs before the password check, so a correct password is also rejected while locked; blocked attempts answer `Too many login tries. Try again later.`. //should-do//
+    - [ ] Counting: Only wrong passwords of existing verified accounts add a try; with threshold N the (N+2)-th attempt is the first one blocked. //should-do//
+    - [ ] Security alert mail: Template `email_too_many_logins.php` with options `user` (`$user->getAll()`), `date` and `ip`; subject `Security alert` (en) or `Sicherheitsmeldung` (`DE_Formal`). //should-do//
+    - [ ] Mail conditions: Sent only when `Request::ip()` passes `FILTER_VALIDATE_IP` and no `z_login_too_many_tries` row exists in the last 10 minutes (hardcoded). //should-do//
+    - [ ] Alert bookkeeping: Every blocked attempt inserts a `z_login_too_many_tries` row even when no mail was sent, so continued attempts keep postponing further alerts. //nice-to-have//
+    - [ ] Logging: Each blocked attempt logs `ACCOUNT_LOGIN_RATE_LIMITED` with `userId`. //nice-to-have//
+  - [ ] Logout `action_logout`: Delegates to `$res->logout()` and is reachable by a plain GET to `login/logout`. //should-do//
+  - [ ] Signup `action_signup`
+    - [ ] Flow: Renders `login_signup.php`; a POST with `action=signup` creates an account. //important//
+    - [ ] Validation: `email` is required, passes `FILTER_VALIDATE_EMAIL` and must be unique in `z_user.email`; `password` is required with length 3-64. //should-do//
+    - [ ] Failure message: Any validation failure returns the single message `This email is not allowed!`; a failed insert returns `error()` with an empty message. //should-do//
+    - [ ] Account creation: Uses `z_user::add($email, $password)` (unverified, native hash) and does not log the user in. //should-do//
+    - [ ] Role assignment: POST `userRoleType` may be empty or `Secondary` (other values become empty) and selects setting `registerRoleId` or `registerRoleIdSecondary`. //important//
+    - [ ] Verification mail: Sent after creation and the send result is ignored, so `success` is returned even if mailing failed. //should-do//
+    - [ ] No protection: No setting disables signup and the bundled action has no CAPTCHA or rate limit. //urgent//
+  - [ ] Forgot password `action_forgot_password`
+    - [ ] Trigger: Runs when URL parameter 0 is `check` or POST `action` is `forgot_password`, otherwise renders `login_forgotpassword.php` (title `Forgot password `). //should-do//
+    - [ ] Lookup: POST `unameemail` is matched exactly against `z_user.email` via `z_login::getUserByLogin`, with no `active` or `verified` filter. //should-do//
+    - [ ] Found user: Inserts an active `z_password_reset` row with reason `forgot` and mails the link `<host><rootFolder>login/reset/<code>/`. //should-do//
+    - [ ] Response: Answers `{"result":"success"}` or `{"result":"error"}` (HTTP 200), so the endpoint reveals whether an email is registered. //important//
+    - [ ] Mail template: `email_password_reset.php` with option `reset_link` is not shipped, so the app must provide it or view resolution falls back to `500.php`. //urgent//
+    - [ ] Subject and language: `Password Reset` (en) or `Passwort Zurücksetzten` (`DE_Formal`); the mail language comes from the user's `languageId`. //nice-to-have//
+    - [ ] Code format: `ZIT-<base36 crc32(uniqueRef)>-<base36 crc32(time)>` in uppercase, derived from `uniqid()` rather than `random_bytes()`. //important//
+    - [ ] No throttling: Requesting a new code does not deactivate earlier active codes and the endpoint has no rate limit. //important//
+    - [ ] Logging: Writes `PASSWORD_RESET_REQUESTED` with `userId` only when the email matched an account. //nice-to-have//
+  - [ ] Reset `action_reset` (`login/reset/<code>`)
+    - [ ] Code validity: A code is valid when a `z_password_reset` row has this `refId`, `active = 1` and `created` within `forgotPasswordTimeSpan`. //important//
+    - [ ] Invalid code: `die("ERROR: This code is not or no longer valid!")` as bare text with HTTP 200 and no layout. //should-do//
+    - [ ] Password update: POST `password` calls `z_login::updatePassword`, which clears all sessions of that user, then disables the code and redirects to the root folder. //should-do//
+    - [ ] No auto-login: The reset does not log the user in and checks no password confirmation on the server; the view compares both fields in JS only. //should-do//
+    - [ ] Length failure: A password outside 3-1024 bytes throws `InvalidArgumentException` after sessions were cleared and before the code is disabled. //nice-to-have//
+    - [ ] Deactivated user: A code belonging to a deactivated user fails because `User::byId()` returns null for inactive rows. //nice-to-have//
+    - [ ] GET rendering: A GET without a posted password renders `login_reset.php` (title `Password reset `). //nice-to-have//
+    - [ ] Logging: Writes `PASSWORD_RESET` with `userId` and `reason` after a successful reset. //nice-to-have//
+  - [ ] Verification `action_verify` (`login/verify/<token>`)
+    - [ ] Verifying: `z_user::verifyUser($token)` accepts an active, unexpired `z_email_verify` token (or any token of an already verified user), deactivates it and sets `z_user.verified` to now. //should-do//
+    - [ ] Repeat visits: Opening the link again for an already verified user re-stamps `verified` with the current time. //should-do//
+    - [ ] No login: Verification happens on a plain GET and does not log the user in. //nice-to-have//
+    - [ ] Resend: POST `email` triggers a resend where a found user gets a new token mail, and `login_verify_wait.php` is always rendered whether or not the address exists. //should-do//
+    - [ ] Default view: Without a POSTed email it renders `login_verify.php` with options `success` and `login` (hard-coded `index`, marked TODO), showing a success text or the resend form. //nice-to-have//
+    - [ ] Mail: Token is `uniqid("v_")` valid for 1 day; the link is `<root>login/verify/<token>` with template `email_verify.php` (option `url`) and subject `<pageName> - Sign Up`. //should-do//
+    - [ ] `pageName` requirement: `getBooterSettings("pageName", "")` passes the fallback as `$useDefault`, so an unset `pageName` throws instead of defaulting to an empty string. //urgent//
+    - [ ] Page titles: both `login_verify.php` and `login_verify_wait.php` render in `layout/min_layout.php` with the title `Email verification`. //optional//
+  - [ ] Password stubs: `action_create_password` and `action_change_password` only reroute internally to `login/reset`, which dies without a code. //should-do//
+- [ ] Bundled login views (each returns `head` and `body` closures)
+  - [ ] `login.php`: Form with ids `username`, `password`, `login-error-label` and `loading` that calls `Z.Presets.Login("username", "password", "login-error-label", "")` and links to `login/forgot_password` and `login/signup`. //should-do//
+  - [ ] `login_signup.php`: Fields `username`, `password` and `password-confirm` that call `Z.Presets.Signup(..., "<root>")` and redirect to the root after success. //should-do//
+  - [ ] `login_forgotpassword.php`: Input `usernameemail` posted via jQuery to `<root>login/forgot_password/check` as `unameemail`; it writes errors into `#login-error-label`, which the view itself does not contain. //nice-to-have//
+  - [ ] `login_reset.php`: Posts `password` back to the same URL with a JS match check and `minlength="4"`. //nice-to-have//
+  - [ ] `login_verify.php` and `login_verify_wait.php`: Mail verification feedback pages (options `success`, `login`; static text). //nice-to-have//
+  - [ ] Mail views: `email_verify.php` (option `url`) and `email_too_many_logins.php` are shipped, `email_password_reset.php` is not. //important//
+  - [ ] Dependencies: The views rely on Bootstrap 4, Font Awesome, jQuery, `Z.js` and `assets/css/loadCircle.css`. //should-do//
+  - [ ] Login and signup texts: `login.php` shows `Login`, `Sign in`, `Forgot Password?` and `Don't have a account?`, while `login_signup.php` shows `Sign up`, `Sign Up` and `Login?`. //extra-effort//
+  - [ ] Forgot and reset texts: `login_forgotpassword.php` shows `Forgot password`, `Send me an email` and `Back to the Login`, and `login_reset.php` shows `Password reset` and a `Reset` button. //extra-effort//
+  - [ ] Forgot-password feedback: success shows `alert("An email was sent. Please check your inbox.")` and an error writes `Your account could not be found. Please try again.` into `#login-error-label`. //nice-to-have//
+  - [ ] Reset match check: `login_reset.php` shows `Passwords don't match!` and disables the `Reset` button while the two password fields differ. //nice-to-have//
+  - [ ] Verification texts: `login_verify.php` shows `Your email was verified! You now can log in!` or `You are missing the verification mail? Send Again!` plus `To the login`, and `login_verify_wait.php` asks to check inbox and spam. //extra-effort//
+- [ ] `z_loginModel` persistence methods [internal]
+  - [ ] Role: Session, token, login-try and reset-code queries; `createLoginToken(int, int): Session` and `checkPassword()` are the public non-internal entry points. //nice-to-have//
+  - [ ] Session queries: `getSessionByToken`, `getSessionsByUserId`, `setExtensionTime`, `extendLoginToken`, `validateSession`, `invalidateSession` and `clearSessions`. //optional//
+  - [ ] Login-try queries: `newLoginTry`, `countLoginTriesByTimeSpan`, `addTooManyLoginsEmailByUserId` and `sendTooManyLoginsEmailByUserId`. //optional//
+  - [ ] Reset queries: `addResetCode`, `getResetCode`, `disableResetCode` and `getUserByLogin`. //optional//
+- [ ] Security-relevant behaviour of the login stack
+  - [ ] Plaintext secrets: Session tokens and reset/verify codes are stored unhashed in `z_logintoken.token`, `z_password_reset.refId` and `z_email_verify.token`. //should-do//
+  - [ ] No CSRF protection: No CSRF token exists on login, logout, signup, reset or verify actions of the bundled controller. //urgent//
+  - [ ] Session rotation: A fresh token is generated on every login and old sessions are never revoked by `loginAs()`. //should-do//
+  - [ ] Field exposure: `user()->fields` contains the password hash and salt of the current user. //important//
+  - [ ] Client IP: `Request::ip()` prefers `HTTP_CLIENT_IP` and `HTTP_X_FORWARDED_FOR` over `REMOTE_ADDR`, so the IP in alert mails is spoofable. //urgent//
+## 13. Permissions, Roles, Groups & Organizations
+- [ ] Concepts and class map
+  - [ ] `ZubZet\Framework\Authentication\Permission\User`: Database-backed user object over `z_user` using traits `Permission`, `RetrievalTrait` and `HandleTrait`. [partial] //should-do//
+  - [ ] `ZubZet\Framework\Authentication\Permission\Role`: Role object over `z_role` rows with `is_group = 0`, extending `AuthenticationObject`. [partial] //should-do//
+  - [ ] `ZubZet\Framework\Authentication\Permission\Group`: Empty subclass of `Role` whose only change is `$dbExpression` set to `is_group = 1`. //should-do//
+  - [ ] `ZubZet\Framework\Authentication\Organization`: Organization object over `z_organization` without the `Permission` trait, so it has no permissions of its own. [partial] //should-do//
+  - [ ] `ZubZet\Framework\Authentication\Permission\Permission`: Trait adding `permissionsAdd`, `permissionsRemove`, `hasAccessAll`, `hasAccessAnyOf` and `buildPermissionVariants` to `User`, `Role` and `Group`. [partial] //important//
+  - [ ] `ZubZet\Framework\Authentication\AuthenticationObject`: Base class shared by `User`, `Role`, `Group`, `Organization` and `Session`. //nice-to-have//
+  - [ ] Aliases: The global alias `User` points to the request user `ZubZet\Framework\Authentication\User` returned by `user()`; `Role`, `Group`, `Organization` and `Permission\User` have no alias and need `use`. //important//
+  - [ ] Effective permissions: A user's permissions are the union of their `z_user_permission` rows and the `z_role_permission` rows of every assigned active role and group. [partial] //important//
+  - [ ] Roles versus groups: Both grant permissions identically and differ only by the `z_role.is_group` flag. //should-do//
+  - [ ] Organization access: Organizations carry no permissions; access comes through the linked group that members receive automatically. [partial] //should-do//
+  - [ ] Link columns: `z_user.organizationId` and `z_organization.groupId` reference organizations and `is_group = 1` roles by convention only, without foreign keys. //nice-to-have//
+- [ ] Permission names and wildcard matching
+  - [ ] Name format: Free-form dot-separated string stored in `z_role_permission.name` or `z_user_permission.name` (`VARCHAR(255)`), such as `edit.article`. [partial] //important//
+  - [ ] `*.*` wildcard: A held `*.*` satisfies every checked permission, including single-segment names such as `support`. [partial] //important//
+  - [ ] Trailing `.*` wildcard: A held `a.*` satisfies a check for `a` itself and for any name beneath it such as `a.b` or `a.b.c`. [partial] //important//
+  - [ ] Nested prefix wildcard: A held `a.b.*` satisfies `a.b` and `a.b.c` but not `a.x`. [partial] //should-do//
+  - [ ] Granted side only: Wildcards are honoured only on the held side; a `*` in the middle of a name or a lone `*` has no special meaning. //should-do//
+  - [ ] `Permission::buildPermissionVariants(string $permissionName): string[]`: Public static helper returning `*.*`, the name and one `<prefix>.*` per prefix, deduplicated, used by every check. //should-do//
+  - [ ] Variant example: For `edit.article` it yields `*.*`, `edit.article`, `edit.*` and `edit.article.*` (the docblock lists a different order). //nice-to-have//
+  - [ ] Case sensitivity: PHP-side checks (`hasAccessAll`, `hasAccessAnyOf`) compare names case-sensitively while `byAccessToAll` and `byAccessToAnyOf` follow the database collation. //should-do//
+  - [ ] No deduplication: `permissionsAdd` inserts a new row per name even when an active identical row exists. //should-do//
+- [ ] Soft deletion and the `active` column
+  - [ ] Removal methods: `remove()` on `User`, `Role`, `Group` and `Organization` plus `permissionsRemove`, `rolesRemove` and `groupsRemove` set `active = 0` instead of deleting rows. [partial] //should-do//
+  - [ ] Retrievers: `byId`, `byIds`, `all`, `byName`, `byEmail`, `byUser` and `byRole` return only `active = 1` rows and only active assignments. [partial] //should-do//
+  - [ ] Role removal: Removing a role or group does not deactivate its permission rows or user assignments; they stop counting because queries join `z_role.active = 1`. //should-do//
+  - [ ] Reserved names: Removed role and group names stay reserved because `z_role.name` is UNIQUE across roles and groups, so reuse is rejected by the database. //should-do//
+  - [ ] Reserved emails: Removed users keep their `email` (covered by `uq_user_email`), so that address cannot be reused for a new user. //should-do//
+- [ ] Shared object model (`AuthenticationObject`, `HandleTrait`, `RetrievalTrait`)
+  - [ ] `AuthenticationObject`
+    - [ ] Constructor: `__construct(array $data)` takes a raw database row and requires an `id` key. [outdated] //important//
+    - [ ] `id()`: Returns the integer id and throws once the instance is removed. [partial] //nice-to-have//
+    - [ ] `getField(string $field)`: Returns a row column or cache entry and throws `InvalidArgumentException` "Field '<name>' does not exist" for unknown keys. //should-do//
+    - [ ] Readable columns: Any loaded column such as `is_group`, `active`, `created`, `organizationId` or `groupId` can be read through `getField`. //nice-to-have//
+    - [ ] `getAll(): array`: Returns the row plus internal cache keys (`permissions`, `user-permissions`, `roles`, `groups`, `organization`, `users`, `group`) and, for users, the `password` and `salt` columns. //should-do//
+    - [ ] `clearFields()`: Empties the data array so every getter throws until `refresh()` or `loadObject()` is called. [partial] //should-do//
+    - [ ] `nullId()` and `checkInstance()`: After `nullId()` every method throws `InvalidArgumentException` "Instance no longer exists". [outdated] //important//
+    - [ ] `setField(string $field, mixed $value)`: Protected extension point for subclasses to cache derived values in the data array. //optional//
+  - [ ] `HandleTrait::refresh(): void`
+    - [ ] Behaviour: Clears the fields and reloads the row via `byId()`; throws `RuntimeException("Object no longer exists")` when the row is gone or inactive. [partial] //should-do//
+    - [ ] Class filter: `refresh()` re-fetches through the class's own `byId`, so a `Group` is reloaded only if it is still a group. //nice-to-have//
+  - [ ] `loadObject(array $data)`
+    - [ ] Role: Public reload method on each class that replaces the data and resets that class's cache keys. [partial] //nice-to-have//
+    - [ ] Cache keys on users: `permissions`, `user-permissions`, `roles`, `groups` and `organization`. //optional//
+    - [ ] Cache keys on roles, groups and organizations: `permissions` and `users` for roles and groups, `users` and `group` for organizations. //optional//
+  - [ ] Field-clearing mutators
+    - [ ] List: `Role::update`, `User::updateEmail`, `updatePassword`, `verify`, `rolesAdd`, `groupsAdd`, `rolesRemove`, `groupsRemove` and `updateOrganization` call `clearFields()`. //should-do//
+    - [ ] Gotcha: Afterwards `email()`, `name()`, `getRoles()` and similar throw `Field '<name>' does not exist` until `refresh()` or a fresh `byId()` is used. //important//
+    - [ ] Exceptions: `Organization::updateName`, `permissionsAdd` and `permissionsRemove` do not clear all fields, so the object stays usable after them. //nice-to-have//
+  - [ ] `RetrievalTrait` static finders
+    - [ ] `all(): static[]`: Returns every active object of that class. [partial] //important//
+    - [ ] `byId(int|string $id): ?static`: Returns the active object or `null` when missing, inactive or outside the class filter. [partial] //important//
+    - [ ] `byIds(int ...$ids): static[]`: Returns the active objects among the given ids and silently skips the rest. [partial] //should-do//
+    - [ ] Group isolation: `Role::byId` never returns a group id and `Group::byId` never returns a role id because of `$dbExpression`. //should-do//
+    - [ ] Query source: The table comes from `$dbTable` (`z_role`, `z_user`, `z_organization`, `z_logintoken`) and is queried through `model("z_permission")` with alias `zr`. //optional//
+- [ ] Permission trait methods (available on `User`, `Role` and `Group`)
+  - [ ] `permissionsAdd(string ...$permissionNames): void`: Inserts one active row per name into `z_user_permission` or `z_role_permission` and resets the cached `permissions` field. [partial] //important//
+  - [ ] `permissionsRemove(string ...$permissionNames): void`: Sets `active = 0` on all rows of that object matching the names. [partial] //important//
+  - [ ] `hasAccessAll(string ...$permissionNames): bool`: True only if every given name is covered by an exact match or wildcard variant. [partial] //important//
+  - [ ] `hasAccessAnyOf(string ...$permissionNames): bool`: True if at least one given name is covered by an exact match or wildcard variant. [partial] //important//
+  - [ ] Empty arguments: `hasAccessAll()` without arguments returns `true` and `hasAccessAnyOf()` without arguments returns `false`. //urgent//
+  - [ ] List shapes: Both checks normalise flat names and rows with `name` before matching. //nice-to-have//
+  - [ ] Storage settings: The trait reads per-class `$dbPermissionsTable` and `$dbPermissionsObjectColumn` (`z_user_permission`/`user`, `z_role_permission`/`role`). //optional//
+- [ ] Role API (`Role`)
+  - [ ] `Role::add(string $rolename): self`: Inserts an active `z_role` row with `is_group` taken from `$dbExpression` (0 for `Role`, 1 for `Group`) and returns the object. [partial] //important//
+  - [ ] `Role::byName(string $name): ?Role`: Returns the single active role (or group on `Group`) with that exact name, or `null`. [partial] //important//
+  - [ ] `Role::byUser(User $user): Role[]`: Returns the active roles (or groups on `Group`) the user is assigned to. [partial] //important//
+  - [ ] `Role::byAccessToAll(string ...$permissionNames): Role[]`: Returns roles whose permissions cover every given name, each matched through its wildcard variants. [partial] //important//
+  - [ ] `Role::byAccessToAnyOf(string ...$permissionNames): Role[]`: Returns roles covering at least one given name through its wildcard variants. [partial] //important//
+  - [ ] Empty `byAccessToAll`: Without arguments it adds no permission condition and returns all active roles (or users). //should-do//
+  - [ ] `update(string $newName): void`: Renames the role, then clears all fields so the object must be refreshed before further reads. [partial] //important//
+  - [ ] `remove(): void`: Soft-deletes the role, flags permissions as changed and nulls the instance so later calls throw. [partial] //important//
+  - [x] `name(): string`: Returns the cached role name.
+  - [ ] `getUsers(): User[]`: Returns active users assigned to the role, lazily loaded and cached in the `users` field until `refresh()`. [partial] //important//
+  - [ ] `getPermissions(): string[]`: Returns permission names as a flat list from `z_role_permission` without deduplication, cached in the `permissions` field. [partial] //important//
+  - [x] `refreshPermissions()`: Public method that reloads the role's permission cache from the database.
+  - [ ] `refreshUsers()` [internal]: Private method that reloads the user cache via `User::byRole()`. [outdated] //important//
+  - [x] `setPermissionsByRole(Role $role): void`: Removes all current permissions of this role and copies those of the source role over.
+- [ ] Group API (`Group`)
+  - [ ] Inherited statics: `Group::add`, `byName`, `byUser`, `byAccessToAll` and `byAccessToAnyOf` are the `Role` methods and return `Group` objects restricted to `is_group = 1`. //should-do//
+  - [ ] Inherited instance methods: `update`, `remove`, `name`, `getUsers`, `getPermissions`, `setPermissionsByRole` and the `Permission` trait methods work like on `Role`. //should-do//
+  - [ ] Type compatibility: A `Group` is accepted wherever a `Role` is type-hinted, such as `User::byRole()` and `User::rolesAdd()`. //should-do//
+- [ ] User role and group assignment API
+  - [ ] `User::rolesAdd(Role ...$roles): void`: Inserts `z_user_role` rows, flags permissions as changed and clears the user's fields. [partial] //important//
+  - [ ] `User::groupsAdd(Group ...$groups): void`: Same insert for groups, but the type hint rejects plain `Role` objects. //should-do//
+  - [ ] `User::rolesRemove(Role ...$roles): void`: Sets `active = 0` on the user's matching `z_user_role` rows. [partial] //important//
+  - [ ] `User::groupsRemove(Group ...$groups): void`: Same soft removal for groups. //should-do//
+  - [ ] Duplicate assignments: Assignment inserts are plain inserts, so adding a role the user already has creates a duplicate row and may return the role twice. //should-do//
+  - [ ] `User::getRoles(): Role[]`: Returns only non-group roles, lazily loaded and cached in the `roles` field. [partial] //important//
+  - [ ] `User::getGroups(): Group[]`: Returns only groups, lazily loaded and cached in the `groups` field. //important//
+  - [ ] `User::byRole(Role $role): User[]` and `User::byGroup(Group $group): User[]`: Return active users with an active assignment to that role or group. [partial] //important//
+- [ ] User permission API
+  - [ ] `User::getPermissions()`: Returns all effective permissions including those from roles and groups, lazily cached in the `permissions` field. [partial] //important//
+  - [x] `User::getUserPermissions()`: Returns only permissions assigned directly to the user, cached in the `user-permissions` field.
+  - [ ] Return shape: `User::getPermissions()` and `getUserPermissions()` return rows like `["name" => "x.y"]` while `Role::getPermissions()` returns plain strings, despite `string[]` docblocks. //should-do//
+  - [x] `User::refreshPermissions()`: Reloads only the `user-permissions` cache.
+  - [x] `User::refreshAllPermissions()`: Reloads the inclusive `permissions` cache used by `hasAccessAll` and `hasAccessAnyOf`.
+  - [ ] `User::byAccessToAll(string ...$permissionNames): User[]`: Returns active users where each name is covered by a direct permission or any active role or group, possibly from different sources. [partial] //important//
+  - [ ] `User::byAccessToAnyOf(string ...$permissionNames): User[]`: Returns active users covered for at least one name by a direct, role or group permission. [partial] //important//
+- [ ] Organization API (`Organization`)
+  - [ ] `Organization::add(?string $name, bool $createGroup = false, ?string $groupName = null): Organization`: Inserts an organization and optionally a linked group. [partial] //should-do//
+  - [ ] Default group name: With `$createGroup` true and `$groupName` null the group is named `<name>_Group`. [partial] //should-do//
+  - [ ] Without group: Without `$createGroup` the `groupId` column stays NULL and no group is created. [partial] //nice-to-have//
+  - [x] `Organization::byName(string $name): Organization[]`: Returns all active organizations with that exact name because names are not unique.
+  - [x] `Organization::byUser(User $user): ?Organization`: Pass-through to `User::organization()`.
+  - [ ] `updateName(string $name): void`: Updates the active row and the cached `name` field, leaving the object usable. [partial] //should-do//
+  - [x] `name(): string`: Returns the cached organization name.
+  - [x] `getUsers(): User[]`: Returns active users whose `organizationId` equals this organization, cached in the `users` field.
+  - [x] `refreshUsers(): void`: Public method that reloads the user cache.
+  - [ ] `getGroup(): ?Group`: Returns the linked group or `null` when `groupId` is NULL or the group is inactive or not a group. [partial] //should-do//
+  - [x] `refreshGroup(): void`: Public method that reloads the linked group from `groupId`.
+  - [ ] `remove(): void`: Sets the organization `active = 0` but neither removes its group nor unassigns users nor nulls the instance. [partial] //should-do//
+  - [x] `User::organization(): ?Organization`: Lazily resolves `organizationId` and caches even a `null` result under the `organization-loaded` marker.
+  - [x] Removed organization: `User::organization()` returns `null` for users whose organization was removed because `Organization::byId` ignores inactive rows.
+  - [x] `User::byOrganization(Organization $organization): User[]`: Returns active users of the organization.
+  - [ ] `User::updateOrganization(?Organization $organization): void`: Sets or clears `z_user.organizationId` and clears the user's fields. [partial] //should-do//
+  - [x] Group sync: It removes the group of the previous organization and adds the group of the new one when those organizations have a linked group.
+  - [x] Null organization: Passing `null` removes the old organization group and leaves the user without organization.
+  - [ ] Sync caveats: The previous organization group is removed even if it was assigned manually, and the removal is skipped when the previous organization is already inactive. //should-do//
+  - [ ] Session property `user()->orgId`: Organization id loaded from `z_user.organizationId` at identification; `null` for anonymous users or users without organization. //should-do//
+- [ ] Caching and invalidation
+  - [ ] Per-object cache: Relationships (`roles`, `groups`, `permissions`, `users`, `group`, `organization`) are loaded lazily once per object and not shared between objects. //should-do//
+  - [ ] `AuthenticationObject::$permissionChanged`: Protected static flag shared by all classes that is never reset within a request, so it only turns on. //optional//
+  - [ ] Flag setters: Set by `permissionsAdd`, `permissionsRemove`, `Role::remove`, `User::remove`, `rolesAdd`, `groupsAdd`, `rolesRemove` and `groupsRemove`. //optional//
+  - [ ] Flag effect: Once set, `Role::getPermissions()`, `User::getUserPermissions()` and `User::getPermissions()` re-query the database on every call. //nice-to-have//
+  - [ ] Access checks: `Role::hasAccessAll` and `hasAccessAnyOf` always reload the role's permissions first, while the user variants reload only direct permissions and read the cached inclusive list. //nice-to-have//
+  - [ ] External changes: Permission changes made outside these objects, such as admin dashboard forms or direct SQL, do not set the flag, so existing objects stay stale until `refreshAllPermissions()` or `refresh()`. //should-do//
+- [ ] Request and session permission checks
+  - [ ] `Request::checkPermission(string $permission, bool $boolResult = false, bool $includeSuperUser = false): bool`
+    - [x] Role: Main access gate used in controllers; returns `true` and continues when the permission is granted.
+    - [ ] Anonymous user: Without `$boolResult` the login page is executed in place via `executePath(["login", "index"])` and the script exits; with `$boolResult` it returns `false`. //important//
+    - [x] Missing permission: Without `$boolResult` the 403 route runs via `executePath(["error", "403"])` and the script exits; with `$boolResult` it returns `false`.
+    - [ ] Reserved name `console`: True only when running in CLI, otherwise 403 (or `false` with `$boolResult`); roles and login are not consulted. //should-do//
+    - [ ] Super user flag: `$includeSuperUser = true` delegates to `user()->checkSuperPermission()`, which also accepts the original (exec) user of a login-as session. //should-do//
+  - [ ] `Request::checkSuperPermission(string $permission, bool $boolResult = false): bool`: Shortcut for `checkPermission()` with `$includeSuperUser` true. //should-do//
+  - [ ] `user()->checkPermission($permission): bool`: Returns `false` for anonymous users and never redirects. [partial] //important//
+  - [ ] `user()->checkSuperPermission($permission): bool`: Checks the acting user first, then, only for login-as sessions where `execUserId` is set and differs, the exec user. //should-do//
+  - [ ] `user()->checkPermissionOf($permission, int $userId): bool`: Public check for any user id that skips the login check and matches `*.*`, the exact name and every dotted-prefix wildcard (`a.*`, `a.b.*`). //should-do//
+  - [ ] Session cache: `permissionsByUserCache` is loaded once per user id per request via `model("z_user")->getPermissionsByUserId()` and is not refreshed when permissions change. //should-do//
+  - [ ] Counted rows: Only active role links, active roles and active permission rows count, and `z_user.active` is not filtered. //important//
+  - [ ] Duplicate matching logic: Session checks implement their own copy of the wildcard variant logic, separate from `Permission::buildPermissionVariants`. //nice-to-have//
+- [ ] Legacy model-level role helpers on the `z_user` model [internal]
+  - [ ] `getRoles($userId)`: Returns active `z_user_role` rows of a user (including group assignments), the value format used for the roles CED. //optional//
+  - [ ] `createRole()`: Inserts an empty role via `INSERT INTO z_role () VALUES ()` and returns its id. //optional//
+  - [ ] `deactivateRole($roleId)`: Sets `z_role.active = 0`, so users lose its permissions unless another active role grants them. //optional//
+  - [ ] `addRoleToUserByRoleId($userId, $roleId)`: Plain insert into `z_user_role` without duplicate or existence check, used by signup for `registerRoleId`. //optional//
+  - [ ] `changeRoleStateByUserIdAndRoleId($userId, $roleId, $shouldHaveRole = true)`: Grants only if no active row exists, or sets all active grants of that pair to `active = 0` when false. //optional//
+  - [ ] Cache note: `changeRoleStateByUserIdAndRoleId` does not reset the per-request permission cache of `Authentication\User`. //optional//
+  - [ ] `getRoleIdByRoleName(string $name): ?int`: Returns the first `z_role` id for the exact name regardless of `active` or `is_group`. //optional//
+  - [ ] `getPermissionsByUserId($userId)`: Returns sorted distinct permission names from active role permissions of active roles and groups plus active `z_user_permission` rows. //optional//
+  - [ ] `getUsersByOrganization(Organization $organization)` and `updateUserOrganization(User $user, ?Organization $organization)`: Model methods behind the organization API, the first marked `@internal`. //optional//
+- [ ] `z_permissionModel` (`model("z_permission")`) [internal]
+  - [ ] Status: Tagged `@internal` and uses `IsInternalModel`; the object classes above are the supported API. //optional//
+  - [ ] Generic readers: `getById(int|string $id, string $table, ?array $expression)`, `getByIds(string $table, array $ids, ?array $expression)` and `getAll(string $table, ?array $expression)` filter `active = 1` and also serve `Session`. //optional//
+  - [ ] Permission writers: `addPermissionsToObject(...)` and `removePermissionsFromObject(...)` take the table and column name from the calling class. //optional//
+  - [ ] Role and group methods: `getRolesGroupByUsers`, `getPermissionsByRoleGroup`, `getUsersByRoleGroup`, `getRoleGroupByName`, `addRoleGroup`, `updateRoleGroup` and `removeRoleGroup`. //optional//
+  - [ ] User methods: `removeUser`, `getUserByEmail`, `getNotVerifiedUsers`, `updateUserEmail`, `verifyUser`, `getPermissionsByUser` and `getPermissionsByUserAll`. //optional//
+  - [ ] Assignment methods: `addRolesGroupsToUser` and `removeRolesGroupsFromUser` serve both roles and groups. //optional//
+  - [ ] Access search methods: `getRolesByAccessToAll`, `getRolesByAccessToAnyOf`, `getUsersByAccessToAll` and `getUsersByAccessToAnyOf` receive pre-built wildcard variants. //optional//
+  - [ ] User access search: Uses one EXISTS subquery per required permission over a UNION ALL of direct and role permissions. //optional//
+  - [ ] Role access search: Uses one LEFT JOIN of `z_role_permission` per required permission and groups by `zr.id`. //optional//
+  - [ ] Builder usage: Both permission models build queries with `dbSelect`, `dbInsert`, `dbUpdate`, `whereInList` and Cake `InsertQuery` for multi-row inserts. //optional//
+- [ ] `z_organizationModel` (`model("z_organization")`) [internal]
+  - [ ] Methods: `create(?string $name, ?Group $group)`, `updateName`, `byName`, `byId` and `remove`; only `create` writes `groupId`, and only when a group is given. //optional//
+  - [ ] Active filtering: Readers filter on `zo.active = 1` and writers on `active = 1` plus the id. //optional//
+  - [ ] Debug bar tagging: It does not use `IsInternalModel`, so its queries count as application queries in the debug bar. //optional//
+- [ ] Extension points and configuration of the object classes
+  - [ ] Static properties: `$dbTable`, `$dbPermissionsTable`, `$dbPermissionsObjectColumn` and `$dbExpression` define table, permission table, foreign column and extra filter. //nice-to-have//
+  - [ ] Role subclasses: A `Role` subclass can redeclare `$dbExpression` like `Group` does, but `Role::add` only reads its `zr.is_group` key. //nice-to-have//
+  - [ ] Visibility: `Role::$dbExpression` is private while `Group::$dbExpression` is public, so a subclass must redeclare it to change the filter. //nice-to-have//
+  - [ ] Empty filters: `User::$dbExpression` and `Organization::$dbExpression` are empty arrays, so no extra filter applies. //optional//
+  - [ ] No configuration: These classes have no settings keys or environment variables. //optional//
+- [ ] Error handling and logging
+  - [ ] Removed instance: Methods on a removed or nulled instance throw `InvalidArgumentException` "Instance no longer exists". //should-do//
+  - [ ] Cleared fields: Reads of cleared or unknown fields throw `InvalidArgumentException` "Field '<name>' does not exist". //should-do//
+  - [ ] `refresh()` failure: Throws `RuntimeException` "Object no longer exists" when the row is gone. //should-do//
+  - [ ] Not found: Lookups return `null` (`byId`, `byName`, `byEmail`, `Organization::byUser`) or an empty array (`byIds`, `byName` on organizations, `byAccessTo*`). [partial] //should-do//
+  - [ ] Logging: Role, group, organization and permission changes write no log events; only `User::add` logs a user-created event. //nice-to-have//
+  - [ ] No empty-list guards: `permissionsAdd`, `permissionsRemove`, `rolesAdd`, `rolesRemove`, `groupsAdd`, `groupsRemove` and `byIds` pass empty lists straight to the query builder. //nice-to-have//
+## 14. Included Pages & Admin Dashboard
+- [ ] Default index page
+  - [ ] `IndexController::action_index($req, $res)`: Renders `index.php` with the explicit layout `layout/default_layout.php`. //important//
+  - [ ] Class and URLs: Extends `z_controller` and is reachable as `/index` and `/index/index`. //nice-to-have//
+  - [ ] Root route: It serves `/` only when `defaultIndex = IndexController` is configured; without the setting `/` targets `DashboardController`. [outdated] //urgent//
+  - [ ] No bundled dashboard: The framework ships no `DashboardController`, so an unconfigured `/` without an application controller ends on the 404 page. //important//
+  - [ ] Overriding: Add an application `IndexController.php` or an application view `index.php` (user views shadow bundled ones). [on develop] //should-do//
+  - [ ] `views/index.php`: Placeholder page with title "Replace this title" and an `alert alert-info` hint to create `z_views/index.php`, while the real default directory is `app/Views/`. //should-do//
+  - [ ] View structure: Returns `head` and `body` closures and `body` receives `$opt`. //nice-to-have//
+- [ ] Error pages (`ErrorController`)
+  - [ ] Class shape: Plain class without parent or constructor, with public `action_403($req, $res)`, `action_404($req, $res)` and `action_500($req, $res)`. //should-do//
+  - [ ] Action behaviour: Each action sets the status with `http_response_code()` and renders `403.php`, `404.php` or `500.php` through `layout/min_layout.php` with no `$opt` data; nothing is logged. //should-do//
+  - [ ] Direct access: Reachable as `/error/403`, `/error/404` and `/error/500`; `/error` alone ends on the 404 page because there is no `action_index`. //nice-to-have//
+  - [ ] Internal dispatch: The router and `Request` reach them through `executePath(["error", "<code>"])`. //optional//
+  - [ ] Overriding: Provide an application `ErrorController.php` (it must implement all three actions or the reroute limit of 10 ends in "Error: Too many reroutes.") or application views `403.php`, `404.php` and `500.php`. //important//
+  - [ ] 403 page: Shown by `Request::checkPermission()` and `checkSuperPermission()` when a logged-in user lacks the permission, then the script exits. [partial] //important//
+  - [ ] 403 variants: `checkPermission("console")` outside CLI also renders 403, and with `boolResult: true` these checks return `false` instead; an anonymous user is sent to `login/index`, not to 403. [outdated] //important//
+  - [ ] 404 page: Shown when the controller file or action (and `action_fallback`) does not exist. //important//
+  - [ ] 500 page: Shown when including a controller throws, or when an action throws and `showErrors` is `0`. //important//
+  - [ ] Silent fallback: `500.php` is also the fallback view when `Response::render()` cannot resolve a view or layout, and that response keeps status 200. //should-do//
+  - [ ] Error views
+    - [ ] Structure: `403.php`, `404.php` and `500.php` are structurally identical, differing only in the `h3`, the three digits and the message text. //extra-effort//
+    - [ ] 403 texts: "Oops! Page not for you" and "It seems like you don't have the permissions to visit this page!". //extra-effort//
+    - [ ] 404 texts: "Oops! Page not found" and "The page you requested couldn't be found!". //extra-effort//
+    - [ ] 500 texts: "Oops! This page seems to be broken" and "Sorry, we messed up!". //extra-effort//
+    - [ ] Back link: Each shows a link "Take me back to my Website" to `$opt["root"]`, and the texts are hard-coded English and not translatable. //nice-to-have//
+    - [ ] Styling: Inline CSS in the `head` closure (breakpoints 767px and 480px, font families Montserrat and Cabin that are not loaded) plus a Colorlib template credit comment. //optional//
+    - [ ] Title: `<title>` comes from the `pageName` setting because no `title` is passed. //nice-to-have//
+- [ ] Bundled login components as overridable framework components
+  - [ ] Component set: Controller `LoginController`, views `login.php`, `login_signup.php`, `login_forgotpassword.php`, `login_reset.php`, `login_verify.php`, `login_verify_wait.php`, mail views `email_verify.php` and `email_too_many_logins.php`, and model `z_loginModel`. //should-do//
+  - [ ] Controller override: A controller of the same name in the application controllers directory (`LoginController.php`) takes precedence over the bundled one. [on develop] //should-do//
+  - [ ] View override: A view with the same file name in the application views directory overrides the bundled login or mail view. [on develop] //should-do//
+  - [ ] Missing mail view: `email_password_reset.php` has no bundled version and must be supplied by the application. //urgent//
+- [ ] Admin panel entry and routing (`ZController`)
+  - [ ] URL scheme: `/z/{action}/{param}` is served by convention routing and the first segment `z` resolves to class `ZController`. [partial] //important//
+  - [ ] Action naming: Actions are `action_*` methods and hyphens in the URL become underscores, so `/z/edit-user` equals `/z/edit_user`. [partial] //should-do//
+  - [ ] Default action: `/z` and `/z/index` both call `action_index`. [partial] //should-do//
+  - [ ] Controller lookup: An application `ZController.php` is loaded before the bundled one and replaces the whole panel. [on develop] //should-do//
+  - [ ] Explicit routes first: FastRoute routes are matched before convention routing, so an application route can shadow `/z`. //should-do//
+  - [ ] Unknown actions: `ZController` has no `action_fallback`, so `/z/{unknown}` ends on the 404 page. //should-do//
+  - [ ] Group middleware: A `Route::group` prefix matching `/z` also wraps convention-routed panel requests. //nice-to-have//
+  - [ ] Constructor: `__construct(Request $req, Response $res)` only calls `$res->setDefaultLayout("layout/z_admin_layout.php")`. //nice-to-have//
+  - [ ] Request detection: Pages are GET renders and writes are POSTs detected with `$req->hasFormData()` (field `isFormData`) or `$req->isAction()` (field `action`). [partial] //nice-to-have//
+  - [ ] Base class: Extends `z_controller` and reuses `makeFood()` and `makeCEDFood()` to feed select and CED inputs. [partial] //nice-to-have//
+- [ ] Admin access control
+  - [ ] Check mechanism: Every action starts with `$req->checkPermission("...")` without super-user fallback and the request stops when it fails. //should-do//
+  - [ ] Anonymous visitor: The login page (`login/index`) is rendered in place and execution stops. [outdated] //important//
+  - [ ] Missing permission: The `error/403` page is rendered with HTTP status 403 and execution stops. [partial] //should-do//
+  - [ ] Impersonation: Checks run against the effective `userId` and not `execUserId`, so an impersonated user needs the permission itself. //should-do//
+  - [ ] Wildcards: Holders of `*.*` or `admin.*` pass every panel check because of wildcard matching. [partial] //should-do//
+  - [ ] No default admin: No bundled migration inserts an admin role, user or permission, so grants must be created manually in `z_role_permission` or `z_user_permission`. [outdated] //urgent//
+  - [ ] `admin.panel` scope: Only the dashboard requires it and the other actions do not, so direct URLs work without it. //urgent//
+  - [ ] Navigation versus enforcement: Sidebar entries and dashboard cards are hidden without permission, but each action enforces its own check. //should-do//
+  - [ ] Navigation mismatch: The Edit User entry and card test `admin.user.edit` while the user list at `/z/edit_user` needs `admin.user.list`. //should-do//
+  - [ ] Permission reference
+    - [ ] `admin.panel`: Dashboard at `/z`. [partial] //important//
+    - [x] `admin.maintenance`: Maintenance status page and bypass cookie action.
+    - [ ] `admin.user.add`: Add-user form and creation. [partial] //important//
+    - [ ] `admin.user.list`: User list at `/z/edit_user`. [partial] //important//
+    - [ ] `admin.user.edit`: Open and save a single user. [partial] //important//
+    - [ ] `admin.su`: `/z/login_as/{userId}`. [partial] //important//
+    - [ ] `admin.groups.list`: Groups list. //important//
+    - [ ] `admin.roles.list`: Roles list and prerequisite of every `/z/roles` request. [partial] //important//
+    - [ ] `admin.roles.create`: POST action `create` on `/z/roles`. [partial] //important//
+    - [ ] `admin.roles.edit`: Open and save a role and prerequisite of delete. [partial] //important//
+    - [ ] `admin.roles.delete`: POST action `delete` on `/z/roles/{roleId}`. [partial] //important//
+    - [ ] `admin.database`: Table list, row view and CSV export. //important//
+- [ ] Dashboard `/z` (`action_index`)
+  - [ ] Access and view: Requires `admin.panel` and renders `administration/dashboard.php`. [partial] //should-do//
+  - [ ] Layout: Icon-only cards in the sections Application, Users and Roles, and Other. [outdated] //important//
+  - [ ] Application cards: Database (`admin.database`) and Maintenance (`admin.maintenance`). [outdated] //important//
+  - [ ] Users and Roles cards: Edit User (`admin.user.edit`), Add User (`admin.user.add`), Roles (`admin.roles.list`) and Groups (`admin.groups.list`). [partial] //should-do//
+  - [ ] Other cards: Back to the application root and Logout (`login/logout`) are always shown. //nice-to-have//
+  - [ ] No widgets: There is no widget or card registration API and the dashboard shows no statistics, so changes require overriding the view. //should-do//
+- [ ] Maintenance page `/z/maintenance` (`action_maintenance`)
+  - [x] Access: Requires `admin.maintenance`.
+  - [ ] View options: GET renders `administration/maintenance.php` with `isActive`, `mode` and `browserCanBypass` from `MaintenanceHandler`. //optional//
+  - [ ] Status cards: Currently Active (`Maintenance` or `Normal` from `isActive()`), Current Mode (`getMode()`, escaped) and Your Browser Status (`Can Bypass` or `Cannot Bypass` from `checkBypassCookie()`). [partial] //nice-to-have//
+  - [x] No toggle: The page never switches maintenance on or off; the mode only comes from the `maintenance_mode` setting.
+  - [ ] Bypass button: "Bypass Cookie" sends POST action `bypass-maintenance` through `Z.Request.action`, reloads on `result` `success` and otherwise alerts `Failed to set bypass cookie`. [partial] //should-do//
+  - [ ] Button state: Disabled and labelled `(Already set)` when the bypass cookie is already present. //optional//
+  - [ ] Cookie written: Name `maintenance` (`MaintenanceHandler::$COOKIE_KEY`), value `true`, expiry now plus `TIMESPAN_DAY_1`, path from `getRootFolder()`, no secure or httponly flag; the action answers `$res->success()`. [partial] //important//
+  - [x] Cookie check: Only the presence of the cookie name is tested, any value counts.
+  - [x] Reachability: The gate runs before routing, so in `enabled` or `full` the panel itself returns 503 and in `soft` the cookie must already exist.
+  - [ ] Navigation: The dashboard card and sidebar link are rendered only for users with `admin.maintenance`. //optional//
+- [ ] Add user `/z/add_user` (`action_add_user`)
+  - [ ] Access: Requires `admin.user.add`. [partial] //should-do//
+  - [ ] Form: GET renders `administration/add_user.php` with field `email` (placeholder `name@example.com`) and field `password` (required client-side only), using `doReload: true`. //should-do//
+  - [ ] Submit detection: Without POST field `isFormData` the form is rendered again. //optional//
+  - [ ] Email unique: A taken address returns form error `{name: "email", type: "unique"}` checked against `z_user.email`. //should-do//
+  - [ ] Email format: A `FILTER_VALIDATE_EMAIL` failure returns `{name: "email", type: "filter"}`. //should-do//
+  - [ ] Empty email: Allowed and stored as NULL. //should-do//
+  - [ ] Password failures: Any exception from `z_user->add()` is caught and reported as `{name: "password", type: "filter"}`, including too short or too long passwords and SQL errors. //should-do//
+  - [ ] No required rule: There is no server-side required rule, so a POST without `password` creates a user without a password. //should-do//
+  - [ ] Partial creation: A rejected password leaves the already inserted user, which then blocks reuse of that email. //nice-to-have//
+  - [ ] Created state: The new user gets `verified` set to the current time, no role is assigned and no mail is sent; `USER_CREATED` is logged by the model. //should-do//
+  - [ ] Responses: `{"result":"success"}` or `{"result":"formErrors","formErrors":[...]}` with a `meta` block. //nice-to-have//
+  - [ ] No password management: The panel offers no password change, so impersonation via login-as is the only way to act as an existing user. //should-do//
+- [ ] Edit user `/z/edit_user[/{userId}]` (`action_edit_user`)
+  - [ ] User picker: Without an id it requires `admin.user.list` and renders `administration/user_select.php` with active users linking to `z/edit_user/{id}`. [partial] //should-do//
+  - [ ] Picker rows: Show `[id]` and the escaped email or `No email` for NULL emails. //nice-to-have//
+  - [ ] Single user: Opening or saving an id additionally requires `admin.user.edit`. [partial] //should-do//
+  - [ ] Id handling: The id is read with `getParameters(0, 1)` and the string `0` counts as a valid id. //optional//
+  - [ ] Unknown id: There is no existence or `active` check; `getUserById` returns `false` for unknown ids and the page still renders. //nice-to-have//
+  - [ ] Form fields: `email`, a roles CED (select `role`), a `Login as` action button and a `User-Level Permissions` CED (text `name`). [partial] //should-do//
+  - [ ] Role choices: The select lists all `active` `z_role` rows, groups included. //nice-to-have//
+  - [ ] Save email: Validated unique ignoring the edited user and by `FILTER_VALIDATE_EMAIL` (error `filter`); an empty email is written as NULL. //should-do//
+  - [ ] Save roles: CED `roles` needs `role` to be required and to exist in `z_role.id`, with no check for `active` or `is_group`, and is written by `doCED("z_user_role", ..., ["user" => $userId])`. //should-do//
+  - [ ] Save permissions: CED `permissions` is written by `doCED("z_user_permission", ...)`, and its validation errors (`name` required, length 3 to 100) are not checked before writing. //should-do//
+  - [ ] CED row addressing: Edit and delete rows are identified by `dbId` only and are not scoped to the edited user. //should-do//
+  - [ ] Persisted columns: Only `z_user.email` is updated, so password, language, verified flag, organization and deactivation cannot be managed here. //should-do//
+  - [ ] Error shape: CED errors carry `name` (CED name), `subname`, `index` and `type`. //optional//
+  - [ ] Logging: Logs `ACCOUNT_UPDATED` with `userId` and the email as it was before the update. //nice-to-have//
+  - [ ] View options: `email`, `userId`, `roles`, `user_roles` and `user_permissions`, plus `users` and `result` which the bundled view does not use. //optional//
+- [ ] Login as another user `/z/login_as/{userId}` (`action_login_as`)
+  - [ ] Access: Requires `admin.su` and is also reached by the `Login as` button of the edit form. [partial] //should-do//
+  - [ ] Missing id: An empty id returns an empty response and the string `0` is accepted. //optional//
+  - [ ] Mechanism: Calls `$res->loginAs($userId, $req->getRequestingUser()->execUserId)` and then redirects to the application root with `rerouteUrl()`. //should-do//
+  - [ ] Executor preserved: Nested impersonation keeps the original `execUserId`. //nice-to-have//
+  - [ ] Cookie and logging: A new `z_login_token` replaces the old one, and `USER_LOGGED_IN_ANOTHER` (or `USER_LOGGED_IN` when both ids are equal) is logged. [outdated] //important//
+  - [ ] Safety: It is a plain GET without CSRF token or confirmation and does not check that the target user exists or is active. //should-do//
+  - [ ] Ending impersonation: The sidebar `Logout` link (`login/logout`) returns to the executing user. //should-do//
+- [ ] Roles `/z/roles[/{roleId}]` (`action_roles`)
+  - [ ] Base access: `admin.roles.list` is checked first for every request, including create and delete. [partial] //should-do//
+  - [ ] Role picker: Without an id it renders `administration/role_select.php` with active roles where `is_group = 0` and a `Create role` button with a confirm dialog. [partial] //nice-to-have//
+  - [ ] Create: POST action `create` additionally needs `admin.roles.create`, inserts an empty role and answers `{"roleId": n}` without a `result` key. [partial] //should-do//
+  - [ ] Create gotcha: The role is created with an empty name, so a second create fails on the unique `z_role.name` until the first is renamed. //should-do//
+  - [ ] Edit access: Opening or saving a role needs `admin.roles.edit`. [partial] //should-do//
+  - [ ] Role lookup: Loads `z_role` by id with `is_group = 0` and without an `active` filter, so deactivated roles open and groups answer `Role not found`. //nice-to-have//
+  - [ ] Unknown id: The lookup reads index `[0]` of the result, which raises an undefined-key warning before `Role not found` is returned. //optional//
+  - [ ] Save form: Field `name` (required, length 3 to 100) and a `permissions` CED with field `name` (required, length 3 to 100) saved by `doCED("z_role_permission", ..., ["role" => $roleId])`. [partial] //should-do//
+  - [ ] Name uniqueness: There is no `unique` rule on the role name, so a duplicate name surfaces as an SQL error. //should-do//
+  - [ ] Permission input: Permission names are free text without a catalogue or wildcard check. //nice-to-have//
+  - [ ] Delete: POST action `delete` additionally needs `admin.roles.delete` and only sets `active = 0` via `deactivateRole`, keeping role permissions and user links. [partial] //should-do//
+  - [ ] Delete UI: The `Delete role` button asks for confirmation and then returns to `z/roles/`. //optional//
+  - [ ] No logging: Role creation, edits and deletion write no log event. //nice-to-have//
+  - [ ] View options: `roles` for the picker, `name` and `permissions` for the editor. //optional//
+- [ ] Groups `/z/groups` (`action_groups`)
+  - [ ] Access: Requires `admin.groups.list`. //should-do//
+  - [ ] Content: Read-only list of `[id]` and name of active `z_role` rows with `is_group = 1` from `z_general->getGroups()`, with the empty state `No groups found.`. //nice-to-have//
+  - [ ] No management: Group creation, editing and deletion do not exist in the panel. //should-do//
+  - [ ] View option: `groups`. //optional//
+- [ ] Database browser `/z/database[/{table}[/page/{n}|/csv]]` (`action_database`)
+  - [ ] Access and scope: Requires `admin.database` for list, rows and CSV; it is a read-only viewer and exporter with no insert, edit, delete, filter or search and a fixed sort. //important//
+  - [ ] Table list: `database/tables.php` shows Amount Of Tables, Approx. Amount Of Rows and per table name link, rows, created and updated (`Y-m-d H:i:s` or an em dash). //nice-to-have//
+  - [ ] Responsive list: Created and updated move into a "Details" toggle below the table name on small screens (`d-lg-none`). //optional//
+  - [ ] Table list order: Sorted by `Rows` descending, and tables with zero rows are shown in a muted link style. //optional//
+  - [ ] Table source: The list uses `SHOW TABLE STATUS` and columns use `SHOW COLUMNS FROM`, so every table of the connected database appears, not only `z_*` tables. //should-do//
+  - [ ] Row counts: The list uses the approximate engine estimate while the table page shows an exact `COUNT(*) AS total`. //nice-to-have//
+  - [ ] Table page: Shows Amount Of Rows, Amount Of Columns, Sorted By, pagination and a table with a key icon on `PRI` columns and `-` for NULL values. //nice-to-have//
+  - [ ] Row query: Built with `dbSelect(["*"])->from($table)->orderDesc($orderBy)->limit()->offset()`. //optional//
+  - [ ] Sort column: Ordered descending by the last `PRI` column of `SHOW COLUMNS`, or by the first column when there is no primary key. //nice-to-have//
+  - [ ] Pagination: 20 rows per page with URL `/z/database/{table}/page/{n}` where `n` is cast to int and at least 1; any other task segment shows page 1. //should-do//
+  - [ ] Pagination window: Up to five page numbers around the current page plus First, Previous, Next and Last; a page beyond the last is not clamped and shows no rows. //optional//
+  - [ ] Table name check: The name must exist in `SHOW TABLE STATUS`, otherwise `InvalidArgumentException("Invalid table name: ...")` is thrown. //nice-to-have//
+  - [ ] Invalid table result: The exception renders the 500 page, or is rethrown when the `showErrors` setting is non-zero. //nice-to-have//
+  - [ ] Empty table name: An empty table segment shows the table list. //optional//
+  - [ ] Masked columns: Columns named exactly `password`, `pw`, `salt` or `hash` are replaced by `********` in HTML and CSV. //important//
+  - [ ] Unmasked secrets: Other sensitive columns such as `z_logintoken.token`, `z_email_verify.token` and `z_password_reset.refId` are shown in clear text. //urgent//
+  - [ ] CSV export `/z/database/{table}/csv`
+    - [ ] Scope: Outputs up to 10000 newest rows ordered like the browser, without pagination. //nice-to-have//
+    - [ ] Headers: `Content-Type: text/csv; charset=UTF-8`, `Content-Disposition: attachment; filename="export_Y-m-d_H-i-s.csv"` (no table name), `Cache-Control: no-store, no-cache, must-revalidate`, `Pragma: no-cache` and `Expires: 0`. //optional//
+    - [ ] Format: UTF-8 BOM, comma delimiter, `"` enclosure, `\` escape and the column names as first line. //nice-to-have//
+    - [ ] Empty table: Only the BOM is written and no header row. //optional//
+    - [ ] Formula injection: Cell values are not neutralised against spreadsheet formula injection. //should-do//
+    - [ ] Export button: The `Export` link on the table page points at `z/database/{table}/csv`. //optional//
+  - [ ] Empty table notice: The message in `rows.php` reads `There are no rows in` without the table name. //optional//
+  - [ ] Option `wideContent`: Set to true by the controller; the table container switches to `content-fluid` when there are more than 5 columns. //optional//
+  - [ ] Row view options: `table` (`name`, `rows`, `columns`, `totalRows`, `totalColumns`, `totalPages`, `orderBy`), `page`, `pageLink`, `paginationStart`, `paginationEnd`, `paginationNext`, `paginationLast` and `totalPages`. //optional//
+  - [ ] List view option: `status` with `tables` and `approxRows`. //optional//
+  - [ ] Pagination quirk [internal]: The First link uses the relative href `{table}/page/1`. //optional//
+- [ ] Admin navigation (sidebar of `z_admin_layout.php`)
+  - [ ] Entries: Application (Database `admin.database`, Maintenance `admin.maintenance`), Users and Roles (Edit User `admin.user.edit`, Add User `admin.user.add`, Roles `admin.roles.list`, Groups `admin.groups.list`) and Other (Go back to application root, Logout `login/logout`). [outdated] //important//
+  - [ ] Logo link: The ZubZet heading links to `{root}z`. //optional//
+  - [ ] Easter egg: Ctrl+J toggles an animated logo and stores the choice in `localStorage` key `z_admin_logo_visible`. //optional//
+- [ ] Admin view override contract
+  - [ ] Override files: `administration/dashboard.php`, `maintenance.php`, `add_user.php`, `user_select.php`, `edit_user.php`, `role_select.php`, `roles.php`, `groups.php`, `database/tables.php`, `database/rows.php` and `layout/z_admin_layout.php` can be replaced from the application views directory. //should-do//
+  - [ ] Escaping: User list, maintenance, table list and row views escape output with `e()`, while role names, group names, the `edit_user.php` email and the `roles.php` name are echoed unescaped. //important//
+  - [ ] CED data: `makeCEDFood` builds the permission and role JSON by string concatenation without an escape callback, so quotes in values are not escaped. //nice-to-have//
+  - [ ] Role name field: `roles.php` creates the name field with `type: "name"`, which is not a valid input type and renders as plain text. //optional//
+- [ ] Test hooks in admin markup [internal]
+  - [ ] Sidebar and dashboard: `btn-database`, `btn-maintenance`, `btn-edit-user`, `btn-add-user`, `btn-roles`, `btn-groups`, `dash-database`, `dash-maintenance`, `dash-edit-user`, `dash-add-user`, `dash-roles`, `dash-groups`, `dash-back` and `dash-logout`. //optional//
+  - [ ] Lists: `user`, `role-{id}`, `role-create` and `group-{id}`. //optional//
+  - [ ] Maintenance: `maintenance-heading`, `maintenance-status`, `maintenance-mode`, `maintenance-browser` and `btn-bypass-maintenance`. //optional//
+  - [ ] Database: `table-amount`, `row-amount`, `table-name-{name}`, `amount-rows`, `amount-columns`, `sort-by`, `btn-csv-export`, `pagination`, `pagination-first`, `pagination-previous`, `pagination-page-{n}`, `pagination-next`, `pagination-last`, `column-{field}` and `row-{field}`. //optional//
+- [ ] Bundled models behind the admin pages [internal]
+  - [ ] `z_adminDashboardModel`
+    - [ ] `getTableStatus(): array`: Returns `["tables" => rows of SHOW TABLE STATUS sorted by Rows desc, "approxRows" => int]`. //optional//
+    - [ ] `getRowStatus(string $table, ?int $page = null): array`: Returns `name`, `rows`, `columns`, `totalRows`, `totalColumns`, `totalPages` and `orderBy`, where a `null` `$page` selects the 10000-row export mode. //optional//
+    - [ ] `exportToCsv(array $table)`: Sends the CSV headers and writes the rows to `php://output` itself. //optional//
+  - [ ] `z_generalModel`
+    - [ ] `getLanguageList()`: Returns all `z_language` rows. //optional//
+    - [ ] `getLanguageById($id)`: Returns one `z_language` row or null. //optional//
+    - [ ] `getLanguageByValue($value, $defaultLanguageId = 1)`: Returns the language id for a code such as `EN` or `DE` and falls back to the default id `1` for unknown values. //optional//
+    - [ ] `getUniqueRef()`: Loops `uniqid('', false)` until `z_uniqueref` has no such `ref`, inserts it and returns it. //optional//
+    - [ ] `getUniqueRef` callers: Upload file naming and the password reset flow use it. //optional//
+    - [ ] Predictability: Values are time-based `uniqid` strings, not random tokens. //nice-to-have//
+    - [ ] `checkUniqueRef($ref)`: Returns true when `z_uniqueref` has no row with that `ref`. //optional//
+    - [ ] `getGroups()`: Returns `z_role` rows with `is_group = 1` and `active = 1` without ordering. //optional//
+## 15. Forms, Validation & File Uploads
+- [ ] Validation entry points
+  - [ ] `Request::validateForm($fields, $data = null)`
+    - [x] Purpose: Validates an array of `FormField` objects and returns a `FormResult` that collects all errors.
+    - [ ] `$fields` argument: The same `FormField` objects are stored in `FormResult::$fields` and each receives its validated `value`. [partial] //should-do//
+    - [ ] Default input source: Without `$data` the input is `array_merge(getPost(), getFiles())`, so uploaded files override same-named POST keys. //important//
+    - [ ] Loose null check: The check is `$data == null`, so an empty array also falls back to POST plus files. //nice-to-have//
+    - [ ] Custom `$data` source: Any array such as `getGet()` can be validated, but `required` and `file` rules still read uploads from `getFiles()`. //should-do//
+    - [ ] Rule execution order: Rules run in the order they were chained and every failing rule appends its own error, so one field can yield several errors. //should-do//
+    - [ ] Empty values skip rules: Every rule except `required` only runs for set non-empty values or the string `0`, otherwise the field value becomes `null`. //important//
+    - [ ] String `0`: It passes `required` and is still checked by all other rules. //should-do//
+    - [ ] Fields without rules: Their value is not normalised, so an empty string stays an empty string instead of becoming `null`. //should-do//
+    - [ ] Value overwrites: Every executed rule re-reads the raw input into the field value, so chain `required()` first and `integer()` last or its cast is discarded. //should-do//
+    - [ ] No custom-rule hook: Rules are hard-coded in `validateForm`, so custom checks are added afterwards with `FormResult::addCustomError()`. //should-do//
+    - [x] Typical handler flow: Check `hasFormData()`, call `validateForm()`, return `$res->formErrors($result->errors)` when `hasErrors`, otherwise save and call `$res->success()`.
+  - [ ] `Request::hasFormData()`: True when POST contains `isFormData`, which every Z.js `ZForm` submission adds. [partial] //important//
+  - [ ] `Request::isAction(string $type)`: True when POST `action` equals the type, matching `Z.Request.action()` calls. [partial] //important//
+  - [ ] Trait composition [internal]: `Request` mixes in `CanValidateForm` and `CanValidateMultiForm`, which itself uses `CanValidateForm`. //optional//
+  - [ ] Global class aliases: `FormField` maps to `Form\Validation\Field`, `FormResult` to `Form\Validation\Result` and `z_upload` to `Form\Upload`. [partial] //important//
+- [ ] `FormField` class (`ZubZet\Framework\Form\Validation\Field`)
+  - [x] Constructor: `new FormField($name, $dbName = null)` where `$name` is the POST key and `$dbName` the database column, defaulting to `$name`.
+  - [ ] Fluent chaining: Every rule method returns the field itself so rules can be chained. [partial] //should-do//
+  - [ ] Public properties
+    - [ ] `name`: POST key of the input. //nice-to-have//
+    - [ ] `dbField`: Column name used by `insertDatabase` and `updateDatabase`. [partial] //important//
+    - [ ] `dataType`: Prepared-statement bind type letter, default `s`, set to `i` by `integer()` and assignable directly for other types. //should-do//
+    - [ ] `isRequired`: Set to true by `required()`, default false. //nice-to-have//
+    - [ ] `value`: Validated value after `validateForm`, default `null`. [partial] //should-do//
+    - [ ] `noSave`: When true the field is skipped when SQL is written; there is no setter, so the property is assigned directly. //should-do//
+    - [ ] `isFile`: Set by `file()` and enables automatic uploads in the database helpers. //nice-to-have//
+    - [ ] `rules`: List of rule arrays that each carry `name`, `type` and the rule options. //optional//
+  - [ ] Rule array shapes [internal]
+    - [ ] Common keys: Every rule array carries `name` and `type`, where the types are `required`, `length`, `filter`, `unique`, `exist`, `in`, `integer`, `range`, `date`, `file` and `regex`. //optional//
+    - [ ] Option keys: `length` and `range` use `min` and `max`, `filter` uses `filter`, `unique` uses `table`, `field`, `ignoreField` and `ignoreValue`, and `exist` uses `table` and `field`. //optional//
+    - [ ] More option keys: `in` uses `allowedValues`, `date` uses `format`, `file` uses `types` and `maxSize`, and `regex` uses `expression` and `exceptions`. //optional//
+  - [ ] Rule methods
+    - [ ] `required()`: Fails with `required` when the input is unset or an empty string and no uploaded file exists under that name. [partial] //important//
+    - [x] `required()` on checkboxes: A Z.js `checkbox` always submits `1` or `0`, so `required()` never fails for it and `checked()` is needed instead.
+    - [ ] `length($min, $max)`: Inclusive bounds using `strlen` (bytes) for scalars and `count` for array values, with error `info` `[min, max]`. [partial] //important//
+    - [ ] `filter($filter)`: Fails with `filter` when `filter_var($value, $filter)` is falsy, so only the filter id is supported without options or flags. //important//
+    - [ ] `filter` falsy results: A valid value that filters to a falsy result, such as `0` with `FILTER_VALIDATE_INT`, still fails. //important//
+    - [ ] `filter` scalar only: Array values such as multi-select are not supported; use `in()` instead. //should-do//
+    - [ ] `integer()`: Fails with `integer` when `filter_var` with `FILTER_VALIDATE_INT` is strictly false, accepts `0` and sets `dataType` to `i`. //important//
+    - [ ] `integer` cast: The field `value` is replaced by `intval($value)` even when validation failed, only survives when `integer()` is the last rule, and array values are not supported. //important//
+    - [ ] `range($min, $max)`: Fails with `range` and `info` `[min, max]` when `$value < $min || $value > $max`, without checking that the value is numeric. //important//
+    - [ ] `date($format = 'Y-m-d')`: Fails with `date` only when `strtotime($value)` is falsy; the `$format` argument is stored but never applied. //urgent//
+    - [ ] `date` accepted strings: Any `strtotime` input such as relative expressions passes, while a value parsing to timestamp 0 is rejected. //should-do//
+    - [ ] `regex($expression, $exceptions = [])`: Fails with `regex` when text remains after the `$exceptions` strings are removed with `str_replace` and all matches of `$expression` are removed with `preg_replace`. [partial] //important//
+    - [ ] `regex` pattern meaning: The expression describes the allowed characters, for example `/[A-Za-z ]/`, and a full-match pattern such as `/^[a-z]+$/` also works. //important//
+    - [ ] `regex` always-failing values: A value of `0`, or one that is empty after exceptions are removed, always fails because of the loose comparison used. //should-do//
+    - [x] `regex` arrays: The regex is applied per item and the field fails as soon as one item fails.
+    - [ ] `unique($table, $field, $ignoreField = null, $ignoreValue = null)`: Fails with `unique` when `db()->checkIfUnique` finds the value, optionally ignoring the row where `$ignoreField` equals `$ignoreValue`. //important//
+    - [ ] `unique` on edit forms: Pass the primary key column and current id as the ignore pair so the edited row does not collide with itself. //important//
+    - [ ] `unique` identifiers: Table and field names are only backtick-wrapped, not escaped, and values are bound as strings, so identifiers must never come from user input. //should-do//
+    - [ ] `unique` scalar only: Array values are not supported because a single uniqueness query is run. //nice-to-have//
+    - [ ] `exists($table, $field)`: Fails with the error key `exist` (not `exists`) when `db()->checkIfExists` finds no matching row. [partial] //important//
+    - [ ] `exists` arrays: Every picked item must exist and the error is reported once for the field. [partial] //should-do//
+    - [ ] `in(array $allowedValues)`: Fails with `in` unless the value is in the in-memory allow-list using non-strict `in_array`, with no database access. [partial] //important//
+    - [x] `in` use case: Meant to reject POST values that were not in the rendered `select` or `multi-select` options; for arrays every picked item must be allowed.
+    - [ ] `checked()`: Sugar for `in(['1', 'true', 'on'])` that enforces a ticked checkbox and reports the error key `in`. [partial] //important//
+    - [ ] `checked` presence: It does not imply `required()`, so a request that omits the field entirely passes. //urgent//
+    - [ ] `file($maxSize, $types = [])`: Validates an upload from `getFiles()`, sets `isFile` and is needed for the automatic upload in `insertDatabase`. [partial] //important//
+    - [ ] `file` `$maxSize`: Byte limit compared with `size > maxSize` using the `FILE_SIZE_*` constants; unlike `Upload::upload` the value 0 does not mean unlimited. [partial] //important//
+    - [ ] `file` `$types`: Allowed extensions compared with the lowercased file extension, so entries must be lowercase without a dot, and an empty array allows any type. [partial] //urgent//
+    - [ ] `file` checks: Only size and the file name extension are checked, not the PHP upload `error` code, the MIME type or the file content. //important//
+    - [ ] `file` multiple errors: One file can report `file_to_big` and `file_type` together. //should-do//
+    - [ ] `file` error trigger: `file` is reported when a value is posted under the field name without a `$_FILES` entry; when nothing is submitted the rule is skipped unless `required()` fails. //should-do//
+    - [ ] `file` value: `FormResult::getValue()` returns the raw `$_FILES` entry array for a file field. //should-do//
+  - [ ] Array-valued fields (multi-select)
+    - [x] List-aware rules: `length` counts items, while `regex`, `exists` and `in` run per item.
+    - [ ] Scalar-only rules: `filter`, `unique`, `integer`, `range` and `date` do not support array values. [partial] //should-do//
+- [ ] Error entries and keys
+  - [ ] Entry shape: Each entry is an array with `name`, `type` and, for `length` and `range`, an `info` array `[min, max]`. //important//
+  - [ ] `required`: Raised by `required()`. //should-do//
+  - [ ] `length`: Raised by `length()` with `info` `[min, max]`. //should-do//
+  - [ ] `filter`: Raised by `filter()`. //should-do//
+  - [ ] `unique`: Raised by `unique()`. //should-do//
+  - [ ] `exist`: Raised by `exists()`. //should-do//
+  - [ ] `in`: Raised by `in()` and `checked()`. //should-do//
+  - [ ] `regex`: Raised by `regex()`. //should-do//
+  - [ ] `integer`: Raised by `integer()`. //should-do//
+  - [ ] `range`: Raised by `range()` with `info` `[min, max]`. //should-do//
+  - [ ] `date`: Raised by `date()`. //should-do//
+  - [ ] `file_to_big`: Raised by `file()` when the upload exceeds `$maxSize`, spelled with one o in "to". //important//
+  - [ ] `file_type`: Raised by `file()` when the extension is not in `$types`. //should-do//
+  - [ ] `file`: Raised by `file()` when a value was posted but no upload exists for the field. //should-do//
+  - [ ] Custom error types: `addCustomError($name, $type)` accepts any `$type`, which the client maps to `Z.Lang.error_<type>`. //important//
+  - [ ] CED error entries: Sub-form errors use the CED name as `name` and add `subname` (field) and `index` (entry key). //should-do//
+- [ ] `FormResult` class (`ZubZet\Framework\Form\Validation\Result`)
+  - [x] `hasErrors`: True when any error exists, default false.
+  - [ ] `errors`: Array of error entry arrays, default empty. [partial] //should-do//
+  - [ ] `fields`: The validated `FormField` objects, or the rule list for a CED result. [partial] //nice-to-have//
+  - [ ] `doNothing`: Set by `validateCED` when the CED key is absent, making `doCED` a no-op; default false. //nice-to-have//
+  - [ ] `name`: Typed `?string` without default and only assigned by `validateCED`, so reading it on a `validateForm` result throws an uninitialized property error. //nice-to-have//
+  - [ ] `getValue($name)`: Returns the validated value of the named field, or `null` when no such field exists. //important//
+  - [ ] `addCustomError($name, $type)`: Appends an error entry and sets `hasErrors` so application-specific checks reach the client in the same format. //important//
+- [ ] Multi-form (CED) validation and persistence
+  - [ ] `Request::validateCED($name, $rules)`
+    - [x] Purpose: Validates every entry of the POST array `$name` with the same `FormField` rules and returns a `FormResult` for `doCED`.
+    - [ ] Missing input: A missing or non-array POST value yields `doNothing = true` and no errors. //should-do//
+    - [ ] Error rewriting: Each sub-error gets `name` set to the CED name, `subname` set to the field name and `index` set to the entry key. //should-do//
+    - [ ] Delete entries: Rules apply to every entry regardless of its `Z` action. [partial] //should-do//
+    - [ ] Value state: `FormResult::$fields` is the shared `$rules` array, so field values reflect only the last validated entry. //nice-to-have//
+  - [ ] `Response::doCED($table, $validationResult, $fix = [])`
+    - [ ] Purpose: Applies the CED entries of `getPost($name)` to `$table` according to each entry `Z` action and returns immediately when `doNothing` is set. [partial] //important//
+    - [ ] `Z` = `create`: Inserts a row using the field `name` as column name (not `dbField`) and `dataType` as bind type, appending `$fix` values bound as strings. [partial] //important//
+    - [ ] `Z` = `edit`: Runs `UPDATE ... WHERE id = ?` with the entry `dbId` bound as integer and sends the generic `error()` when `dbId` is missing; `$fix` is not applied. //important//
+    - [ ] `Z` = `delete`: Soft delete via `UPDATE <table> SET active = 0 WHERE id = ?`, so the table needs an `active` column. [partial] //important//
+    - [ ] Unknown `Z` value: Sends the generic `error()` response and exits. //nice-to-have//
+    - [ ] Raw values: The raw POST item values are written, not the validated or cast field values. //should-do//
+    - [ ] Table requirements: The table needs an `id` primary key and an `active` column. [partial] //should-do//
+    - [ ] Identifiers: Table and column names are not quoted or escaped. //should-do//
+    - [ ] No ownership check: Rows are matched by `id` only, so `$fix` does not restrict which rows a client can change. //urgent//
+    - [ ] No transaction: Nothing wraps the items, so a failure midway leaves earlier items applied. //should-do//
+- [ ] Saving validated forms to the database (prepared statements; table and column names are interpolated, so never pass user input)
+  - [ ] `Response::insertDatabase(string $table, FormResult $validationResult, array $fixed = [])`
+    - [ ] Result: Inserts one row from the validated fields and returns `getInsertId()`. [partial] //important//
+    - [ ] Column mapping: Columns come from non-`noSave` fields using `dbField` and bind types from `dataType`. [partial] //important//
+    - [ ] `$fixed` argument: Column-to-value pairs added first and always bound as strings. //important//
+    - [x] Array values: Values such as multi-select selections are stored `json_encode`d.
+    - [ ] Quoting: Table and column names are wrapped in backticks. //nice-to-have//
+  - [ ] `Response::updateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult, array $fixed = [])`
+    - [ ] Result: Updates the row where `$pkField` equals `$pkValue` from the validated fields and returns nothing. [partial] //important//
+    - [ ] Primary key skip: A field whose `dbField` equals `$pkField` and whose value equals `$pkValue` is not written, and the same holds for `$fixed`. //nice-to-have//
+    - [ ] Types: `$pkType` is the bind type for the WHERE value and `$fixed` values are bound as strings. //should-do//
+    - [ ] Empty column list: If no column remains the generated SQL is invalid. //nice-to-have//
+  - [ ] `Response::insertOrUpdateDatabase(string $table, string $pkField, string $pkType, $pkValue, FormResult $validationResult, array $fixed = [])`
+    - [ ] Result: Selects by primary key, updates and returns `$pkValue` if found, otherwise inserts and returns the new id. [partial] //should-do//
+    - [ ] Insert branch: It does not add the primary key unless it is a form field or in `$fixed`. //nice-to-have//
+  - [ ] Automatic file uploads (private `uploadFromForm()`)
+    - [ ] Trigger: Runs first in the insert and update helpers for fields marked with `->file()`. [partial] //should-do//
+    - [ ] No file posted: A field whose `getFile($name)` is empty gets `noSave = true`, so its column is left untouched. //should-do//
+    - [ ] Target: Uploads into the `uploadFolder` setting (default `uploads/`) and stores the resulting `z_file` id as the field value. [outdated] //important//
+    - [ ] Limits not re-checked: It reads `rules['fileMaxSize']` and `rules['types']` from a list of rule arrays, so it passes size `0` and types `[]` and limits come only from `validateForm()`. //should-do//
+    - [ ] Failure: A non-zero upload code ends the request with `error("Upload error: <code>")`. //nice-to-have//
+  - [ ] `Response::formErrors(...$errors)`: Sends `{result: formErrors, formErrors: [...]}` merging every array argument, drops non-array arguments and exits. [partial] //important//
+- [ ] File uploads (`Upload`, alias `z_upload`)
+  - [x] `Response::upload()`: Factory returning a new `Upload` object that holds the result of the upload it performs.
+  - [ ] `Upload::upload($file, $uploadDir, $maxSize, $typeArray)`
+    - [ ] Purpose: Validates and moves an uploaded file into `$uploadDir`, registers it in `z_file` and returns an `UPLOAD_*` code. [partial] //important//
+    - [x] `$file`: A `$_FILES` style entry such as `$req->getFile('profile_picture')`.
+    - [ ] `$uploadDir`: Must end with a slash because it is concatenated directly, and a missing directory is created with `mkdir(..., 0755, true)` before the type check. [partial] //important//
+    - [ ] `$maxSize`: Byte limit where 0 means unlimited. [partial] //important//
+    - [ ] `$typeArray`: Lowercase extensions without dot, and an empty array allows every extension including `php`. [partial] //urgent//
+    - [ ] Check order: Unique reference, extension check, size check, then `move_uploaded_file`. //nice-to-have//
+    - [ ] Stored file name: The file is stored as `<uniqid>.<lowercased extension>` and the original name is kept only in `z_file.name`. //should-do//
+    - [ ] Reference generation: `model('z_general')->getUniqueRef()` inserts a `z_uniqueref` row even if the upload is rejected afterwards. //nice-to-have//
+    - [ ] Client data trusted: Only the client-supplied extension is evaluated, the MIME type and content are not sniffed, the upload `error` code is not read and `mime` is the browser-reported type. //urgent//
+    - [ ] Real uploads only: `move_uploaded_file` fails (`UPLOAD_ERROR_NOT_MOVED`) for files that were not uploaded through HTTP. //nice-to-have//
+    - [ ] PHP limits: Raise `upload_max_filesize` and `post_max_size` in `php.ini` for large files. //important//
+  - [ ] Return codes
+    - [ ] `UPLOAD_SUCCESS` (0): File moved and `z_file` row created. //important//
+    - [ ] `UPLOAD_ERROR_TOO_BIG` (1): `size` is above `$maxSize`. //important//
+    - [ ] `UPLOAD_ERROR_WRONG_TYPE` (2): The extension is not in `$typeArray`. //important//
+    - [ ] `UPLOAD_ERROR_NOT_MOVED` (3): `move_uploaded_file` returned false. //important//
+    - [ ] `UPLOAD_ERROR_NO_FILE` (4): `$file` is empty or has no `name` key. //important//
+  - [ ] Result properties: `ref`, `mime`, `srcName`, `extension`, `size`, `filePath` and `fileId` are filled only when the upload succeeded. //important//
+  - [ ] `Upload::image($file, $uploadDir, $maxSize = FILE_SIZE_2MB)`: Accepts `jpg`, `jpeg`, `png` and `bmp`. //should-do//
+  - [ ] `Upload::video($file, $uploadDir, $maxSize = FILE_SIZE_100MB)`: Accepts `mp4`, `m4a`, `m4v`, `mov`, `3gp`, `ogg`, `webm`, `flv`, `mkv`, `avi` and `wmv`. //should-do//
+  - [ ] `Upload::audio($file, $uploadDir, $maxSize = FILE_SIZE_10MB)`: Accepts `mp3`, `wav`, `wma`, `ogg`, `m4a`, `aiff` and `aac`. //should-do//
+  - [ ] No serving route: The framework ships no controller or helper that serves stored uploads, and the default `uploads/` path is relative to the working directory. //should-do//
+  - [ ] Predictable names: The reference comes from `uniqid('', false)`, which is time based and not random. //should-do//
+- [ ] `z_file` model (`model('z_file')`, internal)
+  - [ ] `add($ref, $type, $name, $extension, $size)`: Inserts a `z_file` row (`reference`, `type`, `name`, `extension`, `size`) and returns the new id. //optional//
+  - [ ] `getById($fileId)`: Returns one `z_file` row or null, without filtering on `active`. //optional//
+  - [ ] Caller: `Upload::upload()` calls `add` after the file was moved and exposes the id as `fileId`. //optional//
+  - [ ] Stored values: `reference` is the unique ref naming the file on disk as `{ref}.{extension}`, `type` the client-sent MIME type, `name` the original basename. //nice-to-have//
+  - [ ] Stored extension: `extension` holds the lowercased extension of the original file name. //optional//
+- [ ] Upload constants
+  - [ ] `FILE_SIZE_*`: `FILE_SIZE_1MB`, `2MB`, `5MB`, `10MB`, `20MB`, `50MB`, `100MB`, `200MB`, `500MB`, `1GB`, `2GB`, `5GB`, `10GB`, `20GB`, `50GB` and `100GB` hold byte counts. [partial] //important//
+  - [ ] GB definition: The GB constants use 1000 MB, so `FILE_SIZE_1GB` is 1048576000 (1000 times `FILE_SIZE_1MB`) rather than 1024. //should-do//
+## 16. Frontend Integration
+- [ ] Z.js client library overview
+  - [ ] File and globals: `web/Z.js` is a single non-module script defining the global `Z` namespace plus the classes `ZForm`, `ZFormField`, `ZCED`, `ZCEDItem` and the counter `zInputIndex`. [partial] //should-do//
+  - [ ] Automatic inclusion: `essentialsHead` adds Z.js to every layout that calls the layout essentials, so it is not included manually. [partial] [on develop] //important//
+  - [ ] Served URL: Z.js is exposed as `_zubzet/asset-proxy/Z.js` because the framework `web/` directory (`z_frontend_root`) is mounted on the asset proxy. [partial] //should-do//
+  - [ ] Runtime requirements: Needs jQuery (`$.ajax`, `fadeOut`, `slideDown`), the global `bsCustomFileInput` and Bootstrap 4 plus Font Awesome styles. //important//
+  - [ ] Bootstrap 4 markup: Generated DOM relies on Bootstrap 4 classes such as `form-row`, `custom-file`, `input-group-prepend`, `badge-primary` and `float-right`. [partial] //should-do//
+  - [ ] Implicit global: `Z` is assigned without `var` or `const`, so views and the console can use it directly. //nice-to-have//
+  - [ ] `Z.debug`: Flag defaulting to `false` that is declared on `Z` but not read anywhere in Z.js. //optional//
+  - [ ] Layout-assigned properties: `Z.Request.rootHost` and `Z.Request.absRoot` are assigned by the layout essentials script and are not declared in Z.js itself. //nice-to-have//
+- [ ] Layout essentials and bundled libraries
+  - [ ] `$opt['layout_essentials_head']($opt, $customBootstrap = false)`
+    - [ ] Role: Prints the head tags for all frontend assets and is called by the bundled layouts; the underlying `essentialsHead()` function has no default for `$customBootstrap`. //important//
+    - [ ] Script order: `js/jquery.min.js`, `js/popper.min.js`, `js/bootstrap.min.js`, `js/bs-custom-file-input.js` and `Z.js`, all under `_zubzet/asset-proxy/`. //should-do//
+    - [ ] `$customBootstrap`: When true only `bootstrap.min.js` is skipped, while `css/bootstrap.min.css` is still always loaded. //should-do//
+    - [ ] Stylesheets: `css/bootstrap.min.css` and the Font Awesome files `all.min.css`, `brands.min.css`, `v4-shims.min.css` and `fontawesome.min.css` under `css/font-awesome/`, so Font Awesome 4 class names keep working. [partial] //should-do//
+    - [ ] Inline JS config: Sets `Z.Request.rootPath` from `$opt['root']`, `Z.Request.rootHost` from `getRoot()` (the `root` setting) and `Z.Request.absRoot` from `$opt['absRoot']`, echoed without escaping. //nice-to-have//
+    - [ ] Meta and debug bar: Also emits the charset `utf-8` and viewport meta tags and `DebugBarBridge::renderHead()`. //nice-to-have//
+  - [ ] `$opt['layout_essentials_body']($opt)`
+    - [ ] Role: Prints the token-expiry watcher for logged-in users and `DebugBarBridge::renderBody()`. [partial] //should-do//
+    - [ ] Token-expiry watcher: Polls `document.cookie` every 1000 ms and reloads the page once the `z_login_token` cookie is gone, via the global `token_expired_callback`; it needs a JS-readable cookie. //should-do//
+  - [ ] Bundled libraries
+    - [ ] jQuery: Composer package `components/jquery` constrained to `3.5.*`, served at `js/jquery.min.js`. [partial] //should-do//
+    - [ ] Bootstrap: Composer package `components/bootstrap` constrained to `4.6.*`, mounted at the proxy root as `css/bootstrap.min.css` and `js/bootstrap.min.js`. [partial] //should-do//
+    - [ ] Font Awesome: Composer package `components/font-awesome` constrained to `6.5.*`, with styles under `css/font-awesome/` and fonts under `css/webfonts/` so the relative `../webfonts/` URLs inside the CSS resolve. [partial] //should-do//
+    - [ ] `popper.min.js`: Bundled third-party Popper.js v1 build (Federico Zivolo, 2017, MIT) served as `js/popper.min.js` from `IncludedComponents/assets/js/`. //nice-to-have//
+    - [ ] `bs-custom-file-input.js`: Bundled third-party bsCustomFileInput v1.3.2 (MIT) served as `js/bs-custom-file-input.js` that syncs `.custom-file-label` with the chosen file. //nice-to-have//
+    - [ ] No CDN: All bundled frontend libraries are served locally by the asset proxy and no CDN reference exists. [partial] //should-do//
+  - [ ] `loadCircle.css`
+    - [ ] Role: Framework spinner stylesheet shipped in `IncludedComponents/assets/css/` and available as `_zubzet/asset-proxy/css/loadCircle.css`. //nice-to-have//
+    - [ ] `.loading` class: Fixed centered 2em element with `z-index: 999` and a 30 percent black full-screen overlay from `:before`. //optional//
+    - [ ] Spinner animation: The `:after` pseudo-element draws an eight-dot ring rotated by the `spinner` keyframes (1500ms, linear, infinite) and the label text is hidden. //optional//
+    - [ ] Expected markup: Login views use a `div` with class `loading` and id `loading`, initially `display: none`, which `Z.Presets` toggles. //nice-to-have//
+    - [ ] Login view link: The bundled login views link `<root>assets/css/loadCircle.css` (a project-relative path) instead of the asset proxy URL. //nice-to-have//
+- [ ] Asset versioning
+  - [ ] `$opt['generateResourceLink']($url, $root = true)`: Echoes `<rootFolder><url>?v=<assetVersion>`, and `$root = false` omits the root folder prefix. [partial] //important//
+  - [ ] Echo, not return: The closure prints the link, so it is used inline inside a `src` or `href` attribute. [partial] //important//
+  - [ ] `assetVersion` setting: Its value is the cache-busting query string, `dev` replaces it with `time()` on every request and an unset value yields an empty `?v=`. //important//
+  - [ ] Bundled asset links: Every bundled script and stylesheet of the layout essentials goes through `generateResourceLink`, so changing `assetVersion` busts browser caches. //should-do//
+  - [ ] Proxy caching: The asset proxy ignores the query string and sends only a `Content-Type` header with no cache headers, so `?v=` is the only cache-busting mechanism. //should-do//
+- [ ] `Z.Forms`
+  - [x] `Z.Forms.create(options)`: Returns a new `ZForm` built from `options`.
+  - [ ] Default options caveat: Calling it with no argument uses a default object with `doReload: true`, whereas any passed object defaults `doReload` to false. //important//
+- [ ] `Z.Request`
+  - [ ] `Z.Request.action(action, data, handler)`
+    - [ ] Behaviour: POSTs `data` plus the post field `action` to the current URL and parses the JSON text response before calling `handler`. [partial] //important//
+    - [x] Server counterpart: The backend checks the value with `$req->isAction('name')`.
+    - [ ] Parse failure: Logs the raw response to the console with the text "Please show this to a developer" and never calls `handler`. //should-do//
+    - [ ] Argument mutation: `data` is modified in place by adding the `action` key and must be an object. //nice-to-have//
+    - [ ] No error callback: Failed HTTP requests are not handled. //should-do//
+  - [ ] `Z.Request.root(action, subaction, data, handler = null, async = true, parse = true, additionalParameters = {})`
+    - [ ] Behaviour: POSTs to `Z.Request.rootPath + action` with the post field `action` set to `subaction`. //important//
+    - [ ] `action` path: Any controller path such as `login/logout`, and URL parameters can be appended. //should-do//
+    - [ ] `parse`: When true a non-object response is run through `JSON.parse`, and on failure the raw response is still passed to `handler`. //should-do//
+    - [ ] `async`: Passed to jQuery so the call can be made synchronous. //nice-to-have//
+    - [ ] `additionalParameters`: Object spread into the `$.ajax` settings, which can override `method`, `data` and `url`. //nice-to-have//
+    - [ ] `handler` required: The default `null` is called unconditionally, so omitting it throws. //should-do//
+  - [ ] `Z.Request.rootPath`: Application root path set by the layout essentials and not meant to be changed. //nice-to-have//
+  - [ ] JSON content-type pitfall: A response sent with `Response::json()` carries `application/json`, which jQuery pre-parses, so `Z.Request.action` and `ZForm.send` fail to parse it while `Z.Request.root` copes. [partial] //important//
+- [ ] Backend response contract used by Z.js
+  - [ ] REST envelope: `generateRest` output is pretty-printed JSON that also carries a `meta` object with `endpoint`, `request` and `timestamp`, sent without a JSON Content-Type header. [partial] //should-do//
+  - [ ] `success` result: `$res->success($payload = [])` returns `{result: success, ...payload}` and triggers `saveHook` in `ZForm`. [partial] //important//
+  - [ ] `error` result: `$res->error($message = '')` returns `{result: error, message}` and `ZForm` shows the `Z.Lang.saveError` hint without using the message. [outdated] //important//
+  - [ ] `formErrors` result: `$res->formErrors($errors)` returns `{result: formErrors, formErrors: [...]}` and each entry is mapped to the field named in `name`. [partial] //important//
+  - [ ] `generateRestError($code, $message)`: Returns `{error: {code, message}}`, which `Z.Request.root` handlers can read as `res.error.message`. [partial] //should-do//
+  - [ ] Unparseable form response: `ZForm.send` treats a response that is not valid JSON as `{result: error}`. //nice-to-have//
+- [ ] Wire format of Z.js submissions
+  - [ ] `isFormData` marker: Added as `1` to the `FormData` (or `true` in the urlencoded string) and detected by `Request::hasFormData()`. [partial] //should-do//
+  - [ ] `<#decURI#>` prefix: Text values are sent as the prefix plus `encodeURIComponent(value)`. [partial] //should-do//
+  - [ ] Server decoding: `Input\State::fromRequest` strips the prefix and applies `rawurldecode` to every POST item recursively, and values without the prefix are left unchanged. [partial] //should-do//
+  - [ ] Transport: `ZForm.send` posts `multipart/form-data` through `$.ajax` with `contentType: false`, `processData: false` and `cache: false`. [partial] //should-do//
+  - [ ] Target URL: Posts go to the current URL unless `customEndpoint` or the `send(customUrl)` argument is set, which is passed to jQuery as is. [partial] //should-do//
+  - [x] Multi-select: Sent as repeated `name[]` entries so PHP receives an array, and an empty selection is omitted entirely.
+  - [x] Checkbox: Always sent as `1` or `0`.
+  - [ ] File: Appended only when a file is chosen, using the input `value` as file name. //nice-to-have//
+  - [x] Disabled and hidden fields: Their values are still submitted because the data is read from the field objects.
+  - [ ] CED items: Sent as `name[i][Z]` (`create`, `edit` or `delete`), `name[i][dbId]` for saved rows and `name[i][field]` for each value. //should-do//
+  - [ ] Skipped items: A removed item that was never saved (`dbId` of -1) is omitted and the remaining indexes are compacted. //nice-to-have//
+  - [ ] Reserved names: `Z` and `dbId` are used as control keys inside each CED entry. //should-do//
+  - [x] Client-only data: `ZForm.meta` is never submitted.
+  - [ ] Urlencoded alternative: `getPostString()` on `ZForm`, `ZFormField`, `ZCED` and `ZCEDItem` builds the same data as a string, but `send()` does not use it. //nice-to-have//
+- [ ] `Z.Lang` texts
+  - [ ] Overriding: The object can be overwritten in a layout after the essentials. //important//
+  - [ ] Build-time keys: `submit`, `choose_file`, `addElement` and `CEDRemove` are read when elements are built, so they must be set before forms are created. //should-do//
+  - [ ] `addElement`: Add-item button content, default an `<i>` element with the Font Awesome classes `fas fa-plus`. //extra-effort//
+  - [ ] `submit`: Submit button text, default `Submit`. //extra-effort//
+  - [ ] `saved`: Success hint, default `Saved!`. //extra-effort//
+  - [ ] `saveError`: Error hint, default `Error while saving`. //extra-effort//
+  - [ ] `unsaved`: Change hint, default `There are unsaved changes`. //extra-effort//
+  - [ ] `choose_file`: File input placeholder, default `Choose file`. //extra-effort//
+  - [ ] `CEDRemove`: Remove-item button text, default a cross character. //extra-effort//
+  - [ ] `error_filter`: Message for error key `filter`. //extra-effort//
+  - [ ] `error_length`: Message for `length` with placeholders `[0]` and `[1]` for min and max. //extra-effort//
+  - [ ] `error_required`: Message for `required`. //extra-effort//
+  - [ ] `error_range`: Message for `range` with placeholders `[0]` and `[1]`. //extra-effort//
+  - [ ] `error_unique`: Message for `unique`. //extra-effort//
+  - [ ] `error_exist`: Message for `exist`. //extra-effort//
+  - [ ] `error_in`: Message for `in`, also used by `checked()`. //extra-effort//
+  - [ ] `error_integer`: Message for `integer`. //extra-effort//
+  - [ ] `error_date`: Message for `date`. //extra-effort//
+  - [ ] `error_regex`: Message for `regex`. //extra-effort//
+  - [ ] Missing file messages: No default `error_file`, `error_file_to_big` or `error_file_type` exists, so the application must define them or the field label shows undefined. //important//
+  - [ ] Custom error types: `markInvalid` reads `Z.Lang['error_' + type]`, so every `addCustomError` type needs a matching key. //should-do//
+  - [ ] Placeholder substitution: `[0]` and `[1]` are replaced one by one from the error `info` array, first occurrence only. //nice-to-have//
+  - [ ] `error_contact_admin`: Defined but not referenced by Z.js code. //optional//
+  - [ ] `error_password_reset`: Shown by `Presets.ForgotPassword` on any error. //extra-effort//
+  - [ ] `error_password_mismatch`: Shown by `Presets.Signup` when the two passwords differ. //extra-effort//
+  - [ ] `error_invalid_email`: Replaces the server message `This email is not allowed!` in `Presets.Signup`. //should-do//
+  - [ ] `error_too_many_login_tries`: Replaces the server message `Too many login tries. Try again later.` in `Presets.Login`. //should-do//
+  - [ ] `error_login`: Replaces the server message `Username or password is wrong` in `Presets.Login`. //should-do//
+  - [ ] Default required and unique texts: `error_required` is `Please fill in this field` and `error_unique` is `This already exists!`. //extra-effort//
+  - [ ] Default filter and regex texts: `error_filter` is `Your input does not have the correct pattern!` and `error_regex` is `The input does not meet the required pattern!`. //extra-effort//
+  - [ ] Default length text: `error_length` reads `Your input is too long or too short. It should have between [0] and [1] characters.` //extra-effort//
+  - [ ] Default range text: `error_range` reads `The number is too large to too small. It must be between [0] and [1].`, including the typo `too large to too small`. //extra-effort//
+  - [ ] Default exist, in, integer and date texts: `This does not exist!`, `This value is not in the allowed list!`, `This is not an integer!` and `Please give a correct date!`. //extra-effort//
+  - [ ] Default preset texts: `error_password_reset` is `An error occurred. Did you use the correct email address?` and `error_password_mismatch` is `The password are not the same!`. //extra-effort//
+- [ ] `Z.Presets`
+  - [ ] Shared behaviour: Each preset shows the element with id `loading` while the request runs and hides it afterwards. //nice-to-have//
+  - [ ] `Z.Presets.Login(nameElementId, passwordElementId, errorLabelId, redirect = '')`
+    - [ ] Request: Posts `name` and `password` to the `login` route with action `login`. [partial] //should-do//
+    - [ ] Success: Reloads the page, or goes to `redirect` when it is not empty. [partial] //should-do//
+    - [ ] Error display: Hides then shows the error label, maps two known server messages to `Z.Lang`, and shakes the label when the same message repeats, otherwise slides it down. [partial] //nice-to-have//
+    - [ ] Other messages: Any other server message is inserted as HTML. //should-do//
+  - [ ] `Z.Presets.ForgotPassword(unameemailElementId, errorLabel, redirect = '')`
+    - [ ] Request: Posts `unameemail` to `login/forgot_password` with action `forgot_password`. //nice-to-have//
+    - [ ] Error handling: Always shows `Z.Lang.error_password_reset` regardless of the server message. //nice-to-have//
+    - [ ] Account enumeration: The server answers `error` for unknown accounts, so the preset reveals whether an email exists. //nice-to-have//
+  - [ ] `Z.Presets.Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = '', alertErrors = false, additionalData = {})`
+    - [ ] Request: Posts `email` and `password` merged with `additionalData` to `login/signup` with action `signup`. [partial] //should-do//
+    - [ ] Password check: Aborts before the request when the passwords differ and shows `Z.Lang.error_password_mismatch` in the label or an `alert`. //nice-to-have//
+    - [ ] `alertErrors`: When true, errors are shown with `alert()` instead of the label. //nice-to-have//
+    - [ ] `additionalData`: Extra POST data, used for example to pass `userRoleType: "Secondary"` to choose the signup role type. //should-do//
+    - [ ] Error label visibility: The label text is set but its display is not toggled, so it must already be visible. //nice-to-have//
+- [ ] `ZForm`
+  - [ ] Constructor options
+    - [x] `dom`: Id of an element the form is appended to; without it `form.dom` must be attached manually.
+    - [ ] `doReload`: Reload the page after a successful submit, default false and forced to true when a CED is added. //important//
+    - [ ] `saveHook`: Called with the parsed JSON response after a success only, or with `getValues()` in `collectOnly` mode. [partial] //important//
+    - [ ] `formErrorHook`: Called with the parsed response after field errors were marked. //important//
+    - [ ] `hidehints`: Suppresses the hint banner for saved, unsaved and error states. //important//
+    - [ ] `sendOnSubmitClick`: When false the submit button does not call `send()` and the caller must submit, default true. //important//
+    - [ ] `customEndpoint`: URL that `send()` posts to instead of the current action. //important//
+    - [x] `collectOnly`: Client-only mode where the submit button hands `getValues()` to `saveHook` and never posts.
+    - [x] `inputHook`: Called with `getValues()` on every field `input` or `change` event, so it can fire more than once per edit.
+  - [ ] `send(customUrl = null)`
+    - [ ] Behaviour: Collects `getFormData()` and posts it, then handles the JSON `result`. [partial] //important//
+    - [ ] Result handling: `success` runs `saveHook`, optionally reloads and shows the saved hint, `formErrors` marks fields then runs `formErrorHook`, and `error` shows the saveError hint. [partial] //important//
+    - [ ] Double-submit protection: Ignored while a request is running and within 300 ms of the previous send. //should-do//
+    - [x] Auto-disable: All fields and the submit button are disabled while the request is in flight and re-enabled afterwards.
+    - [ ] Error display: Unknown field names in `formErrors` are ignored, and a field with several errors shows only the last message. //should-do//
+    - [ ] Debug logging: Setting the instance property `debug` to true logs the FormData entries and the response to the console. //nice-to-have//
+  - [ ] Field creation
+    - [x] `createField(options)`: Creates a `ZFormField`, adds it and returns it.
+    - [ ] `createCED(blueprint)`: Creates a `ZCED`, adds it and returns it. [partial] //important//
+    - [ ] `addField(field)`: Adds an existing field or CED, registers the unsaved-hint listeners and calls `bsCustomFileInput.init()`. //should-do//
+  - [ ] Layout helpers
+    - [ ] `addCustomHTML(html)`: Appends raw HTML in a `div` and starts the next field on a new row. [partial] //should-do//
+    - [ ] `addSeperator()`: Appends an `hr` and breaks the row; the method name is spelled with an e. [partial] //should-do//
+    - [ ] `createEmpty(size = 12)`: Appends a spacer `div` with classes `col-0 col-md-<size>`. //should-do//
+    - [ ] Row wrapping: Fields flow in a `form-group` and `form-row`, and a new row starts when the summed field widths exceed 12. [partial] //should-do//
+      - [ ] Shared row group: each `form-group` wraps one `form-row`, so `closest('.form-group')` of a field narrower than 12 also contains the other fields sharing its row. //nice-to-have//
+    - [ ] Layout rebuild: A field `hide()` or `show()` rebuilds the layout from the ordered item list while keeping custom HTML, separators and spacers. [partial] //nice-to-have//
+    - [ ] Rebuild keeps listeners: the layout rebuild re-attaches the same field DOM nodes, so listeners added with `field.on()` or jQuery on `field.input` keep firing after `hide()` or `show()`. //nice-to-have//
+    - [ ] Rebuild keeps row state: the rebuild resets the current row, so a `createField()` called after `hide()` or `show()` still lands in the live form. //nice-to-have//
+  - [ ] Buttons
+    - [ ] `createActionButton(text, style, action)`: Adds a button after the submit button and returns it, where `style` must be a single class token such as `btn-secondary`. //important//
+    - [ ] `buttonSubmit`: The built-in submit button with classes `btn btn-primary` and text `Z.Lang.submit`. [partial] //should-do//
+    - [x] `hideSubmit()` and `showSubmit()`: Toggle the display of the submit button.
+  - [ ] Values
+    - [x] `getValues()`: Returns an object of every non-CED field value merged with `meta`, with checkbox fields as booleans.
+    - [x] `setValues(data, options = {})`: Sets values by field name and stores unknown keys in `meta`, ignoring CED keys.
+    - [ ] `options.resetUnknown`: When true `reset()` is called on the whole form before values are applied. [partial] //should-do//
+    - [x] `meta`: Client-only object for extra context such as a record id, never submitted.
+    - [ ] `reset()`: Resets every field to its `default` or empty value and keeps select options, while CEDs are not reset. [partial] //should-do//
+    - [ ] `getFormData()`: Builds the `FormData` and clears all field errors. //should-do//
+  - [ ] State
+    - [ ] `enable()`, `disable()` and `isDisabled()`: Manage the form-level disabled state, and `isDisabled()` is also true while sending. [partial] //should-do//
+    - [x] Field versus form disabling: A field stays disabled after `form.enable()` when it was disabled individually.
+  - [ ] Hints
+    - [ ] `hint(alertClass, content)`: Shows the sticky alert above the form with a Bootstrap alert class and HTML content unless `hidehints` is set. //should-do//
+    - [ ] `unhint()`: Hides the alert. //nice-to-have//
+    - [ ] Automatic hints: A field change shows the unsaved warning, a success shows the saved hint and an error shows the saveError hint. //should-do//
+  - [ ] Public properties: `fields` (map by name), `dom`, `alert`, `inputSpace`, `buttonSubmit`, `options` and `meta` are used by view code. [partial] //should-do//
+- [ ] `ZFormField` and `createField` options
+  - [ ] `name`: POST key and `name` attribute of the input. [partial] //important//
+  - [ ] `type`: One of the HTML input types or `select`, `multi-select`, `textarea`, `autocomplete`, `button` and `hidden`; an omitted type produces an input with an invalid type attribute. [partial] //important//
+  - [ ] `text`: Label HTML, default a non-breaking space. [partial] //important//
+  - [ ] `required`: Only adds a red asterisk and the class `input-required` to the label; no client-side validation is performed. [outdated] //urgent//
+  - [ ] `hint`: Muted help text shown under the input as HTML. //important//
+  - [ ] `placeholder`: Input placeholder, and for `multi-select` the text of the first option. [partial] //important//
+  - [ ] `default`: Value restored by `reset()` and used as initial value when `value` is empty. [partial] //important//
+  - [ ] `value`: Initial value that takes precedence over `default` when truthy (so `0` or an empty string falls back), and the label for `type: button`. [partial] //important//
+  - [ ] `autofill`: When false (default) every input gets `autocomplete=new-password` to suppress browser autofill. //important//
+  - [ ] `width`: Bootstrap grid units 1 to 12 applied as `col-md-N`, default 12 and 0 for `hidden`. [partial] //important//
+  - [ ] `attributes`: Attribute map set on the input element after the defaults, so it can override them. [partial] //important//
+  - [x] `food`: Option list passed to `feedData` for `select` and `multi-select`.
+  - [x] `compact`: Hides the label.
+  - [ ] `prepend`: HTML placed in an `input-group-prepend` before the input. [partial] //important//
+  - [ ] `style`: Bootstrap button class for `type: button`, default `btn-primary`. //nice-to-have//
+  - [ ] `customFileInputText`: Placeholder text of a `file` input, default `Z.Lang.choose_file`. //nice-to-have//
+  - [x] Autocomplete options: `autocompleteData`, `autocompleteMinCharacters`, `autocompleteTextCB` and `autocompleteCB` are described under the autocomplete type.
+  - [x] `disabled` and `hidden`: Start the field disabled or hidden.
+  - [ ] Generated ids: Each input gets the id `input-<n>` from the global counter `zInputIndex` and the label points to it with `for`. //nice-to-have//
+  - [ ] DOM structure contract: Each field is `div.col.col-12.col-md-N` containing label, input and `span.form-text.text-danger`, and views rely on `field.dom`, `field.label`, `field.input` and `closest('.form-group')`. [partial] //should-do//
+    - [ ] Single-control wrappers: `file` adds `div.custom-file`, `checkbox` adds `div.form-check` with the label after the input, and `prepend` wraps the input in `div.input-group`. [partial] //nice-to-have//
+    - [ ] Composite wrappers: `multi-select` wraps the select and a badge `div.mt-2`, and `autocomplete` wraps the input and a suggestion `div.list-group`. [partial] //nice-to-have//
+  - [ ] Field types
+    - [ ] Default types: Any native input type creates an `input` with class `form-control`. [partial] //important//
+    - [ ] `file`: Bootstrap custom file input whose label shows the chosen file name; the value setter only changes the label text. //important//
+    - [ ] `select`: Creates a select with a disabled placeholder option `---` until `feedData` replaces it. [partial] //important//
+    - [ ] `multi-select`: Select plus removable badges where the value is an array of strings, and duplicates are ignored. [partial] //important//
+    - [ ] Multi-select picking: A picked option is hidden in the dropdown, the dropdown returns to the placeholder and an optgroup hides once all its options are chosen. [partial] //nice-to-have//
+    - [ ] Multi-select badges: Badges are `badge badge-primary` spans with a `data-value` attribute that remove the value on click unless the field is disabled. [partial] //nice-to-have//
+    - [ ] Multi-select removal event: Removing a badge dispatches a bubbling `input` event on the select. //nice-to-have//
+    - [ ] Multi-select value: The setter accepts only arrays and clears the selection for any other input, converting items to strings. [partial] //should-do//
+    - [ ] Multi-select reset: Restores `default` or an empty array. [partial] //nice-to-have//
+    - [x] Multi-select server storage: Arrives as a PHP array and `insertDatabase` stores it as JSON.
+    - [x] `checkbox`: Bootstrap `form-check` layout whose value is a boolean and whose setter accepts true, 1, `1`, `true` and `on`.
+    - [ ] `textarea`: Creates a `textarea` with class `form-control`. [partial] //should-do//
+    - [ ] `button`: Creates a full-width button using `value` as label and `style` as class. //should-do//
+    - [ ] `hidden`: Creates a hidden input in a `d-none` wrapper with width 0. //should-do//
+    - [ ] `autocomplete`: Text input with a suggestion list shown from `autocompleteMinCharacters` (default 2) typed characters. [partial] //should-do//
+    - [ ] `autocompleteData`: Array of plain strings filtered by case-insensitive substring match, or a backend path string. [partial] //should-do//
+    - [ ] Backend suggestions: A path string triggers `Z.Request.root(path, 'autocomplete', {value})` on each key press and expects `{data: [...]}` back, used from the next key press. [partial] //should-do//
+    - [ ] `autocompleteTextCB`: Called with the highlighted HTML and the raw entry and its return value is used as the item HTML. [partial] //nice-to-have//
+    - [ ] `autocompleteCB`: Called with the raw entry when the user picks a suggestion. [partial] //nice-to-have//
+    - [ ] Autocomplete interaction: Picking fills the input with the entry, and Escape or any document click closes the list. //nice-to-have//
+  - [ ] Select food format: Entries are objects with `value`, `text` and optional `type` (`option` or `optgroup`), where `value` falls back to `text` and `type: optgroup` starts a group. [partial] //important//
+    - [x] Multi-select fallbacks: an entry with only `value` or only `text` uses it for both, and badges show the text while `data-value` and the submitted value use the value.
+  - [ ] `feedData(food, clear = true)`: Replaces or appends options for `select` and `multi-select` and warns in the console for other types. //important//
+    - [ ] Initial value re-applied: after filling the options `feedData()` re-applies the constructor `value` option (not `default`), so a later feed resets the selection to that initial value. //should-do//
+  - [ ] Placeholder after clearing: A non-required select gets an enabled empty `---` option, a required one gets none. //should-do//
+  - [ ] Multi-select clearing: `feedData` with `clear` also resets the selected values and the option maps. //should-do//
+  - [ ] `value` getter and setter: Multi-select returns a copy of the array, checkbox returns a boolean and other types read the input value. [partial] //important//
+  - [ ] `addSelectedValue(value)` and `clearSelectedValues()`: Add or clear selections of a `multi-select` programmatically. //should-do//
+  - [ ] `setWidth(units)`: Sets the `col-md-N` class and is meant to be called only during construction. //optional//
+  - [x] `on(type, handler)`: Adds a DOM event listener to the input element.
+  - [ ] `markInvalid(error)` and `markValid()`: Show or clear the `Z.Lang` message, the `is-invalid` class and the custom validity, and `markInvalid` scrolls the field into view. //should-do//
+  - [ ] `reset()`: Restores `default` or an empty value, `false` for checkbox and `[]` for multi-select. [partial] //should-do//
+  - [ ] `disable()`, `enable()` and `isDisabled()`: Per-field disabled state that is also true while the owning form is disabled. [partial] //should-do//
+  - [x] `hide()`, `show()` and `isHidden()`: Toggle layout visibility, and hidden fields are still submitted.
+    - [x] Hidden fields leave the DOM: a field created with `hidden: true` or after `hide()` is not attached to the form layout, so its input is not in the document until `show()`.
+  - [ ] XSS surface: Label text, hint, prepend, option and badge text, `hint()` content and `addCustomHTML()` are inserted with `innerHTML`, so untrusted strings must be escaped first. //urgent//
+- [ ] CED widgets (`ZCED`, `ZCEDItem`)
+  - [ ] Blueprint passed to `createCED`
+    - [ ] `name`: POST array name used by `validateCED` and `doCED`. [partial] //important//
+    - [ ] `text`: Label HTML of the CED. [partial] //should-do//
+    - [ ] `fields`: Required array of `createField` option objects that each item repeats. [partial] //important//
+    - [ ] `value`: Initial rows as objects with `dbId` plus values keyed by field name, and a key without a matching field throws. [partial] //important//
+    - [ ] `compact`: Renders items as bootstrap rows instead of cards. [partial] //should-do//
+    - [ ] `smallButton`: Puts the remove button inside the input area instead of below it. //nice-to-have//
+    - [ ] `deleteHook`: Called with the item after the user removes it. //should-do//
+  - [ ] `ZCED` methods: `createItem()`, `addItem(item)`, `on(type, handler)`, `markInvalid(error)`, `markValid()`, `getFormData(data)` and `getPostString()`. //should-do//
+  - [ ] Event `change`: Emitted on `ZCED` when an item is created or removed or a field input changes, and handlers get no arguments. //should-do//
+  - [ ] `ZCED.emit(type)` [internal]: Calls every handler registered with `on(type, handler)` for that type, without arguments, and is meant to be called only by the library. //optional//
+  - [ ] `ZCED.updateMargins()` [internal]: Adds the `mb-1` class to every item and removes it from the last item, so rows are spaced without a trailing margin. //optional//
+  - [ ] Form integration stubs: `isHidden()`, `isDisabled()`, `_updateDisabled()` and `reset()` are no-ops so a CED can sit among normal fields. //optional//
+  - [ ] `ZCEDItem` state: `dbId` is -1 for new rows and `deleted` is set when removed, and removing keeps the DOM node hidden with `d-none`. //nice-to-have//
+  - [ ] Buttons: The remove button is a `btn btn-danger` with text `Z.Lang.CEDRemove` and the add button uses `Z.Lang.addElement`. //nice-to-have//
+  - [ ] Error index mismatch: `markInvalid` uses the server `index` directly on `items`, which differs from the compacted submit index after an unsaved item was removed. //nice-to-have//
+  - [ ] `InvalidError` object: Carries `type`, an optional `info` array and for CEDs `index` and `subname`. //nice-to-have//
+- [ ] Server helpers for Z.js data
+  - [ ] `Controller::makeFood($table, $valueField, $textField, $optionalTextField = null)`: Takes an array of rows and returns a JSON string of `{value, text}` entries for `food`, appending the optional second text column after a space. [partial] //important//
+  - [ ] `makeFood` escaping: Text is not HTML-escaped and Z.js inserts it with `innerHTML`. //urgent//
+  - [ ] `Controller::makeCEDFood($table, $fields, $escape = null)`: Returns a JS array literal of rows with `dbId` from the `id` column plus the listed fields for the CED `value`. [partial] //important//
+  - [ ] `makeCEDFood` output: A hand-built string with a trailing comma, valid as JavaScript but not as JSON. //nice-to-have//
+  - [ ] `makeCEDFood` escaping: `$escape` is an optional callable receiving value and field name; without it values are written unescaped. //important//
+## 17. Logging, Error Handling & Debug Bar
+- [ ] Logging architecture
+  - [ ] Monolog base: `ZubZet\Framework\Logger\Logger` extends `Monolog\Logger` (`monolog/monolog` `^2.11`), so PSR-3 level methods and Monolog handler APIs are available. [partial] //important//
+  - [ ] Level methods: `debug()`, `info()`, `notice()`, `warning()`, `error()`, `critical()`, `alert()`, `emergency()` and `log($level, $message, $context)`, each with an `array $context`. [partial] //important//
+  - [ ] No interpolation: PSR-3 `{placeholder}` message interpolation is not active, because only `BacktraceProcessor` is registered on a channel. //should-do//
+  - [ ] Framework dependency: `logger()` needs the framework instance because the first call reads `config()`; calling it before `new ZubZet` throws `NotInstantiatedException`. [partial] //nice-to-have//
+  - [ ] Channels (named loggers)
+    - [ ] `Logger::APP` (`"app"`): Default channel used by `logger()` without argument. [partial] //important//
+    - [ ] `Logger::ZUBZET` (`"zubzet"`): Channel on which the framework emits its own events. [partial] //should-do//
+    - [x] Custom channels: Any other string passed to `logger($name)` creates a channel lazily on first use.
+    - [ ] Caching: Channels are cached per request in `StaticCache` under type key `logger`, each with its own handler and processor instance. [partial] //nice-to-have//
+  - [ ] `LoggerFactory` API
+    - [ ] `getOrCreateLogger(string $name): Logger`: Returns the cached channel or builds it from the `logger_*` settings. [partial] //should-do//
+    - [ ] `getLogger(string $name): ?Logger`: Returns the cached channel or `null` and never creates one. //should-do//
+    - [x] `register(string $name, Logger|LoggerInterface $logger): Logger`: Stores a manually configured logger under a name, replacing any cached channel of that name.
+    - [ ] Registered loggers: They bypass the `logger_*` handler and processor setup, so they get no traceId, backtrace `extra` or debug bar collector. [partial] //nice-to-have//
+    - [ ] Return type: The parameter is typed `Logger|LoggerInterface` but `register()` and `logger()` return `Logger`, so a non-ZubZet logger raises a `TypeError` on return. [outdated] //urgent//
+    - [ ] `getTraceId(): string`: Static accessor behind `Logger::getTraceId()`. //nice-to-have//
+    - [ ] `LoggerFactory::$traceId` and `$uncaughtException` [internal]: Static properties that hold the request trace id and the flag set by the uncaught-exception handler. //optional//
+    - [x] `handleSlowRequest()` [internal]: Registers the slow-request shutdown function and is called once from the `ZubZet` constructor.
+  - [ ] Logger creation sequence (`getOrCreateLogger`)
+    - [ ] Debug bar first: The collector is attached via `DebugBarBridge::collectLogger` before any handler is pushed. [partial] //optional//
+    - [ ] Disabled logging: With `logger_enabled` falsy only a `NullHandler` is pushed and the function returns early, so no processors run. [partial] //important//
+    - [ ] Normal setup: The handler for `logger_type` (default `database`) gets `setLevel(logger_level)` and a `BacktraceProcessor` with the same level is pushed. [partial] //important//
+    - [ ] Invalid values: An invalid `logger_type` throws `InvalidArgumentException` "Invalid logger type: <type>, Use database or stream in your config" and an invalid `logger_level` throws the Monolog `InvalidArgumentException`. //should-do//
+  - [ ] Log levels
+    - [ ] Names and values: Case-insensitive `debug` 100, `info` 200, `notice` 250, `warning` 300, `error` 400, `critical` 500, `alert` 550 and `emergency` 600; the default level is `notice`. [outdated] //important//
+    - [ ] Filtering: Handlers drop records below `logger_level`, so with the default `info`-level framework events (`RENDER`, login/logout, user and password events) are not stored. [partial] //urgent//
+  - [ ] Logger methods (handlers)
+    - [x] `database` handler (`ZubZet\Framework\Logger\Method\DatabaseLogger`, default): Writes each record through `model("z_logger")->log()` into `z_interaction_log`.
+    - [x] Missing connection: Records emitted before a database connection exists (`db(allowUnsetConnection: true)` is null) are silently dropped.
+    - [ ] Reentrancy guard: The static `$isWriting` flag discards records logged while a log INSERT is running, preventing recursion. //optional//
+    - [ ] Best effort: Any `Throwable` during the insert is swallowed (for example a missing table mid-migration), so the logger never crashes its caller. //should-do//
+    - [ ] Shared connection: Writes run through the shared `Connection`; only the slow-query path snapshots and restores `result`, `insertId` and `callingModel`. //optional//
+    - [ ] `stream` handler (`ZubZet\Framework\Logger\Method\StreamLogger`): Extends Monolog `StreamHandler` writing to `logger_stream_url`; the constructor `__construct($stream, ...$args)` forwards extra arguments (level, bubble, file permission, locking). [partial] //important//
+    - [ ] Stream format: One JSON object per line, formatted by `ZubZet\Framework\Logger\JsonFormatter`, with empty `context` and `extra` written as `{}`. [partial] //should-do//
+    - [ ] Stream environment: `JsonFormatter::format` calls `model("z_logger")->appendEnvironment()`, which needs `request()`, so streaming before the Request exists throws `NotInstantiatedException`. [partial] //nice-to-have//
+    - [ ] Stream target: Monolog creates missing log directories and applies no rotation, and the `php://stderr` default sends logs to the PHP or webserver error stream unless a file path is set. [partial] //should-do//
+    - [x] Null handler: `logger_enabled` falsy makes a `NullHandler` swallow every record.
+  - [ ] Log record format (identical JSON for the database `value` column and stream lines)
+    - [ ] Top-level keys: `message`, `context`, `level`, `level_name`, `channel`, `datetime` and `extra`. [outdated] //important//
+    - [ ] `message` and `context`: `message` equals the `LogEventType` string for framework events and `context` is the array passed to the log call. [partial] //should-do//
+    - [ ] Call site: `extra.file`, `extra.line`, `extra.class` and `extra.function` come from Monolog's `IntrospectionProcessor` (frames in `Monolog\` are skipped) and `callType` is removed. [partial] //nice-to-have//
+    - [ ] `extra.traceId`: The request trace id added by `BacktraceProcessor` to every record. [partial] //should-do//
+    - [ ] Context merge: Logger context keys are merged into `extra` after the built-in keys, so a context key named `traceId`, `file` or `line` overrides them. //should-do//
+    - [ ] Environment keys: `extra.userId`, `extra.execUserId` and `extra.source` (`cli` or `web`) are appended at write time and override same-named keys. [outdated] //important//
+    - [ ] `BacktraceProcessor` [internal]: Constructor `($logger, $level = Logger::DEBUG, array $skipClassesPartials = [], int $skipStackFramesCount = 0)`; below its level no file, line, class or function is added. //optional//
+  - [ ] Logger context (extra fields carried per channel)
+    - [ ] `Logger::$context`: Public array of key/value pairs stored per channel instance for the rest of the request and emitted in `extra`, not `context`. //should-do//
+    - [ ] `contextAdd(array $context): Logger`: Merges keys into the stored context with `array_merge`, later keys win. //should-do//
+    - [ ] `contextMergeFrom(string $logger = Logger::APP): Logger`: Merges another channel's context into this one, the source channel wins on shared keys. //should-do//
+    - [ ] `contextMergeFrom` errors: An empty name throws `InvalidArgumentException` "Logger name cannot be empty." and a source channel that was never created throws `\Exception` "Logger with name 'X' not found in cache.". //should-do//
+    - [ ] `contextInspect(callable $callback): Logger`: Passes the current context array to the callback and replaces the context with its return value. //should-do//
+    - [ ] `contextClear(): Logger`: Resets the context to an empty array. //should-do//
+    - [ ] Chaining: All context methods return the logger, e.g. `logger("x")->contextAdd([...])->info("msg")`. //should-do//
+  - [ ] Trace IDs (request-scoped log correlation)
+    - [ ] `Logger::getTraceId(): string`: Returns a 32-char hex id from `bin2hex(random_bytes(16))`, generated lazily on first call and shared by all records of the request. //should-do//
+    - [ ] `Logger::setTraceId(string $traceId): void`: Overrides the id without format validation and only records written afterwards carry it. //should-do//
+    - [ ] No propagation: The framework does not read any incoming trace header, so propagation must be done by calling `setTraceId()`. //should-do//
+- [ ] `LogEventType` constants (stable `message` values of framework events, public and reusable by application code)
+  - [ ] `RENDER`: Level `info`, context `location`, `view`, `viewPath`, `layout` and `layoutPath`, logged once per rendered view (mail renders included) and ignored if logging fails with an `\Exception`. //should-do//
+  - [ ] `SLOW_REQUEST`: Level `warning`, context `duration_ms` and `uri`. //should-do//
+  - [ ] `SLOW_QUERY`: Level `warning`, context `duration_ms` and `query` (prepared SQL text, no bound values). //should-do//
+  - [ ] `EXCEPTION`: Level `error`, context `class`, `message`, `file`, `line` and `trace`. //should-do//
+  - [ ] PHP error events: `ERROR`, `WARNING`, `NOTICE`, `DEPRECATION`, `PARSE` and `STRICT` carry context `message`, `file` and `line` (see PHP error classification). //should-do//
+  - [ ] `REST_ERROR`: Level `warning`, context `code` and `message`, written by `Response::generateRestError()`. //should-do//
+  - [ ] `ACCOUNT_LOGIN_RATE_LIMITED`: Level `warning`, context `userId`, written for every rate-limited login attempt. //extra-effort//
+  - [ ] `PASSWORD_RESET_REQUESTED`: Level `info`, context `userId`, only written when the submitted email matched an account. //extra-effort//
+  - [ ] `PASSWORD_RESET`: Level `info`, context `userId` and `reason`, written after a successful reset. //extra-effort//
+  - [ ] `USER_CREATED`: Level `info`, context `userId` and `email`, written by `z_userModel::add()` and so also by signup, `User::add()` and the admin add-user page. //extra-effort//
+  - [ ] `ACCOUNT_UPDATED`: Level `info`, context `userId`; written by `updateAccountSettings` and by admin edit-user (which adds the old `email`). //extra-effort//
+  - [ ] `USER_LOGGED_IN`: Level `info`, context `userId`, written by `loginAs()` when user and exec user are equal (also when a login-as logout returns to the exec user). //extra-effort//
+  - [ ] `USER_LOGGED_IN_ANOTHER`: Level `info`, context `userId` and `userId_exec`, written by `loginAs()` for a login-as session. //extra-effort//
+  - [ ] `USER_LOGGED_OUT`: Level `info`, context `userId`, written by `logout()` after the session was invalidated. //extra-effort//
+  - [ ] Not logged
+    - [ ] Authentication: Failed password attempts (only counted in `z_logintry`), verification success and logout of anonymous requests write no event. //should-do//
+    - [ ] Mail failures: Errors in `sendEmail()` are echoed to the output instead of being logged. //should-do//
+    - [ ] Admin actions: Role and permission changes, role create or delete, the maintenance bypass cookie and database browsing write no event of their own. //nice-to-have//
+  - [x] Log rows: Log rows record `user()->userId` and `user()->execUserId` of the request.
+- [ ] Automatic logging on the `zubzet` channel
+  - [ ] Slow requests
+    - [ ] Hook: A shutdown function logs `SLOW_REQUEST` at `warning` when the request duration is at or above `logger_slow_request_ms` (default 1000). [partial] //important//
+    - [ ] Disabling: A non-numeric or negative threshold disables the check. //should-do//
+    - [ ] Measurement: Duration is measured from `REQUEST_TIME_FLOAT` so bootstrap time counts, and `duration_ms` is rounded to 2 decimals. //nice-to-have//
+    - [ ] `uri`: The URL parts joined with `/` (no query string), or `null` if the request is unavailable. //nice-to-have//
+    - [ ] Exclusions: Skipped when the request ended in an uncaught exception (already logged as `EXCEPTION`); there is no CLI exclusion, so long console commands are measured too. //nice-to-have//
+  - [ ] Slow queries
+    - [ ] Hook: `Connection::exec` logs `SLOW_QUERY` at `warning` when the execute time is at or above `logger_slow_query_ms` (default 300). [partial] //important//
+    - [ ] Measurement: Duration covers only `mysqli_stmt::execute()`, excluding prepare and result fetch, and `duration_ms` is rounded to two decimals. //should-do//
+    - [ ] Coverage: It covers `exec()` and therefore `execQuery()`, but not `executeMultiQuery()`. //should-do//
+    - [ ] State protection: The surrounding state (`insertId`, `result`, `callingModel`) is saved and restored via `checkpointCurrentState`, so the log INSERT does not clobber `getInsertId()` or result rows. //optional//
+    - [ ] Recursion: The log INSERT itself is stopped from logging again by the `DatabaseLogger` guard. //optional//
+  - [ ] PHP errors
+    - [ ] Handler: A custom `set_error_handler` logs every error that passes `error_reporting()`, so `@`-suppressed errors are not logged. //should-do//
+    - [ ] Logger failures: Failures inside the error handler are swallowed so they cannot mask the original error. //optional//
+    - [ ] `E_ERROR`, `E_CORE_ERROR`, `E_COMPILE_ERROR`, `E_USER_ERROR`, `E_RECOVERABLE_ERROR`: Map to level `error`, event `ERROR`. //nice-to-have//
+    - [ ] `E_PARSE`: Maps to `critical`, event `PARSE`. //nice-to-have//
+    - [ ] `E_WARNING`, `E_CORE_WARNING`, `E_COMPILE_WARNING`, `E_USER_WARNING`: Map to `warning`, event `WARNING`. //nice-to-have//
+    - [ ] `E_DEPRECATED`, `E_USER_DEPRECATED`: Map to `notice`, event `DEPRECATION`. //nice-to-have//
+    - [ ] `E_NOTICE`, `E_USER_NOTICE`: Map to `notice`, event `NOTICE`. //nice-to-have//
+    - [ ] Severity bit 2048: The legacy `E_STRICT` (removed in PHP 8.4) maps to `debug`, event `STRICT`. //optional//
+    - [ ] Unknown severity: Maps to `warning` with event `ERROR`. //optional//
+    - [ ] Suppressed by `showErrors=0`: With `showErrors=0` `error_reporting` is `0`, so PHP errors are not logged at all. //important//
+    - [ ] Fatal errors: They never reach `set_error_handler` and are not logged by the framework. //should-do//
+  - [ ] Uncaught exceptions
+    - [ ] Logging: `set_exception_handler` logs `EXCEPTION` at `error` with `class`, `message`, `file`, `line` and `trace` (`getTraceAsString`); previous exceptions are not included. //should-do//
+    - [ ] Slow-request flag: It sets `LoggerFactory::$uncaughtException` so the slow-request hook does not double-count. //optional//
+    - [ ] Logger failures: A logger failure inside the handler is swallowed so it cannot mask the original exception. //optional//
+    - [ ] Rendering: Afterwards Whoops renders the exception (test mode), otherwise the throwable is rethrown to PHP's default fatal display. [partial] //should-do//
+- [ ] Exception behavior (`ExceptionBehavior` trait on `ZubZet`)
+  - [ ] `BehaviorOption`: Constants `NONE` = 0, `EXCEPTIONS` = 1 and `ALL` = 2 with `BehaviorOption::isValidOption(int $option): bool`. [partial] //important//
+  - [ ] `setExceptionBehavior(?int $state = null): void`
+    - [ ] Override: Public method (e.g. `zubzet()->setExceptionBehavior(0)`) that overrides `showErrors` for the rest of the request when `$state` is given. [partial] //important//
+    - [ ] Repeated calls: It is called once without argument from the constructor and may be called again at runtime, re-registering the error and exception handlers. [partial] //nice-to-have//
+    - [ ] Whoops init: It always calls `WhoopsHandler::initialize()` first, so in test mode every call builds a new `WhoopsHandler`. //optional//
+    - [ ] Invalid value: An out-of-range integer throws `InvalidArgumentException` "Invalid exception behavior option: X", and a missing `showErrors` setting throws from `HasDynamicAttributes::__get`. //urgent//
+  - [ ] `ALL` mode
+    - [ ] Promotion: Logs then throws `ErrorException($message, 0, $severity, $file, $line)` for every error passing `error_reporting()`, deprecations and notices included. [partial] //should-do//
+    - [ ] Display settings: It does not call `ini_set` or `error_reporting()`, so php.ini decides what is displayed. //should-do//
+    - [ ] Vendor deprecations: Deprecations from vendor code are promoted too, which once broke Whoops on PHP 8.5 until `filp/whoops` `^2.18.4`. //nice-to-have//
+  - [ ] `NONE` and `EXCEPTIONS` modes
+    - [ ] Handler: The error handler logs and returns `false` so PHP's default handling continues. [partial] //should-do//
+    - [ ] Display settings: Sets `display_errors` and `display_startup_errors` to the state value and `error_reporting` to `E_ALL` for `1` and `0` for `0`. [outdated] //urgent//
+  - [ ] Exception handler design: Whoops is invoked directly with the full throwable and must not be paired with `restore_exception_handler()`, which recurses on PHP >= 8.3. //optional//
+  - [ ] Router interplay (`executeControllerAction`)
+    - [ ] Controller include: An `\Exception` thrown while including the controller file always routes to `error/500`. //should-do//
+    - [ ] Action exceptions: An `\Exception` thrown by an action is rethrown when `showErrors != 0` and routes to `error/500` when `showErrors == 0`. //important//
+    - [ ] `\Error` types: Only `\Exception` is caught there, so an `\Error` (e.g. `TypeError`) goes to the global exception handler. //should-do//
+- [ ] `NotInstantiatedException` (`ZubZet\Framework\ErrorHandling\GenericException`)
+  - [ ] Shape: Extends `\LogicException` with the message "The requested instance 'X' has not yet been setup." and a constructor that takes the target name. //nice-to-have//
+  - [ ] Thrown by: `zubzet()`, `request()` and `db()` before their instance exists. //should-do//
+- [ ] Whoops error page (`ZubZet\Framework\ErrorHandling\WhoopsHandler`)
+  - [x] Activation: Only active when `execution_type` is `test`; `WhoopsHandler::initialize()` stores the instance in `StaticCache` under `handler`/`whoops`, otherwise no Whoops code runs.
+  - [ ] Non-test environments: Uncaught exceptions are rethrown to PHP's default handler and no stack trace page is rendered. [partial] //should-do//
+  - [ ] Handler wiring: The public property `Run $run` is driven directly by `$run->handleException($e)` so the full trace is kept. //optional//
+  - [ ] Registration: Uses `PrettyPageHandler`; the constructor calls `$run->register()`, then `setExceptionBehavior` replaces the error and exception handler while Whoops' shutdown handler still renders fatal errors. //optional//
+  - [ ] Application paths: Frames under `<cwd>/app/` are marked as application code. //optional//
+  - [ ] Editor links
+    - [x] Condition: Built only if `automated_host_working_directory` is set, mapping container paths under the working directory to host paths.
+    - [ ] Outside files: Files outside the working directory get no link. //optional//
+    - [ ] URL format: `{development_editor}://file/{hostAppPath}{relative}:{line}` where the editor defaults to `vscode`. [partial] //nice-to-have//
+  - [ ] Sensitive superglobal masking
+    - [ ] Pattern list: Hides keys of `_GET`, `_POST`, `_COOKIE`, `_SESSION`, `_SERVER` and `_ENV` whose lowercase name contains `pass`, `secret`, `token`, `session`, `auth`, `access`, `key`, `credential`, `private` or `bearer`. [partial] //should-do//
+    - [ ] Timing: Evaluated once at construction using the current keys, reading from `request()->input` and falling back to `$GLOBALS` when the request is not ready. //optional//
+  - [ ] Dependency placement: `filp/whoops` and `php-debugbar/php-debugbar` are listed under `require` (not `require-dev`), so they ship in production installs but stay inactive. //should-do//
+- [ ] Debug bar (`ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge`)
+  - [x] Activation: Only built when `execution_type` is `test`; otherwise `isEnabled()` is false, no markup is rendered and all collect calls are no-ops.
+  - [x] Production warning: It exposes SQL, bound params, template data, log context and traceIds, so it must never run in production.
+  - [ ] `DebugBarBridge::bootstrap()` [internal]: Creates a `StandardDebugBar` plus the `queries`, `templates` and `monolog` collectors and calls `setHideEmptyTabs(true)`. [partial] //optional//
+  - [ ] Standard collectors: PhpInfo, Messages, Request, Time, Memory and Exceptions from `php-debugbar` `^1.23.6`. [partial] //nice-to-have//
+  - [ ] Assets: php-debugbar's `src/DebugBar/Resources` is mounted into the asset proxy and the renderer base URL is the hard-coded `/_zubzet/asset-proxy`, without `rootDirectory`. [partial] //nice-to-have//
+  - [ ] Static API: `isEnabled(): bool`, `renderHead(): string` and `renderBody(): string`, where both render methods return `""` when disabled. [partial] //nice-to-have//
+  - [ ] Rendering hook: `essentialsHead()` and `essentialsBody()` echo `renderHead()` and `renderBody()`, reached through `$opt["layout_essentials_head"]` and `$opt["layout_essentials_body"]`. [partial] //should-do//
+  - [ ] Layout requirement: Layouts must call both hooks to show the bar; bundled `default_layout.php`, `min_layout.php` and `z_admin_layout.php` do, `mail_layout.php` and `empty.php` do not. [partial] //should-do//
+  - [ ] `CanCollect` trait (static collect methods on the bridge)
+    - [ ] `collectQuery(string $sql, float $durationSeconds, int $rowCount, array $values, ?Model $model = null)`: Feeds the `queries` collector and is called by `Connection::exec`. [partial] //optional//
+    - [ ] `collectTemplate(string $name, array $data, string $type, string $layout)`: Feeds the `templates` collector for every rendered view with type `php`, using the caller's `$opt` captured before framework values are injected. [partial] //optional//
+    - [x] `collectLogger(Monolog\Logger $logger)`: Attaches the `monolog` collector as handler of a channel, called when a channel is created.
+    - [ ] Early channels: Channels created before `DebugBarBridge::bootstrap()` runs are not attached to the bar. //optional//
+  - [ ] Queries tab (`QueryCollector`, name `queries`)
+    - [ ] Collector contract [internal]: `getName()` returns `queries`, `collect()` returns the statements with `nb_statements` and total duration, `getAssets()` ships the `widgets/sqlqueries` css and js, and `getWidgets()` registers the `queries` widget. //optional//
+    - [ ] Collection trigger: Every successful `Connection::exec()` calls `collectQuery($sql, $durationSeconds, $rowCount, $values, $callingModel)`; failed queries throw before collection and are never listed. [partial] //nice-to-have//
+    - [ ] Row count: `row_count` is `num_rows` for result sets and `affected_rows` otherwise, and `$values` are the bound values without the type string. [partial] //nice-to-have//
+    - [ ] Entry fields: `sql`, `duration` (seconds), `duration_str`, `row_count`, `is_success` (always `true`) and `params`. [partial] //nice-to-have//
+    - [ ] Summary fields: `nb_statements`, `nb_failed_statements` (always `0`), `accumulated_duration` and `accumulated_duration_str`. //optional//
+    - [ ] Indentation: Leading whitespace of every SQL line is stripped before display. //optional//
+    - [ ] Placeholder interpolation: `?` placeholders are replaced by single-quoted `addslashes()`d values (`NULL` for null) for display only, so the shown SQL is not what ran. [partial] //nice-to-have//
+    - [ ] Interpolation skips: `?` inside quoted literals, `--` comments and `/* */` comments is left untouched. //optional//
+    - [x] Internal queries: Queries from internal models are skipped while `debugbar_hide_internal_queries` is true (default).
+    - [ ] Widget: `PhpDebugBar.Widgets.SQLQueriesWidget` with icon `database` and badge `queries.nb_statements`. //optional//
+  - [ ] Templates tab (`TemplateCollector`, name `templates`)
+    - [ ] Collector contract [internal]: `addTemplate($name, $data, $type, $layout)` records one entry per render, `getName()` returns `templates`, `collect()` returns `nb_templates` and `templates`, and `getAssets()` ships `widgets/templates/widget.css` and `widget.js`. //optional//
+    - [ ] Compatibility: Mirrors php-debugbar v3's `TemplateCollector` shape for `PhpDebugBar.Widgets.TemplatesWidget` without requiring v3. //optional//
+    - [ ] Entry fields: `name` (`"<view> (layout: <layout>)"`), `param_count`, `params` (formatted with the DataFormatter), `type`, `layout` and `start`. [partial] //optional//
+    - [ ] Widget: Icon `file-code` and badge `templates.nb_templates`. //optional//
+  - [ ] Log tab (`MonologCollector`, name `monolog`)
+    - [ ] Base: Extends php-debugbar's Monolog bridge handler (level `DEBUG`, bubbling) and reuses its `MessagesWidget` including the search input. [partial] //nice-to-have//
+    - [ ] Record coverage: It receives records below `logger_level` that the database or stream handler drops, but nothing when `logger_enabled` is falsy because the `NullHandler` stops bubbling. [partial] //nice-to-have//
+    - [ ] Headline: `"<traceId> [<channel> <LEVEL>]: <message>"`, escaped with `e()`, with the lowercase level name as label. [partial] //optional//
+    - [x] Details: Context and extra values are listed in a collapsible table under keys `context.<key>` and `extra.<key>`.
+    - [ ] Searchable text: `traceId channel LEVEL message` followed by `key=value` pairs. [partial] //optional//
+    - [ ] `CanFormatValue` trait [internal]: Strings stay as is, scalars and null use `var_export`, and arrays or objects become pretty-printed JSON with unescaped slashes and unicode. [partial] //optional//
+- [ ] Bundled log writer model (`z_loggerModel`, internal)
+  - [ ] `log(array $logRecord)`: Inserts one `z_interaction_log` row via `dbInsert` + `exec` after adding environment info and removing the `formatted` key. [partial] //optional//
+  - [x] Row mapping: `text` is the record `message`, `value` the JSON record, and `userId` and `userId_exec` come from `user()?->userId` and `user()?->execUserId`.
+  - [ ] `appendEnvironment(&$logRecord)`: Merges `extra.userId`, `extra.execUserId` and `extra.source` (`cli` or `web`) into the record. [outdated] //important//
+  - [ ] Shared use: `appendEnvironment` is also called by the stream `JsonFormatter`, so both log methods carry the same `extra` keys. [partial] //nice-to-have//
+  - [ ] JSON encoding: Flags `JSON_UNESCAPED_UNICODE`, `JSON_UNESCAPED_SLASHES`, `JSON_INVALID_UTF8_SUBSTITUTE` and `JSON_THROW_ON_ERROR`; empty `context` and `extra` are stored as `[]` unlike stream output. [outdated] //important//
+  - [ ] Encoding fallback: On a `JsonException` the stored value becomes `{"message": ..., "encoding_error": ...}`, with message `Log encoding failed` when none exists. [partial] //nice-to-have//
+  - [ ] Public surface: Callers normally log through `logger()` and use the model only through `DatabaseLogger`. //optional//
+## 18. Maintenance Mode & Asset Proxy
+- [ ] Maintenance gate (`ZubZet\Framework\Maintenance\MaintenanceHandler::gate()`)
+  - [x] Design: Standalone gate that depends only on loaded configuration (no logger, exception handler or database), so admins can run migrations or deploys while visitors are blocked.
+  - [ ] Timing: Runs on every request right after configuration is loaded and before the logger hooks, asset proxy, routing, REST endpoints and the database connection. [partial] //should-do//
+  - [ ] Failure safety: Resolution problems fall through to `disabled`, so the gate can never lock the site by itself. [partial] //should-do//
+  - [ ] Modes (`MaintenanceMode` constants, final class [internal])
+    - [x] `disabled`: The gate lets every request through.
+    - [x] `soft`: HTTP requests are blocked unless the bypass cookie `maintenance` is present, CLI is allowed.
+    - [x] `enabled`: All HTTP requests are blocked even with the bypass cookie, CLI is allowed.
+    - [x] `full`: Blocks HTTP and CLI alike and the cookie is ignored.
+    - [x] Mode parsing: The `maintenance_mode` string is lowercased with `strtolower` and validated strictly against the four constants by `MaintenanceMode::isValid()`.
+    - [ ] Invalid mode: Unknown or empty values fall back to `disabled` without any warning or log. [partial] //important//
+  - [ ] Bypass cookie
+    - [x] Name and lookup: `MaintenanceHandler::$COOKIE_KEY` = `maintenance`, checked directly in `$_COOKIE` with `array_key_exists`.
+    - [x] Not a secret: Only the presence of the key is checked, so any value (even empty) bypasses `soft` mode and any visitor can send it.
+    - [x] Honoured modes: Honoured only in `soft` mode and ignored in `enabled` and `full`.
+    - [ ] Setting it: Admins set it from the admin page `z/maintenance` (24h, path = root folder, no `secure`/`httponly`/`samesite` flags) before switching to `soft`. [partial] //important//
+    - [ ] Ordering: The cookie cannot be set while the gate blocks the app, so it must be obtained before `soft` mode is enabled. [partial] //important//
+  - [ ] HTTP response when blocked
+    - [ ] Status and headers: Status `503` with `Content-Type: text/html; charset=UTF-8` and `Retry-After: 300`; the body is the maintenance page, then `exit`. [partial] //important//
+    - [ ] Body type: The body is always HTML regardless of request type, so JSON, REST, API and asset-proxy requests receive the HTML page as well. [partial] //should-do//
+  - [x] CLI behavior
+    - [x] Bypass: Console commands (`isCli()`) pass in `disabled`, `soft` and `enabled`, so migrations and cron jobs keep working.
+    - [x] `full` mode: A CLI call writes the plain string "Service Unavailable" plus newline to STDERR and exits with code `1`.
+    - [x] No template: CLI never loads an HTML template, so output stays minimal for cron monitoring.
+  - [ ] Maintenance page template
+    - [x] Lookup order: `app/Views/maintenance.html` (relative to the working directory), then the bundled `src/Maintenance/maintenance.html`.
+    - [x] Skipped candidates: A candidate is skipped when it is not a file, is empty or contains the literal string `<?php`, falling through to the next candidate.
+    - [x] Static output: The file is read with `file_get_contents` and echoed, never included, so no PHP, variables or layout are processed.
+    - [ ] No template found: The HTTP body is the plain text "Service Unavailable". //nice-to-have//
+    - [ ] Bundled page: Self-contained (inline CSS and JS, no asset-proxy dependency) with title "Maintenance", heading "We'll be back soon", a spinner and a contact hint. //should-do//
+      - [ ] Bundled page text: the body reads `Our website is currently undergoing maintenance.`, `Please check back later.` and a hint to contact the web administrator. //extra-effort//
+    - [ ] Auto reload: The bundled page reloads itself every 300000 ms (5 minutes) via `setTimeout(() => location.reload(), 300000)`. //nice-to-have//
+    - [ ] Test hook [internal]: The bundled page root element carries `data-test="maintenance-page"`. //optional//
+  - [ ] Public static API (class is `@internal`)
+    - [ ] `MaintenanceHandler::getMode(): string`: Returns the resolved mode, `disabled` if the setting was invalid. //optional//
+    - [ ] `MaintenanceHandler::isActive(): bool`: True for every mode except `disabled`. //optional//
+    - [ ] `MaintenanceHandler::checkBypassCookie(): bool`: True when the `maintenance` cookie key exists. //urgent//
+    - [ ] `MaintenanceHandler::$COOKIE_KEY`: Public static name of the bypass cookie. //optional//
+  - [ ] Switching modes: The only switch is the `maintenance_mode` setting (z_settings.ini or `CONFIG_MAINTENANCE_MODE` env); no CLI command or admin toggle exists. [partial] //important//
+- [ ] Asset proxy (`ZubZet\Framework\Resources\AssetProxy`)
+  - [ ] Purpose: Serves frontend assets from `src/`, `web/` and Composer packages through PHP so no public copy step is needed. [partial] //important//
+  - [ ] Route: `GET /_zubzet/asset-proxy/{assetPath:.+}` registered in the framework's `DefaultRoutes.php`, GET only and without any access check. [partial] //important//
+  - [x] Instance access: `zubzet()->assetProxy`, created once per request in the framework constructor.
+  - [ ] Maintenance interplay: Asset requests pass the maintenance gate first, so they get the 503 maintenance response while maintenance blocks the visitor. //should-do//
+  - [ ] Mounts in precedence order (first mount that resolves the file wins)
+    - [ ] Framework assets: `IncludedComponents/assets/` of the framework at the URL root, giving `js/popper.min.js`, `js/bs-custom-file-input.js` and `css/loadCircle.css`. //nice-to-have//
+    - [ ] Z.js: `z_frontend_root` (the package's `web/` directory) at the URL root, giving `Z.js`. [partial] //should-do//
+    - [x] Bootstrap: `components/bootstrap` package root at the URL root, giving `css/bootstrap.min.css` and `js/bootstrap.min.js`.
+    - [x] jQuery: `components/jquery` package root at prefix `js`, giving `js/jquery.min.js`.
+    - [x] Font Awesome CSS: `components/font-awesome` directory `css` at prefix `css/font-awesome`.
+    - [ ] Font Awesome fonts: `components/font-awesome` directory `webfonts` at prefix `css/webfonts`. //nice-to-have//
+    - [ ] Debug bar: php-debugbar `src/DebugBar/Resources` at the URL root, registered only when `execution_type` is `test`. [partial] //nice-to-have//
+    - [ ] Application mounts: Mounts registered by the application come last and cannot override a path already provided by an earlier mount. [partial] //should-do//
+  - [ ] `AssetProxy::registerWebRootSource(string $sourceRoot, string $urlPrefix = '')`
+    - [x] Purpose: Public method exposing a directory under an optional URL prefix.
+    - [ ] `$sourceRoot`: Should be an absolute path; a relative path resolves against the working directory. [partial] //should-do//
+    - [x] Lazy validation: The filesystem is not checked at registration, so a bad root only fails when a request reaches that mount.
+    - [ ] `$urlPrefix`: Slashes are trimmed on both sides and the mount only matches paths that start with `<prefix>/`. [partial] //should-do//
+  - [ ] `AssetProxy::serve(string $assetPath)`
+    - [x] Purpose: Writes the first matching file to the output.
+    - [ ] Leading slashes: They are removed from `$assetPath` before matching. //optional//
+    - [ ] Content type: `Content-Type` comes from `FinfoMimeTypeDetector::detectMimeTypeFromPath()` (file extension, case-insensitive) with fallback `application/octet-stream`, e.g. `application/javascript` for `Z.js`. [partial] //should-do//
+    - [ ] Output: Sent with `readfile()` and only the `Content-Type` header is set, with no cache, ETag or length headers. //should-do//
+    - [ ] Not found: HTTP 404 with the plain body "Asset not found: " plus the path escaped by `e()`. [partial] //nice-to-have//
+    - [x] Non-files: A request resolving to a directory, a non-file or an unreadable file counts as not found (404).
+  - [ ] Path safety of a mount (`Mount::resolve`)
+    - [x] Realpath: Paths are resolved with `realpath()`, so symlinks are followed before the check.
+    - [ ] Escape rejection: A resolved path outside the mount root throws `\RuntimeException` "Invalid asset path: <resolved path>" instead of a 404. [partial] //nice-to-have//
+    - [ ] Boundary check: It requires `<root>` plus a directory separator, so sibling directories sharing a name prefix are rejected. [partial] //nice-to-have//
+    - [ ] Mount root: A request for the mount root itself (empty path, `.`, `./`) fails the boundary check and is rejected, so directories are not listed. //nice-to-have//
+    - [x] Symlinks: Symlinks inside a mount that point outside it are rejected.
+    - [ ] Exception handling: The thrown exception is uncaught inside the route and handled by the global exception behaviour. //nice-to-have//
+    - [ ] No allow-list: Everything readable below a mounted root is served, including dotfiles and the `composer.json` or `package.json` of mounted packages, with no extension allow-list. //important//
+  - [ ] `Mount` value object: Public `string $sourceRoot` and `string $urlPrefix` with `resolve(string $assetPath): ?string` returning a file path or `null`. //optional//
+  - [ ] `BundledPackage($package, $directoryInPackage = "", $urlPrefix = "")`
+    - [ ] Purpose: Maps a Composer package directory to a URL prefix. //should-do//
+    - [ ] `$directoryInPackage`: Empty exposes the package root, otherwise the subdirectory below the install path. //nice-to-have//
+    - [ ] `$urlPrefix`: Empty mounts at the asset proxy root. //nice-to-have//
+    - [ ] `mount(AssetProxy $proxy)`: Resolves the install path via `Composer\InstalledVersions::getInstallPath()` on every request. //optional//
+    - [ ] Unknown package: A package not known to Composer (`\OutOfBoundsException`) is silently skipped and its URLs end up as 404. //nice-to-have//
+    - [ ] Not installed: A known package with install path `null` throws `\RuntimeException` "Package is not installed: <package>". //nice-to-have//
+    - [ ] Application use: `(new BundledPackage(...))->mount(zubzet()->assetProxy)` exposes further Composer packages. //should-do//
+  - [ ] `BundledAssets::register(AssetProxy $proxy)`: Final class mounting the fixed list of four `BundledPackage` entries (Bootstrap, jQuery, two Font Awesome directories), invoked from the `AssetProxy` constructor. //optional//
+  - [ ] Debug bar base URL: The debug bar is told the base URL `/_zubzet/asset-proxy` without the root folder. //optional//
+## 19. Testing, CI & Contributing
+- [ ] Test stack overview
+  - [x] Suite type: all tests are Cypress end-to-end specs run against a dockerized consumer project, and no PHPUnit or other unit-test suite exists in the repository.
+  - [x] Size and runtime: the full e2e suite has 590+ tests and takes about 6 minutes.
+  - [x] Quickstart commands: `cd tests/e2e && npm run start`, `npm run tests`, and `npm run tests -- --spec 'tests/cypress/e2e/core/<name>.cy.js'` for one spec.
+  - [ ] App URL: the e2e app is served at `http://localhost:8080`, not `:4000`, although `z_settings.ini` says `host = http://localhost:4000` (overridden by `CONFIG_HOST`). [partial] //optional//
+  - [ ] Test npm packages: devDependencies `cypress` `^15.16.0`, `chai` `^6.2.2`, `pixelmatch` `^5.3.0`, `pngjs` `^7.0.0` and `unicode-substring` `^1.0.0`, plus an `overrides` pin `uuid` `^14.0.0`. //optional//
+  - [ ] Package managers: local use is `npm`, CI uses Bun (`bun install`, `bun run tests`), `package-lock.json` is committed and `bun.lock` is git-ignored. //optional//
+  - [ ] `npm` scripts in `tests/e2e/package.json`
+    - [ ] `docker-compose`: wraps `docker compose -f packaging/docker/docker-compose-base.yml`. //nice-to-have//
+    - [ ] `start`: removes `composer.lock`, runs `npm install`, brings the stack up with `--remove-orphans --build -d`, runs `composer install` in the container, then `npm run seed` and `npm run info`. [partial] //nice-to-have//
+    - [x] `startup`: runs `start` and then attaches with `docker compose up`.
+    - [ ] `stop`: runs `docker compose down -v`, which also deletes the database volume. [partial] //nice-to-have//
+    - [ ] `shell`: opens `bash` in the `application` container with `docker exec -it`. [partial] //nice-to-have//
+    - [ ] `seed`: runs `docker exec application php index.php db:seed`. [partial] //nice-to-have//
+    - [x] `info`: runs `info:startup --pwd "$(pwd)"` in the container.
+    - [ ] `cypress`: opens the interactive runner with `cypress open --project tests`. [partial] //nice-to-have//
+    - [ ] `tests`: headless run `env -u ELECTRON_RUN_AS_NODE cypress run --project tests`. [partial] //nice-to-have//
+- [ ] Docker e2e stack
+  - [ ] Compose file: `tests/e2e/packaging/docker/docker-compose-base.yml` defines services `application`, `database`, `database_dashboard` and `mailer`. [partial] //nice-to-have//
+  - [ ] Service `application`: container name `application`, image `docker-application:latest`, published port `8080:80`, `restart: on-failure`, waits for the healthy `database`. [partial] //nice-to-have//
+  - [ ] Volumes of `application`: `../../` (the e2e project) mounts at `/var/www/html`, the repository root at `/var/www/framework`, and the vhost file read-only. //optional//
+  - [ ] Service `database`: `mariadb:10.5.22` with database and user `app`, password `app_password`, root password `root_password`, `TZ: Europe/Berlin` and a `healthcheck.sh --connect` check. //nice-to-have//
+  - [ ] Service `database_dashboard`: `phpmyadmin:latest` on port 8081 preconfigured for host `database`. [partial] //nice-to-have//
+  - [ ] Service `mailer`: `rnwood/smtp4dev:latest` with its web UI on port 3300. [partial] //nice-to-have//
+  - [ ] Volumes: `mariadb` and `rabbitmq` are declared, and `rabbitmq` is not used by any service. //optional//
+  - [ ] Container environment (`x-config-z-settings`): `COMPOSER_VENDOR_DIR` `/var/www/vendor`, `XDEBUG_MODE` `debug` and `DEBUG_ZUBZET_COVERAGE_FRAMEWORK` `true`. //optional//
+  - [ ] Settings via environment: `CONFIG_HOST`, `CONFIG_ROOTDIRECTORY`, `CONFIG_DBHOST` (`database:3306`), `CONFIG_DBNAME`, `CONFIG_DBUSERNAME`, `CONFIG_DBPASSWORD` and `CONFIG_MAIL_*` override `z_settings.ini` values. [partial] //nice-to-have//
+  - [ ] Placeholder convention: the e2e `z_settings.ini` uses placeholder values `env` or `ENV` for secrets and sets `allow_env_config = true` so the `CONFIG_*` variables apply. [partial] //nice-to-have//
+  - [ ] `Dockerfile.apache-local`
+    - [ ] Base image: `FROM ghcr.io/zubzet/php:${PHP_TAG}` with `PHP_TAG` default `8.0-xdebug` and `USER_UID` default `1000`. //optional//
+    - [ ] User mapping: it remaps `www-data` to `USER_UID` and chowns `/var/www`, `/var/log/apache2` and `/run/apache2`, then runs as `www-data` in `/var/www/html`. //optional//
+    - [ ] Composer: `COMPOSER_ALLOW_SUPERUSER=1` is set in the image. //optional//
+  - [ ] `site-000-default.conf`: Apache vhost with `DocumentRoot /var/www/html/webroot` that logs to stderr and stdout. //optional//
+  - [ ] Framework linkage: the e2e `composer.json` is a `project` with a `path` repository `../framework` (`symlink: true`), requires `zubzet/framework` `*@dev` and sets `minimum-stability` `dev`. //optional//
+  - [ ] Consumer project files: the e2e `index.php`, `webroot/`, `z_config/z_settings.ini`, `app/` and `composer.json` act as the reference consumer-project skeleton. //nice-to-have//
+- [ ] Cypress configuration and helpers
+  - [ ] Config file: `tests/e2e/tests/cypress.config.js` sets `baseUrl` `http://localhost:8080`, `experimentalRunAllSpecs: true`, `video: false` and a 1280x720 viewport. //nice-to-have//
+  - [ ] Node task: `setupNodeEvents` registers the task `compareScreenshot` from `support/visualRegression.js`. //optional//
+  - [ ] Project root: Cypress runs with `--project tests`, so `cypress/e2e/**/*.cy.js` is the spec location and `../z_config` points at the e2e project. //nice-to-have//
+  - [ ] Support loader: `support/e2e.js` imports `./commands` and `./database`. //optional//
+  - [ ] Custom commands (`support/commands.js`)
+    - [x] `cy.query(selector)`: selects `[data-test=<selector>]`.
+    - [ ] `cy.queryLike(selector)`: selects `[data-test*=<selector>]`. //nice-to-have//
+    - [ ] `cy.form(name)`: selects `input`, `select` or `textarea` by `name`. //nice-to-have//
+    - [ ] `cy.fillForm(inputs)`: types into inputs, or uses `select` for select elements, for each name and value pair. [partial] //nice-to-have//
+    - [ ] `cy.validateForm(inputs)`: asserts each named field has the given value. //nice-to-have//
+    - [ ] `cy.loginAs(profile)`: lower-cases the profile, reads `fixtures/logins.json` and sets the cookie `z_login_token` inside `cy.session`. [partial] //nice-to-have//
+    - [ ] `cy.areVisible(list)` and `cy.hasLinks(list)`: assert `data-test` elements are visible and `a[href*=...]` links exist. //optional//
+    - [ ] `cy.http(method, endpoint, body, callback)`: calls `/api/v1/<endpoint>` with header `X-API-KEY: 1234` and `failOnStatusCode: false`, where a string body names a fixture. [partial] //nice-to-have//
+    - [ ] `cy.sendRequest(url, code = 403)`: requests the URL and asserts the status code. //optional//
+    - [ ] `cy.setConfigSetting(key, value)`: rewrites the matching line in `../z_config/z_settings.ini`, which works because the INI is re-read on every request. [partial] //nice-to-have//
+    - [x] `cy.saveConfigBackup()` and `cy.restoreConfigBackup()`: keep and restore the settings file content around tests that change settings.
+  - [ ] `cy.dbSeed()` (`support/database.js`): runs `docker exec application php index.php db:seed` and clears all saved Cypress sessions. [partial] //nice-to-have//
+  - [ ] Visual regression helper `compareScreenshot` (`support/visualRegression.js`)
+    - [ ] Arguments: `{ actualPath, baselinePath, diffPath, regions, regionThreshold = 0.15 }`. //optional//
+    - [ ] Pixel comparison: `pixelmatch` with `threshold: 0.2` and `includeAA: false`. //optional//
+    - [ ] Global mode: passes when at most 0.05 percent of pixels differ (`floor(width * height * 0.0005)`). //optional//
+    - [ ] Region mode: each `{ name, x, y, width, height }` tile fails when its diff ratio exceeds `regionThreshold`. //optional//
+    - [ ] Result reasons: `ok`, `pixel-diff`, `region-diff`, `no-actual`, `no-baseline` and `size-mismatch`. //optional//
+    - [ ] Missing baseline: the actual screenshot is copied in as the new baseline and the test still fails so a human reviews and commits it. //optional//
+    - [ ] Baselines and specs: baselines live in `tests/cypress/fixtures/visual-baselines/`, and the visual specs are pinned to `{ browser: "electron" }` and re-run after bumping a bundled library. //optional//
+    - [ ] Per-spec tolerance: the Font Awesome spec diffs 32x32 `.icon-audit-glyph` tiles with `regionThreshold: 0.05`, while the Bootstrap spec uses global mode on the whole page. //optional//
+    - [ ] Icon presence audit: `visual/icon-presence.cy.js` fails when any `.icon-audit-cell` glyph has empty, `none` or `normal` `::before` content, catching Font Awesome classes that render no glyph. //optional//
+  - [ ] Fixtures
+    - [ ] `fixtures/logins.json`: profiles `wrong`, `not_activated`, `admin`, `support`, `customer` and `customer_new` with names and passwords, and fixed 40-character tokens for the logged-in ones. [partial] //optional//
+    - [ ] `fixtures/MigrationFiles/`: migration, naming-validation, seeding and sync fixtures that specs copy into the app and delete afterwards. //optional//
+    - [ ] `fixtures/RoutingTest.php`: routing fixture copied to `app/Routes/RoutingTest.php` during runs. //optional//
+    - [ ] Runtime upload fixtures: `core/request.cy.js` and `form/file.cy.js` write zero-filled `TestFile_*` files of 1 KB or 513 KB into `cypress/fixtures` in `before` and delete them in `after`. //optional//
+  - [ ] Spec layout: `tests/e2e/tests/cypress/e2e/` holds `*.cy.js` files in `account`, `advanced`, `authentication`, `core`, `database`, `form`, `framework`, `frontend integration`, `logger`, `migration`, `permission`, `support`, `template rendering usage`, `visual`, `webroot` and `z-admin`. //nice-to-have//
+  - [ ] Spec conventions: specs call `cy.dbSeed()` in `before`, use `data-test` attributes and drive CLI commands through `cy.exec('docker exec application php index.php ...')`. [partial] //nice-to-have//
+  - [ ] Test-only app code: controllers, models, views, routes, migrations and seeds under `tests/e2e/app/` exist only as probes for the specs. //optional//
+  - [ ] Seed data conventions: seed files under `app/Database/seed/zubzet/` are numbered `0_`, `1_` and `9_`, and `9_auto_increment.sql` pins `AUTO_INCREMENT` to 10000 for `z_user` and `z_organization` so created ids stay stable. //nice-to-have//
+  - [ ] Boot harness `instance_test.php`
+    - [ ] Purpose: a CLI-only script run as `php instance_test.php` that prints one JSON line covering the not-yet-instantiated branches of `zubzet()` and `db()`. //optional//
+    - [ ] JSON keys: `zubzetNotInstantiated`, `nonDefault`, `allowedNullWhenUnset` and `strictWhenUnset`. //optional//
+    - [ ] Messages covered: `The requested instance 'ZubZet (The framework itself)' has not yet been setup.`, `Only the default connection is supported so far.` and the `Connection (Database)` variant. //optional//
+  - [ ] Function conflict fixture: `webroot/collision.php` declares `function model() {}` before `new ZubZet()` to trigger the `FunctionConflictResolution` error. //optional//
+  - [ ] Security fixtures: `webroot_security.txt` sits outside the web root for path-traversal tests, and `webroot/assets/outside_symlink` is a symlink to it, next to the empty file `webroot/assets/unknown_mime`. //optional//
+  - [ ] Untracked local artefacts: `tests/e2e/tests/flaky-tests.log` and `tests/e2e/galera-target-node.txt` are not tracked, no tracked code writes them and the log names specs (`database/cluster.cy.js`, `translation/locale.cy.js`) that do not exist in the tree. //optional//
+- [ ] Reference settings and support probes [internal]
+  - [ ] Reference INI `tests/e2e/z_config/z_settings.ini`
+    - [ ] Placeholder convention: keys supplied through env use placeholder values such as `env` or `ENV` so the override can apply. [partial] //optional//
+    - [ ] Test values: it sets `execution_type = test`, `showErrors = 2`, `logger_level = debug`, `maintenance_mode = off` and 30000 ms slow thresholds so coverage overhead does not pollute logs. //optional//
+    - [ ] Auth values: `loginTimeoutSeconds = 43200`, `maxLoginTriesTimespan = 3 minutes`, `maxLoginTriesPerTimespan = 5`, `forgotPasswordTimeSpan = 60 minutes` and `registerRoleId = 1`. //optional//
+    - [ ] Keys read by the framework but absent from it: `dbport`, `db_connection_timeout`, `mail_port`, `anonymous_language`, `login_scope_allow_subdomains`, `login_scope_allow_subdomains_delete_domainscope_name` and `registerRoleIdSecondary`. //nice-to-have//
+  - [ ] Support probes: `HelperController`, `SupportProbeController`, `instance_test.php` and `webroot/collision.php` back the specs `support/*.cy.js`, `core/configuration.cy.js` and `advanced/info-startup.cy.js`. //optional//
+  - [ ] Maintenance CLI specs: they run `docker exec application php index.php info:startup` to prove the CLI bypass and the `full` mode block. //optional//
+- [ ] Probe controllers and fixtures by area [internal]
+  - [ ] Request and response layer
+    - [ ] Specs: `core/request.cy.js`, `core/response.cy.js`, `core/state.cy.js`, `core/cookies.cy.js` and `core/rest.cy.js` cover Request, Response, state and cookie behaviour. //optional//
+    - [ ] Probes: `ResponseController`, `StateProbeController` and parts of `CoreController` and `RoutingController` build state objects and emit JSON snapshots, using tables `z_probe_form` and `z_probe_ced`. //optional//
+    - [ ] Settings mutation: the specs rely on the `CONFIG_HOST` and `CONFIG_ROOTDIRECTORY` env overrides, and probes mutate settings at runtime (`zubzet()->host = ...`) to test host and root directory handling. //optional//
+  - [ ] Rendering, mail and assets
+    - [ ] Specs: `core/layout.cy.js`, `core/mail.cy.js`, `core/asset-proxy.cy.js`, `core/framework-views.cy.js` and `template rendering usage/email.cy.js`. //optional//
+    - [ ] Layout resolution fixtures: `LayoutResolutionController`, `LayoutConstructorController` and `LayoutMiddlewareController` with test layouts `layout/new_layout.php` and `layout/alt_layout.php`. //optional//
+    - [ ] `FrameworkViewProbeController`: renders bundled views and layouts by absolute path to bypass the test app's overrides of `login.php`, `layout/default_layout.php` and `layout/mail_layout.php`. //optional//
+    - [ ] Mail assertions: they use the `rnwood/smtp4dev` service (API at `http://localhost:3300/api/messages`, HTML part at `part/2`) with `CONFIG_MAIL_*` set in `docker-compose-base.yml`. //optional//
+    - [ ] Mail senders: `RenderingController` and `CoreController` send mails through `sendEmail()` and `sendEmailToUser()` with test layouts `layout/email_layout.php`, `layout/mail_layout.php` and `rendering/mail_layout.php`. //optional//
+    - [ ] `AssetProxyController`: registers `webroot/` and `webroot/assets/` mounts and serves traversal, symlink, null-byte, directory and unknown-MIME probes against the sentinel file `webroot_security.txt`. //optional//
+  - [ ] Database layer
+    - [ ] `ConnectionProbeController` (`/ConnectionProbe/<action>`): drives `Connection` through `switchUser`, prepare, bind and execute failures, `heartbeat`, `assertConnection`, `execQuery`, `executeMultiQuery` and constructor timeout validation. //optional//
+    - [ ] `DatabaseProbeController`: drives `Interaction` (`mergeAsGroup`, `countTableEntries`) against the fixture tables `z_test_grouping` and `z_test_empty`. //optional//
+    - [ ] Fixtures: tables are created in `tests/e2e/app/Database/migrations/2026-05-12_DatabaseProbe.sql`. //optional//
+    - [ ] Known uncovered branch: ping fails then reconnect in `assertConnection()` needs MySQL fault injection. //optional//
+    - [ ] Query builder specs: they use `QueryBuilderModel` and `CoreController` actions, plus `queryBuilderCakePHPCompat` (ValueBinder signature guard) and `queryBuilderInjectionTest`. //optional//
+  - [ ] Migrations and seeds
+    - [ ] `cy.dbSeed()`: runs `db:seed`, which drops and recreates the test database, and both CI workflows run `db:seed` before the suite. [partial] //nice-to-have//
+    - [ ] Fixture copies: specs `migration/import`, `seed` and `sync` copy fixtures from `tests/cypress/fixtures/MigrationFiles/**` into `app/Database/...` (and the bundled folder) and delete them afterwards. //optional//
+    - [ ] `MigrationController` probes: `checkImport`, `checkPHPFiles`, `checkSkippedMigrations`, `checkEnvMigrations`, `syncMigrations`, `checkSeeding`, `checkTimestampType`, `lockMigration` and `isMigrationLocked` support the specs. //optional//
+    - [ ] Permanent fixture migration: `2026-05-08_TimeStampType.php` exercises the custom `timestamp` DBAL type. //optional//
+    - [ ] Seed folder: the e2e seed folder holds named files such as `Session.sql` and `Permission.sql` plus numbered files under `seed/zubzet/`, while `seed/Environments/` is created by specs and git-ignored. //optional//
+  - [ ] Authentication
+    - [ ] `AuthProbeController`: actions `lastResetCode/<userId>`, `tokenActive/<token>`, `userVerified/<userId>`, `checkPassword/<userId>?password=` and `scheme/<userId>` read auth rows as JSON. //optional//
+    - [ ] Other probes: `SessionController`, `PasswordHashProbeController` and `ApiCompatProbeController` exercise the `Session` API, the `Password` and `Verification` API and the 3-argument `checkPassword()` compatibility. //optional//
+    - [ ] Specs: `account/login.cy.js`, `account/auth-flows.cy.js`, `authentication/session.cy.js`, `passwordhash.cy.js`, `migrate-hashing.cy.js` and `api-compat.cy.js`. //optional//
+    - [ ] Seeds: `Session.sql`, `AuthFlows.sql` and `zubzet/1_users.sql`, whose users carry salted legacy hashes of the password `password` that start on the `legacy` scheme. //optional//
+  - [ ] Permissions
+    - [ ] Probe controllers: `UserController`, `RoleController`, `GroupController` and `OrganizationController` expose each API method as JSON actions under `tests/e2e/app/Controllers/`. //optional//
+    - [ ] Specs: `permission/user.cy.js`, `role.cy.js`, `group.cy.js`, `organization.cy.js` and `core/permissions.cy.js`. //optional//
+    - [ ] Seed data: `Permission.sql` and `Organization.sql` use fixed explicit ids so assertions stay stable. //optional//
+    - [ ] `CoreController` probes: `e2e-SuperPermission`, `permission`, `permissionCheck` and `consoleBool` cover `Request::checkPermission` and `checkSuperPermission`. //optional//
+  - [ ] Logging, errors and maintenance
+    - [ ] `LoggerController`: probe actions (`log`, `multiLog`, `getTraceId`, `setTraceId`, `context*`, `slowQuery`, `slowRequest`, `deprecation`, `uncaughtException` and more) are used by `logger.cy.js`. //optional//
+    - [ ] `LoggerModel`: reads and clears `z_interaction_log` for assertions. //optional//
+    - [ ] Behaviour switch: `CoreController::action_throwsExceptionAfterBehaviorNone` calls `setExceptionBehavior(0)` per request to test the `error/500` path without editing settings. //optional//
+    - [ ] Whoops gating: `ExceptionController::action_whoops` checks that Whoops stays off when `execution_type` is `prod`. //optional//
+    - [ ] Setting changes: Cypress commands `cy.setConfigSetting`, `cy.saveConfigBackup` and `cy.restoreConfigBackup` switch logger, maintenance and debug bar settings between requests. [partial] //optional//
+  - [ ] Visual audit pages: `VisualController` renders `/visual/icons` (a grid of Font Awesome classes) and `/visual/bootstrap` in `layout/min_layout.php`, with animations off and the debug bar hidden. //optional//
+  - [ ] Font readiness hook: both audit pages set `body[data-fonts-ready='1']` after `document.fonts.ready`, which the visual specs wait for before taking screenshots. //optional//
+- [ ] Coverage tooling
+  - [ ] Overview: a custom session-based collector measures coverage of the e2e project (and optionally the framework) while Cypress drives HTTP requests, using `phpunit/php-code-coverage` 9. [partial] //nice-to-have//
+  - [x] Session workflow: `testing:coverage:start`, run the tests, then `testing:coverage:stop` (optionally `--cli`), as the coverage workflow does.
+  - [ ] Activation: coverage is collected only while a `.coverage.session` file exists in the working directory. //nice-to-have//
+  - [ ] Start point: `Collector::initialize()` is called at the top of the `ZubZet` constructor on every request and CLI call. //optional//
+  - [ ] Driver requirement: `Collector::hasDriver()` accepts a loaded `xdebug` or `pcov` extension, and the shipped override sets `XDEBUG_MODE` to `coverage`. //nice-to-have//
+  - [ ] Missing driver: an active session without a driver throws `RuntimeException` explaining to install Xdebug or PCOV or delete `.coverage.session`. //nice-to-have//
+  - [ ] Environment variable `DEBUG_ZUBZET_COVERAGE_FRAMEWORK`: read with `getenv`, parsed as a boolean (default `false`), and when true adds `../vendor/zubzet/framework/src` to the measured set. //optional//
+  - [ ] Measured paths: `./app` is included and `./app/Database` is excluded by default. //nice-to-have//
+  - [ ] Data files: each request serialises its `CodeCoverage` to `.coverage/<sessionId>/<uniqid>.cov` at shutdown, and `merge()` combines them. //optional//
+  - [ ] Class members: `Collector::$sessionLocation` is `.coverage.session`, `$dataDirectory` is `.coverage/` and the session id is read from the session file. //optional//
+  - [ ] Text report
+    - [ ] Content: `TextReport` prints the PHPUnit summary (`lowUpperBound` 50, `highLowerBound` 90, uncovered files shown) followed by a directory tree. [partial] //optional//
+    - [ ] Colours: green at 90 percent or more, yellow from 50 percent, red below, and files without executable lines count as 100 percent. //optional//
+    - [ ] Line format: `<percent>% (<covered>/<executable>)` printed after each file name. //optional//
+  - [ ] Exclusion annotations: `@codeCoverageIgnore` and `@codeCoverageIgnoreStart` / `@codeCoverageIgnoreEnd` mark the coverage engine, the console commands and `Aliases.php`. //optional//
+  - [ ] Git ignore: the repository root ignores `.coverage`, and the e2e project ignores `.coverage/` and `.coverage.session`. //optional//
+- [ ] CI workflows (`.github/workflows/`)
+  - [ ] `tests_e2e.yml` (`E2E tests`)
+    - [ ] Triggers: `pull_request` (opened, reopened, synchronize, ready_for_review), `push` on branches and tags `v*.*.*`, and `workflow_dispatch`. [partial] //nice-to-have//
+    - [x] Path filters: it runs only when `tests/e2e/**`, `composer*`, `src/**`, `web/**` or the workflow file change.
+    - [ ] Branch pattern: the filter `'*'` does not match branch names containing `/`. [outdated] //nice-to-have//
+    - [ ] Dispatch input: `scope` (`smoke` or `full`, default `smoke`) is declared but never referenced, and any dispatch uses the full matrix. //optional//
+    - [ ] Concurrency: group `e2e-${{ github.ref }}` with `cancel-in-progress: true`. //optional//
+    - [ ] Job limits: `timeout-minutes: 60`, `fail-fast: false` and `contents: read` permission. //optional//
+    - [ ] PHP matrix: the full `8.0-apache` to `8.5-apache` on dispatch, pushes to `main` or `develop` and `v*` tags, otherwise only `8.0-apache` and `8.5-apache`. [outdated] //nice-to-have//
+    - [ ] Setup steps: checkout v4, Bun, a Cypress binary cache keyed on `tests/e2e/package-lock.json`, `bun install`, host UID detection and Docker Buildx. //optional//
+    - [ ] Image build: `docker/build-push-action` builds `Dockerfile.apache-local` as `docker-application:latest` with build args `PHP_TAG` and `USER_UID` and a per-tag GHA cache. //optional//
+    - [ ] Stack and preparation: compose pull, `up -d --remove-orphans --wait`, then `composer install --no-interaction --prefer-dist --no-progress` and `php index.php db:seed` inside `application`. //optional//
+    - [ ] Test step: `bun run tests` with `CI=true`. //optional//
+    - [ ] Failure artefacts: Cypress videos and screenshots are uploaded as `cypress-videos-<php_tag>-<attempt>` and `cypress-screenshots-<php_tag>-<attempt>`. //optional//
+  - [ ] `tests_e2e_coverage.yml` (`E2E coverage report`)
+    - [ ] Triggers: `workflow_dispatch` or a `pull_request` labelled `coverage`, so a fork PR can run it by adding the label. //nice-to-have//
+    - [ ] Concurrency and limits: group `e2e-coverage-${{ github.ref }}` and `timeout-minutes: 120` because Xdebug coverage is about five times slower. //optional//
+    - [ ] Image: builds with `PHP_TAG=8.5-xdebug`. //optional//
+    - [ ] Compose override: writes `docker-compose.override.yml` setting `XDEBUG_MODE: coverage` and `DEBUG_ZUBZET_COVERAGE_FRAMEWORK: true`. //optional//
+    - [ ] Run order: seed the database, `testing:coverage:start`, run Cypress with `continue-on-error`, then `testing:coverage:stop` under `if: always()`. //optional//
+    - [ ] Artefacts: uploads `tests/e2e/.coverage/report/**` as `coverage-report-<attempt>` and failure screenshots as `cypress-screenshots-<attempt>`. //optional//
+  - [ ] `docs.yml` (`Distribute Documentation`)
+    - [ ] Triggers: push to `main` touching `docs/**`, `mkdocs.yml` or the workflow, pushes of tags `v*.*.*`, and `workflow_dispatch`. [partial] //nice-to-have//
+    - [ ] Dispatch inputs: `ref` (required, default `v0.11.0`) and `promote_latest` (boolean, default false). //optional//
+    - [ ] Build preparation: checkout with `fetch-depth: 0`, removal of `minify` plugin lines from `mkdocs.yml` with `sed`, Python 3.x, and `pip install mkdocs-material mike`. //optional//
+    - [ ] API reference build: Docker image `phpdoc/phpdoc:3.1` runs `phpdoc -d /app -t /app/docs/api --ignore /app/adminer --ignore /app/docs`. //optional//
+    - [ ] Deployment target: remote `website` is `git@github.com:zubzet/website.git`, authenticated with the secret `WEBSITE_DEPLOY_KEY`, branch `gh-pages` and prefix `docs`. //optional//
+    - [ ] Versioning rules: a tag deploys its version via `mike` and, when promoted, also the alias `latest` with `mike set-default latest`. [partial] //optional//
+    - [ ] Branch builds: `main` or any other branch deploys the alias `unstable`, and normal tag pushes always promote `latest`. [partial] //optional//
+- [ ] Documentation tooling
+  - [ ] Site identity: `mkdocs.yml` sets `site_name` `ZubZet`, `site_url` `https://zubzet.com/docs/`, `repo_url` `https://github.com/zubzet/framework` and `edit_uri` `edit/main/docs/`. //optional//
+  - [ ] Theme: Material with `highlightjs` and languages `php`, `js`, `css`, `html` and `sql`, and features `navigation.instant` and `content.action.edit`. //optional//
+  - [ ] Versioning: `extra.version` uses provider `mike` with `alias: true`. //optional//
+  - [ ] Plugins and URLs: only the `search` plugin is configured, `use_directory_urls` is true and `stylesheets/extra.css` is added. //optional//
+  - [ ] Markdown extensions: `toc`, `admonition`, `abbr`, `attr_list`, `def_list`, `footnotes`, `meta` and many `pymdownx.*` (`superfences`, `tabbed`, `snippets` with `check_paths`, `magiclink` for `zubzet/framework`, `tasklist` and others). //optional//
+  - [ ] Navigation: top-level groups are Getting Started, Setup (with upgrade pages 0.9 through 1.2.0), Core Features, Admin Dashboard, Forms, Frontend Integration, Template Rendering Usages, Advanced Features, API Reference (`api/index.html`), Guides and Contributing. //optional//
+  - [ ] Contributing pages in the nav: How To Contribute, How To Release and Working With Agents. //optional//
+  - [ ] API reference: generated from PHPDoc by phpDocumentor into `docs/api` only inside CI, and `@internal` PHPDoc tags mark non-public classes and methods. [partial] //nice-to-have//
+- [ ] Repository conventions
+  - [x] Branch flow: feature pull requests target `develop`, which is promoted to `main` separately, and not `main` directly.
+  - [x] Release branches and tags: git history shows maintenance branches such as `1.2.x` and tags like `v1.2.0-RC4`, with merges named `Merge main into 1.2.x for v1.2.0`.
+  - [x] Commit style: atomic conventional commits (`refactor(...)`, `feat(...)`, `test(...)`, `docs(...)`) with one scope per commit and a one-line message.
+  - [x] Commit trailers: no `Co-Authored-By` trailer is allowed.
+  - [ ] `AGENTS.md`: root shortcut file that points to the contributor docs and repeats the quickstart. //nice-to-have//
+  - [ ] README role: states that new projects use the skeleton `zubzet/zubzet` and links the contribution guide, docs, issues and the `Apache-2.0` `LICENSE`. //nice-to-have//
+  - [ ] Git ignore (repository root): `docs/TODO`, `TODO`, `vendor/`, `node_modules`, `log.sql`, `sql.log`, Cypress screenshots and videos, `uploads` and `.coverage`. //optional//
+  - [ ] Git ignore for e2e fixtures: `src/IncludedComponents/database/Migration/2025-01-01_Ex_Ex.sql` and `2025-10-01_MigrationImport.sql` are copied into the framework during tests and ignored. //optional//
+  - [ ] Git ignore (`tests/e2e`): `composer.lock`, `logging`, `z_config/z_cache.ini`, `bun.lock`, `.coverage/`, Cypress screenshots except `tests/cypress/screenshots/visual/`, interrupted-run fixtures and `z_automated_setting.ini`. //optional//
+  - [ ] Local-only files: the root `TODO` file and local tooling directories are git-ignored, and `TODO` is also export-ignored. //optional//
+  - [ ] Source code style (observed): 4-space indented PHP bodies below the opening tag, `if(`, `foreach(` and `match(` without a space, and class names with a `Controller` or `Model` suffix. //nice-to-have//
+  - [ ] `@internal` convention: classes and methods tagged `@internal` are contributor-only and not part of the public API. //nice-to-have//
+- [ ] `Changelog.md`
+  - [ ] Format: a short intro line, a temporary `## ToDos` section and a version-keyed numbered list per release (`## v1.2.0`), kept as a developer changelog. //optional//
+  - [ ] Verified entries: `info:startup`, the coverage report, FastRoute replacing Slim, Whoops and PHPDebugBar (only initialised when `execution_type` is `test`) and `auth:migrate-hashing` all have counterparts in `src/` and `composer.json`. //optional//
+  - [ ] `logging` folder entry: `logging` appears only in the e2e project `.gitignore`. //optional//
+  - [ ] Entries without code counterpart: the "Deprecate getZControllers in RequestResponseHandler" and "Deprecate `<#decb64#>`" lines have no match in `src` or `web`, while `<#decURI#>` is still used by `Z.js`. //optional//
+- [ ] Debugging the dev stack
+  - [ ] Xdebug: the base compose sets `XDEBUG_MODE` `debug`, and the VS Code launch configuration `[DOCKER] Listen for XDebug` listens on port 9003. //nice-to-have//
+  - [ ] Path mappings: `/var/www/framework` maps to the workspace root, `/var/www/html/` to `tests/e2e` and `/var/www/vendor/` to `vendor`. //nice-to-have//
+  - [ ] Path mapper settings: `.vscode/settings.json` repeats the same three mappings for the `path-mapper` extension. //optional//
+  - [x] VS Code tasks: `Start Dev Environment` runs `cd tests/e2e; npm run startup` on folder open and `Stop Dev Environment` runs `npm run stop`, also duplicated in `tests/e2e/.vscode/tasks.json`.
+## 20. Open Pull Requests (not merged yet, all target `develop`)
+- [ ] PR #216: WIP: feat(console): add an install command that builds a new project (WIP (title prefix), open, 23 files, 14 commits; contains fork-testing leftovers)
+  - [ ] Overview: Adds `php index.php install <path>`, which copies a project template (`stubs/project`) into a folder and requires the framework with Composer, plus a framework-shipped `scripts/project.sh` that new projects forward to. //nice-to-have//
+  - [ ] `install` console command
+    - [ ] Usage: `php index.php install <path>` builds a new ZubZet project from the bundled template, then requires the framework via Composer. //nice-to-have//
+    - [ ] Registration: added to the console `Application` command list with description `Builds a new ZubZet project.` //optional//
+    - [ ] `path` argument
+      - [ ] Required: the target project folder must already exist and be writable. //nice-to-have//
+      - [ ] Missing folder: prints `Folder does not exist: <path>` and exits with failure. //nice-to-have//
+      - [ ] Not writable: prints `Folder is not writable: <resolved path>` and exits with failure. //nice-to-have//
+    - [ ] Template lookup
+      - [ ] Source: the template is `stubs/project` inside the installed framework package, found via `Composer\InstalledVersions::getInstallPath()`, not via the file location. //optional//
+      - [ ] Failure: prints `Project template not found in the qtnoe/zubzet-framework package` when the folder is missing. [WIP] //optional//
+    - [ ] Copy behaviour
+      - [ ] Never overwrites: files and folders that already exist are skipped and reported as `exists:  <relative path>`. //nice-to-have//
+      - [ ] Output: each new file or folder is reported as `created: <relative path>`; a failed copy or mkdir prints `failed:  <path>` and aborts with failure. //nice-to-have//
+      - [ ] No rollback: files copied before a failure stay in the project folder. //nice-to-have//
+      - [ ] Dotfiles: `.gitignore` and `webroot/.htaccess` are copied too, folders before their contents. //nice-to-have//
+    - [ ] Executable bit: `zubzet` and `project.sh` are set to `0755` after copying because `copy()` drops it; failure prints `Could not make <script> executable`. //nice-to-have//
+    - [ ] Composer step
+      - [ ] Command: runs `composer require qtnoe/zubzet-framework:dev-feat/install-command --no-interaction --working-dir=<project>`. [WIP] //optional//
+      - [ ] Environment: runs with `COMPOSER_VENDOR_DIR` unset, because the caller's value points at the framework's vendor folder, not the new project's. //nice-to-have//
+      - [ ] Composer missing: exit code 127 prints `Composer is required but was not found in your PATH.` //nice-to-have//
+      - [ ] Composer failure: any other non-zero exit prints `composer require failed, run it again inside <project>`. //nice-to-have//
+    - [ ] Exit codes: returns 0 only if every step succeeds; each failure above returns 1. //nice-to-have//
+  - [ ] Project template (`stubs/project`)
+    - [ ] Example application
+      - [ ] Controller: `IndexController::action_index` renders view `index` with all rows from `ExampleModel::getAll()`; served at `/` through `defaultIndex = IndexController`. //nice-to-have//
+      - [ ] Route: `app/Routes/Example.php` registers `Route::get('/example', [IndexController::class, 'action_index'])` as a routing example. //nice-to-have//
+      - [ ] Model: `ExampleModel::getAll()` returns every row of table `example` through `resultToArray()`. //optional//
+      - [ ] Migration: `2026-10-01_Example.sql` creates table `example` with `id` (INT, primary key, auto increment) and `name` (VARCHAR(255), not null). //optional//
+      - [ ] Seed: `app/Database/seed/Example.sql` inserts one row named `Hello from the seed`, loaded by `db:seed`. //optional//
+      - [ ] Views: `index.blade.php` lists `$opt["examples"]`; `layout/default_layout.blade.php` renders `<x-zubzet::head>`, `@yield("head")`, `@yield("content")` and `<x-zubzet::body>`. //optional//
+      - [ ] Blade dependency: the views use `.blade.php` and `x-zubzet::` components, so the template needs the Blade render engine of the next release, not v1.2.0. //nice-to-have//
+    - [ ] Entry points
+      - [ ] `index.php`: enables `display_errors`, changes into the project folder, loads `autoload.php` from `COMPOSER_VENDOR_DIR` (default `./`) and runs `z_framework->execute()`. //optional//
+      - [ ] `zubzet`: executable CLI entry (`#!/usr/bin/env php`) that requires `index.php`, so `./zubzet <command>` works. //optional//
+      - [ ] `webroot/index.php`: web entrypoint, tries `index.php`, `zubzet.php`, `zubzet` in order, otherwise answers HTTP 500 `No entry script found.` //optional//
+      - [ ] `webroot/.htaccess`: rewrites every request that is not an existing file to `index.php`. //optional//
+    - [ ] Configuration `z_config/z_settings.ini`
+      - [ ] Environment-driven: `dbhost`, `dbusername`, `dbpassword`, `dbname` and `mail_*` are `ENV` and `allow_env_config = true`, so `CONFIG_*` variables supply them. //optional//
+      - [ ] Defaults: `host = http://localhost:8080`, `showErrors = 2`, `defaultIndex = IndexController`, `uploadFolder = webroot/uploads/`, `loginTimeoutSeconds = 43200`, `pageName = ZubZet`, `assetVersion = 1.0.0`. //optional//
+      - [ ] Login: `maxLoginTriesTimespan = 3 minutes`, `maxLoginTriesPerTimespan = 5`, `forgotPasswordTimeSpan = 60 minutes`, `registerRoleId = 1`, `registerRoleIdSecondary` empty. //optional//
+      - [ ] Leftovers: `execution_type = test` and `custom_value = TestValue` come from the e2e config and look unintended for a new project. [WIP] //optional//
+    - [ ] Composer: `composer.json` is `type: project` with PSR-4 `App\` mapped to `app/` and no `require`; the install command adds the framework. //optional//
+    - [ ] `.gitignore`: ignores `node_modules`, `vendor`, `**/cypress/videos` and `**/cypress/screenshots`. //optional//
+    - [ ] Docker development stack (`packaging/docker`)
+      - [ ] Services: `application` (Apache + PHP, port 8080), `database` (MariaDB 11.8), `database_dashboard` (phpMyAdmin, port 8081), `mailer` (smtp4dev, port 3300). //optional//
+      - [ ] Database defaults: database and user `app`, password `app_password`, root password `root_password`, `TZ=Europe/Berlin`; a healthcheck gates the application start. //optional//
+      - [ ] Environment: the application gets `CONFIG_HOST`, `CONFIG_ROOTDIRECTORY`, `CONFIG_DBHOST=database:3306`, `CONFIG_DBNAME`, `CONFIG_DBUSERNAME`, `CONFIG_DBPASSWORD`, `CONFIG_MAIL_*` and `COMPOSER_VENDOR_DIR=/var/www/vendor`. //optional//
+      - [ ] Image: `Dockerfile.apache-local` builds on `ghcr.io/zubzet/php:${PHP_TAG}` (default `8.4-apache`) and remaps `www-data` to build arg `USER_UID` (default 1000). //optional//
+      - [ ] Apache vhost: `site-000-default.conf` serves `/var/www/html/webroot` with `AllowOverride All`. //optional//
+      - [ ] Mount leftovers: `../../../../:/var/www/framework` mounts a folder two levels above the project (copied from the e2e stack) and the `rabbitmq` volume is unused. [WIP] //optional//
+    - [ ] Project forwarder `project.sh`: exports `ZUBZET_PROJECT_ROOT` and `exec`s the framework's `scripts/project.sh` from `COMPOSER_VENDOR_DIR` or `<root>/vendor`; the package path is hard-coded to the fork. [WIP] //optional//
+  - [ ] Project script (`scripts/project.sh`)
+    - [ ] Entry: run through the project's `project.sh`; aborts with `Run this via project.sh in your project root` when `ZUBZET_PROJECT_ROOT` is unset. //optional//
+    - [ ] `start`: runs `docker compose up --remove-orphans --build -d`, then `composer install`, `php index.php db:seed` and `info:startup --pwd <root>` inside container `application`. //nice-to-have//
+    - [ ] `stop`: runs `docker compose down -v`, which also deletes the database volume. //nice-to-have//
+    - [ ] `shell`: opens `bash` in container `application` with a TTY. //nice-to-have//
+    - [ ] Test commands
+      - [ ] `tests`: runs headless `cypress run --project <root>/tests`; extra arguments such as `--spec` are passed through. //nice-to-have//
+      - [ ] `cypress`: opens the interactive Cypress UI for the same project folder, with the same argument passthrough. //nice-to-have//
+      - [ ] Needs Node.js: without `npm` on PATH it prints a Node.js download link and exits 1. //optional//
+      - [ ] Never installs automatically: if `node_modules/.bin/cypress` is missing it prints `npm install --no-save --no-package-lock cypress@^15.2.0 chai@^6.0.1 mocha@^11.7.2 puppeteer@^24.19.0 unicode-substring@^1.0.0`. //nice-to-have//
+      - [ ] No tests folder: the template ships no `tests/` project or Cypress config for `--project <root>/tests`. [WIP] //optional//
+    - [ ] Any other command: forwarded to `index.php`, so `./project.sh db:seed` behaves like `php index.php db:seed`. //nice-to-have//
+      - [ ] Host first: uses host `php` when it is on PATH and `<root>/index.php` exists. //nice-to-have//
+      - [ ] Container fallback: otherwise `docker exec -it application php index.php` with a TTY, or `-i` without one (pipe, CI, cron). //nice-to-have//
+    - [ ] Replaces npm scripts: covers `npm run start|stop|shell|seed|cypress|tests` of the `zubzet/zubzet` skeleton without a `package.json`. //optional//
+    - [ ] Dead code: the last line (`docker compose ... "$directory"`) is unreachable after the final `exec` and uses an undefined variable. [internal] //optional//
+  - [ ] Package rename for fork testing [WIP]
+    - [ ] Composer name: `composer.json` name changes from `zubzet/framework` to `qtnoe/zubzet-framework`; `install` and `project.sh` depend on it, so it must be reverted before merge. [changes existing behaviour] //optional//
+    - [ ] Startup version: `info:startup` reads its version from `qtnoe/zubzet-framework` and reports `unknown` for normal `zubzet/framework` installs. [changes existing behaviour] //optional//
+    - [ ] Branch constraint: `install` requires `dev-feat/install-command` instead of a release constraint. //optional//
+- [ ] PR #195: WIP: feat/csrf protection (WIP (title prefix), open, 16 files, 5 commits, merge conflicts with develop; docs written in PR) [docs in PR]
+  - [ ] Overview: Adds a stateless double-submit-cookie CSRF defense (`z_csrf` cookie plus `X-CSRF-Token` header) for `Z.Forms` and `Z.Request`, and makes the bundled login require `action=login`. //important//
+  - [ ] CSRF protection for `Z.Forms` and `Z.Request` [docs in PR]
+    - [ ] Mechanism
+      - [ ] Double-submit cookie: the server issues a `z_csrf` cookie, Z.js echoes it back as header `X-CSRF-Token`, and the server rejects non-matching pairs. //important//
+      - [ ] Comparison: `hash_equals()` of cookie and header; an empty cookie or an empty header counts as a mismatch. //nice-to-have//
+      - [ ] Stateless: nothing is stored server-side, so there is no table, session or migration. //should-do//
+    - [ ] Cookie `z_csrf`
+      - [ ] Value: 40 hex characters from `bin2hex(random_bytes(20))`. //nice-to-have//
+      - [ ] Issuing: set on every request without the cookie, including FastRoute routes such as `/_zubzet/health`; an existing cookie is reused as is and never rotated. //should-do//
+      - [ ] Attributes: lifetime 30 days, path `/`, `SameSite=Lax`, not `HttpOnly` (Z.js must read it), `Secure` by default. //should-do//
+      - [ ] Host-only: no `Domain` attribute and no `login_scope_allow_subdomains` handling, so sibling subdomains cannot read each other's token. //should-do//
+      - [ ] Consequence: each host keeps its own token, so a page on one subdomain cannot submit `Z.Forms` requests to another subdomain. [changes existing behaviour] //important//
+    - [ ] Setting `csrf_secure`
+      - [ ] Default and values: default `true`; parsed with `FILTER_VALIDATE_BOOLEAN`, so `true`/`false`, `1`/`0`, `on`/`off`, `yes`/`no` work; controls the `Secure` cookie attribute. //important//
+      - [ ] When to set `false`: only for plain-HTTP deployments under a real hostname (LAN address, staging without certificate); `http://localhost` works without it. //should-do//
+      - [ ] Failure mode: a `Secure` cookie is ignored over `http://`, so the token never returns and every protected request is answered with 403. //should-do//
+      - [ ] Security: never ship `csrf_secure = false` to production, since one `http://` request leaks the token in cleartext. //important//
+    - [ ] When the check runs
+      - [ ] Entry point: `new Csrf()` runs once per request at the start of `Router::execute()`, before route dispatch. //nice-to-have//
+      - [ ] Conditions: method is not `GET`, `HEAD` or `OPTIONS` and the POST body contains `isFormData` (`Z.Forms`) or `action` (`Z.Request.action()` / `Z.Request.root()`). //important//
+      - [ ] Marker caveat: the marker is attacker-controlled, but dropping it also drops `hasFormData()` / `isAction()`, so the guarded action cannot be reached. //should-do//
+      - [ ] Everything else: requests without marker pass unchecked. //should-do//
+    - [ ] Rejection
+      - [ ] Response: HTTP `403`, `Content-Type: application/json`, body `{"error":{"code":403,"message":"csrf token mismatch"}}`, and the request ends. //should-do//
+      - [ ] Logging: logged as a `REST_ERROR` warning on the `zubzet` logger channel because it goes through `generateRestError()`. //nice-to-have//
+    - [ ] PHP API `ZubZet\Framework\Security\Csrf`
+      - [ ] `new Csrf(bool $enforce = false)`: constructing issues the cookie and runs the check; there is no separate verify method. //should-do//
+      - [ ] `enforce: true`: verifies regardless of the marker, for actions that read plain POST fields without `hasFormData()` / `isAction()`. //should-do//
+      - [ ] Constants: `Csrf::COOKIE` is `z_csrf` and `Csrf::HEADER` is `X-CSRF-Token`. //nice-to-have//
+      - [ ] Bundled actions: no framework action uses `enforce: true` yet, only the test probe `CsrfProbeController::action_enforced`. [WIP] //optional//
+    - [ ] Limits of this release
+      - [ ] Raw forms: `<form method="post">` without a marker is unchecked unless the action constructs `new Csrf(enforce: true)`. //should-do//
+      - [ ] Unmarked reads: actions using `getPost()` without `hasFormData()` / `isAction()` are not forced to carry a marker. //should-do//
+      - [ ] GET: state-changing actions reachable via `GET` are never checked. //should-do//
+      - [ ] Custom clients: `fetch()` / `$.ajax()` outside `Z.Request` must attach the header themselves or receive 403. //should-do//
+  - [ ] Z.js changes
+    - [ ] `Z.Request.csrfToken()`: public method returning the `z_csrf` cookie value, or `null` if the browser holds no cookie; use it for custom `fetch()` / `$.ajax()` calls. //should-do//
+      - [ ] `null` case: on a framework-rendered page this only happens when the browser rejected the cookie, typically `csrf_secure` over plain HTTP. //nice-to-have//
+      - [ ] Usage: `fetch(url, {method: "POST", headers: {"X-CSRF-Token": Z.Request.csrfToken()}, body: data})`. //nice-to-have//
+    - [ ] Automatic header: `Z.Request.action()`, `Z.Request.root()` and every `ZForm` submit attach `X-CSRF-Token`, so existing Z.js code needs no change. //should-do//
+    - [ ] Caller headers: `Z.Request.root()` merges `additionalParameters.headers` with the CSRF header and the CSRF header wins, so custom headers extend instead of replacing it. //nice-to-have//
+    - [ ] Helpers `Z.Request._cookie(name)` and `Z.Request._csrfHeaders()`: underscore-prefixed helpers behind the above. [internal] //optional//
+  - [ ] Bundled login requires `action=login` [changes existing behaviour]
+    - [ ] `LoginController::action_index`: credentials are only checked when `$req->isAction("login")` is true; otherwise the login page renders (layout `layout/min_layout.php`, GET `noLayout`). //important//
+    - [ ] Before and after: any POST containing `name` used to attempt a login; now a plain POST with `name` and `password` returns the login HTML and sets no `z_login_token`. //important//
+    - [ ] Reason: closes login CSRF, because reaching the action implies the marker and therefore the header check ran. //nice-to-have//
+    - [ ] `Z.Presets.Login()`: unchanged, it already sends `action=login` through `Z.Request.root('login', 'login', ...)`. //nice-to-have//
+    - [ ] Custom login forms and API clients: must POST `action=login` and send `X-CSRF-Token`, otherwise they get the login page or 403. //important//
+  - [ ] Upgrade notes for existing applications [changes existing behaviour]
+    - [ ] Custom AJAX: requests sending `isFormData` or `action` must set `X-CSRF-Token` from the `z_csrf` cookie, otherwise they receive 403. //important//
+    - [ ] Non-browser clients: must first obtain the cookie from any response (a `GET` is enough) and echo it as the header. //should-do//
+    - [ ] Subdomain single sign-on: with `login_scope_allow_subdomains = true`, cross-subdomain form posts no longer work because the CSRF cookie stays host-only. //should-do//
+    - [ ] Project test suites: bare `cy.request()` posts carrying `action` or `isFormData` now get 403 and need the `X-CSRF-Token` header. //nice-to-have//
+    - [ ] Version label: the docs page says `Since version 1.4.0` and the Changelog entries sit under `## v1.4.0`. //optional//
+  - [ ] Test infrastructure [internal]
+    - [ ] `cy.zRequest(options)`: Cypress command wrapping `cy.request` that adds `X-CSRF-Token` from the `z_csrf` cookie and primes it with `GET /_zubzet/health` when absent. [internal] //optional//
+    - [ ] Probe: `CsrfProbeController::action_enforced` calls `new Csrf(enforce: true)` and returns success. [internal] //optional//
+    - [ ] Spec `core/csrf.cy.js`: covers missing and mismatching header, form submit, unmarked requests, and the header sent by `Z.Request` and `Z.Forms`. [internal] //optional//
+    - [ ] Existing specs: login posts now send `action: 'login'` and use `cy.zRequest`. [internal] //optional//
+    - [ ] Open maintainer requirement: add an e2e case proving a POST of `name` and `password` to `/login` without marker and header sets no `z_login_token` cookie. [WIP] //optional//
+- [ ] PR #181: feat(database): retry transient cluster errors in exec() (Draft on GitHub (body says Ready for review), already pre-merged into develop (97498b8); 6 files / 8 commits remain, open as placeholder) [docs in PR]
+  - [ ] Overview: Makes `Connection::exec()` retry deadlocks, lock-wait timeouts and Galera conflicts and reconnect after lost connections, with the e2e suite running on a three-node Galera cluster; the remaining diff is a refactor plus the `configNumeric()` helper. //should-do//
+  - [ ] Retry and recovery in `Connection::exec()` (issue #80, already on develop)
+    - [ ] `db_max_retries` setting
+      - [ ] Default and range: default `3` extra attempts per statement; `0` disables retries, negative values are clamped to `0`. //important//
+      - [ ] Shared budget: transient retries and reconnects draw from one budget; when it is spent the original failure is thrown. //nice-to-have//
+      - [ ] Validation: a non-numeric value throws `InvalidArgumentException` (`Config key 'db_max_retries' must be numeric, got: '...'`). //nice-to-have//
+      - [ ] Opt-out: retries are default-on, so apps that prefer failing over a rare double-apply set `0`. //important//
+    - [ ] Transient contention
+      - [ ] Triggers: error `1213` (deadlock), `1205` (lock-wait timeout) and SQLSTATE `40001` (Galera serialization conflict). //should-do//
+      - [ ] Behaviour: the server already discarded the statement, so it is re-prepared and re-run on the same connection. //should-do//
+      - [ ] Backoff: randomized 10-50 ms between attempts. //nice-to-have//
+    - [ ] Connection loss
+      - [ ] Triggers: `1047` (WSREP node not ready, e.g. SST/IST donor), `2002`, `2003`, `2006` and `2013`. //nice-to-have//
+      - [ ] Behaviour: reconnects through the configured `dbhost` endpoint, re-prepares and re-runs; backoff is attempt x 400 ms, capped at 2 s. //should-do//
+      - [ ] Error `1047`: the refusing node never ran the statement so the re-run is always safe; with `wsrep_sync_wait` donors return it for every read during a node rejoin. //nice-to-have//
+    - [ ] Delivery semantics [changes existing behaviour]
+      - [ ] Double apply: if a write ran but the acknowledgment was lost (`2006`/`2013`), the retry applies it again; exposure is one statement because every `exec()` auto-commits. //important//
+      - [ ] Not retried: `executeMultiQuery()` and caller-managed raw-SQL transactions. //should-do//
+      - [ ] Errors after the budget: the thrown `Exception` keeps the prefix `SQL Error:` (connect/prepare) or `SQL Execution Error:` (execute) followed by the `Query:` text. //nice-to-have//
+      - [ ] Unchanged errors: `ArgumentCountError` / `ValueError` from `bind_param()` are not `mysqli_sql_exception` and surface immediately. //nice-to-have//
+      - [ ] Logging: retries are neither logged nor counted in metrics yet. [WIP] //optional//
+    - [ ] Production gotcha: Galera interleaves auto-increment ids by node offset, so applications must not assume dense id sequences. //should-do//
+  - [ ] Connection establishment [changes existing behaviour]
+    - [ ] Connect timeout: each connect attempt is bounded to 5 seconds so a blackholed endpoint cannot hang a request. //should-do//
+    - [ ] Exception type: failed connects throw `mysqli_sql_exception` on every PHP version; on PHP 8.0 an empty error becomes `Cannot connect to MySQL` or `Cannot connect to MySQL using SSL`. //nice-to-have//
+    - [ ] Warnings: connect warnings are suppressed with `@` so the error handler cannot turn them into an `ErrorException` before retry classification. [internal] //optional//
+    - [ ] Endpoint requirement: a MySQL client waiting for the server greeting has no read timeout, so the proxy or mesh in front of the cluster must close sessions to dead backends promptly. //nice-to-have//
+  - [ ] `executeMultiQuery()` failure handling [changes existing behaviour]
+    - [ ] Single failure path: every failure goes through `multiQueryFailed()`; with `$throwOnFailure = true` it throws `Exception` with prefix `SQL Multi-Query Error:`. //should-do//
+    - [ ] Non-throwing mode: with `$throwOnFailure = false` it returns `false` after draining pending result sets, preventing `commands out of sync` on the next statement. //should-do//
+    - [ ] Drain limits: draining stops at the first error and a connection that cannot be drained is replaced by `assertConnection()` on next use. //nice-to-have//
+  - [ ] Global helper `configNumeric(string $key, int $default): int` [docs in PR]
+    - [ ] Purpose: returns a configuration value as `int` and rejects non-numeric values instead of casting, so a typo or `off` cannot silently become `0`. //should-do//
+    - [ ] Parameters: `$key` is the configuration identifier, `$default` is returned when the key is missing. //nice-to-have//
+    - [ ] Failure: throws `InvalidArgumentException` (`Config key '<key>' must be numeric, got: '<value>'`). //nice-to-have//
+    - [ ] Used by: `db_connection_timeout` (default `900`) and `db_max_retries` (default `3`). //nice-to-have//
+    - [ ] Name conflict: a project that already defines a global `configNumeric()` gets a `RuntimeException` from `FunctionConflictResolution`. [changes existing behaviour] //nice-to-have//
+  - [ ] Database settings from the same pre-merged branch (documented on develop in `docs/core-features/database-connection.md`)
+    - [ ] `db_connection_timeout`: existing setting, default `900` seconds of idleness before the connection is checked; now validated through `configNumeric()` with the same error message. //should-do//
+    - [ ] `dbport`: now honoured by the runtime connection, not only by migrations. //should-do//
+    - [ ] `db_ssl`
+      - [ ] Default and effect: default `false`; `true` connects over TLS and always verifies the server certificate. //important//
+      - [ ] Trust store: resolved via `openssl_get_cert_locations()`; throws `RuntimeException` instead of connecting unverified when none is found. //should-do//
+      - [ ] Private CA: add it to the system trust store or `openssl.cafile`; there is deliberately no CA setting. //should-do//
+      - [ ] `dbhost` restriction: with `db_ssl` the host must be a plain hostname, a `host:port` value is rejected with an error pointing to `dbport`. //should-do//
+      - [ ] Migrations: the Doctrine DBAL connection of the migration commands uses the same `Endpoint` (host, port, TLS). //nice-to-have//
+    - [ ] `db_persistent`: default `false`; `true` prefixes the host with `p:` so the PHP worker keeps the connection across requests; reload PHP workers after changing `db_ssl`. //should-do//
+  - [ ] Internals [internal]
+    - [ ] `StatementFailure`: value object with `errorCode`, `sqlState`, `exception` and named constructors `preparing()` / `executing()` that pick the error prefix. [internal] //optional//
+    - [ ] Recovery structure: `execWithRecovery()` holds the policy, `attemptStatement()` makes one prepare/bind/execute attempt for PHP 8.0 and 8.1+ alike. [internal] //optional//
+    - [ ] Agent docs: `AGENTS.md` and `working-with-agents.md` document `StatementFailure` and add a `configNumeric($key, $default)` row to the helper table. [internal, docs in PR] //optional//
+  - [ ] E2E suite on a three-node Galera cluster [internal]
+    - [ ] Stack: MariaDB 11.8 Galera nodes behind an haproxy registered as service `database`; e2e-only `wsrep_sync_wait = 1`; `galera1` bootstraps only on first initialization; healthcheck asserts `wsrep_ready`. [internal] //optional//
+    - [ ] Lifecycle: the stack always starts from empty volumes, `npm run stop` removes them. [internal] //optional//
+    - [ ] Specs: `database/cluster.cy.js`, `failover.cy.js`, `retry.cy.js` and `connection.cy.js`; probe tables `test_retry` and `test_cluster` (the `z_` prefix stays reserved for framework tables). [internal] //optional//
+    - [ ] Test settings: `tests/e2e/z_config/z_settings.ini` sets `db_max_retries = 2`, `db_ssl = false`, `db_persistent = true`. [internal] //optional//
+    - [ ] Flake tracking: Cypress `retries: { runMode: 1, openMode: 0 }`, `cy.dbSeed()` before any retry, passes-on-retry appended to `tests/e2e/tests/flaky-tests.log` and uploaded as a CI artifact. [internal] //optional//
+- [ ] PR #213: WIP: Test: merge the version migrator with its history (Open, not a draft but titled WIP/Test, base develop, 38 files all new (migrator/), label enhancement)
+  - [ ] Overview: Moves the standalone zubzet/version-migration CLI (the project upgrade tool for 0.10.0 up to 1.3.0, including a legacy-view to Blade converter) into this repository under migrator/ with its commit history. //nice-to-have//
+  - [ ] Version migrator merged into this repository [changes existing behaviour]
+    - [ ] Location: the tool moves from the separate `zubzet/version-migration` repo into `migrator/` with its history; the PR body wrongly says `version-migration/`. [changes existing behaviour] //nice-to-have//
+    - [ ] Update existing upgrade guides: `docs/setup/upgrade/1.0.0-to-1.1.0.md` and `docs/setup/upgrade/1.1.0-to-1.2.0.md` still tell users to clone `zubzet/version-migration`. [changes existing behaviour] //should-do//
+    - [ ] Add a 1.2.0 to 1.3.0 upgrade guide covering the Blade view conversion, `health_endpoint_enabled` and the composer bump once 1.3.0 ships. [WIP] //optional//
+    - [ ] Setup and requirements
+      - [ ] Install: run `composer install` inside `migrator/`, which has its own `composer.json` and `composer.lock` separate from the framework. //nice-to-have//
+      - [ ] Dependencies: `symfony/console ^6.0`, `symfony/filesystem ^6.0`, `symfony/finder ^6.0` and `sebastian/diff ^4.0`. //optional//
+      - [ ] PHP version: no `php` constraint is declared, but locked Symfony 6.0 needs PHP >= 8.0.2 and the code uses `match`, `str_contains` and promoted properties. //nice-to-have//
+      - [ ] Autoload: PSR-4 namespace `ZubZet\Tooling\` maps to `migrator/src/`. [internal] //optional//
+      - [ ] Ignored files: `migrator/.gitignore` ignores `vendor` and `script.php`. [internal] //optional//
+      - [ ] License: `migrator/LICENSE` is an Apache 2.0 text, identical in kind to the root `LICENSE`. [internal] //optional//
+      - [ ] Packaging: `/migrator` is not in `.gitattributes` `export-ignore`, so it would ship inside the Composer dist archive. [internal] //optional//
+    - [ ] Entrypoint `migrator/application.php`
+      - [ ] Executable: PHP script with `#!/usr/bin/env php` shebang that loads `vendor/autoload.php` and runs a Symfony Console `Application` named "ZubZet Tooling". //nice-to-have//
+      - [ ] Commands: `upgrade` is the only registered command. //nice-to-have//
+    - [ ] Command `upgrade`
+      - [ ] Usage: `php application.php upgrade <location> <from> <to> [--dry] [--skip <step>]` with description "Upgrade a ZubZet project from one version to another." //nice-to-have//
+      - [ ] Argument `location`: required path of the project to upgrade; a missing directory prints `Invalid project location` and returns `Command::INVALID`. //nice-to-have//
+      - [ ] Working directory: the tool calls `chdir()` into `location`, so every path a migration touches (`z_config/z_settings.ini`, `app/`, `package.json`, `.gitignore`) is relative to the project root. //nice-to-have//
+      - [ ] Argument `from`: required current project version, one of the supported versions. //nice-to-have//
+      - [ ] Argument `to`: required target version, one of the supported versions. //nice-to-have//
+      - [ ] Supported versions: `0.10.0`, `0.11.0`, `1.0.0`, `1.1.0`, `1.2.0`, `1.3.0`; unknown values print the available list and return `Command::INVALID`. //nice-to-have//
+      - [ ] Range rule: `from` must be earlier than `to`, otherwise `Invalid range` is printed and `Command::INVALID` returned. //nice-to-have//
+      - [ ] Step sequence: runs one migration per version after `from` up to and including `to`, printing "Planning upgrade from X to Y (in N steps)" and finally "Upgrade complete". //nice-to-have//
+      - [ ] Migration lookup: the class `ZubZet\Tooling\Version\V<major>_<minor>_<patch>` must exist for every target version, else the command aborts with `Command::FAILURE`. //nice-to-have//
+      - [ ] Failure handling: a migration whose `upgrade()` returns `false` prints "reported failure" and exits with `Command::FAILURE`; all shipped migrations return `true`. //nice-to-have//
+      - [ ] Option `--dry` / `-d`: prints what would happen without writing, deleting, moving or running commands; confirmations are auto-declined and abort requests do not stop the run. //nice-to-have//
+      - [ ] Option `--skip` / `-s`: repeatable, takes a step name such as `1.2.0-logger-settings`; the skipped step is reported and the run continues. //nice-to-have//
+      - [ ] Step names: each step is announced as `==> Running '<version>-<step>' ...`; this printed name is what `--skip` matches (the option help text "-s 1 -s 4" is misleading). //nice-to-have//
+      - [ ] Confirmation prompt: automated changes ask "Do you want to apply the automated change now? [Y/n]" but the default answer is no, so Enter declines. //nice-to-have//
+      - [ ] Abort behaviour: when a change is declined or cannot be automated, the run throws `AbortRequiringUserAction` telling the user to fix it manually and re-run with `--skip <step>` or `-s`. //nice-to-have//
+      - [ ] After an abort the tool forces dry mode so no further modifications happen before the exception reaches the console. //optional//
+      - [ ] Release stability: `ReleaseState` defines `RC`, `dev`, `alpha`, `beta` and `stable`; `BaseVersion::$stability` defaults to `dev`; 0.11.0 to 1.2.0 are `stable` and 1.3.0 is `alpha`. //optional//
+    - [ ] Framework dependency bump (`ComposerModifier`)
+      - [ ] Detection: reads `composer.lock` `packages` for `zubzet/framework`, strips a leading `v` and any `-suffix`; a missing lock file is treated as `0.0.0`. //optional//
+      - [ ] Skip rule: if the installed version is `>=` the migration's version, prints "Already at version" and does nothing. //optional//
+      - [ ] Command: proposes `composer require "zubzet/framework:^<major>.<minor>" --with-all-dependencies --ignore-platform-reqs` and runs it after confirmation. //optional//
+      - [ ] Pre-release constraint: non-stable target versions append the stability, so 1.3.0 requires `^1.3-alpha`. //optional//
+      - [ ] Declining or failing the command is not treated as an abort, the run simply continues; a failed command prints its exit code and output. //optional//
+    - [ ] Migration 0.10.0 to 0.11.0 (`V0_11_0`, stable)
+      - [ ] Step `0.11.0-mail-settings`: adds `mail_security = tls` after `mail_smtp` in `z_config/z_settings.ini`. //extra-effort//
+      - [ ] Step `0.11.0-mail-docker`: optionally finds `docker-compose-base.yml` under `packaging/` and, if `CONFIG_MAIL_SECURITY` is missing, adds it as `"false"` after the mail user, password or `## Mailer` line. //extra-effort//
+      - [ ] Step `0.11.0-index-main`: if `index.php` contains `main.php`, demands removal of `require_once "z_framework/main.php";` and offers to delete the line. //extra-effort//
+      - [ ] Step `0.11.0-index-autoload`: if `index.php` lacks `autoload.php`, offers to insert `require_once "vendor/autoload.php";` right after the `chdir(...)` line. //extra-effort//
+      - [ ] Step `0.11.0-composer`: bumps `zubzet/framework` to `^0.11`. //extra-effort//
+      - [ ] Step `0.11.0-composer-zubzet-install`: if `composer.lock` lacks `zubzet/framework`, offers to run `composer install`; a missing `composer.lock` throws a `RuntimeException`. //extra-effort//
+      - [ ] Step `0.11.0-submodule-zubzet`: optional; if `.gitmodules` mentions `z_framework` or `zubzet`, offers `git rm z_framework`. //extra-effort//
+      - [ ] Step `0.11.0-folder-submodule-zubzet`: removes the `z_framework` folder via `rmdir`, which fails if it is not empty. //extra-effort//
+      - [ ] Step `0.11.0-old-file-cleanup`: deletes `.z_framework`, `composer.phar` and `cv.txt` without asking. //extra-effort//
+    - [ ] Migration 0.11.0 to 1.0.0 (`V1_0_0`, stable)
+      - [ ] Settings cleanup (`z_config/z_settings.ini`)
+        - [ ] Step `1.0.0-composer`: bumps `zubzet/framework` to `^1.0`. //extra-effort//
+        - [ ] Step `1.0.0-settings-lite-mode`: removes `lite_mode`; if its value contains `1`, `true`, `on` or `yes` it warns that Lite Mode was removed and asks for confirmation. //extra-effort//
+        - [ ] Step `1.0.0-settings-language`: removes `anonymous_available_languages` and `anonymous_language` (language system removed). //extra-effort//
+        - [ ] Step `1.0.0-settings-sitemap`: removes `sitemapPublicDefault` with a warning that the sitemap feature was removed if it was enabled. //extra-effort//
+        - [ ] Step `1.0.0-settings`: removes `dedicated_mail`, adds `allow_env_config = true`, `execution_type = test` and an empty `registerRoleIdSecondary` after `registerRoleId`. //extra-effort//
+        - [ ] Same step sets `uploadFolder` to `webroot/uploads/`, collapses consecutive empty rows and makes sure the file ends with an empty line. //extra-effort//
+      - [ ] Entrypoints
+        - [ ] Step `1.0.0-index-vendor-env`: replaces `require "vendor/autoload.php"` in `index.php` with `$source = getenv("COMPOSER_VENDOR_DIR") ?: "./vendor";` plus `require_once "$source/autoload.php";`. //extra-effort//
+        - [ ] Step `1.0.0-zubzet-entrypoint`: copies the bundled `zubzet` file into the project root so `php zubzet <command>` works; it just requires `index.php`. //extra-effort//
+        - [ ] Step `1.0.0-webroot-entrypoint`: copies the bundled `index.php` into `webroot/`; it sets `$calledFromWebroot`, changes to the parent directory and requires the first of `index.php`, `zubzet.php`, `zubzet`. //extra-effort//
+        - [ ] Failure mode: if no entry script exists the webroot `index.php` answers HTTP 500 with "No entry script found." //extra-effort//
+        - [ ] Step `1.0.0-webroot-htaccess`: copies the bundled `.htaccess` (rewrite non-file requests to `index.php` with `[L,QSA]`) into `webroot/`; step `1.0.0-remove-old-htaccess` deletes the root `.htaccess`. //extra-effort//
+      - [ ] Removed API detection
+        - [ ] Step `1.0.0-deprecated-methods`: scans `z_controllers`, `z_models`, `app/Controllers`, `app/Models` and aborts on removed methods `getConfigFile`, `updateErrorHandling`, `getPreAction`, `getActionStack`, `getLastController`, `getControllerStack`, `showFile`, `send`, `getReCaptchaV3Score` and `renderPDF`. //extra-effort//
+        - [ ] Matching: only `->method(` and `?->method(` calls are matched, including whitespace, block comments and quoted `->{"method"}(` forms. //extra-effort//
+        - [ ] Step `1.0.0-deprecated-translations`: also scans `z_views` and `app/Views` for `$opt["lang"]("key")`, `}, "lang" =>` and `z_lang` and aborts because the translation system was removed. //extra-effort//
+        - [ ] Step `1.0.0-deprecated-password-handler`: aborts on `passwordHandler`, pointing to the package `zubzet/password-hash-utilities` and the refactor commit. //extra-effort//
+      - [ ] Userspace layout
+        - [ ] Step `1.0.0-folders-userspace`: creates `app/Controllers`, `app/Database`, `app/Models`, `app/Routes` and `app/Views`. //extra-effort//
+        - [ ] Step `1.0.0-migration-userspace`: moves `z_controllers`, `z_models`, `z_views`, `z_database` into `app/Controllers`, `app/Models`, `app/Views`, `app/Database`; a missing source is skipped. //extra-effort//
+        - [ ] Step `1.0.0-example-router`: copies `ExampleRouter.php` into `app/Routes`, a stub with a commented `Route::get("/hello/world", ...)` example. //extra-effort//
+        - [ ] Step `1.0.0-folders-old-userspace`: removes the old `z_*` folders with `rmdir`, so they must be empty after the move. //extra-effort//
+        - [ ] Step `1.0.0-userspace-autoload`: sets `autoload.psr-4."App\\" = "app/"` in `composer.json` and, if changed, offers `composer dump-autoload -o`. //extra-effort//
+      - [ ] Webroot and uploads
+        - [ ] Step `1.0.0-webroot-folder`: creates `webroot/`. //extra-effort//
+        - [ ] Step `1.0.0-migration-userspace` (second use of the same name): moves `assets` to `webroot/assets` and prints that other public files must be moved manually. //extra-effort//
+        - [ ] Skipping: both steps share one name, so `--skip 1.0.0-migration-userspace` skips both. //optional//
+        - [ ] Steps `1.0.0-folder-upload`, `1.0.0-migration-uploads`, `1.0.0-folder-old-upload`: create `webroot/uploads`, move `uploads` into it, then remove `uploads` and an empty `webroot/uploads`. //extra-effort//
+      - [ ] package.json and database import
+        - [ ] Step `1.0.0-package-json-seed`: optional; if `scripts.seed` contains `import.php` it becomes `docker exec application php app/Database/import.php`. //extra-effort//
+        - [ ] Step `1.0.0-package-json-start`: optional; if `scripts.start` contains `npm run docker-compose -- up` it becomes `npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed`. //extra-effort//
+        - [ ] Step `1.0.0-database-import`: replaces an existing `app/Database/import.php` with the bundled version after confirmation; nothing is created when it does not exist. //extra-effort//
+        - [ ] Bundled `import.php`: hardcodes host `database`, db `app`, user `root` and password `root_password`, drops and recreates the database, then imports all `.sql` files in sorted order. //extra-effort//
+    - [ ] Migration 1.0.0 to 1.1.0 (`V1_1_0`, stable)
+      - [ ] Step `1.1.0-change-password-deprecation`: scans `./app` for `z_login.*->updatePassword` and aborts with a deprecation warning that the changePassword function is replaced by the Authentication System. [deprecated] //extra-effort//
+      - [ ] Step `1.1.0-settings`: adds empty `dbusername_elevated` after `dbpassword` and empty `dbpassword_elevated` after `dbusername_elevated`. //extra-effort//
+      - [ ] Step `1.1.0-app-zubzet-migrations`: finds `CREATE TABLE` for 15 framework tables in `./app` and deletes every file containing a match, without asking. //extra-effort//
+      - [ ] Framework tables matched: `z_email_verify`, `z_file`, `z_interaction_log`, `z_interaction_log_category`, `z_language`, `z_logintoken`, `z_logintry`, `z_login_too_many_tries`, `z_password_reset`, `z_role`, `z_role_permission`, `z_uniqueref`, `z_user`, `z_user_role`, `z_user_permission`. //extra-effort//
+      - [ ] Step `1.1.0-zubzet-db-usages`: scans `./app/Models` for backtick-quoted framework table names and aborts with "Please do not use the ZubZet database directly." //extra-effort//
+      - [ ] Step `1.1.0-language-system-deprecation`: aborts on `<?php }, "lang" => [` or `z_language` in `./app` with a language-system deprecation warning. [deprecated] //extra-effort//
+      - [ ] Step `1.1.0-package-json-seed`: rewrites `scripts.seed` to `docker exec application php zubzet db:seed`; `package.json` is required here, a missing file throws. //extra-effort//
+      - [ ] Step `1.1.0-remove-import-script`: deletes `./app/Database/import.php`. //extra-effort//
+      - [ ] Step `1.1.0-rename-migrations`: checks every `*.sql` in `./app/Database/migrations` and offers to rename invalid names, aborting if declined. //extra-effort//
+      - [ ] Migration file name rule: `YYYY-MM-DD_Name.sql` or `YYYY-MM-DD_Version_Name.sql` with a valid date, year >= 2000, not in the future and a non-empty name. //extra-effort//
+      - [ ] Rename suggestion: recognises `YYYY-MM-DD`, `YYYY/MM/DD`, `YYYY.MM.DD`, `YYYY_MM_DD`, `YYYYMMDD`, `DD-MM-YYYY` and `MM-DD-YYYY`, otherwise prefixes today's date. //extra-effort//
+      - [ ] Rename normalisation: separators become `_`, a numeric first or last segment moves to the front as version, non-word characters become `_`; no suggestion if the result is invalid or the target exists. //extra-effort//
+    - [ ] Migration 1.1.0 to 1.2.0 (`V1_2_0`, stable)
+      - [ ] Deprecation scans (all on `./app`)
+        - [ ] Step `1.2.0-logging-deprecation`: aborts on `logActionByCategory`, `logAction`, `getLogCategoryIdByName`, `z_interaction_log` and `z_interaction_log_category`, linking the new logging docs. [deprecated] //extra-effort//
+        - [ ] Step `1.2.0-deprecations-1-2-0`: aborts on `getZControllers` (RequestResponseHandler) and on the `<#decb64#>` POST-parameter prefix, suggesting `<#decURI#>` or standard encoding. [deprecated] //extra-effort//
+      - [ ] Superglobals and request body
+        - [ ] Step `1.2.0-super-globals-detection`: lists `$_COOKIE[`, `$_POST[`, `$_GET[`, `$_REQUEST[`, `$_FILES[` and `$_SERVER[` usages in `./app`. [deprecated] //extra-effort//
+        - [ ] Step `1.2.0-super-globals-<file>`: per affected file shows a diff and offers rewriting `$_X[` to `request()->input->X[`; declining aborts. //extra-effort//
+        - [ ] Step `1.2.0-php-input-detection` and `1.2.0-php-input-<file>`: offer rewriting `file_get_contents('php://input')` to `request()->input->body`. [deprecated] //extra-effort//
+        - [ ] Step names use only the file basename, so two files with the same name in different folders share one step name. //optional//
+      - [ ] Settings added to `z_config/z_settings.ini`
+        - [ ] Steps `1.2.0-logger-settings`: adds `logger_enabled = true`, `logger_type = database`, `logger_stream_url = logs/app.log` and `logger_level = info`. //extra-effort//
+        - [ ] Step `1.2.0-slow-settings`: adds `logger_slow_request_ms = 700` and `logger_slow_query_ms = 300`. //extra-effort//
+        - [ ] Step `1.2.0-debugbar-settings`: adds `debugbar_hide_internal_queries = true`. //extra-effort//
+        - [ ] Step `1.2.0-maintenance-mode-settings`: adds `maintenance_mode = off`. //extra-effort//
+        - [ ] Step `1.2.0-automated-file-settings`: adds `config_automated_file = z_config/z_automated_setting.ini`. //extra-effort//
+        - [ ] Step `1.2.0-editor-setting`: adds `development_editor = vscode`. //extra-effort//
+      - [ ] .gitignore entries
+        - [ ] Step `1.2.0-gitignore-logs`: offers to append `logs/`. //extra-effort//
+        - [ ] Step `1.2.0-gitignore-automated-file`: offers to append `z_config/z_automated_setting.ini`. //extra-effort//
+        - [ ] Step `1.2.0-gitignore-coverage`: offers to append `.coverage`. //extra-effort//
+      - [ ] package.json scripts
+        - [ ] Step `1.2.0-package-json-info-startup`: adds `info` as `docker exec application php index.php info:startup --pwd "$(pwd)"` and appends ` && npm run info` to `start`. //extra-effort//
+        - [ ] Step `1.2.0-package-json-startup`: adds `startup` as `npm run start && npm run docker-compose -- up` when `start` exists and `startup` does not. //extra-effort//
+        - [ ] Requirement: `package.json` is mandatory in both steps, a missing file throws a `RuntimeException`. //optional//
+      - [ ] Files and folders
+        - [ ] Step `1.2.0-remove-phpstorm-meta`: deletes `./.phpstorm.meta.php`. //extra-effort//
+        - [ ] Steps `1.2.0-vscode-folder` and `1.2.0-vscode-tasks`: create `.vscode/` and copy `tasks.json` with the tasks "Start Dev Environment" (runs on folder open) and "Stop Dev Environment". //extra-effort//
+        - [ ] Task commands: `cd tests/e2e 2>/dev/null; npm run startup` and `cd tests/e2e 2>/dev/null; npm run stop`. //optional//
+      - [ ] Step `1.2.0-composer`: bumps `zubzet/framework` to `^1.2`. //extra-effort//
+    - [ ] Migration 1.2.0 to 1.3.0 (`V1_3_0`, stable flag is `alpha`) [WIP]
+      - [ ] Step `1.3.0-blade-view-migration`: converts legacy return-type views and layouts under `./app/Views` to Katana `.blade.php` files and deletes the original `.php` files. [WIP] //nice-to-have//
+      - [ ] Scope: recursively scans `*.php` (not `*.blade.php`) in `./app/Views` only; a missing directory is skipped with a notice. //optional//
+      - [ ] Detection: a file counts as a legacy view if it contains `return [`, and as a layout if it returns a `"layout"` closure. //optional//
+      - [ ] Skip reasons: `unreadable`, `not a legacy return[...] view`, `target already exists: <file>.blade.php` and `conversion failed: <message>`. //optional//
+      - [ ] Flow: prints a plan (`layout` or `view` per file) and asks for confirmation; dry run prints "no files written"; declining aborts. //optional//
+      - [ ] Output summary: "Found N legacy view(s) to convert, M file(s) skipped." then "Converted N view(s) to .blade.php." //optional//
+      - [ ] View conversion: `"body"` becomes `@section("content")`, an optional `"head"` becomes `@section("head")`, and the file starts with `@extends($layout)`. //nice-to-have//
+      - [ ] Layout variable: `$layout` must be passed as render data holding the dotted layout view name such as `layout.default_layout` or `rendering.mail_layout`. [WIP] //nice-to-have//
+      - [ ] Layout conversion: the `"layout"` closure becomes the parent template; its second and third parameters (`$body($opt)`, `$head($opt)`) become `@yield("content")` and `@yield("head")`. //optional//
+      - [ ] Layout essentials: `$opt["layout_essentials_head"]($opt)` and `$opt["layout_essentials_body"]($opt)` become `<x-zubzet::head :opt="$opt"/>` and `<x-zubzet::body :opt="$opt"/>`. [WIP] //optional//
+      - [ ] Raw PHP: `<?php ?>` and `<?= ?>` blocks are kept verbatim; layouts are dedented to column 0, section bodies keep their indentation. //optional//
+      - [ ] Escaping: literal `{{`, `{!!` and `{{-- --}}` in template HTML become `@{{`, `@{!!` and `@verbatim ... @endverbatim`; markers inside raw PHP are untouched. //optional//
+      - [ ] Limitations: only short-array `return [...]` views are supported (`array(...)` is skipped), and keys other than `body`, `head` and `layout` are silently dropped. //optional//
+      - [ ] Step `1.3.0-health-endpoint-settings`: adds `health_endpoint_enabled = true` to `z_config/z_settings.ini`; the framework side is not part of this PR. [WIP] //optional//
+      - [ ] Step `1.3.0-composer`: bumps `zubzet/framework` to `^1.3-alpha` to pull in the Katana-backed framework. [WIP] //optional//
+    - [ ] Writing new migrations [internal]
+      - [ ] Adding a version: create `ZubZet\Tooling\Version\V<major>_<minor>_<patch>` implementing `VersionInterface::upgrade(): bool`, extend `BaseVersion` and add the version to `Upgrade::$versions`. [internal] //optional//
+      - [ ] Bundled files: files a migration copies live in `migrator/files/<version>/` and are copied with `IncludedFile`. [internal] //optional//
+      - [ ] `BaseModifier`: each modifier takes the version and a step name, prints the step banner, offers `configure()`, `confirmAutomatedChange()`, `shouldSkipStep()` and `abortRequiringUserAction()`. [internal] //optional//
+      - [ ] `SettingsIni`: edits `z_config/z_settings.ini` line by line with `addProperty`, `removeProperty`, `modifyProperty`, `collapseConsecutiveEmptyRows`, `assertEmptyLastRow` and `save`; a missing file throws. [internal] //optional//
+      - [ ] `SettingsIni` matching: property lookup is a substring match, so a name that appears anywhere (comments, values) counts as existing and blocks `addProperty`. [internal] //optional//
+      - [ ] `SettingsIni::removeProperty`: takes a warning and `warnIf` values (default `1`, `true`, `on`, `yes`) and asks for confirmation before removing. [internal] //optional//
+      - [ ] `FileContent`: `find` (breadth-first, max depth 10, closest match wins), `optional`, `optionalIfNotFound`, `shouldChangeIfPattern`, `shouldChangeIfIncludes`, `shouldChangeIfNotIncludes`, `automateChange`, `automateChangeCmd`, `demandChange`. [internal] //optional//
+      - [ ] `FileContent::demandChange`: prints the explanation, offers the command, shows a unified diff for the automated change, and aborts if declined unless optional. [internal] //optional//
+      - [ ] `MatchingModifier`: `from` collects files recursively, `matchLineByLine($pattern, $warning)` records `Issue` objects (file, line, messages), `warn()` prints them and aborts, `getIssues()` returns them. [internal] //optional//
+      - [ ] `JsonModifier`: `from`, `optional`, `modify(Closure)` (return `null` for no change) and `ifModified`; writes pretty-printed JSON without escaped slashes, reformatting the whole file. [internal] //optional//
+      - [ ] `Folder`: `shouldExist` (`mkdir` 0755, recursive), `shouldNotExist` and `shouldNotExistIfEmpty`, both based on `rmdir`. [internal] //optional//
+      - [ ] `FolderContent`: `move` mirrors with override and then empties the source, refusing identical or nested paths; `moveWithParentFolder` also removes the source folder. [internal] //optional//
+      - [ ] `IncludedFile`: copies a bundled file with mode 0644, skips identical files (sha1), asks before replacing different ones, and supports `optionalIfNotFound`. [internal] //optional//
+      - [ ] `RemoveFile`, `RenameModifier`, `CommandModifier` and the `CommandInteraction::runCommand` trait delete without prompting, rename with a suggestion and confirmation, and run a shell command after confirmation. [internal] //optional//
+      - [ ] `LegacyViewConverter`: static helpers `isLayout`, `isLegacyView`, `convertFile`, `convertView`, `convertLayout`, `neutralize` and `extractSections`, tokenizer-based via `token_get_all`. [internal] //optional//
+- [ ] PR #211: WIP: feat/self-org-management (WIP-titled (not marked draft), feature label, 27 files, 12 commits, targets develop (Changelog section v1.4.0)) [docs in PR]
+  - [ ] Overview: Lets members of an organization manage it themselves at /z/organization in the Z-Admin panel: rename, invite existing accounts by link, hand out roles released via the new z_role.is_org_assignable flag. //nice-to-have//
+  - [ ] Organization self-management page
+    - [ ] Route `/z/organization`: Z-Admin action `action_organization` lets members manage their own organization; needs a login plus the permission of each section, not `admin.panel`. [docs in PR] //nice-to-have//
+      - [ ] Anonymous visitor: is rerouted to the login page. //optional//
+      - [ ] Account without an organization: sees "You are not a member of any organization." and no forms or cards. [docs in PR] //optional//
+      - [ ] Cards and buttons: Rename, Invite member, Members and Open invitations each render only with their own permission. [docs in PR] //nice-to-have//
+      - [ ] Modals: rename and invite forms open in modals; closing the invite modal after creating a link reloads the page to refresh open invitations. //optional//
+    - [ ] Navigation: sidebar entry `Organization` (under Other) and dashboard card `dash-organization` need `z.organization.manage`; without it the page stays reachable by URL. [docs in PR] //nice-to-have//
+    - [ ] Endpoint scheme: everything runs through one action below `/z/organization/`: POST `invite`, `revoke/{inviteId}`, `roles/{userId}`, `rename`, plus `invitation/{token}` and `invitation/{token}/accept`. //nice-to-have//
+  - [ ] Permissions
+    - [ ] `z.organization.manage`: shows the sidebar entry and dashboard card only, grants no action. [docs in PR] //nice-to-have//
+    - [ ] `z.organization.invite`: create invitations, list open invitations and revoke them. [docs in PR] //nice-to-have//
+    - [ ] `z.organization.roles`: give members released roles and take them away again. [docs in PR] //nice-to-have//
+    - [ ] `z.organization.rename`: rename the own organization. [docs in PR] //nice-to-have//
+    - [ ] Missing permission: endpoints answer 403 and the Blade components render nothing. //optional//
+    - [ ] Scope: every action works on the requester's own organization (`user()->orgId`) only. //nice-to-have//
+  - [ ] Invitations
+    - [ ] Create an invitation: `POST /z/organization/invite` with form name `z-organization-invite` and field `email`. [docs in PR] //nice-to-have//
+      - [ ] Validation: `email` is required and must pass the email filter, otherwise form errors `required` or `filter`. //optional//
+      - [ ] Invitable accounts: only an active account without an organization, found via `User::byEmail`; anything else answers form error `user_unavailable`. [docs in PR] //nice-to-have//
+      - [ ] Non-disclosure: unknown, inactive, already-member and requester-without-organization cases all return the same `user_unavailable` error. [docs in PR] //nice-to-have//
+      - [ ] One open invitation per address and organization: a second one answers form error `already_invited`; expired invitations do not count. [docs in PR] //nice-to-have//
+      - [ ] Address comparison: the e2e test treats the address case-insensitively; this relies on SQL equality and the column collation. //optional//
+      - [ ] Response: JSON field `invite_link` = `config("root")` + `z/organization/invitation/{token}`; no mail is sent, the inviter shares the link. [docs in PR] //nice-to-have//
+      - [ ] Token: 32 hex characters from `random_bytes(16)`, stored in plain text in `z_organization_invite.token`. //nice-to-have//
+      - [ ] Invite modal: shows the link with a Copy button and clears the `email` field for the next invitation. //optional//
+    - [ ] Lifetime: an invitation is valid 7 days from `created` (private constant `INVITE_LIFETIME`, not configurable). [docs in PR] //nice-to-have//
+    - [ ] Open invitations list: email, invited date and valid-until date (`d.m.Y H:i`), newest first; expired and inactive ones are not listed. [docs in PR] //optional//
+    - [ ] Revoke: `POST /z/organization/revoke/{inviteId}` sets `active = 0`, so the link stops working at once. [docs in PR] //nice-to-have//
+      - [ ] Foreign or unknown invite id: JSON error `invalid_invite`. //optional//
+      - [ ] Requester without an organization: JSON error `invalid_organization`. //optional//
+    - [ ] Invitation page `GET /z/organization/invitation/{token}`
+      - [ ] Login: anonymous visitors get the login page; the invited address must match the logged-in account (`strcasecmp` on email). [docs in PR] //nice-to-have//
+      - [ ] Content: organization name, invited address and creation date (`d.m.Y H:i`) with an accept button, rendered with `layout/min_layout.php` instead of the admin layout. [docs in PR] //optional//
+      - [ ] 404 cases: unknown token, expired, revoked or already accepted, removed organization, invitation for another address, or user already in an organization. [docs in PR] //optional//
+    - [ ] Accept: `POST /z/organization/invitation/{token}/accept`; opening the link with GET never joins. //nice-to-have//
+      - [ ] Success: `User::updateOrganization()` makes the account a member and adds the linked group, the invite is deactivated, the browser goes to the app root. [docs in PR] //nice-to-have//
+      - [ ] Failure: JSON error `invalid_token` (also for an already used token) or `already_in_organization`; the button shows the matching `Z.Lang` text. //optional//
+  - [ ] Releasing roles to organizations
+    - [ ] Column `z_role.is_org_assignable`: marks a role or group that organizations may hand to their members. [docs in PR] //nice-to-have//
+      - [ ] Migrator note: nothing is released after the migration, each role must be ticked. [docs in PR] //nice-to-have//
+    - [ ] Roles admin page `/z/roles/{id}`: new checkbox `is_org_assignable` labelled "Organizations may assign this role to their members". [docs in PR] //optional//
+      - [ ] Validation: `required()` and `in(["0","1"])`; other values answer form error `in`, a missing field `required`. //optional//
+      - [ ] Groups: the roles page lists only `is_group = 0`, so a group can only be released directly in the database. [docs in PR] //optional//
+    - [ ] Security: a released role hands its permissions to whoever an organization picks, keep the `z.organization.*` permissions out of released roles. [docs in PR] //should-do//
+  - [ ] Member role assignment
+    - [ ] Members card: lists active members of the own organization, each with a multi-select `roles` of released roles (active, `is_org_assignable = 1`, sorted by name) preselected with the held ones. [docs in PR] //nice-to-have//
+    - [ ] Save: `POST /z/organization/roles/{userId}` with form name `z-organization-member-{userId}` and field `roles`. //optional//
+      - [ ] Replacement: the selection replaces the released roles the member holds, roles that are not released stay untouched. [docs in PR] //nice-to-have//
+      - [ ] Empty selection: the field is not posted at all and removes every released role of the member. //optional//
+      - [ ] Validation: every posted role id must be released, otherwise form error `in`. //optional//
+      - [ ] Target: must be a member of the own organization, otherwise JSON error `invalid_member` (also for unknown ids). //optional//
+      - [ ] Self: the requester is listed among the members and may change their own released roles. //optional//
+      - [ ] Groups: released groups are assigned the same way as roles. [docs in PR] //optional//
+  - [ ] Rename organization
+    - [ ] `POST /z/organization/rename` with form name `z-organization-rename` and field `name`: renames through `Organization::updateName()`. [docs in PR] //nice-to-have//
+      - [ ] Validation: `name` required, length 3 to 255; form errors `required` and `length` (info `[3, 255]`). //optional//
+      - [ ] Without an organization: JSON error `invalid_organization`. //optional//
+      - [ ] Page heading `.z-organization-name` updates after saving. //optional//
+  - [ ] Blade components `zubzet::organization.*`
+    - [ ] Shared behaviour: render nothing for a logged-out user, without the permission or without an organization (`accept` only needs a login); extra attributes such as `class` land on the root element. [docs in PR] //nice-to-have//
+    - [ ] `<x-zubzet::organization.rename :name="$name"/>`: rename form posting to `z/organization/rename`, needs `z.organization.rename`. [docs in PR] //nice-to-have//
+    - [ ] `<x-zubzet::organization.invite/>`: invite form with copyable link, needs `z.organization.invite`. [docs in PR] //nice-to-have//
+    - [ ] `<x-zubzet::organization.invites :invites="$invites"/>`: list with revoke buttons, rows need `id`, `email`, `created` and `expires_at` (timestamp). [docs in PR] //nice-to-have//
+    - [ ] `<x-zubzet::organization.members :members="$members" :food="$roleFood"/>`: per-member multi-select forms; members carry `id`, `email`, `roles`, food is `value`/`text` pairs. [docs in PR] //nice-to-have//
+    - [ ] `<x-zubzet::organization.accept :token="$token"/>`: accept button for an invitation token, needs a login. [docs in PR] //nice-to-have//
+    - [ ] Gotcha: `rename` and `invite` use fixed element ids (`z-organization-rename-form`, `z-organization-invite-form`), so each can appear once per page. //optional//
+    - [ ] Escaping: member and name data are JSON-encoded with `JSON_HEX_TAG | JSON_HEX_AMP`, a name containing `</script>` cannot break out. //optional//
+  - [ ] Z.Lang texts in `web/Z.js`
+    - [ ] New keys: `error_user_unavailable`, `error_already_invited`, `error_invalid_token`, `error_already_in_organization` with English defaults, overwritable in the layout after the layout essentials. [docs in PR] //nice-to-have//
+    - [ ] Lookup: form error types and accept error codes are shown as `Z.Lang["error_" + code]`, unknown accept codes fall back to `error_invalid_token`. //optional//
+  - [ ] Translations
+    - [ ] New catalogue keys in `messages.en.json` and `messages.de.json`: `admin.nav.organization`, `admin.roles.org_assignable`, `admin.organization.*`, `admin.organization_invitation.*`, `organization.*` (component texts). //optional//
+    - [ ] Placeholders: `organization.invites.validity` takes `{created}` and `{expires}`, `d.m.Y H:i` formatted. //optional//
+  - [ ] Changes to existing behaviour
+    - [ ] Z-Admin edit user role select: offers active plain roles plus only the groups the user already holds, groups follow the organization and are no longer handed out there. [changes existing behaviour] [docs in PR] //should-do//
+      - [ ] Validation: role ids in the Roles CED are checked with `in()` against the offered ids instead of `exists("z_role", "id")`; other ids answer form error `in`. [changes existing behaviour] //should-do//
+      - [ ] Held groups stay offered, so saving a user keeps the groups they already hold. //nice-to-have//
+    - [ ] Roles admin save: `is_org_assignable` is a required field, scripts posting to `/z/roles/{id}` without it get form error `required`. [changes existing behaviour] //should-do//
+  - [ ] Database and upgrade
+    - [ ] Migration `2026-09-23_organization-invite.sql`: creates table `z_organization_invite` with `CREATE TABLE IF NOT EXISTS`, runs automatically. [docs in PR] //should-do//
+      - [ ] `id`: INT primary key, auto increment. //optional//
+      - [ ] `organizationId`: INT NOT NULL, no foreign key and no index. //optional//
+      - [ ] `email`: VARCHAR(255) NOT NULL, the invited address. //optional//
+      - [ ] `token`: VARCHAR(255) NOT NULL, no unique index; 32 hex characters when created by the framework. //optional//
+      - [ ] `active`: TINYINT(1) NOT NULL DEFAULT 1, set to 0 on accept or revoke. //optional//
+      - [ ] `created`: DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, the 7 day lifetime counts from it. //optional//
+    - [ ] Migration `2026-09-23_group-org-assignable.sql`: adds `z_role.is_org_assignable` (TINYINT(1) NOT NULL DEFAULT 0, after `is_group`) with `ADD COLUMN IF NOT EXISTS`. [docs in PR] //nice-to-have//
+    - [ ] Upgrade guide: section "Organization self-management" and both migrations in the 1.3.0 to 1.4.0 table. [docs in PR] //optional//
+  - [ ] Model `z_organizationModel` [internal]
+    - [ ] New methods: `createInvite`, `getInvite`, `getInviteByToken`, `getInvitesByOrganization` (adds `expires_at`), `hasOpenInvite`, `deactivateInvite`, `getAssignableRoles`, `getAssignedRoles`. [internal] //optional//
+  - [ ] E2E tests and seeds [internal]
+    - [ ] `organization.cy.js` with seed `ZAdminOrganization.sql` (ids in the 800 range, roles 260-263) and `zorg_*` logins in `logins.json`; `ZAdmin.sql` gains roles 246-248 and user 246. [internal] //optional//
+- [ ] PR #194: WIP: feat(z-admin): add organization management and user assignment (WIP-titled (not marked draft), feature label, 13 files, 5 commits, targets develop (Changelog section v1.4.0), empty PR description) [docs in PR]
+  - [ ] Overview: Adds admin-panel pages to create, list, rename and delete organizations (optionally with a linked permission group) and an Organization select on the Add User and Edit User forms. //nice-to-have//
+  - [ ] Organization administration pages
+    - [ ] Organizations list `/z/organizations`: Z-Admin action `action_organizations`, needs `admin.organizations.list`, shows active organizations as `[id] name`. [docs in PR] //nice-to-have//
+      - [ ] Empty states: "No organizations found." and an italic "No name" for an organization without a name. //optional//
+      - [ ] Button "Create organization" links to `/z/add_organization`, shown with `admin.organizations.create`. //optional//
+    - [ ] Organization detail `/z/organizations/{id}`: additionally needs `admin.organizations.edit`, shows the name form, the linked group and the assigned users. [docs in PR] //nice-to-have//
+      - [ ] Rename: form field `name`, required, length 3 to 249 (form errors `required`, `length`), saved through `Organization::updateName()`. [docs in PR] //optional//
+      - [ ] Linked group: shown as `[id] name`, or "This organization has no group.". [docs in PR] //optional//
+      - [ ] Users: assigned active users as `[id] email`, "No email" for accounts without one, "No users belong to this organization." when empty. [docs in PR] //optional//
+      - [ ] Delete: button "Delete organization" (confirm dialog) posts `action=delete`, soft-deletes through `Organization::remove()` and returns to the list. [docs in PR] //nice-to-have//
+      - [ ] Delete permission: `admin.organizations.edit` is checked before the delete branch, so deleting needs `edit` and `delete`. //nice-to-have//
+      - [ ] Linked group is kept: only the organization is set inactive, its group stays an active role. //nice-to-have//
+      - [ ] Unknown or inactive id: JSON error "Organization not found". //optional//
+    - [ ] Add organization `/z/add_organization`: needs `admin.organizations.create`, form with `name` and checkbox `create_group`. [docs in PR] //nice-to-have//
+      - [ ] Name: required, length 3 to 249, names may repeat. [docs in PR] //optional//
+      - [ ] Checkbox `create_group` ("Create a permission group"): creates group `{name}_Group` through `Organization::add($name, true, $groupName)` and links it. [docs in PR] //nice-to-have//
+      - [ ] Group name collision: if a `z_role` named `{name}_Group` already exists (inactive ones included) the form answers error `unique` on `create_group`. [docs in PR] //optional//
+      - [ ] Existing API: `Organization::add()` already accepts a third parameter `?string $groupName` that the signature in docs/core-features/access-control.md omits. //should-do//
+      - [ ] Form reloads the page after success (`doReload: true`). //optional//
+    - [ ] Navigation: sidebar entries `Organizations` and `Add Organization` plus dashboard cards `dash-organizations` and `dash-add-organization`, shown with `admin.organizations.list` and `admin.organizations.create`. [docs in PR] //optional//
+    - [ ] UI texts: hard-coded English in the new views, no translation keys. //optional//
+  - [ ] Permissions
+    - [ ] `admin.organizations.list`: open the organization list and see the sidebar entry and dashboard card. [docs in PR] //nice-to-have//
+    - [ ] `admin.organizations.create`: open and submit the Add Organization form. [docs in PR] //nice-to-have//
+    - [ ] `admin.organizations.edit`: open the detail page and rename an organization. [docs in PR] //nice-to-have//
+    - [ ] `admin.organizations.delete`: delete an organization, on top of `edit`. [docs in PR] //nice-to-have//
+  - [ ] Organization assignment in the user forms
+    - [ ] Add User: new select `organization` (active organizations, empty `---` means none), assigned after creation through `User::updateOrganization()`. [docs in PR] //nice-to-have//
+    - [ ] Edit User: select `organization` preselected with the user's `organizationId`, the empty entry unassigns. [docs in PR] //nice-to-have//
+      - [ ] Saving: the field is `noSave` and applied through `User::updateOrganization()` after the roles CED, so the organization decides the group membership. [docs in PR] //optional//
+      - [ ] Effect on groups: the group of the previous organization is removed from the user and the group of the new one added. [docs in PR] //nice-to-have//
+      - [ ] Unchanged selection: nothing is written when the user already has that organization. //optional//
+      - [ ] Group membership is a `z_user_role` row, so it shows up among the user's roles in the Roles CED. //optional//
+    - [ ] Validation: `organization` must be the id of an active organization (`in()`), otherwise a form error; an empty value is allowed. //optional//
+  - [ ] Changes to existing behaviour
+    - [ ] `Organization::remove()`: now detaches all members first (`$user->updateOrganization(null)`), which clears `z_user.organizationId` and removes the linked group membership before the soft delete. [changes existing behaviour] //should-do//
+      - [ ] Before, `organizationId` was preserved and users only resolved to no organization; docs/core-features/access-control.md still says so and is not updated in the PR. //should-do//
+      - [ ] Applies to every caller of `Organization::remove()`, not only the admin panel. //nice-to-have//
+  - [ ] Controller helpers and tests [internal]
+    - [ ] Private `ZController::getOrganizations()` and `applyOrganization()` back the pages and the user forms. [internal] //optional//
+    - [ ] E2E: `ZAdmin.sql` seeds roles 246-247, organizations 560-563 and users 560-562; tests live in `zadmin.cy.js`. [internal] //optional//
+- [ ] PR #209: WIP: Two factor authentication and a profile page (Open, not a draft but titled WIP; 53 files, 64 commits, +5346/-77; docs, changelog and upgrade guide included) [docs in PR]
+  - [ ] Overview: Adds TOTP two factor authentication (enrollment, login challenge, freshness guard, admin reset) and a self-service profile page at /z/profile with reusable account Blade components, plus session last-used tracking and a change to what clearing sessions revokes. //nice-to-have//
+  - [ ] Two factor authentication (TOTP)
+    - [ ] Dependency
+      - [ ] `spomky-labs/otphp` is a new required package: constraint `^10.0 || ^11.3`, locked at 10.0.3 with `beberlei/assert`, `paragonie/constant_time_encoding`, `thecodingmachine/safe`. //should-do//
+      - [ ] Allowing otphp 11 lets PHP 8.4+ skip `thecodingmachine/safe`; `verifyTwoFactorCode()` is written to behave the same on otphp 10 and 11. //optional//
+    - [ ] Settings
+      - [ ] `two_factor_freshness_seconds`: default `900`; seconds a passed check counts as recent for `requireFreshTwoFactor()` and `$session->requireRenew()`. [docs in PR] //should-do//
+      - [ ] `two_factor_challenge_seconds`: default `600`; seconds a login challenge can be redeemed. [docs in PR] //should-do//
+      - [ ] `two_factor_tries`: default `5`; wrong codes a session may send, the initial budget of every new session and what a passed check restores. [docs in PR] //should-do//
+      - [ ] Budget column is `TINYINT UNSIGNED`, so 255 is the practical maximum for `two_factor_tries`. //nice-to-have//
+      - [ ] `maxLoginTriesPerTimespan` and `maxLoginTriesTimespan`: existing login-limit settings that now also count wrong two factor codes. [docs in PR] [changes existing behaviour] //should-do//
+    - [ ] Enrollment API on the user object
+      - [ ] `$user->startTwoFactor(): TOTP`
+        - [ ] Stores a fresh unconfirmed secret (20 random bytes, base32) in `z_user.two_factor_secret` and returns `OTPHP\TOTP` with `getSecret()` and `getProvisioningUri()`. [docs in PR] //should-do//
+        - [ ] Provisioning label is the user's email, or `User` when there is none; issuer is the `pageName` setting (default `ZubZet`); colons are stripped. //nice-to-have//
+        - [ ] Starting again replaces the secret and turns an active two factor off until the new secret is confirmed. [docs in PR] //nice-to-have//
+      - [ ] `$user->confirmTwoFactor(string $code): bool`: sets `two_factor_confirmed_at` and turns two factor on; returns `false` for a wrong code or when it is already on. [docs in PR] //should-do//
+      - [ ] `$user->verifyTwoFactorCode(string $code): bool`
+        - [ ] Accepts the current code and one 30 second step either side; returns `false` while the account has no secret. [docs in PR] //should-do//
+        - [ ] No replay protection: nothing records a used code, so a valid code verifies again within its window. //should-do//
+      - [ ] `$user->hasTwoFactor(): bool` and `$user->twoFactorConfirmedAt(): ?string`: only a confirmed enrollment counts, a stored but unconfirmed secret means off. [docs in PR] //should-do//
+      - [ ] `$user->disableTwoFactor(): void`: clears the secret and `two_factor_confirmed_at`; existing sessions of the account stay valid. [docs in PR] //should-do//
+      - [ ] Secret storage: the secret is kept unencrypted in `z_user.two_factor_secret` (`VARCHAR(255)`). //should-do//
+    - [ ] Login with a challenge
+      - [ ] Login action answer [changes existing behaviour]
+        - [ ] A correct password on an account with confirmed two factor answers `{"result":"success","twoFactor":true,"challenge":"zub-..."}` and creates no session or cookie. [docs in PR] [changes existing behaviour] //important//
+        - [ ] Accounts without two factor or with an unconfirmed enrollment log in as before; a wrong password hands out no challenge. [docs in PR] //should-do//
+        - [ ] Custom clients of the login action must handle the `twoFactor` answer themselves; `Z.Presets.Login` does. [docs in PR] //important//
+      - [ ] Challenge storage
+        - [ ] Challenge is `zub-` plus 64 hex characters in `z_two_factor_challenge`, valid until `expires_at` and while `active` is 1. //nice-to-have//
+        - [ ] `device` and `ip_creation` are recorded but not compared when the challenge is redeemed. //nice-to-have//
+        - [ ] Used and expired challenge rows are never deleted in this PR. //optional//
+      - [ ] `POST _zubzet/two-factor/login`
+        - [ ] Takes `challenge` and `code`, and only answers requests carrying the `two-factor-login` action marker that `Z.Request` sends, else `Invalid request`. //nice-to-have//
+        - [ ] Error answers: `Missing challenge`, `Invalid challenge` (unknown, used, expired or user gone), `Missing code`, `Invalid code`, `Too many login tries. Try again later.` //nice-to-have//
+        - [ ] A correct code burns the challenge and starts the session via `$res->loginAs($id, recordTwoFactor: true)`, already stamped with a passed check. [docs in PR] //should-do//
+        - [ ] A wrong code keeps the challenge usable until it expires or the login limit blocks the account. //nice-to-have//
+      - [ ] Login limit shared by both steps
+        - [ ] A wrong code calls `newLoginTry()` and counts like a wrong password within `maxLoginTriesTimespan`. [docs in PR] //should-do//
+        - [ ] The limit is checked before the code is verified and also blocks the password step afterwards; shared in `blockedByLoginLimit()`. //nice-to-have//
+        - [ ] When tripped the owner gets the security email once per window (valid client IP only) and `ACCOUNT_LOGIN_RATE_LIMITED` is logged. //nice-to-have//
+      - [ ] Other login paths ask for no code
+        - [ ] Admin `login_as` impersonation and app code calling `$res->loginAs()` create sessions without a challenge. //should-do//
+        - [ ] Such sessions carry no stamp, so `requireFreshTwoFactor()` demands the target account's code from whoever uses them. //nice-to-have//
+    - [ ] Session two factor state
+      - [ ] `$session->requireRenew(?int $freshnessSeconds = null): bool`
+        - [ ] Returns `false` for an account without two factor; `true` when no check was ever passed, the last one is older than the window or the user is gone. [docs in PR] //should-do//
+        - [ ] API keys start without a stamp and stay stale until a renewal passes. [docs in PR] //nice-to-have//
+      - [ ] `$session->lastTwoFactor(): ?string` and `$session->remainingTwoFactorTries(): int`: when the last check passed (or `null`) and how many wrong codes are left. [docs in PR] //nice-to-have//
+      - [ ] `$session->recordTwoFactor()` and `$session->resetTwoFactorTries()`: stamp a passed check, restore the full try budget. [docs in PR] //nice-to-have//
+      - [ ] `$session->spendTwoFactorTry(): int`: decrements only while above zero and returns the tries left; the framework's endpoints sign the session out at zero. [docs in PR] //nice-to-have//
+      - [ ] `$res->loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null, bool $recordTwoFactor = false)`: new last parameter stamps the new session right away. [docs in PR] //should-do//
+    - [ ] Guarding an action
+      - [ ] `$req->requireFreshTwoFactor(?int $freshnessSeconds = null, bool $boolResult = false): bool`
+        - [ ] Passes for a fresh session and for accounts without two factor; the first argument overrides `two_factor_freshness_seconds`. [docs in PR] //should-do//
+        - [ ] A stale session without `boolResult` ends the request with the JSON error `Two factor required` carrying `twoFactorRenew: true`. [docs in PR] //should-do//
+        - [ ] With `boolResult: true` it returns `false` so the action answers itself, for example before `validateForm()`. [docs in PR] //nice-to-have//
+        - [ ] A visitor who is not logged in gets the login page and the request ends (`false` with `boolResult`). //nice-to-have//
+      - [ ] `$res->error($message = "", $payload = [])`: the optional payload is merged into the error answer, like `success()` does. [changes existing behaviour] //should-do//
+      - [ ] `POST _zubzet/two-factor/refresh`
+        - [ ] Takes `code` and the `two-factor-refresh` action marker; errors `Not logged in`, `Two factor is not active`, `Invalid input`, `Wrong code`, `Too many wrong codes. Signed out.` //nice-to-have//
+        - [ ] A correct code stamps `last_two_factor` on the session or API key that authenticated the request and restores its tries. [docs in PR] //nice-to-have//
+        - [ ] A wrong code spends a try; at zero the session is invalidated and the `z_login_token` cookie removed. [docs in PR] //nice-to-have//
+      - [ ] Client reaction to `twoFactorRenew`
+        - [ ] `Z.Request.action()`, `Z.Request.root()` and `Z.Forms` open the modal, post the code to `_zubzet/two-factor/refresh` and alert `Z.Lang.two_factor_renewed`. [docs in PR] //nice-to-have//
+        - [ ] The original request is not resent; the user has to repeat the action. //nice-to-have//
+    - [ ] Front end (`web/Z.js`)
+      - [ ] `Z.Presets.Login` opens the code modal on a `twoFactor` answer and continues like a normal login (reload or redirect). [docs in PR] //nice-to-have//
+      - [ ] `Z.Presets.ShowTwoFactor(challenge, redirect = "")`: opens the modal and redeems a login challenge; the challenge travels in the POST body. //nice-to-have//
+      - [ ] `Z.Presets.RefreshTwoFactor(onDone = null)`: opens the modal to renew the check on demand; `onDone` replaces the page reload. [docs in PR] //nice-to-have//
+      - [ ] `Z.Presets.OpenTwoFactorModal(submit)` and `Z.Presets.FailTwoFactor(message)`: low-level modal helpers to build your own flow. //optional//
+      - [ ] `Z.Lang` keys `error_two_factor_incomplete`, `two_factor_renewed` and `error_password_wrong` can be overwritten after the layout essentials. [docs in PR] //optional//
+      - [ ] Modal behaviour
+        - [ ] Six single-digit inputs: typing, paste and one-time-code autofill fill all boxes, and the sixth digit sends automatically. //optional//
+        - [ ] Fewer than six digits shows `Z.Lang.error_two_factor_incomplete` without a request; a rejected code shows the server message and clears the boxes. //optional//
+        - [ ] Static backdrop, Escape disabled, `Cancel` button closes it. //optional//
+    - [ ] Modal markup component
+      - [ ] `<x-zubzet::authentication.two-factor/>` holds the modal in a `<template id="z-two-factor-template">` that Z.js clones on first use. //nice-to-have//
+      - [ ] `<x-zubzet::body/>` now renders it on every page; a layout without the body essentials must place it by hand. [docs in PR] [changes existing behaviour] //important//
+      - [ ] Without the template Z.js logs `Two factor modal missing, add x-zubzet::body to the layout` and no code can be entered. //nice-to-have//
+    - [ ] Turning two factor off
+      - [ ] Profile page: `POST _zubzet/profile/disable-two-factor` needs a current code instead of the password. [docs in PR] //nice-to-have//
+        - [ ] A wrong code spends a session try; at zero the session is signed out (`Too many wrong codes. Signed out.`). [docs in PR] //optional//
+        - [ ] Success logs `ACCOUNT_UPDATED` with reason `two-factor-disabled`. //optional//
+      - [ ] Admin reset: action `disable_two_factor` on `z/edit_user/<id>` turns it off without a code. [docs in PR] //nice-to-have//
+        - [ ] Needs `admin.user.edit` (403 otherwise); errors `Unknown user` and `Two factor is not active`. [docs in PR] //optional//
+        - [ ] Success logs `ACCOUNT_UPDATED` with reason `two-factor-force-disabled`. //optional//
+        - [ ] `Disable two factor` button appears on Edit User only while the account has two factor and asks for confirmation. [docs in PR] //optional//
+  - [ ] Profile page
+    - [ ] Route and access
+      - [ ] `/z/profile` is served by `ZController::action_profile` in the admin panel layout and needs no permission, since it only shows the requesting account. [docs in PR] //nice-to-have//
+      - [ ] A visitor who is not logged in gets the login page instead. //optional//
+      - [ ] Linked as `Profile` in the sidebar under `Other` and as a card on the admin dashboard. [docs in PR] //optional//
+    - [ ] Page sections
+      - [ ] Header: email, member since (`d.m.Y`) and the organization name when the account has one. [docs in PR] //optional//
+      - [ ] Security card: password change opens a modal; two factor is set up and turned off in place. [docs in PR] //nice-to-have//
+      - [ ] Sessions card with `Clear all sessions`, and an API keys card. [docs in PR] //nice-to-have//
+    - [ ] Password change
+      - [ ] Fields `password_current`, `password_new`, `password_repeat`; new password must be `Password::MIN_LENGTH_BYTES` to `MAX_LENGTH_BYTES` bytes (3 to 1024). //nice-to-have//
+      - [ ] Errors: `password_mismatch` on the repeat field, `password_wrong` on the current field, `Invalid input` for non-string values. //optional//
+      - [ ] A new password ends every login of the account, the current browser included, but spares API keys. [docs in PR] [changes existing behaviour] //should-do//
+      - [ ] Success logs `PASSWORD_RESET` with reason `change`. //optional//
+      - [ ] An account without a stored password cannot pass the current-password check, so it cannot set one here. //nice-to-have//
+    - [ ] Sessions and API keys listing
+      - [ ] Each entry shows its name (fallback `Session` or `API key`), device, start date and IP, last use (or `never used since`) and expiry (or `Never expires`). [docs in PR] //optional//
+      - [ ] Sessions also show the `reason` and mark the current one as `This browser`. [docs in PR] //optional//
+      - [ ] Rename: empty name restores the generic name; the name is trimmed and cut to 255 characters. [docs in PR] //optional//
+      - [ ] Revoke: invalidates one session or API key; revoking the current session signs this browser out. [docs in PR] //nice-to-have//
+    - [ ] API keys
+      - [ ] `APIKey::LIFETIMES`: constant mapping days to labels (1, 3, 7, 30, 60, 90 days and 365 = `1 year`) offered when creating a key. [docs in PR] //nice-to-have//
+      - [ ] Create form takes a name and a lifetime, or `never` for no expiry. [docs in PR] //nice-to-have//
+      - [ ] An unknown lifetime falls back to the shortest one (1 day); expiry is computed from the database-written `created`. //optional//
+      - [ ] The token is returned once as `token` and shown in a modal with a copy button; it cannot be read again. [docs in PR] //nice-to-have//
+      - [ ] Copy uses `navigator.clipboard.writeText` only, with no `execCommand` fallback for insecure contexts. //optional//
+    - [ ] Endpoints `POST _zubzet/profile/*`
+      - [ ] Registered unconditionally in `DefaultRoutes.php`: `change-password`, `clear-sessions`, `revoke-token`, `rename-token`, `create-api-key`, `start-two-factor`, `confirm-two-factor`, `disable-two-factor`. [docs in PR] //nice-to-have//
+      - [ ] Handled by `ZubZetController`, so the framework claims no controller name an app might use. //optional//
+      - [ ] Each answers `Invalid request` unless it carries the Z.js marker: POST `action=<endpoint name>`, or `isFormData` for `change-password`. //optional//
+      - [ ] Other errors (English text): `Not logged in`, `Invalid input`, `Unknown token`. //optional//
+      - [ ] `revoke-token` and `rename-token` take `uuid` and `type` (`session` or `api-key`); each type finds only its own kind and only the caller's own rows, else `Unknown token`. [docs in PR] //nice-to-have//
+      - [ ] `create-api-key` takes `name` and `lifetime`; `start-two-factor` returns `secret` and `uri` once and refuses while two factor is on. //optional//
+      - [ ] `confirm-two-factor` takes `code`, then stamps the current session as a passed check, restores its tries and logs reason `two-factor-enabled`. //optional//
+      - [ ] None of these endpoints is guarded by `requireFreshTwoFactor()`. //nice-to-have//
+    - [ ] Reusable account components (`zubzet::account.*`)
+      - [ ] `<x-zubzet::account.change-password/>`: password form posting to `_zubzet/profile/change-password`, reloads on success. [docs in PR] //nice-to-have//
+      - [ ] `<x-zubzet::account.sessions/>`: list of the user's logins with rename and revoke buttons; attributes land on the `<ul>`. [docs in PR] //nice-to-have//
+      - [ ] `<x-zubzet::account.clear-sessions/>`: button that ends every login including the current one; label comes from the slot, brings no classes. [docs in PR] //nice-to-have//
+      - [ ] `<x-zubzet::account.api-keys/>`: create form, key list with rename and revoke, and the new-token modal. [docs in PR] //nice-to-have//
+      - [ ] `<x-zubzet::account.two-factor/>`: state, setup with QR code and manual key, and the disable form. [docs in PR] //nice-to-have//
+      - [ ] `<x-zubzet::account.rename-token/>`: shared rename modal included by sessions and api-keys, rendered once per page via `@once`. [internal] //optional//
+      - [ ] Components read the current user themselves, render nothing for a guest and need no data or route from the app. [docs in PR] //nice-to-have//
+      - [ ] Components use fixed element ids (for example `z-sessions`, `z-api-keys`), so each belongs on a page once. //nice-to-have//
+      - [ ] Framing is left to the app: no card or heading is rendered. [docs in PR] //optional//
+  - [ ] Sessions
+    - [ ] Last use tracking
+      - [ ] `z_logintoken.last_used` is stamped on authenticated requests of sessions and API keys; read it with `$session->lastUsed(): ?string`. [docs in PR] [changes existing behaviour] //should-do//
+      - [ ] `session_last_used_throttle_seconds`: default `60`; writes at most once per window, `0` writes on every request. [docs in PR] //nice-to-have//
+      - [ ] A request from a new address is always written, because that also updates `ipLast()`. [docs in PR] //optional//
+      - [ ] `recordSessionIp()` is renamed `recordSessionUse()`. [internal] //optional//
+    - [ ] Clearing sessions
+      - [ ] `Session::clearForUser(User $user): void`: ends every login of a user in one statement, the issuing session included, API keys untouched. [docs in PR] //should-do//
+      - [ ] `$user->clearSessions()` and `$user->updatePassword()` no longer invalidate the user's API keys; revoke them through `APIKey::byUser()`. [docs in PR] [changes existing behaviour] //important//
+    - [ ] Token index: `z_logintoken.token` is now indexed (performance). [docs in PR] //optional//
+  - [ ] Database and migrations
+    - [ ] `2026-09-17_session-last-used-and-token-index.sql`: adds nullable `z_logintoken.last_used` (`TIMESTAMP`) and an index on `z_logintoken.token`. [docs in PR] //nice-to-have//
+    - [ ] `2026-09-21_two-factor-challenge.sql`
+      - [ ] Creates `z_two_factor_challenge` (`id`, `token`, `userId`, `device`, `ip_creation`, `expires_at`, `active`, `created`; index on `token`). [docs in PR] //optional//
+      - [ ] Adds `z_logintoken.last_two_factor` and `z_user.two_factor_secret` (`VARCHAR(255)`) plus `z_user.two_factor_confirmed_at`, all nullable. [docs in PR] //optional//
+    - [ ] `2026-09-21_2_session-two-factor-tries.sql`: adds `z_logintoken.remaining_two_factor_tries` (`TINYINT UNSIGNED NOT NULL DEFAULT 5`); the `_2_` version segment orders it after the challenge migration. [docs in PR] //optional//
+    - [ ] All three migrations use `IF NOT EXISTS` and run automatically; manual schema changes can use the same idempotent statements. [docs in PR] //nice-to-have//
+    - [ ] `createLoginToken()` takes a new `recordTwoFactor` flag and now builds its insert with the query builder. [internal] //optional//
+  - [ ] Admin panel texts and translations
+    - [ ] New keys in `messages.en.json` and `messages.de.json`: `admin.nav.profile`, `admin.profile.*`, `admin.edit_user.disable_two_factor`, `admin.edit_user.disable_two_factor_confirm`. //optional//
+    - [ ] New top-level `account.*` keys (sessions, API keys, rename, password, two factor modal and lifetimes) let apps translate or redefine the account components. //optional//
+    - [ ] Server answers such as `Wrong code` and `Unknown token` stay hard-coded English. //optional//
+    - [ ] Modal digit inputs carry a hard-coded English `aria-label` (`Digit N of 6`). //optional//
+  - [ ] Vendored QR code script
+    - [ ] `qrcode.js` (qrcodejs, MIT, unmodified) is bundled in `src/IncludedComponents/assets/js/` and served via `_zubzet/asset-proxy/js/qrcode.js`. [internal] //optional//
+    - [ ] Bundled instead of loaded from a CDN so no third-party script can read the shared secret; QR is 180x180 at error level L. [internal] //optional//
+  - [ ] Tests and fixtures
+    - [ ] Cypress specs `two-factor.cy.js`, `two-factor-login.cy.js`, `two-factor-gate.cy.js` and `profile/profile.cy.js` cover enrollment, login, the freshness gate and the profile page. [internal] //optional//
+    - [ ] Test-only `TwoFactorProbeController` and seeds `TwoFactor.sql` and `Profile.sql`; e2e `z_settings.ini` sets both new timing settings. [internal] //optional//
+    - [ ] `failover.cy.js` now waits until every Galera node reports `Synced/ON` after the failover test. [internal] //optional//
+- [ ] PR #199: feat(tasks): background tasks with a database-backed queue and worker container (WIP draft, 34 files, 4 commits, base develop (docs already written in PR)) [docs in PR]
+  - [ ] Overview: Adds a database-backed background task system: `Tasks::dispatch()` queues work into `z_task`/`z_task_queue`, `queue:work` runs it in supervised worker processes, plus an owner-scoped status endpoint and three new settings. //important//
+  - [ ] Dispatching tasks with `Tasks::dispatch()`
+    - [ ] Signature: `dispatch(string $type, array $payload = [], ?string $name = null, string $queue = "default", int $delay = 0, ?int $userId = null): TaskRecord`; returns immediately, named arguments work. [docs in PR] //important//
+    - [ ] `$type`: task class name or bare file name from `app/Tasks`; a namespaced name is cut to its last segment, so task classes must live in the global namespace. //should-do//
+    - [ ] `$payload`: array stored as JSON in `z_task.payload` and exposed to the task as `$this->payload`; pass ids, not loaded models. [docs in PR] //should-do//
+    - [ ] `$name`: human-readable label, defaults to the task type. [docs in PR] //nice-to-have//
+    - [ ] `$queue`: lane name, default `default`; a worker only consumes the one queue given by `--queue`. [docs in PR] //should-do//
+    - [ ] `$delay`: seconds until the task becomes runnable (stored as `availableAt`); negative values are clamped to 0. [docs in PR] //should-do//
+    - [ ] `$userId`: owner of the task; defaults to the logged-in user and is `null` in CLI or anonymous requests. [docs in PR] //should-do//
+    - [ ] Unknown type: throws `\InvalidArgumentException` at dispatch ("Task 'X' does not exist. Expected a class named 'X' in app/Tasks."). [docs in PR] //nice-to-have//
+    - [ ] Unencodable payload: throws `\InvalidArgumentException` ("payload cannot be stored: <json error>") instead of silently storing an empty payload. [docs in PR] //nice-to-have//
+    - [ ] Not atomic: task row and queue row are two autocommits; if the queue insert fails the task is marked `failed` ("Could not be queued: ...") and the exception rethrown. //nice-to-have//
+  - [ ] Reading task state
+    - [ ] `Tasks::find(int $id)`: returns a `TaskRecord` or `null`; no ownership check and ids are sequential, so own endpoints must compare `userId`. [docs in PR] //important//
+    - [ ] `Tasks::forUser(?int $userId = null, int $limit = 20)`: newest-first records of a user; defaults to the logged-in user, returns `[]` without one, limit minimum 1. [docs in PR] //should-do//
+    - [ ] `Tasks::pending(string $queue = "default")`: counts unreserved queue rows, which also includes delayed tasks that are not yet due. [docs in PR] //nice-to-have//
+    - [ ] Soft delete flag: `find()` and `forUser()` only see rows with `z_task.active = 1`; nothing in the PR sets `active` to 0. //nice-to-have//
+    - [ ] Polling pattern: check `isFinished()`/`hasFailed()`, report `progress`, read `result` when done. [docs in PR] //should-do//
+  - [ ] `TaskRecord` (what userspace receives)
+    - [ ] Properties: `id`, `type`, `name`, `status`, `payload` (array), `result` (?array), `error`, `progress`, `attempts`, `userId`, `created`, `startedAt`, `finishedAt`; timestamps are strings. [docs in PR] //should-do//
+    - [ ] Helpers: `isFinished()`, `isRunning()`, `hasFailed()`. [docs in PR] //nice-to-have//
+    - [ ] `toArray()`: every field for an application's own API responses, except `userId`. [docs in PR] //nice-to-have//
+    - [ ] `toStatusArray()`: reduced view used by the framework endpoint (`id`, `type`, `name`, `status`, `progress`, `finished`, timestamps); not mentioned in the PR docs. //nice-to-have//
+    - [ ] Stored JSON that does not decode to an array yields an empty `payload` and a `null` `result`. //nice-to-have//
+  - [ ] `TaskStatus` values
+    - [ ] Statuses: `pending`, `running`, `done`, `failed`; `done` and `failed` are terminal. [docs in PR] //should-do//
+    - [ ] Helpers: `TaskStatus::all()` and `TaskStatus::isFinished($status)`; class constants instead of an enum because PHP 8.0 is supported. //nice-to-have//
+  - [ ] Writing a task class
+    - [ ] Location: `app/Tasks/` of the application or of a module, one class per file, class named exactly like the file, extending `ZubZet\Framework\Tasks\Task`. [docs in PR] //important//
+    - [ ] `handle()`: the only required method; declared without a return type so implementations may add `: void` or `: array`. [docs in PR] //important//
+    - [ ] Return value: an array is stored as the task result (JSON); any other return value is stored as `null`. [docs in PR] //should-do//
+    - [ ] Throwing: any `Throwable` marks the attempt failed and the message is recorded as `ExceptionClass: message`. [docs in PR] //should-do//
+    - [ ] `$this->payload`: protected array copy of the dispatched payload. [docs in PR] //should-do//
+    - [ ] `$this->progress(int $percent)`: protected; clamps to 0-100, updates `z_task.progress` and refreshes the worker's claim. [docs in PR] //should-do//
+    - [ ] `$this->record()`: public accessor for the current `TaskRecord`; not in the PR docs. //nice-to-have//
+    - [ ] Name resolution
+      - [ ] Lookup goes through the registry kind `tasks`: application first, then modules, no framework tasks; an application task shadows a module task of the same name. [docs in PR] //should-do//
+      - [ ] Type names must match `^[A-Za-z_][A-Za-z0-9_]*$`, so a crafted database row cannot address arbitrary paths. //nice-to-have//
+      - [ ] Runtime errors become failed attempts: "does not exist in any app/Tasks directory", "does not declare a class named", "must extend ...Task". //nice-to-have//
+  - [ ] Running workers with `queue:work`
+    - [ ] Command: `php index.php queue:work`, registered in the console application with description "Run queued background tasks". [docs in PR] //important//
+    - [ ] Nothing is processed unless a `queue:work` process is running; there is no web or cron trigger built in. [docs in PR] //important//
+    - [ ] Options
+      - [ ] `--workers` / `-w`: number of worker processes, default `1`, minimum 1; the `-w` shortcut is not in the docs. [docs in PR] //should-do//
+      - [ ] `--queue`: queue to consume, default `default`; one worker serves one queue, so other queues need their own worker. [docs in PR] //should-do//
+      - [ ] `--sleep`: seconds to wait on an empty queue, default `1`; a value below 1 still sleeps 1 second. [docs in PR] //nice-to-have//
+      - [ ] `--max-jobs`: recycle a worker after this many tasks, default `0` (never). [docs in PR] //nice-to-have//
+      - [ ] `--time-limit`: recycle a worker after this many seconds, default `0` (never). [docs in PR] //nice-to-have//
+      - [ ] `--memory-limit`: recycle a worker at or above this many MB of `memory_get_usage(true)`, default `0` (never). [docs in PR] //nice-to-have//
+      - [ ] `--once`: handle at most one task and exit; ignores `--workers`, and a database error while claiming aborts instead of being retried. [docs in PR] //nice-to-have//
+    - [ ] Console output: "Worker started on queue X.", per task `done in Nms` / `failed after Nms` / `will retry (attempt N)`, and "Worker stopped after N tasks." //nice-to-have//
+    - [ ] Worker pool (`--workers` above 1)
+      - [ ] Supervisor spawns N child processes running `queue:work --workers=1` via `proc_open` with `PHP_BINARY` and the original entry script; `proc_open` must not be disabled. [docs in PR] //should-do//
+      - [ ] Why processes, not `pcntl_fork`: each child boots its own framework and database connection and no extension is needed. [docs in PR] //nice-to-have//
+      - [ ] Children get the parent's options (except `--workers` and `--once`), the full environment via `getenv()` and `ZUBZET_TASK_SUPERVISED=1`. //optional//
+      - [ ] Supervision: checks every second and replaces children that recycled, crashed or failed to start ("Failed to start worker N, retrying."). [docs in PR] //nice-to-have//
+      - [ ] Failure mode: exits with code 1 ("Could not determine the console entry point...") when the entry script cannot be resolved. //nice-to-have//
+    - [ ] Worker recycling
+      - [ ] `--max-jobs`, `--time-limit` and `--memory-limit` are checked between tasks only, so a running task is never interrupted. [docs in PR] //should-do//
+      - [ ] A recycled worker exits and the supervisor starts a fresh one; a single worker (`--workers=1`) just ends, so the deployment needs `restart: always`. [docs in PR] //should-do//
+    - [ ] Claiming work
+      - [ ] Worker reads up to 10 runnable queue rows oldest first (unreserved, `availableAt` reached) and claims one with `UPDATE ... SET reservedAt, reservedBy WHERE id = ? AND reservedAt IS NULL`. //optional//
+      - [ ] Exclusivity comes from the conditional update plus `affectedRows`; no `SELECT ... FOR UPDATE`, safe on Galera where a concurrent claim is refused as a certification conflict. [docs in PR] //nice-to-have//
+      - [ ] Lost acknowledgement: when a retried claim reports 0 rows the worker re-checks `reservedBy` and keeps the task if it already owns it. //optional//
+      - [ ] Worker identity is `hostname:pid`, stored in `z_task_queue.reservedBy`. //optional//
+    - [ ] Resilience of the worker loop
+      - [ ] Database errors while claiming do not end the worker: retried with a 1 s to 30 s growing backoff, only the first 3 consecutive errors are printed. //nice-to-have//
+      - [ ] Errors from a task or its bookkeeping never end the worker; a failed bookkeeping write is printed as "could not be processed". //nice-to-have//
+      - [ ] A task that succeeded is not recorded as failed if writing the result hits a database error; the claim expires and is recovered. //nice-to-have//
+    - [ ] Stopping workers
+      - [ ] Supervisor drains on stop: closes each child's stdin, children finish the task in flight and exit; waits up to 60 s (fixed) and leaves still-busy workers to the reservation timeout. [docs in PR] //should-do//
+      - [ ] Requires `ext-pcntl` to trap SIGTERM and SIGINT; without it the process is killed outright and in-flight tasks are recovered through `task_reservation_timeout`. [docs in PR] //should-do//
+      - [ ] A single worker also traps SIGTERM and SIGINT with `ext-pcntl` and exits after its current task ("asked to stop"). //nice-to-have//
+      - [ ] Liveness pipe: a supervised worker (`ZUBZET_TASK_SUPERVISED=1`) exits after its current task when its stdin hits EOF, which also covers a dead supervisor; hand-started workers are unaffected. [docs in PR] //nice-to-have//
+      - [ ] Container needs `init: true` (PID 1 gets no default signal handling) and `stop_grace_period` long enough for a task. [docs in PR] //should-do//
+      - [ ] Apache-based images declare `STOPSIGNAL SIGWINCH`, which PHP ignores, so set `stop_signal: SIGTERM` on the worker service. [docs in PR] //should-do//
+    - [ ] Cron alternative: `* * * * * cd /var/www && php index.php queue:work --time-limit=55` for hosts without long-lived processes, at up to a minute of latency. [docs in PR] //should-do//
+  - [ ] Task lifecycle, retries and recovery
+    - [ ] Normal run: claim, then `status = running`, `startedAt` set and `attempts` incremented, then `handle()`, then `done` with `progress = 100`, `result`, `finishedAt`, and the queue row deleted. [docs in PR] //should-do//
+    - [ ] Failed attempt with attempts left: task goes back to `pending`, `progress` reset to 0, `startedAt` cleared, queue entry released with a delay of 10 s times the attempt number (fixed, not configurable). //should-do//
+    - [ ] Final failure: queue row deleted, `status = failed`, `error` = `ExceptionClass: message`, `finishedAt` set; `error` stays empty while retries remain. [docs in PR] //should-do//
+    - [ ] Delivery guarantee is at-least-once; tasks with `task_max_attempts` above 1 must be safe to run twice. [docs in PR] //should-do//
+    - [ ] All transitions after the claim are conditional on still holding the reservation, so a worker with a stale view cannot release, delete or fail another worker's live run. //optional//
+    - [ ] Task row deleted or deactivated mid-run: the run ends quietly, the queue entry is dropped and the worker prints "dropped orphaned queue entry". //nice-to-have//
+    - [ ] Abandoned claim recovery
+      - [ ] Every worker scans every 60 s (fixed), also while busy-queue never idles, for reservations older than `task_reservation_timeout`. [docs in PR] //nice-to-have//
+      - [ ] Attempts left: entry returns to the queue as immediately available and the task to `pending`. [docs in PR] //nice-to-have//
+      - [ ] No attempts left (default with `task_max_attempts = 1`): entry removed and task `failed` with "Abandoned: the worker running this task stopped before it finished." [docs in PR] //nice-to-have//
+      - [ ] `progress()` refreshes `reservedAt`; a task running longer than the timeout without reporting progress may be picked up a second time. [docs in PR] //nice-to-have//
+      - [ ] Recovery statements re-test staleness, so two workers recovering at once cannot give one task to two runners. //optional//
+  - [ ] Built-in status endpoint `GET /_zubzet/task/{id}`
+    - [ ] Route: registered in `DefaultRoutes` inside the `/_zubzet` group, `id` digits only, handled by `ZubZetController::task()`. [docs in PR] //nice-to-have//
+    - [ ] Authorization: only the logged-in owner is served; unknown id, unowned task, anonymous request or another user's task all answer 404 `{"error":"Task not found"}`. [docs in PR] //should-do//
+    - [ ] Response: JSON from `toStatusArray()` (`id`, `type`, `name`, `status`, `progress`, `finished`, `created`, `startedAt`, `finishedAt`); never `payload`, `result` or `error`. [docs in PR] //should-do//
+    - [ ] Gotcha: `type` (class name) and `name` are included although the docs say "progress and timing only". //nice-to-have//
+    - [ ] Applications wanting more data build their own endpoint on `Tasks::find()` and `toArray()`, as the e2e probe controller shows. [docs in PR] //nice-to-have//
+  - [ ] Settings (all optional, read from the application ini, workers need a restart to pick up changes)
+    - [ ] `task_endpoint_enabled`: default `true`; `false` removes the `/_zubzet/task/{id}` route entirely (decided when routes register). [docs in PR] //should-do//
+    - [ ] `task_max_attempts`: default `1` (retries are opt-in), values below 1 are treated as 1; attempts before a task is marked `failed`. [docs in PR] //should-do//
+    - [ ] `task_reservation_timeout`: default `900` seconds, effective minimum 30 (smaller values are raised); age at which a claim counts as abandoned. [docs in PR] //should-do//
+    - [ ] Path key `z_tasks` (default `app/Tasks/`) added to the framework path configuration. //nice-to-have//
+    - [ ] `module:setup` treats all three `task_*` settings as framework-reserved, so a module ini can no longer introduce them. [changes existing behaviour] //nice-to-have//
+  - [ ] Database schema (new framework migration `2026-08-27_task.sql`, run by `db:migrate`)
+    - [ ] Migration is picked up by existing installs on `db:migrate`, which now creates two more framework tables. [docs in PR] [changes existing behaviour] //should-do//
+    - [ ] `z_task` columns: `id` (INT auto-increment), `type` (VARCHAR 191), `name` (VARCHAR 255, default empty), `status` (VARCHAR 16, default `pending`). [docs in PR] //extra-effort//
+    - [ ] `z_task` payload columns: `payload` and `result` (LONGTEXT JSON), `error` (TEXT), `progress` (TINYINT UNSIGNED, default 0), `attempts` (INT, default 0). [docs in PR] //extra-effort//
+    - [ ] `z_task` ownership and time columns: `userId` (INT NULL), `active` (TINYINT(1), default 1), `created`, `startedAt`, `finishedAt` (TIMESTAMP). [docs in PR] //extra-effort//
+    - [ ] `z_task` indexes: `status` and `userId`; rows are kept as history and nothing in the PR prunes finished tasks. //extra-effort//
+    - [ ] `z_task_queue` columns: `id`, `taskId`, `queue` (VARCHAR 64, default `default`), `availableAt`, `reservedAt`, `reservedBy` (VARCHAR 64), `created`; holds outstanding work only, so an idle system polls an empty table. [docs in PR] //extra-effort//
+    - [ ] `z_task_queue` indexes: UNIQUE `taskId` and composite `poll` (`queue`, `reservedAt`, `availableAt`). //extra-effort//
+    - [ ] Migration uses `ADD INDEX IF NOT EXISTS` and `ADD UNIQUE KEY IF NOT EXISTS` (MariaDB syntax), no foreign keys. //optional//
+  - [ ] Database layer addition `Connection::$affectedRows`
+    - [ ] New public `int $affectedRows` on the `Interaction` trait: rows changed by the last write or returned by the last read, set in `exec()`; only in the Changelog, not in docs. //should-do//
+    - [ ] Gotcha: mysqli semantics count changed rows, not matched rows, so an UPDATE writing the current value reports 0; usable to tell whether a conditional update won. //should-do//
+    - [ ] Included in the connection checkpoint (`#[IncludeInCheckpoint]`) so the slow-query logger does not clobber it. [internal] //optional//
+  - [ ] Logging
+    - [ ] New `LogEventType` constants `TASK_DONE` (info), `TASK_FAILED` (error) and `TASK_ABANDONED` (warning), written through `Logger::ZUBZET`; not in the PR docs. //nice-to-have//
+    - [ ] Log context: `task` and `type` (done), plus `attempt` and `message` (failed), `task` and `attempts` (abandoned). `TASK_FAILED` is also used when recording a success fails. //nice-to-have//
+  - [ ] Modules and registry
+    - [ ] New registry kind `tasks` (`app/Tasks` in userspace and modules, nothing shipped by the framework), resolved userspace first then modules, with nested files reachable by bare name. [docs in PR] //nice-to-have//
+  - [ ] Deployment requirements
+    - [ ] Run workers as an extra service from the same image as the application: `command: php index.php queue:work --workers=4 --time-limit=900`, `restart: always`, `init: true`, `stop_signal: SIGTERM`, `stop_grace_period: 45s`. [docs in PR] //should-do//
+    - [ ] No broker or extra stateful service: the queue lives in the application's database; scale with `--workers` or more worker containers. [docs in PR] //should-do//
+    - [ ] PHP: `ext-pcntl` is optional but needed for graceful stops, `proc_open` is needed for `--workers` above 1 (not stated in docs). //should-do//
+  - [ ] Documentation shipped in the PR
+    - [ ] New page `docs/advanced-features/background-tasks.md` plus `mkdocs.yml` nav entry under Advanced Features and a section in `docs/core-features/console-commands.md`. [docs in PR] //optional//
+    - [ ] Changelog entries for background tasks (settings, workers, stop behaviour) and for `Connection::$affectedRows`. //optional//
+  - [ ] Contributor-only changes
+    - [ ] E2E stack: new `worker` compose service (same image, `init: true`, `stop_signal: SIGTERM`, `stop_grace_period: 45s`, `queue:work --workers=4 --time-limit=900`, waits until `php index.php list` works). [internal] //optional//
+    - [ ] `COMPOSER_VENDOR_DIR` became a named volume `vendor` shared by application and worker; Dockerfile pre-creates `/var/www/vendor` and installs `pcntl`. [internal] //optional//
+    - [ ] Coverage workflow gives the `worker` service the `XDEBUG_MODE` and `DEBUG_ZUBZET_COVERAGE_FRAMEWORK` environment. [internal] //optional//
+    - [ ] E2E app doubles as worked example: `ReportTask`, `FailingTask`, `TaskProbeController`, `/tasks/*` routes and `tasks.cy.js` (14 specs). [internal] //optional//
+    - [ ] All task SQL lives in the internal model `z_taskModel` (`IsInternalModel`); `Task::bind()`, `TaskRecord::fromRow()`, `Runner`, `Worker`, `WorkerPool`, `Signals` are `@internal`. [internal] //optional//
+    - [ ] `docs/contributing/agents/working-with-agents.md` lists the `Tasks/` directory and `queue:work`. [internal] [docs in PR] //optional//
+  - [ ] Open design questions raised in the PR description
+    - [ ] `Tasks::cancel()` does not exist; whether it should is undecided. [WIP] //optional//
+    - [ ] Default `task_max_attempts = 1` may still change. [WIP] //optional//
+    - [ ] Whether the framework endpoint should serve unowned tasks behind a setting is undecided; currently they always 404. [WIP] //optional//
