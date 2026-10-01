@@ -74,7 +74,7 @@
         }
 
         private function getInstalledVersion(): string {
-            return InstalledVersions::getPrettyVersion('zubzet/framework') ?? 'unknown';
+            return InstalledVersions::getPrettyVersion('qtnoe/zubzet-framework') ?? 'unknown';
         }
 
         private function getConfiguredHost(): string {

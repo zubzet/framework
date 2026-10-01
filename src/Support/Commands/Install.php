@@ -34,9 +34,9 @@
             }
 
             // Project template: resolved through Composer, so it does not depend on where this file lives
-            $template = realpath(InstalledVersions::getInstallPath("zubzet/framework") . "/stubs/project");
+            $template = realpath(InstalledVersions::getInstallPath("qtnoe/zubzet-framework") . "/stubs/project");
             if($template === false) {
-                $out->writeln("<error>Project template not found in the zubzet/framework package</error>");
+                $out->writeln("<error>Project template not found in the qtnoe/zubzet-framework package</error>");
                 return Command::FAILURE;
             }
 
@@ -74,8 +74,8 @@
             }
 
             // Require the framework, the caller's COMPOSER_VENDOR_DIR points at the framework's vendor, not the new project's
-            $out->writeln("<info>composer require zubzet/framework</info>");
-            passthru("env -u COMPOSER_VENDOR_DIR composer require zubzet/framework --no-interaction --working-dir=" . escapeshellarg($project), $exitCode);
+            $out->writeln("<info>composer require qtnoe/zubzet-framework:dev-feat/install-command</info>");
+            passthru("env -u COMPOSER_VENDOR_DIR composer require qtnoe/zubzet-framework:dev-feat/install-command --no-interaction --working-dir=" . escapeshellarg($project), $exitCode);
 
             // 127: env could not find the composer binary
             if($exitCode === 127) {
