@@ -67,7 +67,7 @@
         private static function key(string $cipherId): string {
             $secret = (string) config(self::SETTING, default: "");
             if(strlen($secret) < self::MIN_KEY_LENGTH) {
-                throw new RuntimeException("The setting '" . self::SETTING . "' must be at least " . self::MIN_KEY_LENGTH . " characters long.");
+                throw new RuntimeException("The setting '" . self::SETTING . "' must be at least " . self::MIN_KEY_LENGTH . " bytes long.");
             }
 
             return hash_hkdf("sha256", $secret, 32, "zubzet-framework-encryption:" . $cipherId);
