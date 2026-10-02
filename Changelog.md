@@ -38,6 +38,7 @@ These todos should be as temporary as possible:
 1. Changed - `$user->updateEmail()` now throws an `InvalidArgumentException` when the address is not a valid email or already belongs to another user; `null` still clears it. **Migrator note:** callers that passed unchecked input have to catch the exception or validate beforehand
 1. Fixed - `$user->email()` threw a `TypeError` for users without an email address, although `z_user.email` is nullable; it now returns `null` for them
 1. Changed - `User::add()` now throws an `InvalidArgumentException` when the email is not a valid address or already belongs to another user, like `updateEmail()`; `null` still creates a user without an email. **Migrator note:** callers that passed unchecked input have to catch the exception or validate beforehand
+1. Fixed - `z_logintoken.token` had no index, so the session lookup of every authenticated request scanned the whole table, including every session ever invalidated. The migration `2026-10-02_session-token-index.sql` adds a unique index. **Migrator note:** the migration runs automatically and fails if two sessions share a token, which the framework never issues; `SELECT token FROM z_logintoken GROUP BY token HAVING COUNT(*) > 1` lists them
 
 ## v1.2.0
 1. Added DEV Changelog
