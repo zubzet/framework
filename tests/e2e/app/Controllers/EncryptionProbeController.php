@@ -73,6 +73,15 @@
             return $this->catchThrowableMessage(fn() => decryptSecret(self::HEADER . "abcde"));
         }
 
+        public function action_nonCanonicalEncoding(Request $req, Response $res) {
+            // 29 payload bytes leave unused bits in the last character, so
+            // flipping its lowest bit still decodes to the same bytes
+            $encrypted = encryptSecret("x");
+            $alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+            $modified = substr($encrypted, 0, -1) . $alphabet[strpos($alphabet, substr($encrypted, -1)) ^ 1];
+            return $this->catchThrowableMessage(fn() => decryptSecret($modified));
+        }
+
         public function action_shortKey(Request $req, Response $res) {
             return $this->withKey("too-short", fn() => encryptSecret(self::SECRET));
         }

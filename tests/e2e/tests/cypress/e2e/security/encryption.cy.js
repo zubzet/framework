@@ -48,6 +48,7 @@ describe('Security/Encryption', () => {
             { name: 'a truncated payload',           url: 'malformed',         message: /malformed/ },
             { name: 'characters outside base64url',  url: 'invalidCharacters', message: /malformed/ },
             { name: 'an impossible base64 length',   url: 'invalidLength',     message: /malformed/ },
+            { name: 'a non-canonical encoding',      url: 'nonCanonicalEncoding', message: /malformed/ },
         ];
 
         cases.forEach(({ name, url, message }) => {
