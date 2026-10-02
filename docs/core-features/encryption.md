@@ -7,6 +7,9 @@ with a key from `z_config/z_settings.ini`, so a leaked database alone does not r
 
 ## Setting the key
 
+Encryption needs PHP's OpenSSL extension, which the framework declares as a requirement in its
+`composer.json`.
+
 Add an `encryption_key` of at least 32 characters to `z_config/z_settings.ini`:
 
 ```ini
