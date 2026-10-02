@@ -10,7 +10,8 @@ with a key from `z_config/z_settings.ini`, so a leaked database alone does not r
 Encryption needs PHP's OpenSSL extension, which the framework declares as a requirement in its
 `composer.json`.
 
-Add an `encryption_key` of at least 32 characters to `z_config/z_settings.ini`:
+Add an `encryption_key` of at least 32 bytes to `z_config/z_settings.ini`. The length is counted
+in bytes, so a key of plain ASCII characters, like the generated one below, needs 32 characters:
 
 ```ini
 encryption_key = 2f6c1d9e8a7b4c3d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5
@@ -25,7 +26,9 @@ php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
 !!! warning "Keep the key out of the repository and never lose it"
     Anyone with the key and the database can decrypt every value, so provide it through the
     environment (`CONFIG_ENCRYPTION_KEY` with `allow_env_config = true`, see
-    [Installation](../setup/installation.md)) instead of committing it. Values encrypted with a
+    [Installation](../setup/installation.md)) instead of committing it. Environment variables only
+    override settings that exist in `z_settings.ini`, so keep an empty `encryption_key =` line
+    there; without it `CONFIG_ENCRYPTION_KEY` is ignored. Values encrypted with a
     key cannot be decrypted without it: changing or losing the key makes every stored value
     unreadable.
 
@@ -70,7 +73,7 @@ try {
 }
 ```
 
-A missing `encryption_key`, or one shorter than 32 characters, throws a `RuntimeException`, so a
+A missing `encryption_key`, or one shorter than 32 bytes, throws a `RuntimeException`, so a
 misconfiguration is noticed before anything is stored. Decryption checks the value first: a value
 that is not in the encrypted format throws the `DecryptionException` even when the key is missing.
 
