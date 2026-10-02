@@ -64,6 +64,30 @@ describe('Root directory', () => {
         });
     });
 
+    // The requests above reach controllers through the autorouter; these go
+    // through Route:: definitions, which match relative to the root directory.
+    describe('Route:: definitions', () => {
+        it('matches a plain route and its parameters', () => {
+            cy.request('/sub/test').its('body').should('include', 'TestRoute Executed');
+            cy.request('/sub/abc/7/9').its('body').should('match', /\[userId\] => 7\s+\[postId\] => 9/);
+        });
+
+        it('serves the framework routes', () => {
+            cy.request('/sub/_zubzet/health').its('body').should('deep.equal', { status: 'healthy' });
+            cy.request('/sub/_zubzet/asset-proxy/Z.js').its('headers.content-type')
+                .should('include', 'application/javascript');
+        });
+
+        it('still runs the route middleware', () => {
+            cy.request('/sub/middleware-block').its('body').then((body) => {
+                expect(body).to.include('Route Middleware Blocked Executed');
+                expect(body).to.not.include('TestRoute Executed');
+            });
+            cy.request('/sub/RouteDeny/check').its('body')
+                .should('include', 'Route Middleware Blocked Executed').and('not.include', 'Route Afterware');
+        });
+    });
+
     it('keeps the admin login-as button and its redirect below the root', () => {
         cy.loginAs('admin');
 
