@@ -38,6 +38,8 @@ These todos should be as temporary as possible:
 1. Fixed - An unset `loginTimeoutSeconds` gave sessions a lifetime of 0 instead of the documented 7 days, and the login cookie set by `$res->loginAs()` expired the moment it was set. Both now fall back to 7 days
 1. Fixed - With `dbusername_elevated` and `dbpassword_elevated` set, the Doctrine DBAL connection of the migrations had no credentials at all, so the lock table checks of `db:status`, `db:migrate` and the other migration commands as well as PHP migrations failed. It now logs in with the elevated credentials, and with the default ones while they are not set
 1. Fixed - The password reset mail of `login/forgot-password` rendered `email_password_reset`, which the framework did not ship, so the request failed unless the application provided its own view. The framework now bundles a default `email_password_reset.blade.php`; an application view of the same name still replaces it
+1. Fixed - With a non-empty `rootDirectory`, `rootFolder` and `root` (and with them `$opt["root"]`, `$opt["absRoot"]`, `$req->getRootFolder()`, `$req->getRoot()` and `Z.Request.rootPath`) ended without a slash, so every link appended to them broke, e.g. `/sublogin/verify`. They now always end with a slash. **Migrator note:** application code that added its own slash after these values (`$opt["root"] . "/path"`) now produces a double slash and has to drop it
+1. Fixed - Routes defined with `Route::` (including the asset proxy and `/_zubzet/health`) never matched when the application ran below a non-empty `rootDirectory`, because the router compared them against the full request path. The root directory is now stripped first, like the autorouter already did
 
 ## v1.2.0
 1. Added DEV Changelog
