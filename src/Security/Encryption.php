@@ -78,10 +78,12 @@
         }
 
         private static function base64UrlDecode(string $encoded): ?string {
-            if(!preg_match('/^[A-Za-z0-9_-]*$/', $encoded)) return null;
-
             $bytes = base64_decode(strtr($encoded, "-_", "+/"), true);
-            return false === $bytes ? null : $bytes;
+
+            // Only the canonical encoding is accepted, so no character of a stored value can change unnoticed
+            if(false === $bytes || self::base64UrlEncode($bytes) !== $encoded) return null;
+
+            return $bytes;
         }
     }
 ?>
