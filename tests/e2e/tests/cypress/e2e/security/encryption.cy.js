@@ -74,7 +74,7 @@ describe('Security/Encryption', () => {
                 cy.request(`/EncryptionProbe/${url}`).then((res) => {
                     expect(res.body.threw).to.eq(true);
                     expect(res.body.type).to.eq('RuntimeException');
-                    expect(res.body.message).to.match(/'encryption_key' must be at least 32 characters/);
+                    expect(res.body.message).to.match(/'encryption_key' must be at least 32 bytes/);
                 });
             });
         });
