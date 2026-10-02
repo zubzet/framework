@@ -85,13 +85,19 @@ describe('Auth flows', () => {
                 expect(row.userId).to.eq(601);
                 expect(row.reason).to.eq('forgot');
                 expect(row.code).to.match(/^ZIT-/);
-            });
 
-            // And the password-reset email landed in mailhog.
-            fetchLatestMail().then((mail) => {
-                expect(mail.to[0]).to.eq('auth_forgot@cypress.test');
-                expect(JSON.stringify(mail.subject).toLowerCase())
-                    .to.match(/password reset|passwort/);
+                // And the password-reset email, rendered from the framework's
+                // bundled view, landed in mailhog carrying the reset link.
+                fetchLatestMail().then((mail) => {
+                    expect(mail.to[0]).to.eq('auth_forgot@cypress.test');
+                    expect(JSON.stringify(mail.subject).toLowerCase())
+                        .to.match(/password reset|passwort/);
+
+                    cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
+                        expect(res.body).to.include('Reset your password');
+                        expect(res.body).to.include(`/login/reset/${row.code}/`);
+                    });
+                });
             });
         });
 

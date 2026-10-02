@@ -1,6 +1,7 @@
 <?php
 
     use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Database\Migration\Commands\Traits\DbalConnection;
 
     class MigrationController extends z_controller  {
 
@@ -74,6 +75,30 @@
 
         public function action_isMigrationLocked(Request $req, Response $res) {
             echo json_encode(['locked' => model("z_migration")->isLocked()]);
+        }
+
+        // Reports the user the migrations' DBAL connection logs in as, with
+        // and without elevated credentials. Used by migration/system.cy.js.
+        public function action_dbalUser(Request $req, Response $res) {
+            return $res->json(["user" => $this->dbalUser()]);
+        }
+
+        public function action_dbalUserElevated(Request $req, Response $res) {
+            zubzet()->dbusername_elevated = "root";
+            zubzet()->dbpassword_elevated = "root_password";
+            return $res->json(["user" => $this->dbalUser()]);
+        }
+
+        private function dbalUser(): string {
+            $probe = new class {
+                use DbalConnection;
+
+                public function connect() {
+                    return $this->createDbalConnection();
+                }
+            };
+
+            return $probe->connect()->fetchOne("SELECT CURRENT_USER()");
         }
 
     }

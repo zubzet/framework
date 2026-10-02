@@ -13,11 +13,11 @@
         private function createDbalConnection(): Connection {
             Type::hasType("timestamp") || Type::addType("timestamp", TimeStamp::class);
 
-            $usernameElevated = config('dbusername_elevated');
-            $passwordElevated = config('dbpassword_elevated');
+            $username = config('dbusername_elevated');
+            $password = config('dbpassword_elevated');
 
             // Use default credentials if elevated ones are not set
-            if(empty($usernameElevated) || empty($passwordElevated)) {
+            if(empty($username) || empty($password)) {
                 $username = config("dbusername");
                 $password = config("dbpassword");
             }

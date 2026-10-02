@@ -3,7 +3,8 @@
 //     exercised by app/Database/migrations/2026-05-08_TimeStampType.php and
 //     verified via an INFORMATION_SCHEMA probe.
 //   - `db:unlock-migration` command (src/Database/Migration/Commands/UnlockMigration.php).
-//   - `db:status` command - asserts the trailing lock status line.
+//   - `db:status` command - asserts the lock status line and the exit code.
+//   - Elevated credentials on the DBAL connection (Traits/DbalConnection.php).
 //
 // No dbSeed here: the migration schema is already in place from the test
 // runner's startup `db:seed`. The describes are ordered so the Unlock
@@ -61,11 +62,42 @@ describe('Migration System', () => {
         });
     });
 
+    describe('Elevated credentials', () => {
+        // The migrations' DBAL connection has to log in as the elevated
+        // user when one is configured, and as the default user otherwise.
+        it('connects as the default user without elevated credentials', () => {
+            cy.request('/migration/dbalUser').then((res) => {
+                expect(res.body.user).to.match(/^app@/);
+            });
+        });
+
+        it('connects as the elevated user when elevated credentials are set', () => {
+            cy.request('/migration/dbalUserElevated').then((res) => {
+                expect(res.body.user).to.match(/^root@/);
+            });
+        });
+    });
+
     describe('Status', () => {
-        it("should display the migration status correctly", () => {
+        // Locked runs first and unlocks again, so the spec ends unlocked.
+        it("fails and reports LOCKED while the migration table is locked", () => {
+            cy.request('/migration/lockMigration');
+
             cy.exec("docker exec application php index.php db:status", {
                 failOnNonZeroExit: false,
             }).then((result) => {
+                expect(result.exitCode).to.eq(1);
+                expect(result.stdout).to.include("Migration Lock Status: LOCKED");
+            });
+
+            cy.exec('docker exec application php index.php db:unlock-migration');
+        });
+
+        it("succeeds and reports UNLOCKED while the migration table is unlocked", () => {
+            cy.exec("docker exec application php index.php db:status", {
+                failOnNonZeroExit: false,
+            }).then((result) => {
+                expect(result.exitCode).to.eq(0);
                 expect(result.stdout).to.include("Migration Lock Status: UNLOCKED");
             });
         });

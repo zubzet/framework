@@ -21,7 +21,7 @@
             $isLocked = model("z_migration")->isLocked();
 
             $out->writeln("Migration Lock Status: <info>" . ($isLocked ? "LOCKED" : "UNLOCKED") . "</info>");
-            return $isLocked ? Command::SUCCESS : Command::FAILURE;
+            return $isLocked ? Command::FAILURE : Command::SUCCESS;
         }
     }
 

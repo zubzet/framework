@@ -144,7 +144,7 @@
             $fixedExpiry = $this->getField("expires_at");
             if(!is_null($fixedExpiry)) return $fixedExpiry;
 
-            $lifetime = (int) config("loginTimeoutSeconds", TIMESPAN_DAY_7);
+            $lifetime = (int) config("loginTimeoutSeconds", default: TIMESPAN_DAY_7);
 
             if(!is_null($this->extendedSeconds())) $lifetime += $this->extendedSeconds();
 

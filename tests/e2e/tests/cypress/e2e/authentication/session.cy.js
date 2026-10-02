@@ -142,6 +142,12 @@ describe('Authentication - Session', () => {
         });
     });
 
+    it('should give a new session the 7 day default lifetime without loginTimeoutSeconds', () => {
+        requestJson('/session/addWithoutTimeoutSetting').then((output) => {
+            expect(output.lifetime).to.equal(7 * 24 * 60 * 60);
+        });
+    });
+
 
     /**
      * Interactions

@@ -47,6 +47,15 @@
             $res->loginAs(1);
         }
 
+        // Logs in user 1 without loginTimeoutSeconds, so the cookie lifetime
+        // has to fall back to the documented 7 days instead of 0.
+        public function action_loginAsWithoutTimeoutSetting(Request $req, Response $res) {
+            $settings = zubzet()->getAllAttributes();
+            unset($settings["loginTimeoutSeconds"]);
+            zubzet()->setAttributes($settings);
+            $res->loginAs(1);
+        }
+
         // Drives Response::deleteOldLoginCookieDomainScope() (private,
         // called by loginAs/logout when login_scope_allow_subdomains_delete_domainscope_name
         // is set). Forces a Set-Cookie clearing the legacy-domain cookie.
