@@ -32,6 +32,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 - `Registry/` — Central resolver for convention lookups + module discovery (see below)
 - `Resources/` — Asset proxy: ordered `Mount` chain, bundled Composer packages
 - `Routing/` — `Router` trait, FastRoute integration, `Route` builder
+- `Security/` — `Encryption` (versioned `zenc:<cipher>:` values, key from the `encryption_key` setting), `Cipher/` (`Cipher` interface, `AesGcmCipher`), `DecryptionException`
 - `Support/` — Global helpers, dynamic attributes, function-conflict resolution
 - `Testing/` — Coverage commands
 
@@ -134,6 +135,7 @@ Defined in `src/Support/GlobalReferences.php`, all wrapped with `FunctionConflic
 | `model($name, $dir=null)` | Model instance |
 | `view($document, $opt=[], $options=[])` | Renders via response |
 | `logger($name=null)` | `Logger` (default: `app` channel) |
+| `encryptSecret($plaintext)` / `decryptSecret($encrypted)` | Encrypted / decrypted value, throws `DecryptionException` on a wrong key |
 | `isCli()` | `php_sapi_name() === "cli"` |
 
 See [Global Helper Functions](../../core-features/global-helper-functions.md).

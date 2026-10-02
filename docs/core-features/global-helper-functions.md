@@ -177,6 +177,34 @@ view("adminpanel/dashboard");
 
 ```
 
+### `encryptSecret()`
+
+Encrypts a secret with the `encryption_key` setting, for example before storing it in the database. See [Encryption](encryption.md).
+
+**Syntax:** `encryptSecret(string $plaintext): string`
+
+* **$plaintext**: The value to encrypt.
+
+**Example:**
+
+```php
+$stored = encryptSecret($secretKey);
+```
+
+### `decryptSecret()`
+
+Decrypts a value created by `encryptSecret()`. Throws a `ZubZet\Framework\Security\DecryptionException` when the key is wrong or the value is malformed or was modified. See [Encryption](encryption.md).
+
+**Syntax:** `decryptSecret(string $encrypted): string`
+
+* **$encrypted**: A value returned by `encryptSecret()`.
+
+**Example:**
+
+```php
+$secretKey = decryptSecret($stored);
+```
+
 ### `__()`
 
 Translates a message id into the active locale. See [Translations](translations.md) for the catalogues and how the locale is picked.
