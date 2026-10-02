@@ -4,6 +4,7 @@
 //     verified via an INFORMATION_SCHEMA probe.
 //   - `db:unlock-migration` command (src/Database/Migration/Commands/UnlockMigration.php).
 //   - `db:status` command - asserts the lock status line and the exit code.
+//   - Elevated credentials on the DBAL connection (Traits/DbalConnection.php).
 //
 // No dbSeed here: the migration schema is already in place from the test
 // runner's startup `db:seed`. The describes are ordered so the Unlock
@@ -57,6 +58,22 @@ describe('Migration System', () => {
             }).then((result) => {
                 expect(result.exitCode).to.eq(0);
                 expect(result.stdout).to.include('Migration table is not locked');
+            });
+        });
+    });
+
+    describe('Elevated credentials', () => {
+        // The migrations' DBAL connection has to log in as the elevated
+        // user when one is configured, and as the default user otherwise.
+        it('connects as the default user without elevated credentials', () => {
+            cy.request('/migration/dbalUser').then((res) => {
+                expect(res.body.user).to.match(/^app@/);
+            });
+        });
+
+        it('connects as the elevated user when elevated credentials are set', () => {
+            cy.request('/migration/dbalUserElevated').then((res) => {
+                expect(res.body.user).to.match(/^root@/);
             });
         });
     });
