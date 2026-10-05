@@ -2,6 +2,7 @@
 
     namespace ZubZet\Framework\Logger;
 
+    use ZubZet\Framework\Message\Request;
     use ZubZet\Framework\Support\StaticCache;
     use ZubZet\Framework\Logger\Method\StreamLogger;
     use ZubZet\Framework\Logger\Method\DatabaseLogger;
@@ -101,6 +102,9 @@
             register_shutdown_function(function() {
                 // Uncaught exceptions are logged by the exception handler; don't double-count.
                 if(self::$uncaughtException) return;
+
+                // The bootstrap died before the request existed, let its own error stand alone
+                if(!(zubzet()->req instanceof Request)) return;
 
                 $threshold = config("logger_slow_request_ms", default: 1000);
                 if(!is_numeric($threshold) || $threshold < 0) return;
