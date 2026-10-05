@@ -70,6 +70,7 @@ These todos should be as temporary as possible:
 1. Fixed - Below a non-empty `rootDirectory`, `$res->reroute()` and `zubzet()->reroute()` ended in a 404, because the rerouted request path lacked the root directory that `getUrlParts()` strips. The rerouted path now starts with the root directory, like a real request
 1. Fixed - `getUrlParts()` counted slashes around `rootDirectory` as segments, so `rootDirectory = sub/` stripped the controller as well
 1. Fixed - The debug bar loaded its assets from `/_zubzet/asset-proxy` regardless of `rootDirectory`; it now uses the asset proxy below the root directory
+1. Fixed - Framework tables could end up with different collations: the bundled SQL migrations take the database default, which can differ from the collation of an installation's older tables, and `z_migration_lock` / `z_version` were created as `utf8mb3_unicode_ci` by Doctrine. Mixed collations made the permission lookup fail with "Illegal mix of collations for operation 'UNION'" on every authenticated request. The migration tables are now created with the collation of `z_user` (the database default before it exists), and the migration `2026-10-05_collation.php` converts every framework table that differs from it. **Migrator note:** the migration runs automatically and only touches tables with another collation; `ALTER TABLE ... CONVERT TO` rewrites such a table, which can take a while for a large `z_interaction_log`
 
 ## v1.2.0
 1. Added DEV Changelog
