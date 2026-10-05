@@ -36,6 +36,30 @@ public function action_view(Request $req, Response $res) {
     return $res->render("employee/employee_view");
 }
 ```
+
+## Requiring an organization
+[`requireOrganization`](../api/classes/ZubZet-Framework-Message-Request.html#method_requireOrganization) works like `checkPermission`, but ensures that the user belongs to an organization instead of checking a permission. Without `id` or `uuid` any organization is enough, with one of them it has to be that organization. A logged out user is sent to the login, a user without access to the 403 page. A removed organization no longer counts.
+
+```php
+public function action_view(Request $req, Response $res) {
+    $req->requireOrganization();                // any organization
+    $req->requireOrganization(id: 5);           // the organization with id 5
+    $req->requireOrganization(uuid: $uuid);     // the organization with this uuid
+
+    return $res->render("employee/employee_view");
+}
+```
+```php
+// Returns a bool instead of showing the login or 403 page
+if(!$req->requireOrganization(true, id: 5)) {
+    return $res->render("forbidden");
+}
+```
+
+!!! warning "A given `null` is denied"
+    Leaving `id` and `uuid` out means any organization. Passing `null` (or `false`), for example from
+    a lookup that found nothing, matches no organization and is denied like a wrong one.
+
 ## Checking permissions while rendering the page
 To check if the requesting user has a permission, the user object in `$opt` can be used. It has a method called [`checkPermission`](../api/classes/ZubZet-Framework-Authentication-User.html#method_checkPermission) that returns a boolean. **Note** that this is **another** method than `checkPermission` from the request object. This one does not redirect the user and can be used for example to determin if specific should be visible to the user on a page it generally has access to.
 
