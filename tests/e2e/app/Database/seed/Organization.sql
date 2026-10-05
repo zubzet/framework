@@ -78,3 +78,11 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
 INSERT INTO `z_user_role`(`id`, `role`, `user`, `active`, `created`) VALUES
 (550, 241, 551, 1, '2000-01-01 12:00:00'),
 (551, 243, 552, 1, '2000-01-01 12:00:00');
+
+
+-- Users for Request::checkOrganization: a member of org 505, a user without
+-- an organization, and a member of the removed (inactive) org 501
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`, `organizationId`) VALUES
+(560, 'org_check_member@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 505),
+(561, 'org_check_none@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00', NULL),
+(562, 'org_check_removed@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 501);
