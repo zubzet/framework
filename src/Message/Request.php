@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Message;
 
     use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Authentication\Organization;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
@@ -283,6 +284,40 @@
                 : user()->checkPermission($permission);
 
             if(!$hasPermission) {
+                if($boolResult) return false;
+                zubzet()->executePath(["error", "403"]);
+                exit;
+            }
+
+            return true;
+        }
+
+        /**
+         * Ensures the current user belongs to an organization, or to the one given by id or uuid.
+         * Redirects like checkPermission(). Only omitting both $id and $uuid accepts any organization,
+         * a passed null is denied.
+         * @param bool $boolResult If true, the function will return a boolean result instead of redirecting
+         * @param ?int $id Id of the required organization
+         * @param ?string $uuid Uuid of the required organization
+         */
+        public function requireOrganization(bool $boolResult = false, ?int $id = null, ?string $uuid = null): bool {
+            // Tell an omitted argument from a passed null: named arguments count up to the last one passed
+            $checkUuid = func_num_args() >= 3;
+            $checkId = 2 === func_num_args() || ($checkUuid && !is_null($id));
+
+            if(!user()->isLoggedIn) {
+                if($boolResult) return false;
+                zubzet()->executePath(["login", "index"]);
+                exit;
+            }
+
+            // byId() skips removed organizations, so their former members are denied
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+
+            $matchesId = !$checkId || (int) $organization?->id() === $id;
+            $matchesUuid = !$checkUuid || (!is_null($uuid) && strtolower((string) $organization?->uuid()) === strtolower($uuid));
+
+            if(is_null($organization) || !$matchesId || !$matchesUuid) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
                 exit;
