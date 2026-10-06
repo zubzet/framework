@@ -77,6 +77,10 @@
             return $this->getField("name");
         }
 
+        public function hasMember(User $user): bool {
+            return $user->isMemberOf($this);
+        }
+
         public function getUsers(): array {
             if(is_null($this->getField("users"))) $this->refreshUsers();
 
