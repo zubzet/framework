@@ -20,6 +20,10 @@
         use Interaction;
         use CanCheckpoint;
 
+        // Every table should share these, or queries across tables fail with "Illegal mix of collations"
+        public const CHARSET = "utf8mb4";
+        public const COLLATION = "utf8mb4_uca1400_ai_ci";
+
         /**
          * MySQL/MariaDB error codes that are safe to retry: the server has
          * already rolled the offending statement back, so re-running it does
@@ -174,7 +178,7 @@
             $this->conn = $conn;
 
             // Set the connection charset
-            $this->conn->set_charset("utf8mb4");
+            $this->conn->set_charset(self::CHARSET);
 
             // Remember the connection time
             $this->lastConnect = time();

@@ -1,5 +1,6 @@
 <?php
 
+    use ZubZet\Framework\Database\Connection;
     use ZubZet\Framework\Database\IsInternalModel;
     use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
     use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
@@ -34,48 +35,32 @@
             return !empty($result);
         }
 
-        // Tables the framework creates. They have to share one collation, or queries across them fail with "Illegal mix of collations".
-        private const FRAMEWORK_TABLES = [
-            "z_email_verify", "z_file", "z_interaction_log", "z_interaction_log_category", "z_language",
-            "z_logintoken", "z_login_too_many_tries", "z_logintry", "z_migration_lock", "z_organization",
-            "z_password_reset", "z_role", "z_role_permission", "z_uniqueref", "z_user", "z_user_permission",
-            "z_user_role", "z_version",
-        ];
-
-        /**
-         * The collation for framework tables: the one of z_user, so new tables match an existing
-         * installation, or the database default before z_user exists.
-         *
-         * @return array{0: string, 1: string} [charset, collation]
-         */
-        public function frameworkCollation(): array {
-            $collation = $this->exec(
-                "SELECT COALESCE(
-                    (SELECT TABLE_COLLATION FROM information_schema.TABLES
-                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'z_user'),
-                    @@collation_database
-                ) AS `collation`"
-            )->resultToLine()["collation"];
-
-            // Collation names start with their charset, e.g. utf8mb4_unicode_ci
-            return [explode("_", $collation)[0], $collation];
-        }
-
-        /** Framework tables whose table or text column collation differs from the given one. */
-        public function misalignedFrameworkTables(string $collation): array {
-            $tables = "'" . implode("', '", self::FRAMEWORK_TABLES) . "'";
-            $rows = $this->exec(
-                "SELECT DISTINCT t.TABLE_NAME AS `table`
-                 FROM information_schema.TABLES t
-                 LEFT JOIN information_schema.COLUMNS c
-                    ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-                 WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_NAME IN ($tables)
-                   AND (t.TABLE_COLLATION <> ? OR c.COLLATION_NAME <> ?)
-                 ORDER BY t.TABLE_NAME",
-                "ss", $collation, $collation,
-            )->resultToArray();
+        // Every table of the database whose own or any column's collation differs from the given one
+        public function tablesNotInCollation(string $collation): array {
+            $sql = "SELECT DISTINCT `t`.`TABLE_NAME` AS `table`
+                    FROM `information_schema`.`TABLES` AS `t`
+                    LEFT JOIN `information_schema`.`COLUMNS` AS `c`
+                        ON `c`.`TABLE_SCHEMA` = `t`.`TABLE_SCHEMA`
+                        AND `c`.`TABLE_NAME` = `t`.`TABLE_NAME`
+                    WHERE `t`.`TABLE_SCHEMA` = DATABASE()
+                    AND `t`.`TABLE_TYPE` = 'BASE TABLE'
+                    AND (`t`.`TABLE_COLLATION` <> ? OR `c`.`COLLATION_NAME` <> ?)
+                    ORDER BY `t`.`TABLE_NAME`";
+            $rows = $this->exec($sql, "ss", $collation, $collation)->resultToArray();
 
             return array_column($rows, "table");
+        }
+
+        // Rewrites the table and every text column; foreign key checks would refuse changing a referenced column
+        public function convertTableToCollation(string $table, string $charset, string $collation): void {
+            $table = str_replace("`", "``", $table);
+
+            $this->exec("SET FOREIGN_KEY_CHECKS = 0");
+            try {
+                $this->exec("ALTER TABLE `$table` CONVERT TO CHARACTER SET $charset COLLATE $collation");
+            } finally {
+                $this->exec("SET FOREIGN_KEY_CHECKS = 1");
+            }
         }
 
         // Ensure migration tables exist (z_migration_lock and z_version) (otherwise create them)
@@ -83,12 +68,11 @@
             $connection = $this->createDbalConnection();
             $schemaManager = $connection->createSchemaManager();
             $platform = $this->getPlatform();
-            [$charset, $collation] = $this->frameworkCollation();
 
             if(!$schemaManager->tablesExist(["z_migration_lock"])) {
                 $table = new Table("z_migration_lock");
-                $table->addOption("charset", $charset);
-                $table->addOption("collation", $collation);
+                $table->addOption("charset", Connection::CHARSET);
+                $table->addOption("collation", Connection::COLLATION);
                 $table->addColumn("id", "integer", ["autoincrement" => true]);
                 $table->setPrimaryKey(["id"]);
 
@@ -103,8 +87,8 @@
 
             if(!$schemaManager->tablesExist(["z_version"])) {
                 $table = new Table("z_version");
-                $table->addOption("charset", $charset);
-                $table->addOption("collation", $collation);
+                $table->addOption("charset", Connection::CHARSET);
+                $table->addOption("collation", Connection::COLLATION);
                 $table->addColumn("id", "integer", ["autoincrement" => true]);
                 $table->setPrimaryKey(["id"]);
 

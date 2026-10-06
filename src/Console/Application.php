@@ -5,6 +5,7 @@
     use ZubZet\Framework\Support\Commands\Startup;
     use ZubZet\Framework\Registry\Commands\ModuleSetup;
     use ZubZet\Framework\Database\Migration\Commands\Seed;
+    use ZubZet\Framework\Database\Commands\RepairCollation;
     use ZubZet\Framework\Database\Migration\Commands\Sync;
     use ZubZet\Framework\Database\Migration\Commands\Status;
     use ZubZet\Framework\Database\Migration\Commands\Migrate;
@@ -33,6 +34,7 @@
                     new Sync(),
                     new Seed(),
                     new UnlockMigration(),
+                    new RepairCollation(),
                     new HashingAlgorithmMigration(),
                     new Startup(),
                     new ModuleSetup(),

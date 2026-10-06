@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `z_email_verify` (
   `end` DATETIME NOT NULL,
   `active` INT NOT NULL DEFAULT 1,
   `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_file
 CREATE TABLE IF NOT EXISTS `z_file` (
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `z_file` (
   `size` INT NOT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_interaction_log
 CREATE TABLE IF NOT EXISTS `z_interaction_log` (
@@ -29,14 +29,14 @@ CREATE TABLE IF NOT EXISTS `z_interaction_log` (
   `text` MEDIUMTEXT DEFAULT NULL,
   `value` MEDIUMTEXT DEFAULT NULL,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_interaction_log_category
 CREATE TABLE IF NOT EXISTS `z_interaction_log_category` (
   `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
   `name` VARCHAR(255) NOT NULL,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_interaction_log_category
 INSERT IGNORE INTO `z_interaction_log_category` (`id`, `name`, `created`) VALUES
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `z_language` (
   `name` VARCHAR(255) NOT NULL,
   `nativeName` VARCHAR(255) NOT NULL,
   `value` VARCHAR(255) NOT NULL
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_language
 INSERT IGNORE INTO `z_language` (`id`, `name`, `nativeName`, `value`) VALUES
@@ -72,21 +72,21 @@ CREATE TABLE IF NOT EXISTS `z_logintoken` (
   `userId` INT NOT NULL,
   `userId_exec` INT NOT NULL,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_logintry
 CREATE TABLE IF NOT EXISTS `z_logintry` (
   `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
   `userId` INT NOT NULL,
   `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_login_too_many_tries
 CREATE TABLE IF NOT EXISTS `z_login_too_many_tries` (
   `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
   `userId` INT NOT NULL,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_password_reset
 CREATE TABLE IF NOT EXISTS `z_password_reset` (
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `z_password_reset` (
   `reason` enum('create','change','forgot') NOT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_role
 CREATE TABLE IF NOT EXISTS `z_role` (
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS `z_role` (
   `name` VARCHAR(255) DEFAULT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_role_permission
 CREATE TABLE IF NOT EXISTS `z_role_permission` (
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `z_role_permission` (
   `name` VARCHAR(255) NOT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_uniqueref
 CREATE TABLE IF NOT EXISTS `z_uniqueref` (
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `z_uniqueref` (
   `ref` VARCHAR(255) NOT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_user
 CREATE TABLE IF NOT EXISTS `z_user` (
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS `z_user` (
   `languageId` INT NOT NULL DEFAULT 0,
   `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
   `verified` TIMESTAMP NULL DEFAULT NULL
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
 
 -- Table: z_user_role
 CREATE TABLE IF NOT EXISTS `z_user_role` (
@@ -141,4 +141,4 @@ CREATE TABLE IF NOT EXISTS `z_user_role` (
   `user` INT NOT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
