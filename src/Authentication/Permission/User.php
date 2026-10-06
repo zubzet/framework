@@ -360,6 +360,11 @@ class User extends AuthenticationObject {
         return $this->getField("organization");
     }
 
+    // A removed organization has no members
+    public function isMemberOf(Organization $organization): bool {
+        return $this->organization()?->id() === $organization->id();
+    }
+
     /**
      * Get the users` verified date
      * 
