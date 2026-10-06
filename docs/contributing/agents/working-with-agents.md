@@ -238,6 +238,7 @@ docker exec application php index.php <command>
 | `db:sync` | Sync migration state up to a version/date |
 | `db:status` | Show migration status |
 | `db:unlock-migration` | Release a stuck migration lock |
+| `repair:database-collation` | Convert every table to `Connection::COLLATION` |
 | `info:startup` | Print framework startup banner (no side effects — safe in tests) |
 | `module:setup` | Append-only merge of missing module ini defaults into the app ini |
 | `testing:coverage:start` / `:stop` | Bracket a coverage session |
