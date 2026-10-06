@@ -1,6 +1,6 @@
 <?php
 
-    use ZubZet\Framework\Security\Encryption;
+    use ZubZet\Framework\Security\Secrets\Encryption;
 
     class EncryptionProbeController extends z_controller {
 

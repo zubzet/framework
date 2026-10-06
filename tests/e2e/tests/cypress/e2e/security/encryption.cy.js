@@ -1,9 +1,9 @@
-// Drives Security\Encryption and its AesGcmCipher through EncryptionProbeController,
+// Drives Security\Secrets\Encryption and its AesGcmCipher through EncryptionProbeController,
 // via the encryptSecret() / decryptSecret() helpers and the Encryption class.
 //
 // Coverage target: every reachable line/branch in Encryption and AesGcmCipher.
 
-describe('Security/Encryption', () => {
+describe('Security/Secrets/Encryption', () => {
 
     describe('round trip', () => {
         it('encrypts to a URL-safe value naming its cipher that decrypts to the plaintext', () => {
@@ -55,7 +55,7 @@ describe('Security/Encryption', () => {
             it(`throws a DecryptionException for ${name}`, () => {
                 cy.request(`/EncryptionProbe/${url}`).then((res) => {
                     expect(res.body.threw).to.eq(true);
-                    expect(res.body.type).to.eq('ZubZet\\Framework\\Security\\DecryptionException');
+                    expect(res.body.type).to.eq('ZubZet\\Framework\\Security\\Secrets\\DecryptionException');
                     expect(res.body.message).to.match(message);
                 });
             });
