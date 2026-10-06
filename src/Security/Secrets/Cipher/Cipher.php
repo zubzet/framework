@@ -1,8 +1,8 @@
 <?php
 
-    namespace ZubZet\Framework\Security\Cipher;
+    namespace ZubZet\Framework\Security\Secrets\Cipher;
 
-    use ZubZet\Framework\Security\DecryptionException;
+    use ZubZet\Framework\Security\Secrets\DecryptionException;
 
     /**
      * An authenticated cipher behind Encryption. Implementations must detect a

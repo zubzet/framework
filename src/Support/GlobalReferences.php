@@ -8,8 +8,8 @@
 
         use ZubZet\Framework\ZubZet;
         use ZubZet\Framework\Logger\Logger;
-        use ZubZet\Framework\Security\Encryption;
-        use ZubZet\Framework\Security\DecryptionException;
+        use ZubZet\Framework\Security\Secrets\Encryption;
+        use ZubZet\Framework\Security\Secrets\DecryptionException;
         use ZubZet\Framework\Message\Request;
         use ZubZet\Framework\Message\Response;
         use ZubZet\Framework\Authentication\User;

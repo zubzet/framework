@@ -1,10 +1,9 @@
 <?php
 
-    namespace ZubZet\Framework\Security;
+    namespace ZubZet\Framework\Security\Secrets;
 
     use RuntimeException;
-    use ZubZet\Framework\Security\Cipher\Cipher;
-    use ZubZet\Framework\Security\Cipher\AesGcmCipher;
+    use ZubZet\Framework\Security\Secrets\Cipher\AesGcmCipher;
 
     /**
      * Symmetric encryption for secrets that have to be stored and read back, like
@@ -30,8 +29,14 @@
         ];
 
         public static function encryptSecret(string $plaintext): string {
-            $payload = self::cipher(self::DEFAULT_CIPHER)->encrypt(self::key(self::DEFAULT_CIPHER), $plaintext);
-            return self::MARKER . ":" . self::DEFAULT_CIPHER . ":" . self::base64UrlEncode($payload);
+            $cipherClass = self::CIPHERS[self::DEFAULT_CIPHER];
+            $cipher = new $cipherClass();
+            $key = self::key(self::DEFAULT_CIPHER);
+
+            $payload = $cipher->encrypt($key, $plaintext);
+            $encoded = self::base64UrlEncode($payload);
+
+            return self::MARKER . ":" . self::DEFAULT_CIPHER . ":" . $encoded;
         }
 
         /**
@@ -55,12 +60,11 @@
                 throw new DecryptionException("The encrypted value is malformed.");
             }
 
-            return self::cipher($cipherId)->decrypt(self::key($cipherId), $payload);
-        }
+            $cipherClass = self::CIPHERS[$cipherId];
+            $cipher = new $cipherClass();
+            $key = self::key($cipherId);
 
-        private static function cipher(string $id): Cipher {
-            $class = self::CIPHERS[$id];
-            return new $class();
+            return $cipher->decrypt($key, $payload);
         }
 
         /** Derive a 256-bit key for one cipher from the configured setting. */
@@ -74,13 +78,20 @@
         }
 
         private static function base64UrlEncode(string $bytes): string {
+            // Plain base64 uses "+", "/" and "=", which need escaping in URLs, ini files and
+            // environment variables. Base64url swaps in "-" and "_" and drops the padding, the
+            // length alone tells how many bytes the last characters hold.
             return rtrim(strtr(base64_encode($bytes), "+/", "-_"), "=");
         }
 
         private static function base64UrlDecode(string $encoded): ?string {
             $bytes = base64_decode(strtr($encoded, "-_", "+/"), true);
 
-            // Only the canonical encoding is accepted, so no character of a stored value can change unnoticed
+            // Each character holds 6 bits. When the byte count is not a multiple of 3, the last
+            // character has 2 or 4 bits left over, which base64_decode() ignores: "_w" and "_x"
+            // both decode to the byte 0xff. AES-GCM only authenticates the decoded bytes, so such
+            // a changed last character would still decrypt. Re-encoding yields the one canonical
+            // spelling, and comparing it rejects every other spelling of the same bytes.
             if(false === $bytes || self::base64UrlEncode($bytes) !== $encoded) return null;
 
             return $bytes;

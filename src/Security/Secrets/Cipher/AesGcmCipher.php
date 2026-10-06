@@ -1,9 +1,9 @@
 <?php
 
-    namespace ZubZet\Framework\Security\Cipher;
+    namespace ZubZet\Framework\Security\Secrets\Cipher;
 
     use RuntimeException;
-    use ZubZet\Framework\Security\DecryptionException;
+    use ZubZet\Framework\Security\Secrets\DecryptionException;
 
     /** AES-256-GCM through OpenSSL. Payload layout: iv (12) . tag (16) . ciphertext. */
     final class AesGcmCipher implements Cipher {
