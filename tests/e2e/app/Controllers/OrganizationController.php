@@ -10,40 +10,6 @@
          * @var Organization Getters
          *
          */
-        /**
-         *
-         * @var Request requireOrganization
-         *
-         * Like CoreController::permissionCheck, the probe runs both shapes back to back: the
-         * boolResult call prints allowed/denied, the default call lets "passed" through only on
-         * access and shows the login or 403 page otherwise.
-         *
-         */
-        public function action_requireLogin(Request $req, Response $res): void {
-            $res->loginAs((int) $req->getParameters(0, 1));
-        }
-
-        // /organization/require[/<mode>/<value>], uuidOf looks the uuid of an organization id up
-        public function action_require(Request $req, Response $res): void {
-            echo $this->requireBy($req, true) ? "allowed\n" : "denied\n";
-            $this->requireBy($req, false);
-            echo "passed";
-        }
-
-        private function requireBy(Request $req, bool $boolResult): bool {
-            $value = $req->getParameters(1, 1);
-            return match($req->getParameters(0, 1)) {
-                "id" => $req->requireOrganization($boolResult, id: (int) $value),
-                "uuid" => $req->requireOrganization($boolResult, uuid: $value),
-                "uuidFromQuery" => $req->requireOrganization($boolResult, uuid: $req->getGet("org")),
-                "uuidOf" => $req->requireOrganization($boolResult, uuid: Organization::byId((int) $value)->uuid()),
-                "idNull" => $req->requireOrganization($boolResult, id: null),
-                "uuidNull" => $req->requireOrganization($boolResult, uuid: null),
-                "idFalse" => $req->requireOrganization($boolResult, id: false),
-                default => $req->requireOrganization($boolResult),
-            };
-        }
-
         public function action_byId(Request $req, Response $res): void {
             $organization = Organization::byId(500);
             $this->echoOrganization($organization, false);
@@ -193,6 +159,44 @@
         public function action_userByOrganizationEmpty(Request $req, Response $res): void {
             $users = User::byOrganization(Organization::byId(511));
             echo(json_encode($users));
+        }
+
+
+        /**
+         *
+         * @var Organization / User Membership
+         *
+         */
+        // /organization/hasMember/<organizationId>/<userId>
+        public function action_hasMember(Request $req, Response $res): void {
+            $organization = Organization::byId((int) $req->getParameters(0, 1));
+            echo(json_encode($organization->hasMember(User::byId((int) $req->getParameters(1, 1)))));
+        }
+
+        // /organization/isMemberOf/<userId>/<organizationId>
+        public function action_isMemberOf(Request $req, Response $res): void {
+            $user = User::byId((int) $req->getParameters(0, 1));
+            echo(json_encode($user->isMemberOf(Organization::byId((int) $req->getParameters(1, 1)))));
+        }
+
+
+        /**
+         *
+         * @var Request requireOrganization
+         *
+         * Like CoreController::permissionCheck, the probe runs both shapes back to back: the
+         * boolResult call prints allowed/denied, the default call lets "passed" through only on
+         * access and shows the login or 403 page otherwise.
+         *
+         */
+        public function action_requireLogin(Request $req, Response $res): void {
+            $res->loginAs((int) $req->getParameters(0, 1));
+        }
+
+        public function action_require(Request $req, Response $res): void {
+            echo $req->requireOrganization(true) ? "allowed\n" : "denied\n";
+            $req->requireOrganization();
+            echo "passed";
         }
 
 

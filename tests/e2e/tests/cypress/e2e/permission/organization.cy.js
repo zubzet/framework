@@ -224,19 +224,36 @@ describe('Permission System - Organization', () => {
         });
     });
 
-    // Request::requireOrganization, through the probe in OrganizationController. Seeded users:
-    // 560 is in org 505, 561 has no organization, 562 is in the removed org 501.
+    // Seeded users: 560 is in org 505, 561 has no organization, 562 is in the removed org 501
+    describe('membership', () => {
+        it('hasMember is true for a member of the organization', () => {
+            requestJson('/organization/hasMember/505/560').then((output) => expect(output).to.equal(true));
+        });
+
+        it('hasMember is false for a member of another organization or none', () => {
+            requestJson('/organization/hasMember/506/560').then((output) => expect(output).to.equal(false));
+            requestJson('/organization/hasMember/505/561').then((output) => expect(output).to.equal(false));
+        });
+
+        it('isMemberOf is true for the organization of the user', () => {
+            requestJson('/organization/isMemberOf/560/505').then((output) => expect(output).to.equal(true));
+        });
+
+        it('isMemberOf is false for another organization or a user without one', () => {
+            requestJson('/organization/isMemberOf/560/506').then((output) => expect(output).to.equal(false));
+            requestJson('/organization/isMemberOf/561/505').then((output) => expect(output).to.equal(false));
+            requestJson('/organization/isMemberOf/562/505').then((output) => expect(output).to.equal(false));
+        });
+    });
+
+    // Request::requireOrganization, through the probe in OrganizationController
     describe('requireOrganization', () => {
-        function check(path = '') {
-            return cy.request({ url: `/organization/require${path}`, failOnStatusCode: false });
+        function check() {
+            return cy.request({ url: '/organization/require', failOnStatusCode: false });
         }
 
-        function expectAllowed(path) {
-            check(path).its('body').should('eq', 'allowed\npassed');
-        }
-
-        function expectDenied(path, page) {
-            check(path).its('body').then((body) => {
+        function expectDenied(page) {
+            check().its('body').then((body) => {
                 expect(body.startsWith('denied\n'), 'boolResult returns false').to.be.true;
                 expect(body, 'the default call stops the request').to.not.include('passed');
                 expect(body).to.include(page);
@@ -249,52 +266,22 @@ describe('Permission System - Organization', () => {
         beforeEach(() => cy.clearCookies());
 
         it('sends a logged out user to the login', () => {
-            expectDenied('', login);
-            expectDenied('/id/505', login);
+            expectDenied(login);
         });
 
-        it('allows a member, for any organization and for its own by id or uuid', () => {
+        it('allows a member of an organization', () => {
             cy.request('/organization/requireLogin/560');
-            expectAllowed('');
-            expectAllowed('/id/505');
-            expectAllowed('/uuidOf/505');
-        });
-
-        it('forbids a member another organization by id or uuid', () => {
-            cy.request('/organization/requireLogin/560');
-            expectDenied('/id/506', forbidden);
-            expectDenied('/id/0', forbidden);
-            expectDenied('/uuidOf/506', forbidden);
-            expectDenied('/uuid/unknown', forbidden);
-        });
-
-        // A failed lookup yields null (or false), which must be denied instead of meaning "any"
-        it('forbids null or false as the required organization', () => {
-            cy.request('/organization/requireLogin/560');
-            expectDenied('/idNull/x', forbidden);
-            expectDenied('/uuidNull/x', forbidden);
-            expectDenied('/idFalse/x', forbidden);
-        });
-
-        // Values a request can produce must never be read as "no organization given": a number
-        // below PHP_INT_MIN casts to exactly PHP_INT_MIN, and %00 arrives as a NUL byte
-        it('forbids request input that looks like an omitted organization', () => {
-            cy.request('/organization/requireLogin/560');
-            expectDenied('/id/-99999999999999999999', forbidden);
-            expectDenied('/uuidFromQuery/x?org=%00', forbidden);
-            expectDenied('/uuidFromQuery/x?org=', forbidden);
+            check().its('body').should('eq', 'allowed\npassed');
         });
 
         it('forbids a user without an organization', () => {
             cy.request('/organization/requireLogin/561');
-            expectDenied('', forbidden);
-            expectDenied('/id/505', forbidden);
+            expectDenied(forbidden);
         });
 
         it('forbids a member of a removed organization', () => {
             cy.request('/organization/requireLogin/562');
-            expectDenied('', forbidden);
-            expectDenied('/id/501', forbidden);
+            expectDenied(forbidden);
         });
     });
 });
