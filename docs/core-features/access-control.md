@@ -334,6 +334,12 @@ Permission checks always resolve the **complete permission set**.
     $user->organization(): ?Organization
     ```
 
+* Returns whether the user belongs to the given organization. A removed organization has no members.
+
+    ```php
+    $user->isMemberOf(Organization $organization): bool
+    ```
+
 * Validates that the instance exists and is not null.
 
     ```php
@@ -626,6 +632,12 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 
     ```php
     $organization->refreshUsers();
+    ```
+
+* Returns whether the given user belongs to this organization. The counterpart of `$user->isMemberOf()`.
+
+    ```php
+    $organization->hasMember(User $user): bool
     ```
 
 * Returns the permission `Group` linked to this organization, or `null` if none is linked. The result is cached on the instance until `clearFields()` or a write operation invalidates it.
