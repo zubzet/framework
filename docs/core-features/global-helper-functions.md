@@ -179,7 +179,7 @@ view("adminpanel/dashboard");
 
 ### `encryptSecret()`
 
-Encrypts a secret with the `encryption_key` setting, for example before storing it in the database. See [Encryption](encryption.md).
+Encrypts a secret with the `encryption_key` setting, for example before storing it in the database. See [Secrets](secrets.md).
 
 **Syntax:** `encryptSecret(string $plaintext): string`
 
@@ -193,7 +193,7 @@ $stored = encryptSecret($secretKey);
 
 ### `decryptSecret()`
 
-Decrypts a value created by `encryptSecret()`. Throws a `ZubZet\Framework\Security\DecryptionException` when the key is wrong or the value is malformed or was modified. See [Encryption](encryption.md).
+Decrypts a value created by `encryptSecret()`. Throws a `ZubZet\Framework\Security\Secrets\DecryptionException` when the key is wrong or the value is malformed or was modified. See [Secrets](secrets.md).
 
 **Syntax:** `decryptSecret(string $encrypted): string`
 
