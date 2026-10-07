@@ -49,8 +49,10 @@
             $path = trim($path, '/');
 
             $urlParts = empty($path) ? [] : explode("/", $path);
-            if(!empty(config("rootDirectory"))) {
-                $rootDirectoryLength = count(explode("/", config("rootDirectory")));
+            // Surrounding slashes are no segments, "sub/" strips one
+            $rootDirectory = trim((string) config("rootDirectory"), '\/');
+            if("" !== $rootDirectory) {
+                $rootDirectoryLength = count(explode("/", $rootDirectory));
                 for($i = 0; $i < $rootDirectoryLength; $i++) {
                     array_shift($urlParts);
                 }
