@@ -185,7 +185,9 @@
                         ],
                         "email_password_reset.php", 
                         [
-                            "reset_link" => $url
+                            "reset_link" => $url,
+                            // The recipient's language, not the one of whoever asked
+                            "locale" => $user["locale_bcp_47"] ?? null,
                         ]
                     );
 

@@ -95,5 +95,13 @@
             "last": "Last",
             "empty": "There are no rows in {table}."
         }
+    },
+    "email": {
+        "password_reset": {
+            "title": "Reset your password",
+            "text": "Someone asked to reset the password of your account. If that was you, choose a new password with the link below. If not, you can ignore this email.",
+            "link": "Click this link to reset your password!",
+            "open": "Or open:"
+        }
     }
 }
