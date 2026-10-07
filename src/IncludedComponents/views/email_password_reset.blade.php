@@ -6,11 +6,7 @@
 
 @section("content")
 
-    <h2>Reset your password</h2>
-    <p>
-        Someone asked to reset the password of your account. If that was
-        you, choose a new password with the link below. If not, you can
-        ignore this email.
-    </p>
-    <a href="{{ $opt["reset_link"] }}">Click this link to reset your password!</a><br> Or open: {{ $opt["reset_link"] }}
+    <h2>{{ __("email.password_reset.title", locale: $opt["locale"] ?? null) }}</h2>
+    <p>{{ __("email.password_reset.text", locale: $opt["locale"] ?? null) }}</p>
+    <a href="{{ $opt["reset_link"] }}">{{ __("email.password_reset.link", locale: $opt["locale"] ?? null) }}</a><br> {{ __("email.password_reset.open", locale: $opt["locale"] ?? null) }} {{ $opt["reset_link"] }}
 @endsection
