@@ -101,6 +101,46 @@ describe('Auth flows', () => {
             });
         });
 
+        it('translates the password reset email into the active locale', () => {
+            clearMailhog();
+
+            cy.request({
+                method: 'POST',
+                url: '/login/forgot-password/check',
+                form: true,
+                headers: { 'Accept-Language': 'de' },
+                body: { unameemail: 'auth_forgot@cypress.test' },
+            });
+
+            fetchLatestMail().then((mail) => {
+                cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
+                    expect(res.body).to.include('Passwort zurücksetzen');
+                    expect(res.body).to.not.include('Reset your password');
+                });
+            });
+        });
+
+        it('writes the password reset email in the language of the recipient', () => {
+            clearMailhog();
+
+            // A guest browser asking in English must not override the recipient's locale
+            cy.request({
+                method: 'POST',
+                url: '/login/forgot-password/check',
+                form: true,
+                headers: { 'Accept-Language': 'en' },
+                body: { unameemail: 'auth_forgot_de@cypress.test' },
+            });
+
+            fetchLatestMail().then((mail) => {
+                expect(mail.to[0]).to.eq('auth_forgot_de@cypress.test');
+                cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
+                    expect(res.body).to.include('Passwort zurücksetzen');
+                    expect(res.body).to.not.include('Reset your password');
+                });
+            });
+        });
+
         it('returns "error" JSON for an unknown email but still 200', () => {
             cy.request({
                 method: 'POST',
