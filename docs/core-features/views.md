@@ -42,7 +42,7 @@ public function action_index(Request $req, Response $res) {
     <h1>Hello {{ $name }}</h1>   {{-- or $opt["name"] --}}
 @endsection
 ```
-The framework also injects a set of helpers into `$opt` for every render: `$opt["root"]` (the application's root path), `$opt["host"]`, `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` and `$opt["generateResourceLink"]`. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests.md)).
+The framework also injects a set of helpers into `$opt` for every render: `$opt["root"]` (the application's root path, always ending with a slash, so paths are appended without one), `$opt["host"]`, `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` and `$opt["generateResourceLink"]`. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests.md)).
 
 !!! note "View names and the file extension"
     The view above is addressed as `"employee/index"` while the file on disk is `z_views/employee/index.blade.php`. The extension is optional and dot notation works too, so `"employee/index"`, `"employee/index.blade.php"` and `"employee.index"` all resolve to the same file. A view in your project overrides a framework view of the same name.
