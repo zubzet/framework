@@ -162,8 +162,9 @@
          * @param array $parts The parts of the new route. Example: ["auth", "login"]
          */
         public function reroute(array $parts): void {
+            // Below the root directory, like a real request
             $newState = State::fromOverwrite(request()->input)
-                ->withPath(is_array($parts) ? implode("/", $parts) : $parts)
+                ->withPath(config("rootFolder") . ltrim(implode("/", $parts), "/"))
                 ->withArgs($parts);
             zubzet()->replaceRequest($newState);
             $this->execute();
