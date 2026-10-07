@@ -341,4 +341,12 @@ describe('Request', () => {
             expect(res.body).to.deep.equal(['x', 'y']);
         });
     });
+
+    // "rootDirectory = sub/" was the only way to get working links before
+    // v1.2.0, so the slashes must not count as extra segments.
+    it('getUrlParts() ignores slashes around the rootDirectory', () => {
+        cy.request('/Routing/urlPartsProbe_stripSlashes/x/y').then((res) => {
+            expect(res.body).to.deep.equal(['urlPartsProbe_stripSlashes', 'x', 'y']);
+        });
+    });
 });

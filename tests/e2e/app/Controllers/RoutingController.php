@@ -118,6 +118,13 @@
             return $res->json($req->getUrlParts());
         }
 
+        // Surrounding slashes, as in "rootDirectory = sub/", still strip one segment
+        public function action_urlPartsProbe_stripSlashes(Request $req, Response $res) {
+            zubzet()->rootDirectory = "/Routing/";
+            unset($req->urlParts);
+            return $res->json($req->getUrlParts());
+        }
+
     }
 
 ?>
