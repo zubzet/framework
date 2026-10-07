@@ -38,6 +38,13 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
     '4401287036553e310907533.22322450',
     1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
 
+-- 605: action_forgot_password - recipient with a German locale
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`, `locale_bcp_47`) VALUES
+(605, 'auth_forgot_de@cypress.test',
+    '772e7e18b509ee9dbf4a53d415187fa49c68c991873e3282c0025e9e53d4c946125f184c34e04a7fcd5136fcdc04bedc17afd981380ee05ccb7683e7d83ec615',
+    '4401287036553e310907533.22322450',
+    1, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 'de');
+
 
 -- Active session token for user 600 (used by the logout test)
 INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `extended_seconds`, `created`, `active`) VALUES
