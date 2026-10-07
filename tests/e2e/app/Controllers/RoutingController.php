@@ -1,5 +1,7 @@
 <?php
 
+    use ZubZet\Framework\Message\Input\State;
+
     /**
      * Test fixtures for tests/cypress/e2e/core/routing.cy.js.
      *
@@ -123,6 +125,14 @@
             zubzet()->rootDirectory = "/Routing/";
             unset($req->urlParts);
             return $res->json($req->getUrlParts());
+        }
+
+        // Dispatches ?uri= as if the app ran below ?root=, for the prefix
+        // edge cases of core/root-directory.cy.js that no vhost can reach
+        public function action_dispatchBelowRoot(Request $req, Response $res) {
+            zubzet()->rootFolder = $req->getGet("root");
+            zubzet()->replaceRequest(State::fromOverwrite($req->input)->withPath($req->getGet("uri")));
+            zubzet()->execute();
         }
 
     }
