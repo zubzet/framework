@@ -37,7 +37,7 @@
             // Setup the asset proxy
             $vendorPath = InstalledVersions::getInstallPath('php-debugbar/php-debugbar');
             zubzet()->assetProxy->registerWebRootSource("$vendorPath/src/DebugBar/Resources");
-            $renderer->setBaseUrl('/_zubzet/asset-proxy');
+            $renderer->setBaseUrl(config("rootFolder") . '_zubzet/asset-proxy');
 
             self::$debugBar = $debugBar;
             self::$renderer = $renderer;
