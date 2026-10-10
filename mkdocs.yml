@@ -132,6 +132,7 @@ nav:
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
+        - Organization Management: z-admin/organization-management
     - Forms:
         - Auto Validation: forms/auto-form-validation
         - CED Validation: forms/ced-validation
