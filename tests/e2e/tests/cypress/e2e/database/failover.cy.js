@@ -21,15 +21,33 @@ describe('Galera failover', () => {
         // Bring the killed node back (whichever it was; start is a no-op on
         // running nodes) and wait until the cluster is whole again, so
         // everything after this file sees a healthy stack.
+        //
+        // Each node is asked directly, not through the proxy: a request via
+        // the endpoint lands on a healthy node, which reports size 3 and
+        // Synced as soon as the joiner is back in the membership, while the
+        // joiner is still receiving its state transfer (no listener yet, so
+        // the proxy never routes to it) and the donor sits in Donor/Desynced,
+        // answering reads with 1047 because of wsrep_sync_wait. The seed of
+        // the next spec goes through executeMultiQuery(), which does not
+        // retry, so that window (measured ~30 s) must be over before leaving.
         cy.exec('docker start galera1 galera2 galera3', { timeout: 30000 });
-        const waitForSize3 = (retriesLeft) => {
-            cy.request('/DatabaseClusterProbe/status').then((res) => {
-                if (res.body.clusterSize === 3 && res.body.state === 'Synced') return;
-                expect(retriesLeft, 'cluster rejoin attempts left').to.be.greaterThan(0);
-                cy.wait(2000).then(() => waitForSize3(retriesLeft - 1));
+        const NODES = ['galera1', 'galera2', 'galera3'];
+        // One labelled line per node; a node without a listener prints its
+        // label alone, so a missing node can never pass as a synced one.
+        const nodeState = (node) =>
+            `echo "${node} $(docker exec ${node} mariadb -uroot -proot_password --silent ` +
+            `-e "SHOW STATUS WHERE Variable_name IN ('wsrep_ready', 'wsrep_local_state_comment')" ` +
+            `2>/dev/null | awk '{print $2}' | paste -sd ' ')"`;
+        const waitForWholeCluster = (retriesLeft) => {
+            cy.exec(NODES.map(nodeState).join('; ')).then(({ stdout }) => {
+                const states = stdout.trim().split('\n').map((line) => line.trim());
+                const whole = NODES.every((node, i) => states[i] === `${node} Synced ON`);
+                if (whole) return;
+                expect(retriesLeft, `cluster rejoin attempts left (${states.join(' | ')})`).to.be.greaterThan(0);
+                cy.wait(2000).then(() => waitForWholeCluster(retriesLeft - 1));
             });
         };
-        waitForSize3(60);
+        waitForWholeCluster(90);
     });
 
     it('a request survives its database node dying mid-flight', () => {
@@ -64,9 +82,12 @@ describe('Galera failover', () => {
         // The compose restart policy brings the killed node back on its own
         // and the join-aware bootstrap re-admits it, so membership may
         // already be back at three here; availability is the contract.
+        // The node answering may be the one donating the state transfer to
+        // the rejoining node; it is still serving (wsrep_ready ON).
         cy.request('/DatabaseClusterProbe/status').then((res) => {
             expect(res.body.clusterSize, 'cluster keeps quorum').to.be.within(2, 3);
-            expect(res.body.state).to.eq('Synced');
+            expect(res.body.ready, 'node is serving').to.eq('ON');
+            expect(res.body.state).to.be.oneOf(['Synced', 'Donor/Desynced']);
         });
     });
 });
