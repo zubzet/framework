@@ -15,6 +15,7 @@
                 "z_models" => "app/Models/",
                 "z_views" => "app/Views/",
                 "z_commands" => "app/Commands/",
+                "z_tasks" => "app/Tasks/",
                 "routes" => "app/Routes/",
                 "translations" => "app/Translations/",
                 "config_file" => "z_config/z_settings.ini",
