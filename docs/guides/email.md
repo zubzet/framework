@@ -18,7 +18,7 @@ EmailController
            // Here we will send our Email
         }
 
-        public function action_emailuser(Request $req, Response $re) {
+        public function action_emailuser(Request $req, Response $res) {
             // Here we will send our Email
         }
     }
@@ -113,11 +113,11 @@ For the email layout, it is essential that the filename ends with `_layout.blade
                 [
                     "name" => "John Doe"        // Options
                 ],
-                "email_layout",                 // Layout file
+                "mail_layout",                 // Layout file
             );
         }
 
-        public function action_emailuser(Request $req, Response $re) {
+        public function action_emailuser(Request $req, Response $res) {
             $res->sendEmailToUser(
                 123,                           // User ID
                 "Your subscription is active", // Subject
@@ -125,7 +125,7 @@ For the email layout, it is essential that the filename ends with `_layout.blade
                 [
                     "plan" => "Premium"        // Options
                 ],
-                "email_layout"                 // Layout file
+                "mail_layout"                 // Layout file
             );
         }
     }
