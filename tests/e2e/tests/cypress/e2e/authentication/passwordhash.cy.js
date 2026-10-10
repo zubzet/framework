@@ -3,7 +3,7 @@
 // assertion needs.
 //
 // Coverage target: every reachable line/branch in Password, Verification and
-// LegacyHash.
+// LegacyHash, WordPressBcryptHash and WordPressPortableHash.
 
 describe('Authentication/PasswordHash', () => {
 
@@ -113,6 +113,51 @@ describe('Authentication/PasswordHash', () => {
         it('rejects a wrong password against an onion hash', () => {
             cy.request('/PasswordHashProbe/verifyOnionMismatch').then((res) => {
                 expect(res.body.ok).to.eq(false);
+            });
+        });
+    });
+
+    describe('Password::verify() wordpress', () => {
+        it('verifies a WordPress 6.8+ $wp$ bcrypt hash and yields a native upgrade', () => {
+            cy.request('/PasswordHashProbe/verifyWordPressBcrypt').then((res) => {
+                expect(res.body.ok).to.eq(true);
+                expect(res.body.needsUpgrade).to.eq(true);
+                expect(res.body.okTrimmed).to.eq(true);
+                expect(res.body.wrong).to.eq(false);
+            });
+        });
+
+        it('verifies a pre-6.8 $P$ phpass hash and yields a native upgrade', () => {
+            cy.request('/PasswordHashProbe/verifyWordPressPortable').then((res) => {
+                expect(res.body.ok).to.eq(true);
+                expect(res.body.needsUpgrade).to.eq(true);
+                expect(res.body.wrong).to.eq(false);
+            });
+        });
+
+        it('verifies emoji, umlaut, CJK, special-character, spaced and long passwords in both formats', () => {
+            cy.request('/PasswordHashProbe/verifyWordPressVectors').then((res) => {
+                const names = Object.keys(res.body);
+                expect(names).to.include.members(['emoji', 'umlauts', 'cjk', 'specials', 'innerSpaces', 'longBytes']);
+                names.forEach((name) => {
+                    expect(res.body[name], name).to.deep.eq({
+                        bcrypt: true,
+                        portable: true,
+                        bcryptFlipped: false,
+                        portableFlipped: false,
+                    });
+                });
+            });
+        });
+
+        it('rejects foreign and malformed stored values', () => {
+            cy.request('/PasswordHashProbe/verifyWordPressMalformed').then((res) => {
+                expect(res.body).to.deep.eq({
+                    unprefixedBcrypt: false,
+                    badRounds: false,
+                    shortSalt: false,
+                    native: false,
+                });
             });
         });
     });
