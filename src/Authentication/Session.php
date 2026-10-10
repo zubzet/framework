@@ -19,4 +19,9 @@ class Session extends AuthenticationObject {
 
         return model("z_login")->createLoginToken($user->id(), $userExec->id(), $name, $reason);
     }
+
+    // Ends every active login of a user, leaving their api keys alone
+    public static function clearForUser(User $user): void {
+        model("z_login")->clearSessions($user);
+    }
 }

@@ -269,11 +269,11 @@
          * @param ?string $name An optional name for the session
          * @param ?string $reason Why the session was created, e.g. why an admin impersonates
          */
-        public function loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null) {
+        public function loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null, bool $recordTwoFactor = false) {
             if($user_exec === null) $user_exec = $userId;
 
             $session = model("z_login", $this->booter->z_framework_root)
-                ->createLoginToken($userId, $user_exec, $name, $reason);
+                ->createLoginToken($userId, $user_exec, $name, $reason, recordTwoFactor: $recordTwoFactor);
 
             $this->setCookie(
                 "z_login_token",
@@ -305,9 +305,12 @@
         /**
          * Generates a generic error
          * @param string $message An error message
+         * @param mixed[] $payload An optional payload that will be added to the result
          */
-        public function error($message = "") {
-            $this->generateRest(["result" => "error", "message" => $message]);
+        public function error($message = "", $payload = []) {
+            $result = ["result" => "error", "message" => $message];
+            $result = array_merge($result, $payload);
+            $this->generateRest($result);
         }
 
         /**

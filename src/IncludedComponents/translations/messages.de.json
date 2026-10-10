@@ -24,7 +24,8 @@
             "roles": "Rollen",
             "groups": "Gruppen",
             "back": "Zurück",
-            "logout": "Abmelden"
+            "logout": "Abmelden",
+            "profile": "Profil"
         },
         "dashboard": {
             "title": "Dashboard"
@@ -41,7 +42,9 @@
             "role": "Rolle",
             "login_as": "Anmelden als",
             "permissions": "Benutzerspezifische Berechtigungen",
-            "permission": "Berechtigung"
+            "permission": "Berechtigung",
+            "disable_two_factor": "Zwei-Faktor deaktivieren",
+            "disable_two_factor_confirm": "Zwei-Faktor für dieses Konto deaktivieren? Die Anmeldung erfolgt dann nur mit dem Passwort, bis der Inhaber es erneut einrichtet."
         },
         "user_select": {
             "title": "Benutzer bearbeiten",
@@ -94,6 +97,90 @@
             "next": "Nächste",
             "last": "Letzte",
             "empty": "In {table} gibt es keine Zeilen."
+        },
+        "profile": {
+            "title": "Profil",
+            "member_since": "Mitglied seit",
+            "security": "Sicherheit",
+            "password": "Passwort",
+            "password_hint": "Ein neues Passwort beendet jede Anmeldung dieses Kontos, API-Keys funktionieren weiter.",
+            "change": "Ändern",
+            "sessions": "Sitzungen",
+            "api_keys": "API-Keys",
+            "change_password": "Passwort ändern",
+            "change_password_hint": "Ein neues Passwort beendet jede Anmeldung dieses Kontos, auch in diesem Browser, der sich danach neu anmelden muss. API-Keys funktionieren weiter."
+        }
+    },
+    "account": {
+        "unknown_address": "einer unbekannten Adresse",
+        "never_used": "seitdem nicht verwendet",
+        "last_seen": "zuletzt verwendet am {date} von {ip}",
+        "never_expires": "Läuft nie ab",
+        "expires": "Läuft ab am {date}",
+        "rename": "Umbenennen",
+        "revoke": "Widerrufen",
+        "close": "Schließen",
+        "sessions": {
+            "fallback_name": "Sitzung",
+            "current": "Dieser Browser",
+            "unknown_device": "Unbekanntes Gerät",
+            "started": "Gestartet am {date} von {ip},",
+            "reason": "Grund: {reason}",
+            "name_placeholder": "Name, z. B. Laptop zu Hause",
+            "empty": "Keine Sitzungen.",
+            "clear": "Alle Sitzungen beenden"
+        },
+        "api_keys": {
+            "name_placeholder": "Name, z. B. Deployment-Pipeline",
+            "expires_in": "Läuft ab in {lifetime}",
+            "lifetime": {
+                "1": "1 Tag",
+                "3": "3 Tagen",
+                "7": "7 Tagen",
+                "30": "30 Tagen",
+                "60": "60 Tagen",
+                "90": "90 Tagen",
+                "365": "1 Jahr"
+            },
+            "create": "API-Key erstellen",
+            "fallback_name": "API-Key",
+            "created": "Erstellt am {date} von {ip},",
+            "empty": "Keine API-Keys.",
+            "created_title": "Ihr neuer API-Key",
+            "created_hint": "Wird nur einmal angezeigt. Kopieren Sie ihn jetzt, er kann nicht erneut ausgelesen werden.",
+            "copy": "Kopieren",
+            "copied": "Kopiert",
+            "done": "Fertig"
+        },
+        "rename_token": {
+            "title": "Umbenennen",
+            "hint": "Ein leerer Name stellt den allgemeinen Namen wieder her.",
+            "placeholder": "Name",
+            "save": "Speichern"
+        },
+        "change_password": {
+            "current": "Aktuelles Passwort",
+            "new": "Neues Passwort",
+            "repeat": "Neues Passwort wiederholen"
+        },
+        "two_factor": {
+            "active": "Zwei-Faktor ist aktiv",
+            "confirmed": "Bestätigt am {date}",
+            "turn_off": "Deaktivieren",
+            "disable_placeholder": "Code aus Ihrer Authenticator-App",
+            "inactive": "Zwei-Faktor ist inaktiv",
+            "inactive_hint": "Die Anmeldung fragt dann zusätzlich nach einem Code aus einer Authenticator-App.",
+            "set_up": "Einrichten",
+            "setup_hint": "Scannen Sie diesen Code mit Ihrer Authenticator-App und geben Sie zur Bestätigung den angezeigten Code ein. Bis dahin bleibt Zwei-Faktor inaktiv.",
+            "manual_key": "Oder geben Sie den Schlüssel von Hand ein",
+            "code_placeholder": "6-stelliger Code",
+            "confirm": "Bestätigen",
+            "modal": {
+                "title": "Zwei-Faktor",
+                "hint": "Ihr Passwort wurde akzeptiert. Geben Sie den Code aus Ihrer Authenticator-App ein.",
+                "cancel": "Abbrechen",
+                "sign_in": "Anmelden"
+            }
         }
     }
 }
