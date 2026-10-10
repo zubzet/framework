@@ -2,6 +2,7 @@
 
     namespace ZubZet\Framework\Console;
 
+    use ZubZet\Framework\Support\Commands\Install;
     use ZubZet\Framework\Support\Commands\Startup;
     use ZubZet\Framework\Registry\Commands\ModuleSetup;
     use ZubZet\Framework\Database\Migration\Commands\Seed;
@@ -35,6 +36,7 @@
                     new UnlockMigration(),
                     new HashingAlgorithmMigration(),
                     new Startup(),
+                    new Install(),
                     new ModuleSetup(),
                     new CoverageStart(),
                     new CoverageStop(),
