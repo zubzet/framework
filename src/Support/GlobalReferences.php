@@ -8,6 +8,8 @@
 
         use ZubZet\Framework\ZubZet;
         use ZubZet\Framework\Logger\Logger;
+        use ZubZet\Framework\Security\Secrets\Encryption;
+        use ZubZet\Framework\Security\Secrets\DecryptionException;
         use ZubZet\Framework\Message\Request;
         use ZubZet\Framework\Message\Response;
         use ZubZet\Framework\Authentication\User;
@@ -165,6 +167,31 @@
              */
             function __(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
                 return Translation::translate($id, $parameters, $domain, $locale);
+            }
+        });
+
+        FunctionConflictResolution::requireAndThen("encryptSecret", function() {
+            /**
+             * Encrypts a secret with the `encryption_key` setting, e.g. before storing it.
+             *
+             * @param string $plaintext Value to encrypt
+             * @return string Encrypted value, safe to store as text
+             */
+            function encryptSecret(string $plaintext): string {
+                return Encryption::encryptSecret($plaintext);
+            }
+        });
+
+        FunctionConflictResolution::requireAndThen("decryptSecret", function() {
+            /**
+             * Decrypts a secret created by encryptSecret().
+             *
+             * @param string $encrypted Value returned by encryptSecret()
+             * @throws DecryptionException When the key is wrong or the value is malformed or modified
+             * @return string The original plaintext
+             */
+            function decryptSecret(string $encrypted): string {
+                return Encryption::decryptSecret($encrypted);
             }
         });
 

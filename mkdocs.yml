@@ -109,6 +109,7 @@ nav:
         - Translations: core-features/translations
         - Permission System: core-features/permission-system
         - Password Handling: core-features/password-handling
+        - Secrets: core-features/secrets
         - Configuration: core-features/configuration
         - Database Connection: core-features/database-connection
         - REST API: core-features/rest-api
