@@ -113,6 +113,15 @@ describe('Authentication - Session', () => {
         });
     });
 
+    it('should look sessions up through a unique index on the token', () => {
+        requestJson('/session/tokenIndex').then((output) => {
+            expect(output.index).to.equal('token');
+            expect(output.unique).to.be.true;
+            expect(output.lookupKey).to.equal('token');
+            expect(output.duplicate).to.match(/Duplicate entry/);
+        });
+    });
+
 
     /**
      * add
