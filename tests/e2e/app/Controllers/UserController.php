@@ -89,6 +89,38 @@ class UserController extends z_controller {
         $this->echoUser(User::byId(118), false, false);
     }
 
+    public function action_updateEmailRejected(Request $req, Response $res): void {
+        $user = User::byId(154);
+
+        $errors = [];
+        foreach(['not-an-email', '', 'user_byId_Active@cypress.test'] as $email) {
+            try {
+                $user->updateEmail($email);
+            } catch(InvalidArgumentException $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
+
+        echo(json_encode([
+            "errors" => $errors,
+            "user" => $this->getUser(User::byId(154), false, false),
+        ]));
+    }
+
+    public function action_updateEmailSame(Request $req, Response $res): void {
+        $user = User::byId(154);
+        $user->updateEmail('user_updateEmail_Rejected@cypress.test');
+
+        $this->echoUser(User::byId(154), false, false);
+    }
+
+    public function action_updateEmailNull(Request $req, Response $res): void {
+        $user = User::byId(155);
+        $user->updateEmail(null);
+
+        $this->echoUser(User::byId(155), false, false);
+    }
+
     public function action_updatePassword(Request $req, Response $res): void {
         $user = User::byId(119);
 

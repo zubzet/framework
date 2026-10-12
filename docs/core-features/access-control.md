@@ -149,7 +149,7 @@ The `$password` parameter is optional. When `null` is passed, the user is create
 
 User attributes can be updated directly on the instance.
 
-* Updates the user’s email address.
+* Updates the user’s email address. Throws an `InvalidArgumentException` if the address is not a valid email or already belongs to another user. Passing `null` clears it.
 
     ```php
     $user->updateEmail(?string $email);

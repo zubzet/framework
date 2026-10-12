@@ -35,6 +35,8 @@ These todos should be as temporary as possible:
 1. Changed - Dependency constraints modernized: `symfony/filesystem` moves off the exact `v6.0.19` pin to `^6.0 || ^7.0` (PHP 8.0 keeps resolving 6.0, newer PHP gets maintained releases), `symfony/console` normalizes to `^6.0 || ^7.0` (same resolution, consistent style), `components/jquery` moves from `3.5.*` to `3.7.*` (jQuery 3.5.1 from 2020 to 3.7.1), and `katanaphp/blade` moves from a commit-pinned integration branch to the tagged release `^0.2` now that the upstream maintainer merged the integration work. **Migrator note:** the jQuery bump is the only consumer-visible change; apps overriding the bundled jQuery are unaffected
 1. Changed - The declared PHP floor is `>=8.0.2` instead of `>=8.0`, matching what actually installs (symfony 6.0 requires 8.0.2, so 8.0.0/8.0.1 never resolved)
 1. Fixed - A `showErrors` value that is not one of `0`, `1` or `2` (an empty string, a word, `7`) stopped the bootstrap with a `TypeError`, followed by a second fatal from the slow-request logger, which also ran when the request never existed. Integers like `"1"` are now accepted and anything else falls back to `0`, no errors shown; the slow-request logger skips a request that was never set up
+1. Changed - `$user->updateEmail()` now throws an `InvalidArgumentException` when the address is not a valid email or already belongs to another user; `null` still clears it. **Migrator note:** callers that passed unchecked input have to catch the exception or validate beforehand
+1. Fixed - `$user->email()` threw a `TypeError` for users without an email address, although `z_user.email` is nullable; it now returns `null` for them
 
 ## v1.2.0
 1. Added DEV Changelog
