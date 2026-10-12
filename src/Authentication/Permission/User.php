@@ -311,9 +311,9 @@ class User extends AuthenticationObject {
     /**
      * Get the user's email from the cache
      *
-     * @return string The email of the user
+     * @return string|null The email of the user, null if none is set
      */
-    public function email(): string {
+    public function email(): ?string {
         return $this->getField('email');
     }
 
