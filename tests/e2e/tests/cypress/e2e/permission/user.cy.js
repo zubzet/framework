@@ -304,6 +304,18 @@ describe('Permission System - User', () => {
         });
     });
 
+    it('should reject invalid and already used emails on add', () => {
+        requestJson('/user/addRejected').then((output) => {
+            expect(output).to.deep.equal({
+                errors: [
+                    'Invalid email address.',
+                    'Invalid email address.',
+                    'Email address is already in use.',
+                ],
+            });
+        });
+    });
+
     it('should check if a user hasAccessToAll', () => {
         requestJson('/user/hasAccessToAll').then((output) => {
             expect(output).to.deep.equal(
