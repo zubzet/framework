@@ -37,6 +37,7 @@ These todos should be as temporary as possible:
 1. Fixed - A `showErrors` value that is not one of `0`, `1` or `2` (an empty string, a word, `7`) stopped the bootstrap with a `TypeError`, followed by a second fatal from the slow-request logger, which also ran when the request never existed. Integers like `"1"` are now accepted and anything else falls back to `0`, no errors shown; the slow-request logger skips a request that was never set up
 1. Changed - `$user->updateEmail()` now throws an `InvalidArgumentException` when the address is not a valid email or already belongs to another user; `null` still clears it. **Migrator note:** callers that passed unchecked input have to catch the exception or validate beforehand
 1. Fixed - `$user->email()` threw a `TypeError` for users without an email address, although `z_user.email` is nullable; it now returns `null` for them
+1. Changed - `User::add()` now throws an `InvalidArgumentException` when the email is not a valid address or already belongs to another user, like `updateEmail()`; `null` still creates a user without an email. **Migrator note:** callers that passed unchecked input have to catch the exception or validate beforehand
 
 ## v1.2.0
 1. Added DEV Changelog

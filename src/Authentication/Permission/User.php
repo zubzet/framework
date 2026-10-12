@@ -116,18 +116,45 @@ class User extends AuthenticationObject {
      * Create a new user
      * This will insert the user into the database and return the created user object
      *
-     * @param string $email The email of the new user
+     * @param ?string $email The email of the new user, null creates a user without an email
      * @param ?string $password Optional the password of the new user (plain text, will be hashed)
      * @param ?DateTime $verified Optional datetime object indicating when the user was verified
      * @return User|null The created user object or null on failure
+     * @throws \InvalidArgumentException If the email is invalid or already used by another user
      */
     public static function add(?string $email, ?string $password, ?DateTime $verified = null): ?User {
+        self::assertValidEmail($email);
+
         // If a datetime object is provided, format it to a string
         if(!is_null($verified)) $verified = $verified->format("Y-m-d H:i:s");
 
         $insertedId = model("z_user")->add($email, $password, $verified);
 
         return self::byId($insertedId);
+    }
+
+    /**
+     * Make sure an email is a valid address that no other user has
+     *
+     * @param ?string $email The email to check, null is always accepted
+     * @param ?int $ignoreUserId A user whose own email does not count as taken
+     * @return void
+     * @throws \InvalidArgumentException If the email is invalid or already used by another user
+     */
+    private static function assertValidEmail(?string $email, ?int $ignoreUserId = null): void {
+        if(is_null($email)) return;
+
+        if(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException("Invalid email address.");
+        }
+
+        $unique = is_null($ignoreUserId)
+            ? db()->checkIfUnique("z_user", "email", $email)
+            : db()->checkIfUnique("z_user", "email", $email, "id", $ignoreUserId);
+
+        if(!$unique) {
+            throw new \InvalidArgumentException("Email address is already in use.");
+        }
     }
 
     /**
@@ -139,15 +166,7 @@ class User extends AuthenticationObject {
      * @throws \InvalidArgumentException If the email is invalid or already used by another user
      */
     public function updateEmail(?string $email): void {
-        if(!is_null($email)) {
-            if(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                throw new \InvalidArgumentException("Invalid email address.");
-            }
-
-            if(!db()->checkIfUnique("z_user", "email", $email, "id", $this->id())) {
-                throw new \InvalidArgumentException("Email address is already in use.");
-            }
-        }
+        self::assertValidEmail($email, $this->id());
 
         model('z_permission')->updateUserEmail($this, $email);
         $this->clearFields();

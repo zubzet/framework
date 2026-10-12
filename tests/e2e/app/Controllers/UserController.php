@@ -224,6 +224,19 @@ class UserController extends z_controller {
         $this->echoUser($user, false, true);
     }
 
+    public function action_addRejected(Request $req, Response $res): void {
+        $errors = [];
+        foreach(['not-an-email', '', 'user_byId_Active@cypress.test'] as $email) {
+            try {
+                User::add($email, "password123");
+            } catch(InvalidArgumentException $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
+
+        echo(json_encode(["errors" => $errors]));
+    }
+
     public function action_getPermissions(Request $req, Response $res): void {
         $user = User::byId(126);
 

@@ -141,6 +141,8 @@ Users can be created through the static `add` method.
 
 If no verification date is provided, the user is created as **unverified**.
 
+Throws an `InvalidArgumentException` if the email is not a valid address or already belongs to another user. Passing `null` creates a user without an email.
+
 The `$password` parameter is optional. When `null` is passed, the user is created without a password - useful for invite or SSO flows where a credential is set later via `updatePassword()`.
 
 ---
