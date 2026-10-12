@@ -136,8 +136,19 @@ class User extends AuthenticationObject {
      *
      * @param string $email The new email address
      * @return void
+     * @throws \InvalidArgumentException If the email is invalid or already used by another user
      */
     public function updateEmail(?string $email): void {
+        if(!is_null($email)) {
+            if(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new \InvalidArgumentException("Invalid email address.");
+            }
+
+            if(!db()->checkIfUnique("z_user", "email", $email, "id", $this->id())) {
+                throw new \InvalidArgumentException("Email address is already in use.");
+            }
+        }
+
         model('z_permission')->updateUserEmail($this, $email);
         $this->clearFields();
     }
