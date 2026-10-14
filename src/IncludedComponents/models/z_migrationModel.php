@@ -37,18 +37,23 @@
 
         // Every table of the database whose own or any column's collation differs from the given one
         public function tablesNotInCollation(string $collation): array {
-            $sql = "SELECT DISTINCT `t`.`TABLE_NAME` AS `table`
-                    FROM `information_schema`.`TABLES` AS `t`
-                    LEFT JOIN `information_schema`.`COLUMNS` AS `c`
-                        ON `c`.`TABLE_SCHEMA` = `t`.`TABLE_SCHEMA`
-                        AND `c`.`TABLE_NAME` = `t`.`TABLE_NAME`
-                    WHERE `t`.`TABLE_SCHEMA` = DATABASE()
-                    AND `t`.`TABLE_TYPE` = 'BASE TABLE'
-                    AND (`t`.`TABLE_COLLATION` <> ? OR `c`.`COLLATION_NAME` <> ?)
-                    ORDER BY `t`.`TABLE_NAME`";
-            $rows = $this->exec($sql, "ss", $collation, $collation)->resultToArray();
+            $query = $this->dbSelect(["name" => "t.TABLE_NAME"], [
+                "t" => "information_schema.TABLES",
+            ])->distinct()->leftJoin([
+                "c" => "information_schema.COLUMNS",
+            ], [
+                "c.TABLE_SCHEMA = t.TABLE_SCHEMA",
+                "c.TABLE_NAME = t.TABLE_NAME",
+            ])->where([
+                "t.TABLE_SCHEMA = DATABASE()",
+                "t.TABLE_TYPE" => "BASE TABLE",
+                "OR" => [
+                    "t.TABLE_COLLATION !=" => $collation,
+                    "c.COLLATION_NAME !=" => $collation,
+                ],
+            ])->orderAsc("t.TABLE_NAME");
 
-            return array_column($rows, "table");
+            return array_column($this->exec($query)->resultToArray(), "name");
         }
 
         // Rewrites the table and every text column; foreign key checks would refuse changing a referenced column
