@@ -1,5 +1,6 @@
 <?php
 
+    use ZubZet\Framework\Database\Connection;
     use ZubZet\Framework\Database\IsInternalModel;
     use ZubZet\Framework\Database\Migration\Parser\MigrationFile;
     use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
@@ -34,6 +35,39 @@
             return !empty($result);
         }
 
+        // Every table of the database whose own or any column's collation differs from the given one
+        public function tablesNotInCollation(string $collation): array {
+            $query = $this->dbSelect(["name" => "t.TABLE_NAME"], [
+                "t" => "information_schema.TABLES",
+            ])->distinct()->leftJoin([
+                "c" => "information_schema.COLUMNS",
+            ], [
+                "c.TABLE_SCHEMA = t.TABLE_SCHEMA",
+                "c.TABLE_NAME = t.TABLE_NAME",
+            ])->where([
+                "t.TABLE_SCHEMA = DATABASE()",
+                "t.TABLE_TYPE" => "BASE TABLE",
+                "OR" => [
+                    "t.TABLE_COLLATION !=" => $collation,
+                    "c.COLLATION_NAME !=" => $collation,
+                ],
+            ])->orderAsc("t.TABLE_NAME");
+
+            return array_column($this->exec($query)->resultToArray(), "name");
+        }
+
+        // Rewrites the table and every text column; foreign key checks would refuse changing a referenced column
+        public function convertTableToCollation(string $table, string $charset, string $collation): void {
+            $table = str_replace("`", "``", $table);
+
+            $this->exec("SET FOREIGN_KEY_CHECKS = 0");
+            try {
+                $this->exec("ALTER TABLE `$table` CONVERT TO CHARACTER SET $charset COLLATE $collation");
+            } finally {
+                $this->exec("SET FOREIGN_KEY_CHECKS = 1");
+            }
+        }
+
         // Ensure migration tables exist (z_migration_lock and z_version) (otherwise create them)
         public function ensureMigrationTablesExist(): void {
             $connection = $this->createDbalConnection();
@@ -42,6 +76,8 @@
 
             if(!$schemaManager->tablesExist(["z_migration_lock"])) {
                 $table = new Table("z_migration_lock");
+                $table->addOption("charset", Connection::CHARSET);
+                $table->addOption("collation", Connection::COLLATION);
                 $table->addColumn("id", "integer", ["autoincrement" => true]);
                 $table->setPrimaryKey(["id"]);
 
@@ -56,6 +92,8 @@
 
             if(!$schemaManager->tablesExist(["z_version"])) {
                 $table = new Table("z_version");
+                $table->addOption("charset", Connection::CHARSET);
+                $table->addOption("collation", Connection::COLLATION);
                 $table->addColumn("id", "integer", ["autoincrement" => true]);
                 $table->setPrimaryKey(["id"]);
 
