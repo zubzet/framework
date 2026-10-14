@@ -9,7 +9,7 @@
 
     chdir(realpath(__DIR__));
 
-    $source = getenv('COMPOSER_VENDOR_DIR') ?: "./";
+    $source = getenv('COMPOSER_VENDOR_DIR') ?: "./vendor";
     require_once "$source/autoload.php";
 
     //z_framework init

@@ -46,15 +46,19 @@ case "$1" in
         ;;
 esac
 
-# Check if PHP is available and if the index.php file exists in the root directory -> execute the PHP script directly
+# Project container is running -> run in it, the settings and the database host only exist there
+if [ -n "$(compose ps --status running -q application 2>/dev/null)" ]; then
+    # Interactive terminal -> with TTY, non-interactive (pipe, CI, cron) -> without
+    if [ -t 0 ]; then
+        exec docker exec -it application php index.php "$@"
+    fi
+    exec docker exec -i application php index.php "$@"
+fi
+
+# Container is not running -> execute the PHP script directly, if PHP is available
 if command -v php >/dev/null && [ -f "$root/index.php" ]; then
     exec php "$root/index.php" "$@"
 fi
 
-# Interactive terminal -> run in container with TTY
-if [ -t 0 ]; then
-    exec docker exec -it application php index.php "$@"
-fi
-
-# Non-interactive (pipe, CI, cron) -> run in container without TTY
-exec docker exec -i application php index.php "$@"
+echo "Error: The project is not running and PHP was not found in your PATH. Start it with: ./project.sh start" >&2
+exit 1

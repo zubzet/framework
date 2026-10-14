@@ -30,7 +30,6 @@ x-built-application-image: &built-application-image
     - host.docker.internal:host-gateway
   volumes:
     - ../../:/var/www/html
-    - ../../../../:/var/www/framework
     - ./site-000-default.conf:/etc/apache2/sites-enabled/000-default.conf:ro
   depends_on:
     database:

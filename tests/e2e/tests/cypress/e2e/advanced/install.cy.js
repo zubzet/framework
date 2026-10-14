@@ -8,11 +8,11 @@ describe('install Command', () => {
     const INSTALL_OPTIONS = { timeout: 180000, failOnNonZeroExit: false };
 
     beforeEach(() => {
-        cy.exec(`docker exec application sh -c "rm -rf ${PROJECT} && mkdir ${PROJECT}"`);
+        cy.exec(`docker exec application sh -c "chmod -R u+w ${PROJECT} 2>/dev/null; rm -rf ${PROJECT} && mkdir ${PROJECT}"`);
     });
 
     after(() => {
-        cy.exec(`docker exec application rm -rf ${PROJECT}`);
+        cy.exec(`docker exec application sh -c "chmod -R u+w ${PROJECT}; rm -rf ${PROJECT}"`);
     });
 
     it('fails for a missing folder', () => {
@@ -22,8 +22,18 @@ describe('install Command', () => {
         });
     });
 
-    it('builds the project from the template', () => {
+    it('fails for a folder that is not writable', () => {
+        cy.exec(`docker exec application chmod 555 ${PROJECT}`);
+
         cy.exec(INSTALL_COMMAND, INSTALL_OPTIONS).then((result) => {
+            expect(result.exitCode).to.not.equal(0);
+            expect(result.stdout).to.include(`Folder is not writable: ${PROJECT}`);
+        });
+    });
+
+    it('builds the project from the template and requires the framework', () => {
+        cy.exec(INSTALL_COMMAND, INSTALL_OPTIONS).then((result) => {
+            expect(result.exitCode, result.stdout + result.stderr).to.equal(0);
             expect(result.stdout).to.include('created: index.php');
             expect(result.stdout).to.include('created: composer.json');
             expect(result.stdout).to.include('created: z_config/z_settings.ini');
@@ -33,12 +43,27 @@ describe('install Command', () => {
         // copy() drops the executable bit, the command sets it again
         cy.exec(`docker exec application test -x ${PROJECT}/zubzet`);
         cy.exec(`docker exec application test -x ${PROJECT}/project.sh`);
+
+        // The framework landed in the project's own vendor folder
+        cy.exec(`docker exec application test -f ${PROJECT}/vendor/autoload.php`);
+    });
+
+    it('boots the built project without a COMPOSER_VENDOR_DIR', () => {
+        cy.exec(INSTALL_COMMAND, INSTALL_OPTIONS).then((result) => {
+            expect(result.exitCode, result.stdout + result.stderr).to.equal(0);
+        });
+
+        // Without the variable the entry script has to find vendor/ on its own
+        cy.exec(`docker exec application sh -c "cd ${PROJECT} && env -u COMPOSER_VENDOR_DIR php index.php info:startup"`, { failOnNonZeroExit: false }).then((result) => {
+            expect(result.exitCode, result.stdout + result.stderr).to.equal(0);
+        });
     });
 
     it('never overwrites files already in the project', () => {
         cy.exec(`docker exec application sh -c "echo keep > ${PROJECT}/index.php"`);
 
         cy.exec(INSTALL_COMMAND, INSTALL_OPTIONS).then((result) => {
+            expect(result.exitCode, result.stdout + result.stderr).to.equal(0);
             expect(result.stdout).to.include('exists:  index.php');
             expect(result.stdout).to.include('created: project.sh');
         });
