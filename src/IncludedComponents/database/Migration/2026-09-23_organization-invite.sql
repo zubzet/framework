@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS `z_organization_invite` (
+    `id` INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    `organizationId` INT NOT NULL,
+    `email` VARCHAR(255) NOT NULL,
+    `token` VARCHAR(255) NOT NULL,
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

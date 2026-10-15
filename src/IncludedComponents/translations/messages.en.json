@@ -24,7 +24,8 @@
             "roles": "Roles",
             "groups": "Groups",
             "back": "Go back",
-            "logout": "Logout"
+            "logout": "Logout",
+            "organization": "Organization"
         },
         "dashboard": {
             "title": "Dashboard"
@@ -59,7 +60,8 @@
             "create": "Create role",
             "create_confirm": "Do you really want to create a new role?",
             "delete": "Delete role",
-            "delete_confirm": "Do you really want to delete this role?"
+            "delete_confirm": "Do you really want to delete this role?",
+            "org_assignable": "Organizations may assign this role to their members"
         },
         "maintenance": {
             "title": "Maintenance Mode",
@@ -94,6 +96,51 @@
             "next": "Next",
             "last": "Last",
             "empty": "There are no rows in {table}."
+        },
+        "organization": {
+            "title": "Organization",
+            "no_organization": "You are not a member of any organization.",
+            "rename": "Rename",
+            "invite": "Invite member",
+            "members": "Members",
+            "members_hint": "Open a member's roles to give them access or take it away again.",
+            "invites": "Open invitations",
+            "invites_hint": "Invitations waiting to be accepted. Revoke one if it was sent by mistake.",
+            "rename_title": "Rename organization",
+            "invite_title": "Invite a member",
+            "invite_hint": "Enter an email address to create an invitation link and share it with that person. The link stays valid for 7 days.",
+            "close": "Close"
+        },
+        "organization_invitation": {
+            "title": "Invitation",
+            "hint": "You have been invited to join this organization. Accepting makes your account a member of it.",
+            "invited_as": "Invited as",
+            "invited_on": "Invited on"
+        }
+    },
+    "organization": {
+        "accept": "Accept invitation",
+        "invite": {
+            "email": "Email",
+            "create": "Create invitation",
+            "copy": "Copy",
+            "copied": "Copied"
+        },
+        "invites": {
+            "validity": "Invited {created}, valid until {expires}",
+            "revoke": "Revoke",
+            "empty": "No open invitations."
+        },
+        "members": {
+            "no_email": "No email",
+            "roles": "Roles",
+            "roles_placeholder": "Add a role...",
+            "save": "Save roles",
+            "empty": "No members."
+        },
+        "rename": {
+            "name": "Name",
+            "save": "Save name"
         }
     }
 }
