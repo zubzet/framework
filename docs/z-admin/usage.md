@@ -15,6 +15,7 @@ It has following categories:
 | Edit User | Form to edit users
 | Add User | Form to add users
 | Roles | User permission managment |
+| Profile | [Own password, two factor, sessions and api keys](profile.md) |
 
 
 ## Permissions
@@ -31,8 +32,13 @@ To be able to use all functions, the following permissions are needed:
 - admin.log
 - [admin.su](login-as-another-user.md)
 
+Profile is the exception: it only ever shows the requesting account, so every login reaches it without a permission.
+
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.
 Be advised, each role gives special permissions, some give the user special powers, therefore please see the list above of what roles have which permissions.
 
 After you set a role, you can either add more roles or save the user by clicking ‘submit’ at the bottom of the page. The user should now be able to use their role.
+
+## Two factor
+An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.edit`.
