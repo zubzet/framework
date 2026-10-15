@@ -18,8 +18,7 @@ For the everyday feature-branch flow and the `develop` / `main` model, see
 
 !!! note "RCs are pre-releases"
     Publish every RC as a GitHub **pre-release**. That keeps the last stable release
-    (e.g. `v1.1.0`) labelled *Latest* and lets consumers opt in with
-    `composer create-project zubzet/zubzet your-folder --stability=RC`.
+    (e.g. `v1.1.0`) labelled *Latest*.
 
 ## Prerequisites
 
