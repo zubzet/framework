@@ -1,34 +1,80 @@
 # Installation
-ZubZet ships as a Composer package. New projects start from the [**`zubzet/zubzet`**](https://github.com/zubzet/zubzet) skeleton, which pulls in the framework and bundles a Docker development stack: Apache + PHP, MariaDB,
-phpMyAdmin, and a mail catcher.
+ZubZet projects are set up with an install script. It builds the project and bundles a Docker development stack: Apache + PHP, MariaDB, phpMyAdmin, and a mail catcher.
 
-## Prerequisites
-- [**Docker**](https://docs.docker.com/get-started/get-docker/) and [**Docker Compose**](https://docs.docker.com/compose/)
-- [**Composer**](https://getcomposer.org/)
-- [**Node.js**](https://nodejs.org/en) and **npm**
+## Requirement
+[**Docker**](https://docs.docker.com/get-started/get-docker/) is required. Nothing else needs to be installed on your host.
 
-PHP itself is not required on your host as it runs inside the application container.
+## Install script
+Save the following script as `install.sh` and run it with `bash install.sh your-folder-name`. Without an argument it asks for the project directory.
 
-## Create a new project
 ```bash
-composer create-project zubzet/zubzet your-folder-name
-cd your-folder-name
+#!/usr/bin/env bash
+
+
+# ----------------
+# Check Environment
+# ----------------
+
+if ! command -v docker >/dev/null; then
+    echo "Error: Docker is required but was not found in your PATH." >&2
+    echo "Install Docker: https://docs.docker.com/get-started/get-docker/" >&2
+    echo "Then run this installer again." >&2
+    exit 1
+fi
+
+
+# ----------------
+# Project Directory
+# ----------------
+
+# Given as first argument (./install.sh my-project), otherwise asked for
+if [ $# -ge 1 ]; then
+    directory="$1"
+else
+    read -r -p "Project directory (leave empty for current directory): " directory
+fi
+directory="${directory:-.}"
+
+mkdir -p "$directory"
+directory="$(cd "$directory" && pwd)"
+echo "Installing ZubZet into $directory"
+
+# The project belongs to the user running the installer, the application container takes over its uid.
+# Apache refuses to run as root, so for root the project goes to uid 1000 instead.
+owner="$(id -u):$(id -g)"
+if [ "$(id -u)" = 0 ]; then
+    owner="1000:1000"
+    chown "$owner" "$directory"
+fi
+
+# ----------------
+# Require Framework, Run Install Command
+# ----------------
+
+# The framework from source because the dist archive leaves out tests/, everything else as dist
+docker run --rm -u "$owner" -e HOME=/tmp -v "$directory":/app --entrypoint sh ghcr.io/zubzet/php:8.5-apache -c '
+    mkdir /tmp/installer && cd /tmp/installer &&
+    echo "{\"config\":{\"preferred-install\":{\"qtnoe/zubzet-framework\":\"source\",\"*\":\"dist\"}}}" > composer.json &&
+    composer require -q qtnoe/zubzet-framework:dev-feat/install-command &&
+    cd vendor/qtnoe/zubzet-framework/tests/e2e && COMPOSER_VENDOR_DIR=/tmp/installer/vendor php index.php install /app
+' || exit 1
 ```
 
-## Start the development stack
+## Start the project
+Inside your project folder, run:
+
 ```bash
-npm run start
+./project.sh start
 ```
 
 This single command:
 
-1. Installs the npm dev dependencies,
-2. Builds and starts the Docker stack (detached),
-3. Runs `composer install` inside the application container,
-4. Seeds the database with `db:seed`, which applies all pending migrations
+1. Builds the application image and starts the Docker stack (detached),
+2. Runs `composer install` inside the application container,
+3. Seeds the database with `db:seed`, which applies all pending migrations,
+4. Prints the startup info with `info:startup`.
 
-!!! warning "First run"
-    The first `npm run start` builds the container image and downloads dependencies, so it takes a few minutes. Subsequent starts are fast.
+To stop and remove the stack (and its volumes), run `./project.sh stop`. `./project.sh shell` opens a shell inside the application container. See [console commands](../core-features/console-commands.md#projectsh) for all `project.sh` commands.
 
 ## Access your application
 | Service | URL |
@@ -43,15 +89,6 @@ The seed creates demo accounts:
 3. `customer@zubzet.com`
 
 (see `app/Database/seed/accounts/`). Adjust or remove them before going to production.
-
-## Everyday commands
-| Command | What it does |
-| ------- | ------------ |
-| `npm run start` | Start the stack and seed the database |
-| `npm run stop` | Stop and remove the stack (and its volumes) |
-| `npm run restart` | Restart the stack |
-| `npm run shell` | Open a shell inside the application container |
-| `npm run seed` | Reset the database: run migrations, then load seed data |
 
 ## Configuration
 Settings live in `z_config/z_settings.ini`. When `allow_env_config = true`, any setting can be overridden by a `CONFIG_*` environment variable. The Docker stack uses this to inject the database and mailer credentials (see `packaging/docker/docker-compose-base.yml`). Keep secrets out of the committed INI file and provide them via the environment.

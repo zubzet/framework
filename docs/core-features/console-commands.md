@@ -72,7 +72,7 @@ Every generated project ships a `project.sh` script in its root for the everyday
 | Command | Description |
 | ------- | ----------- |
 | `./project.sh start` | Build and start the Docker stack, then run `composer install`, `db:seed` and `info:startup`. |
-| `./project.sh stop` | Stop the stack and remove it, including its volumes (like `npm run stop`). |
+| `./project.sh stop` | Stop the stack and remove it, including its volumes. |
 | `./project.sh shell` | Open a shell inside the application container. |
 | `./project.sh tests` | Run the Cypress suite headless; extra arguments (e.g. `--spec`) are passed through. |
 | `./project.sh cypress` | Open the interactive Cypress UI. |
