@@ -28,7 +28,7 @@ describe('Profile', () => {
     }
 
     it('turns away a post without the marker Z.js sends', () => {
-        login('0800a');
+        login('0900a');
 
         ['change-password', 'clear-sessions', 'revoke-token', 'rename-token', 'create-api-key', 'start-two-factor', 'confirm-two-factor', 'disable-two-factor'].forEach((action) => {
             cy.request({ method: 'POST', url: `/_zubzet/profile/${action}`, form: true, body: {} })
@@ -65,7 +65,7 @@ describe('Profile', () => {
     // ---------------------------------------------------------------------
     describe('action_profile', () => {
         it('shows the data of the account behind the cookie', () => {
-            login('0800a');
+            login('0900a');
             cy.visit('/z/profile');
 
             cy.query('profile-heading').should('be.visible');
@@ -75,7 +75,7 @@ describe('Profile', () => {
         });
 
         it('leaves the organization out when the account has none', () => {
-            login('0801a');
+            login('0901a');
             cy.visit('/z/profile');
 
             cy.query('profile-email').should('contain', 'profile_plain@cypress.test');
@@ -111,7 +111,7 @@ describe('Profile', () => {
 
         // Both the sessions and the api keys ship the rename modal
         it('carries the shared rename modal exactly once', () => {
-            login('0800a');
+            login('0900a');
             cy.visit('/z/profile');
 
             cy.get('#z-rename-token').should('have.length', 1);
@@ -129,7 +129,7 @@ describe('Profile', () => {
         };
 
         it('rejects a wrong current password', () => {
-            login('0803a');
+            login('0903a');
 
             post('change-password', { ...credentials, password_current: 'not the password' }).then((out) => {
                 expect(out.result).to.eq('formErrors');
@@ -138,7 +138,7 @@ describe('Profile', () => {
         });
 
         it('rejects a new password that was repeated differently', () => {
-            login('0803a');
+            login('0903a');
 
             post('change-password', { ...credentials, password_repeat: 'something else' }).then((out) => {
                 expect(out.result).to.eq('formErrors');
@@ -147,7 +147,7 @@ describe('Profile', () => {
         });
 
         it('rejects a new password under three characters', () => {
-            login('0803a');
+            login('0903a');
 
             post('change-password', { ...credentials, password_new: 'ab', password_repeat: 'ab' }).then((out) => {
                 expect(out.result).to.eq('formErrors');
@@ -156,7 +156,7 @@ describe('Profile', () => {
         });
 
         it('requires every field', () => {
-            login('0803a');
+            login('0903a');
 
             post('change-password', {}).then((out) => {
                 expect(out.result).to.eq('formErrors');
@@ -171,7 +171,7 @@ describe('Profile', () => {
         // An array passes the length rule by its item count, so the endpoint
         // has to turn it away before it reaches the hashing
         it('turns away a password that is not a string', () => {
-            login('0803a');
+            login('0903a');
 
             const body = 'password_current=password&password_new[]=a&password_new[]=b&password_new[]=c&password_repeat=abc';
 
@@ -189,7 +189,7 @@ describe('Profile', () => {
         });
 
         it('marks the current password as wrong on the form', () => {
-            login('0803a');
+            login('0903a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/_zubzet/profile/change-password').as('change');
             dontFade('change-password-modal');
@@ -208,37 +208,37 @@ describe('Profile', () => {
         });
 
         it('changes the password, ends every login and spares the api keys', () => {
-            login('0802a');
+            login('0902a');
 
             post('change-password', credentials).then((out) => {
                 expect(out.result).to.eq('success');
             });
 
-            cy.request('/AuthProbe/checkPassword/802?password=changed-password').then((res) => {
+            cy.request('/AuthProbe/checkPassword/902?password=changed-password').then((res) => {
                 expect(JSON.parse(res.body)).to.deep.eq({ found: true, ok: true });
             });
-            cy.request('/AuthProbe/checkPassword/802?password=password').then((res) => {
+            cy.request('/AuthProbe/checkPassword/902?password=password').then((res) => {
                 expect(JSON.parse(res.body)).to.deep.eq({ found: true, ok: false });
             });
 
-            tokenActive('0802a').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
-            tokenActive('0802b').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
-            tokenActive('0802c').then((out) => expect(out).to.deep.eq({ exists: true, active: true }));
+            tokenActive('0902a').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
+            tokenActive('0902b').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
+            tokenActive('0902c').then((out) => expect(out).to.deep.eq({ exists: true, active: true }));
         });
     });
 
     // ---------------------------------------------------------------------
     describe('sessions component', () => {
         it('lists every session with its origin, device and expiry', () => {
-            login('0800a');
+            login('0900a');
             cy.visit('/z/profile');
 
-            sessionRow(800)
+            sessionRow(900)
                 .should('contain', 'Cypress Chrome on Linux')
                 .and('contain', 'Started')
                 .and('contain', 'last seen');
 
-            sessionRow(801)
+            sessionRow(901)
                 .should('contain', 'Laptop at home')
                 .and('contain', 'Firefox on Linux')
                 .and('contain', 'Started 04.03.2025 08:30 from 203.0.113.11')
@@ -247,24 +247,24 @@ describe('Profile', () => {
                 .and('contain', 'Reason: z-admin impersonation');
 
             // Api keys belong to their own section
-            cy.get(`[data-test="session-${uuid(802)}"]`).should('not.exist');
+            cy.get(`[data-test="session-${uuid(902)}"]`).should('not.exist');
         });
 
         it('marks the session of this browser', () => {
-            login('0800a');
+            login('0900a');
             cy.visit('/z/profile');
 
-            sessionRow(800).find('[data-test="session-current"]').should('be.visible');
-            sessionRow(801).find('[data-test="session-current"]').should('not.exist');
+            sessionRow(900).find('[data-test="session-current"]').should('be.visible');
+            sessionRow(901).find('[data-test="session-current"]').should('not.exist');
         });
 
         it('renames a session through the modal', () => {
-            login('0804a');
+            login('0904a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/rename-token').as('rename');
             dontFade('token-rename');
 
-            sessionRow(809).find('.z-rename-token').click();
+            sessionRow(909).find('.z-rename-token').click();
             cy.query('token-rename').should('be.visible');
             cy.query('token-name').should('have.value', 'Tablet in the kitchen');
 
@@ -272,53 +272,53 @@ describe('Profile', () => {
             cy.query('btn-save-token-name').click();
             cy.wait('@rename');
 
-            sessionRow(809).should('contain', 'Workstation');
+            sessionRow(909).should('contain', 'Workstation');
         });
 
         it('falls back to a generic name when the modal is emptied', () => {
-            login('0804a');
+            login('0904a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/rename-token').as('rename');
             dontFade('token-rename');
 
-            sessionRow(809).find('.z-rename-token').click();
+            sessionRow(909).find('.z-rename-token').click();
             cy.query('token-rename').should('be.visible');
 
             cy.query('token-name').clear();
             cy.query('btn-save-token-name').click();
             cy.wait('@rename');
 
-            sessionRow(809).find('.z-rename-token').should('have.attr', 'data-name', '');
-            sessionRow(809).should('contain', 'Session');
+            sessionRow(909).find('.z-rename-token').should('have.attr', 'data-name', '');
+            sessionRow(909).should('contain', 'Session');
         });
 
         it('cuts an overlong name to what the column takes', () => {
-            login('0804a');
+            login('0904a');
 
-            post('rename-token', { uuid: uuid(809), type: 'session', name: 'N'.repeat(400) }).then((out) => {
+            post('rename-token', { uuid: uuid(909), type: 'session', name: 'N'.repeat(400) }).then((out) => {
                 expect(out.result).to.eq('success');
             });
 
             cy.visit('/z/profile');
-            sessionRow(809).find('.z-rename-token')
+            sessionRow(909).find('.z-rename-token')
                 .invoke('attr', 'data-name')
                 .should('have.length', 255);
         });
 
         it('revokes another session', () => {
-            login('0804a');
+            login('0904a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/revoke-token').as('revoke');
 
-            sessionRow(810).find('.z-revoke-session').click();
+            sessionRow(910).find('.z-revoke-session').click();
             cy.wait('@revoke');
 
-            sessionRow(810).should('not.exist');
-            tokenActive('0804c').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
+            sessionRow(910).should('not.exist');
+            tokenActive('0904c').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
         });
 
         it('clears every session and spares the api keys', () => {
-            login('0804a');
+            login('0904a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/clear-sessions').as('clear');
 
@@ -328,31 +328,31 @@ describe('Profile', () => {
             // The reload has nothing left to authenticate with
             cy.query('btn-login').should('be.visible');
 
-            tokenActive('0804a').then((out) => expect(out.active).to.eq(false));
-            tokenActive('0804b').then((out) => expect(out.active).to.eq(false));
-            tokenActive('0804d').then((out) => expect(out.active).to.eq(true));
+            tokenActive('0904a').then((out) => expect(out.active).to.eq(false));
+            tokenActive('0904b').then((out) => expect(out.active).to.eq(false));
+            tokenActive('0904d').then((out) => expect(out.active).to.eq(true));
         });
 
         it('revokes the session of this browser', () => {
-            login('0808a');
+            login('0908a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/revoke-token').as('revoke');
 
-            sessionRow(818).find('.z-revoke-session').click();
+            sessionRow(918).find('.z-revoke-session').click();
             cy.wait('@revoke');
 
             cy.query('btn-login').should('be.visible');
-            tokenActive('0808a').then((out) => expect(out.active).to.eq(false));
+            tokenActive('0908a').then((out) => expect(out.active).to.eq(false));
         });
     });
 
     // ---------------------------------------------------------------------
     describe('api keys component', () => {
         it('lists an api key with its creation and expiry', () => {
-            login('0805a');
+            login('0905a');
             cy.visit('/z/profile');
 
-            apiKeyRow(813)
+            apiKeyRow(913)
                 .should('contain', 'Reporting job')
                 .and('contain', 'Created 06.02.2025 10:00 from 203.0.113.14')
                 .and('contain', 'never used since')
@@ -360,14 +360,14 @@ describe('Profile', () => {
         });
 
         it('shows an empty state for an account without api keys', () => {
-            login('0801a');
+            login('0901a');
             cy.visit('/z/profile');
 
             cy.query('api-keys-empty').should('be.visible');
         });
 
         it('creates a key with the chosen lifetime and shows its token once', () => {
-            login('0805a');
+            login('0905a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/create-api-key').as('create');
             dontFade('api-key-created');
@@ -389,7 +389,7 @@ describe('Profile', () => {
         });
 
         it('copies the shown token to the clipboard', () => {
-            login('0805a');
+            login('0905a');
             cy.visit('/z/profile', {
                 onBeforeLoad(win) {
                     cy.stub(win.navigator.clipboard, 'writeText').as('clipboard').resolves();
@@ -411,7 +411,7 @@ describe('Profile', () => {
         });
 
         it('creates a key that never expires', () => {
-            login('0805a');
+            login('0905a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/create-api-key').as('create');
             dontFade('api-key-created');
@@ -428,7 +428,7 @@ describe('Profile', () => {
         });
 
         it('falls back to the shortest lifetime the form offers', () => {
-            login('0805a');
+            login('0905a');
 
             post('create-api-key', { name: 'Unoffered lifetime', lifetime: '9999' }).then((out) => {
                 expect(out.result).to.eq('success');
@@ -441,7 +441,7 @@ describe('Profile', () => {
         });
 
         it('calls a key without a name an api key', () => {
-            login('0805a');
+            login('0905a');
 
             post('create-api-key', { name: '   ', lifetime: 'never' }).then((out) => {
                 expect(out.result).to.eq('success');
@@ -452,12 +452,12 @@ describe('Profile', () => {
         });
 
         it('renames an api key through the shared modal', () => {
-            login('0805a');
+            login('0905a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/rename-token').as('rename');
             dontFade('token-rename');
 
-            apiKeyRow(813).find('.z-rename-token').click();
+            apiKeyRow(913).find('.z-rename-token').click();
             cy.query('token-rename').should('be.visible');
             cy.query('token-name').should('have.value', 'Reporting job');
 
@@ -465,52 +465,52 @@ describe('Profile', () => {
             cy.query('btn-save-token-name').click();
             cy.wait('@rename');
 
-            apiKeyRow(813).should('contain', 'Monthly report');
+            apiKeyRow(913).should('contain', 'Monthly report');
         });
 
         it('falls back to a generic name when an api key name is emptied', () => {
-            login('0805a');
+            login('0905a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/rename-token').as('rename');
             dontFade('token-rename');
 
-            apiKeyRow(813).find('.z-rename-token').click();
+            apiKeyRow(913).find('.z-rename-token').click();
             cy.query('token-rename').should('be.visible');
 
             cy.query('token-name').clear();
             cy.query('btn-save-token-name').click();
             cy.wait('@rename');
 
-            apiKeyRow(813).should('contain', 'API key');
+            apiKeyRow(913).should('contain', 'API key');
         });
 
         it('revokes an api key', () => {
-            login('0805a');
+            login('0905a');
             cy.visit('/z/profile');
             cy.intercept('POST', '**/revoke-token').as('revoke');
 
-            apiKeyRow(813).find('.z-revoke-api-key').click();
+            apiKeyRow(913).find('.z-revoke-api-key').click();
             cy.wait('@revoke');
 
-            apiKeyRow(813).should('not.exist');
-            tokenActive('0805b').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
+            apiKeyRow(913).should('not.exist');
+            tokenActive('0905b').then((out) => expect(out).to.deep.eq({ exists: true, active: false }));
         });
     });
 
     // ---------------------------------------------------------------------
     describe('token guards', () => {
         beforeEach(() => {
-            login('0807a');
+            login('0907a');
         });
 
         it('refuses a session of somebody else', () => {
-            post('revoke-token', { uuid: uuid(814), type: 'session' }).then(expectUnknownToken);
-            tokenActive('0806a').then((out) => expect(out.active).to.eq(true));
+            post('revoke-token', { uuid: uuid(914), type: 'session' }).then(expectUnknownToken);
+            tokenActive('0906a').then((out) => expect(out.active).to.eq(true));
         });
 
         it('refuses an api key of somebody else', () => {
-            post('revoke-token', { uuid: uuid(815), type: 'api-key' }).then(expectUnknownToken);
-            tokenActive('0806b').then((out) => expect(out.active).to.eq(true));
+            post('revoke-token', { uuid: uuid(915), type: 'api-key' }).then(expectUnknownToken);
+            tokenActive('0906b').then((out) => expect(out.active).to.eq(true));
         });
 
         it('refuses an unknown uuid', () => {
@@ -523,43 +523,43 @@ describe('Profile', () => {
 
         // The kind picks the lookup and each one only finds its own rows
         it('refuses a session addressed as an api key', () => {
-            post('revoke-token', { uuid: uuid(816), type: 'api-key' }).then(expectUnknownToken);
-            tokenActive('0807a').then((out) => expect(out.active).to.eq(true));
+            post('revoke-token', { uuid: uuid(916), type: 'api-key' }).then(expectUnknownToken);
+            tokenActive('0907a').then((out) => expect(out.active).to.eq(true));
         });
 
         it('refuses an api key addressed as a session', () => {
-            post('revoke-token', { uuid: uuid(817), type: 'session' }).then(expectUnknownToken);
-            tokenActive('0807b').then((out) => expect(out.active).to.eq(true));
+            post('revoke-token', { uuid: uuid(917), type: 'session' }).then(expectUnknownToken);
+            tokenActive('0907b').then((out) => expect(out.active).to.eq(true));
         });
 
         it('refuses a kind the form never offers', () => {
-            post('revoke-token', { uuid: uuid(816), type: 'cookie' }).then(expectUnknownToken);
-            tokenActive('0807a').then((out) => expect(out.active).to.eq(true));
+            post('revoke-token', { uuid: uuid(916), type: 'cookie' }).then(expectUnknownToken);
+            tokenActive('0907a').then((out) => expect(out.active).to.eq(true));
         });
 
         it('refuses to rename a session of somebody else', () => {
-            post('rename-token', { uuid: uuid(814), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
+            post('rename-token', { uuid: uuid(914), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
 
-            login('0806a');
+            login('0906a');
             cy.visit('/z/profile');
-            sessionRow(814).should('contain', 'Not yours');
+            sessionRow(914).should('contain', 'Not yours');
         });
 
         // Both endpoints share the lookup, so the kinds hold for a rename too
         it('refuses to rename a token addressed as the wrong kind', () => {
-            post('rename-token', { uuid: uuid(816), type: 'api-key', name: 'Mine now' }).then(expectUnknownToken);
-            post('rename-token', { uuid: uuid(817), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
+            post('rename-token', { uuid: uuid(916), type: 'api-key', name: 'Mine now' }).then(expectUnknownToken);
+            post('rename-token', { uuid: uuid(917), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
 
             cy.visit('/z/profile');
-            sessionRow(816).find('.z-rename-token').should('have.attr', 'data-name', '');
-            apiKeyRow(817).should('contain', 'Guarded key');
+            sessionRow(916).find('.z-rename-token').should('have.attr', 'data-name', '');
+            apiKeyRow(917).should('contain', 'Guarded key');
         });
 
         it('turns a visitor who is not logged in away from every endpoint', () => {
             cy.clearCookie('z_login_token');
 
-            post('revoke-token', { uuid: uuid(816), type: 'session' }).then(expectUnknownToken);
-            post('rename-token', { uuid: uuid(816), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
+            post('revoke-token', { uuid: uuid(916), type: 'session' }).then(expectUnknownToken);
+            post('rename-token', { uuid: uuid(916), type: 'session', name: 'Mine now' }).then(expectUnknownToken);
 
             post('clear-sessions', {}).then((out) => {
                 expect(out).to.include({ result: 'error', message: 'Not logged in' });
@@ -568,7 +568,7 @@ describe('Profile', () => {
                 expect(out).to.include({ result: 'error', message: 'Not logged in' });
             });
 
-            tokenActive('0807a').then((out) => expect(out.active).to.eq(true));
+            tokenActive('0907a').then((out) => expect(out.active).to.eq(true));
         });
     });
 });
