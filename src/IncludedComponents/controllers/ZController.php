@@ -1,5 +1,7 @@
 <?php
 
+    use ZubZet\Framework\Authentication\Organization;
+    use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
@@ -91,13 +93,16 @@
             $user = $req->getModel("z_user")->getUserById($userId);
             $email = $user["email"];
 
+            // Plain roles and the groups the user already holds, offered and accepted alike
+            $roles = $req->getModel("z_general")->getTableWhere("z_role", "*", "active = 1 AND (is_group = 0 OR id IN (SELECT role FROM z_user_role WHERE active = 1 AND user = ?))", "i", [$userId]);
+
             if($req->hasFormData()) {
                 $formResult = $req->validateForm([
                     (new FormField("email"))->unique("z_user", "email", "id", $userId),
                 ]);
 
                 $subformResult = $req->validateCED("roles", [
-                    (new FormField("role"))->required()->exists("z_role", "id"),
+                    (new FormField("role"))->required()->in(array_column($roles, "id")),
                 ]);
 
                 $subPermissionForm = $req->validateCED("permissions", [
@@ -127,7 +132,7 @@
 
             return $res->render("administration/edit_user.php", [
                 "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
-                "roles" => $this->makeFood($req->getModel("z_general")->getTableWhere("z_role", "*", "active = ?", "i", [1]), "id", "name"),
+                "roles" => $this->makeFood($roles, "id", "name"),
                 "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
                 "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
                 "result" => "success",
@@ -157,6 +162,71 @@
 
             return $res->render("administration/groups.php", [
                 "groups" => model("z_general")->getGroups(),
+            ]);
+        }
+
+        public function action_organization(Request $req, Response $res) {
+            if(!user()->isLoggedIn) return $res->reroute(["login", "index"]);
+
+            $action = $req->getParameters(0, 1);
+            $target = $req->getParameters(1, 1);
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+
+            if("invitation" === $action) {
+                $invite = empty($target) ? null : model("z_organization")->getInviteByToken($target);
+                $invitedOrganization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
+                $user = User::byId(user()->userId);
+
+                // Unknown, expired, meant for another address or its organization is gone
+                $error = null;
+                if(is_null($invitedOrganization) || 0 !== strcasecmp($invite["email"], $user->email())) {
+                    $error = "invalid_token";
+                } else if(!is_null($organization)) {
+                    $error = "already_in_organization";
+                }
+
+                // The page answers like an unknown address
+                if(!is_null($error)) return zubzet()->executePath(["error", "404"]);
+
+                return $res->render("administration/organization_invitation", [
+                    "invite" => $invite,
+                    // name() is typed string, an organization may have none
+                    "organizationName" => $invitedOrganization->getField("name"),
+                ], "layout/min_layout.php");
+            }
+
+            $invites = [];
+            if(!is_null($organization) && $req->checkPermission("z.organization.invite", true)) {
+                $invites = model("z_organization")->getInvitesByOrganization($organization);
+            }
+
+            $members = [];
+            $roleFood = [];
+            if(!is_null($organization) && $req->checkPermission("z.organization.roles", true)) {
+                foreach(model("z_organization")->getAssignableRoles() as $role) {
+                    $roleFood[] = ["value" => $role["id"], "text" => $role["name"]];
+                }
+
+                $heldRoleIds = [];
+                foreach(model("z_organization")->getAssignedRoles($organization) as $assignment) {
+                    $heldRoleIds[$assignment["user"]][] = $assignment["role"];
+                }
+
+                foreach($organization->getUsers() as $member) {
+                    $members[] = [
+                        "id" => $member->id(),
+                        // email() is typed string, an account may have none
+                        "email" => $member->getField("email"),
+                        "roles" => $heldRoleIds[$member->id()] ?? [],
+                    ];
+                }
+            }
+
+            return $res->render("administration/organization.php", [
+                "organizationName" => $organization?->getField("name"),
+                "invites" => $invites,
+                "members" => $members,
+                "roleFood" => $roleFood,
             ]);
         }
 
@@ -192,6 +262,7 @@
             if($req->hasFormData()) {
                 $formResult = $req->validateForm([
                     (new FormField("name"))->required()->length(3, 100),
+                    (new FormField("is_org_assignable"))->required()->in(["0", "1"]),
                 ]);
                 $subformResult = $req->validateCED("permissions", [
                     (new FormField("name"))->required()->length(3, 100),
@@ -208,6 +279,7 @@
 
             return $res->render("administration/roles.php", [
                 "name" => $role["name"],
+                "isOrgAssignable" => (bool) $role["is_org_assignable"],
                 "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"]),
             ]);
         }
