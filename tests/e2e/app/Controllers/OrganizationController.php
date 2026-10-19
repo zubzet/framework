@@ -184,17 +184,20 @@
          *
          * @var Request requireOrganization
          *
-         * Like CoreController::permissionCheck, the probe runs both shapes back to back: the
-         * boolResult call prints allowed/denied, the default call lets "passed" through only on
-         * access and shows the login or 403 page otherwise.
+         * Each shape gets its own probe: output before the 403 page sends the headers and
+         * http_response_code() then fails. The boolResult probe prints allowed/denied, the
+         * default probe lets "passed" through only on access and shows the login or 403 page otherwise.
          *
          */
         public function action_requireLogin(Request $req, Response $res): void {
             $res->loginAs((int) $req->getParameters(0, 1));
         }
 
+        public function action_requireBool(Request $req, Response $res): void {
+            echo $req->requireOrganization(true) ? "allowed" : "denied";
+        }
+
         public function action_require(Request $req, Response $res): void {
-            echo $req->requireOrganization(true) ? "allowed\n" : "denied\n";
             $req->requireOrganization();
             echo "passed";
         }

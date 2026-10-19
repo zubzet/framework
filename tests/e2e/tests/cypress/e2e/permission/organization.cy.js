@@ -248,13 +248,9 @@ describe('Permission System - Organization', () => {
 
     // Request::requireOrganization, through the probe in OrganizationController
     describe('requireOrganization', () => {
-        function check() {
-            return cy.request({ url: '/organization/require', failOnStatusCode: false });
-        }
-
         function expectDenied(page) {
-            check().its('body').then((body) => {
-                expect(body.startsWith('denied\n'), 'boolResult returns false').to.be.true;
+            cy.request('/organization/requireBool').its('body').should('eq', 'denied');
+            cy.request({ url: '/organization/require', failOnStatusCode: false }).its('body').then((body) => {
                 expect(body, 'the default call stops the request').to.not.include('passed');
                 expect(body).to.include(page);
             });
@@ -271,7 +267,8 @@ describe('Permission System - Organization', () => {
 
         it('allows a member of an organization', () => {
             cy.request('/organization/requireLogin/560');
-            check().its('body').should('eq', 'allowed\npassed');
+            cy.request('/organization/requireBool').its('body').should('eq', 'allowed');
+            cy.request('/organization/require').its('body').should('eq', 'passed');
         });
 
         it('forbids a user without an organization', () => {
