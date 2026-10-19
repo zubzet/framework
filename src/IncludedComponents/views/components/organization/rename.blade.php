@@ -9,7 +9,7 @@
                 var form = Z.Forms.create({
                     dom: "z-organization-rename-form",
                     name: "z-organization-rename",
-                    customEndpoint: Z.Request.rootPath + "z/organization/rename",
+                    customEndpoint: Z.Request.rootPath + "_zubzet/organization/rename",
                     saveHook: () => $(".z-organization-name").text(nameField.value),
                 });
 

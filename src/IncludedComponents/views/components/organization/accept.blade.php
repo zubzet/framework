@@ -19,7 +19,7 @@
                     error.addClass("d-none");
 
                     // attr() rather than data(), which would turn an all digit token into a number
-                    Z.Request.root("z/organization/invitation/" + button.attr("data-token") + "/accept", null, {}, (res) => {
+                    Z.Request.root("_zubzet/organization/invitations/" + button.attr("data-token") + "/accept", null, {}, (res) => {
                         if("success" != res.result) {
                             button.prop("disabled", false);
                             // The backend answers with a code, Z.Lang holds its text

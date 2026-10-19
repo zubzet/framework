@@ -33,7 +33,7 @@
                         var button = $(this);
                         button.prop("disabled", true);
 
-                        Z.Request.root("z/organization/revoke/" + button.data("id"), null, {}, (res) => {
+                        Z.Request.root("_zubzet/organization/invites/" + button.data("id") + "/revoke", null, {}, (res) => {
                             if("success" == res.result) return location.reload();
                             button.prop("disabled", false);
                         });

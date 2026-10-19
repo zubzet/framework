@@ -20,7 +20,7 @@
                 var form = Z.Forms.create({
                     dom: "z-organization-invite-form",
                     name: "z-organization-invite",
-                    customEndpoint: Z.Request.rootPath + "z/organization/invite",
+                    customEndpoint: Z.Request.rootPath + "_zubzet/organization/invites",
                     saveHook: (res) => {
                         // The link stays until the next invite, the field is free for it
                         emailField.value = "";

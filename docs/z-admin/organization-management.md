@@ -41,7 +41,7 @@ In the *Members* section every member gets a multi select of the released roles.
 
 ## Components
 
-The page is built from Blade components in the `zubzet::` namespace, so an application can place them on its own pages. Each one checks its permission and renders nothing without it. They post to the `z/organization/*` endpoints of the Z-Admin panel.
+The page is built from Blade components in the `zubzet::` namespace, so an application can place them on its own pages. Each one checks its permission and renders nothing without it. They post to the framework's `_zubzet/organization/*` endpoints.
 
 | Component | Props | Permission |
 | --------- | ----- | ---------- |

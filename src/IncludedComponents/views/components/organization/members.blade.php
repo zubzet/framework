@@ -35,7 +35,7 @@
                     var form = Z.Forms.create({
                         dom: "z-organization-member-" + member.id + "-form",
                         name: "z-organization-member-" + member.id,
-                        customEndpoint: Z.Request.rootPath + "z/organization/roles/" + member.id,
+                        customEndpoint: Z.Request.rootPath + "_zubzet/organization/members/" + member.id + "/roles",
                     });
 
                     form.createField({

@@ -88,7 +88,7 @@ describe('Z-Admin - Organization', () => {
 
         it('prefills and saves the name', () => {
             cy.visit('/z/organization');
-            cy.intercept('POST', '/z/organization/rename').as('rename');
+            cy.intercept('POST', '/_zubzet/organization/rename').as('rename');
 
             openModal('rename');
             cy.form('name').should('have.value', 'zorg_Rename').clear().type('zorg_Renamed');
@@ -101,17 +101,17 @@ describe('Z-Admin - Organization', () => {
         });
 
         it('rejects an empty or too short name', () => {
-            post('/z/organization/rename', { isFormData: 1, formAction: 'z-organization-rename', name: '' }).then((out) => {
+            post('/_zubzet/organization/rename', { isFormData: 1, formAction: 'z-organization-rename', name: '' }).then((out) => {
                 expect(out.formErrors).to.deep.include({ name: 'name', type: 'required' });
             });
 
-            post('/z/organization/rename', { isFormData: 1, formAction: 'z-organization-rename', name: 'ab' }).then((out) => {
+            post('/_zubzet/organization/rename', { isFormData: 1, formAction: 'z-organization-rename', name: 'ab' }).then((out) => {
                 expect(out.formErrors).to.deep.include({ name: 'name', type: 'length', info: [3, 255] });
             });
         });
 
         it('keeps a name with markup from closing the script tag', () => {
-            post('/z/organization/rename', {
+            post('/_zubzet/organization/rename', {
                 isFormData: 1,
                 formAction: 'z-organization-rename',
                 name: '</script><script>alert(1)</script>',
@@ -125,7 +125,7 @@ describe('Z-Admin - Organization', () => {
         it('refuses a user without z.organization.rename', () => {
             cy.loginAs('zorg_member');
 
-            statusOf('/z/organization/rename', {
+            statusOf('/_zubzet/organization/rename', {
                 isFormData: 1,
                 formAction: 'z-organization-rename',
                 name: 'zorg_Hijacked',
@@ -136,7 +136,7 @@ describe('Z-Admin - Organization', () => {
     describe('Invite', () => {
         beforeEach(() => cy.loginAs('zorg_manager'));
 
-        const invite = (email) => post('/z/organization/invite', {
+        const invite = (email) => post('/_zubzet/organization/invites', {
             isFormData: 1,
             formAction: 'z-organization-invite',
             email: email,
@@ -144,7 +144,7 @@ describe('Z-Admin - Organization', () => {
 
         it('creates an invitation link through the form', () => {
             cy.visit('/z/organization');
-            cy.intercept('POST', '/z/organization/invite').as('invite');
+            cy.intercept('POST', '/_zubzet/organization/invites').as('invite');
 
             openModal('invite');
             cy.form('email').type('zorg_invitable@cypress.test');
@@ -157,7 +157,7 @@ describe('Z-Admin - Organization', () => {
 
         it('explains in words why an address cannot be invited', () => {
             cy.visit('/z/organization');
-            cy.intercept('POST', '/z/organization/invite').as('invite');
+            cy.intercept('POST', '/_zubzet/organization/invites').as('invite');
 
             openModal('invite');
             cy.form('email').type('zorg_nobody@cypress.test');
@@ -213,7 +213,7 @@ describe('Z-Admin - Organization', () => {
         it('refuses a user without z.organization.invite', () => {
             cy.loginAs('zorg_member');
 
-            statusOf('/z/organization/invite', {
+            statusOf('/_zubzet/organization/invites', {
                 isFormData: 1,
                 formAction: 'z-organization-invite',
                 email: 'zorg_invitable@cypress.test',
@@ -238,7 +238,7 @@ describe('Z-Admin - Organization', () => {
 
         it('revokes an invitation through its button', () => {
             cy.visit('/z/organization');
-            cy.intercept('POST', '/z/organization/revoke/806').as('revoke');
+            cy.intercept('POST', '/_zubzet/organization/invites/806/revoke').as('revoke');
 
             cy.query('organization-invite-806').find('[data-test="btn-revoke-organization-invite"]').click();
             cy.wait('@revoke');
@@ -247,19 +247,19 @@ describe('Z-Admin - Organization', () => {
         });
 
         it('does not revoke an invitation of another organization', () => {
-            post('/z/organization/revoke/807').should('deep.include', { result: 'error', message: 'invalid_invite' });
+            post('/_zubzet/organization/invites/807/revoke').should('deep.include', { result: 'error', message: 'invalid_invite' });
         });
 
         it('refuses a user without z.organization.invite', () => {
             cy.loginAs('zorg_member');
-            statusOf('/z/organization/revoke/809', {}).should('eq', 403);
+            statusOf('/_zubzet/organization/invites/809/revoke', {}).should('eq', 403);
         });
     });
 
     describe('Members', () => {
         beforeEach(() => cy.loginAs('zorg_manager'));
 
-        const saveRoles = (userId, roles = {}) => post(`/z/organization/roles/${userId}`, {
+        const saveRoles = (userId, roles = {}) => post(`/_zubzet/organization/members/${userId}/roles`, {
             isFormData: 1,
             formAction: `z-organization-member-${userId}`,
             ...roles,
@@ -276,7 +276,7 @@ describe('Z-Admin - Organization', () => {
 
         it('assigns a role through the form', () => {
             cy.visit('/z/organization');
-            cy.intercept('POST', '/z/organization/roles/801').as('roles');
+            cy.intercept('POST', '/_zubzet/organization/members/801/roles').as('roles');
 
             cy.query('organization-member-801').find('[data-test="btn-edit-organization-member-roles"]').click();
             cy.get('#z-organization-member-801-form select[name=roles]').select('zorg_Assignable_Role');
@@ -312,7 +312,7 @@ describe('Z-Admin - Organization', () => {
         it('refuses a user without z.organization.roles', () => {
             cy.loginAs('zorg_member');
 
-            statusOf('/z/organization/roles/801', {
+            statusOf('/_zubzet/organization/members/801/roles', {
                 isFormData: 1,
                 formAction: 'z-organization-member-801',
             }).should('eq', 403);
@@ -355,12 +355,12 @@ describe('Z-Admin - Organization', () => {
     });
 
     describe('Accept', () => {
-        const accept = (token) => post(`/z/organization/invitation/${token}/accept`);
+        const accept = (token) => post(`/_zubzet/organization/invitations/${token}/accept`);
 
         it('joins the organization through the button', () => {
             cy.loginAs('zorg_invitee');
             cy.visit('/z/organization/invitation/zorg_token_accept_ui');
-            cy.intercept('POST', '/z/organization/invitation/zorg_token_accept_ui/accept').as('accept');
+            cy.intercept('POST', '/_zubzet/organization/invitations/zorg_token_accept_ui/accept').as('accept');
 
             cy.query('btn-accept-organization-invitation').click();
             cy.wait('@accept');
@@ -401,7 +401,7 @@ describe('Z-Admin - Organization', () => {
         it('explains a refused accept in words', () => {
             cy.loginAs('zorg_stranger');
             cy.visit('/z/organization/invitation/zorg_token_open');
-            cy.intercept('POST', '/z/organization/invitation/zorg_token_open/accept', JSON.stringify({
+            cy.intercept('POST', '/_zubzet/organization/invitations/zorg_token_open/accept', JSON.stringify({
                 result: 'error',
                 message: 'already_in_organization',
             }));
