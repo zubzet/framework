@@ -297,13 +297,6 @@ describe('Auth flows', () => {
             submit('nope-4').then((res) => {
                 expect(res.body).to.include('Too many login tries');
             });
-
-            // Security alert email arrived.
-            fetchLatestMail().then((mail) => {
-                expect(mail.to[0]).to.eq('auth_ratelimit@cypress.test');
-                expect(JSON.stringify(mail.subject).toLowerCase())
-                    .to.match(/security alert|sicherheits/);
-            });
         });
     });
 

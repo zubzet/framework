@@ -3,7 +3,6 @@
      * This file holds the login controller
      */
 
-    use ZubZet\Framework\Authentication\Login;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
@@ -18,7 +17,7 @@
         // Both the password and the two factor step run through this, so wrong
         // codes count the same as wrong passwords.
         private function blockedByLoginLimit(User $user): bool {
-            return !Login::checkLoginTries($user);
+            return !$user->checkLoginTries();
         }
 
         /**
@@ -59,7 +58,7 @@
 
             // Wrong password: record the attempt so it counts toward the rate limit.
             if(!$user->verifyPassword($req->getPost("password"))) {
-                Login::recordTry($user);
+                $user->recordLoginTry();
                 return $res->error("Username or password is wrong");
             }
 
