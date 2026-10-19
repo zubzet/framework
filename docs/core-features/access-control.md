@@ -247,6 +247,36 @@ The account side of [two factor authentication](two-factor-authentication.md). T
 
 ---
 
+### Login Tries
+
+Failed logins are counted per account to rate-limit password guessing.
+
+* Returns `false` when the user has more failed tries than `maxLoginTriesPerTimespan` within the last `maxLoginTriesTimespan`. The event is logged as `ACCOUNT_LOGIN_RATE_LIMITED`.
+
+    ```php
+    $user->checkLoginTries(): bool
+    ```
+
+* Counts a failed login toward that limit.
+
+    ```php
+    $user->recordLoginTry(): void
+    ```
+
+```php
+if(!$user->checkLoginTries()) {
+    // blocked, notify the owner here if the application wants to
+}
+
+if(!$user->verifyPassword($password)) {
+    $user->recordLoginTry();
+}
+```
+
+The framework does not notify the owner of a blocked login, an application does that itself where it needs to.
+
+---
+
 ### Role Assignment
 
 Users can have multiple roles assigned or removed dynamically.
@@ -810,6 +840,21 @@ Everything else a key needs it already has as a session: it is named through
     ```php
     APIKey::LIFETIMES // [1 => "1 day", 3 => "3 days", ..., 365 => "1 year"]
     ```
+
+---
+
+### Bearer Authentication
+
+A client that cannot keep a cookie, like a script or another service, sends its token in the
+`Authorization` header instead. Both a login and an [api key](#api-keys) authenticate this way.
+
+```
+Authorization: Bearer <token>
+```
+
+The bearer token wins over the `z_login_token` cookie. If it is invalid or expired the request is
+anonymous, it does not fall back to the cookie. A header of another scheme, like `Basic`, is ignored
+and the cookie is used. `$req->bearerToken()` returns the token of the header, or `null`.
 
 ---
 
