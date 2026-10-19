@@ -26,6 +26,12 @@
             $input->SESSION = $_SESSION ?? [];
             $input->COOKIE = $_COOKIE ?? [];
 
+            // mod_php hands the Authorization header to getallheaders() only, not to $_SERVER
+            if(!isset($input->SERVER['HTTP_AUTHORIZATION']) && function_exists('getallheaders')) {
+                $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+                if(isset($headers['authorization'])) $input->SERVER['HTTP_AUTHORIZATION'] = $headers['authorization'];
+            }
+
             // Parse Post request
             array_walk_recursive($_POST, function(&$item) {
                 if(substr($item, 0, 10) == "<#decURI#>") {

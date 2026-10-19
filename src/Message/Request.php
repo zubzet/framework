@@ -101,6 +101,16 @@
             return $this->input->SERVER['HTTP_USER_AGENT'] ?? null;
         }
 
+        // The token of an `Authorization: Bearer <token>` header, null for any other scheme
+        public function bearerToken(): ?string {
+            $header = $this->input->SERVER['HTTP_AUTHORIZATION'] ?? null;
+
+            // "Bearer" in any case, whitespace, then a single token with no spaces in it
+            if(!is_string($header) || !preg_match('/^Bearer\s+(\S+)$/i', trim($header), $match)) return null;
+
+            return $match[1];
+        }
+
         public function acceptLanguage(): array {
             $header = $this->input->SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
             if(!is_string($header) || "" === trim($header)) return [];
