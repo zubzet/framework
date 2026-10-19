@@ -413,7 +413,7 @@
                     && $group->name() === $organization->getField("name") . "_Group"
                     && $name !== $organization->getField("name");
 
-                if($renameGroup && !db()->checkIfUnique("z_role", "name", $name . "_Group")) {
+                if($renameGroup && !db()->checkIfUnique("z_role", "name", $name . "_Group", "id", $group->id())) {
                     $formResult->addCustomError("name", "unique");
                     return $res->formErrors($formResult->errors);
                 }
