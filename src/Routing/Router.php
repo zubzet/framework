@@ -36,6 +36,12 @@
 
             $uri = rawurldecode($uri);
 
+            // Routes are defined relative to the root directory, a doubled slash after it counts as one
+            $rootFolder = config("rootFolder");
+            if("/" !== $rootFolder && str_starts_with("$uri/", $rootFolder)) {
+                $uri = "/" . ltrim(substr($uri, strlen($rootFolder)), "/");
+            }
+
             // Strip trailing slashes internally so /test/abc/ matches the same route as /test/abc
             if($uri !== '/') {
                 $uri = rtrim($uri, '/');
@@ -156,8 +162,9 @@
          * @param array $parts The parts of the new route. Example: ["auth", "login"]
          */
         public function reroute(array $parts): void {
+            // Below the root directory, like a real request
             $newState = State::fromOverwrite(request()->input)
-                ->withPath(is_array($parts) ? implode("/", $parts) : $parts)
+                ->withPath(config("rootFolder") . ltrim(implode("/", $parts), "/"))
                 ->withArgs($parts);
             zubzet()->replaceRequest($newState);
             $this->execute();

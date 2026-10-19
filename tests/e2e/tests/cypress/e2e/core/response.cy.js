@@ -94,6 +94,19 @@ describe('Response', () => {
             cy.clearCookie('z_login_token');
         });
 
+        // Without the setting the cookie used to get a lifetime of 0 and
+        // expired the moment it was set, logging the user straight out.
+        it('loginAs falls back to a 7 day cookie without loginTimeoutSeconds', () => {
+            cy.request('/Response/loginAsWithoutTimeoutSetting').then((res) => {
+                const headers = [].concat(res.headers['set-cookie'] || []);
+                const login = headers.find((h) => h.startsWith('z_login_token='));
+                expect(login, 'Set-Cookie carrying z_login_token').to.exist;
+                const maxAge = Number(/max-age=(\d+)/i.exec(login)[1]);
+                expect(maxAge).to.be.within(7 * 24 * 60 * 60 - 5, 7 * 24 * 60 * 60);
+            });
+            cy.clearCookie('z_login_token');
+        });
+
         // deleteOldLoginCookieDomainScope() clears the cookie on a
         // configured *legacy* domain so the unified-login transition
         // doesn't leave orphaned cookies on the old scope. PHP emits

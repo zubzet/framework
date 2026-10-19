@@ -6,6 +6,7 @@
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Translation\Translation;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -176,16 +177,17 @@
                     );
 
                     $url = $req->getBooterSettings("host") . $req->getRootFolder() . "login/reset/$code/";
- 
+
+                    // The recipient's language, not the one of whoever asked
+                    $locale = Translation::locale(User::byId($user["id"]));
+
                     $res->sendEmailToUser(
                         $user["id"],
-                        [
-                            "en" => "Password Reset",
-                            "DE_Formal" => "Passwort Zurücksetzten"
-                        ],
+                        __("email.password_reset.subject", locale: $locale),
                         "email_password_reset.php", 
                         [
-                            "reset_link" => $url
+                            "reset_link" => $url,
+                            "locale" => $locale,
                         ]
                     );
 

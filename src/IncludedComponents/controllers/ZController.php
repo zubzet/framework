@@ -28,7 +28,8 @@
                     MaintenanceHandler::$COOKIE_KEY,
                     "true",
                     time() + TIMESPAN_DAY_1,
-                    $req->getRootFolder(),
+                    // Without the trailing slash, so the bare root sends it too
+                    rtrim($req->getRootFolder(), "/") ?: "/",
                 );
                 return $res->success();
             }
