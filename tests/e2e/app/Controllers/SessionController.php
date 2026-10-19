@@ -135,6 +135,42 @@ class SessionController extends z_controller {
         echo(json_encode($this->getSession($session)));
     }
 
+    /**
+     * Every authenticated request looks its session up by token, so the
+     * lookup has to hit a unique index instead of scanning the table.
+     */
+    public function action_tokenIndex(Request $req, Response $res): void {
+        $index = db()->exec(
+            "SELECT INDEX_NAME, NON_UNIQUE FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'z_logintoken'
+               AND COLUMN_NAME = 'token' AND SEQ_IN_INDEX = 1"
+        )->resultToLine();
+
+        $token = Session::byId(404)->token();
+        $plan = db()->exec(
+            "EXPLAIN SELECT * FROM `z_logintoken` WHERE `token` = ? AND `active` = 1 LIMIT 1",
+            "s", $token,
+        )->resultToLine();
+
+        try {
+            $id = db()->exec(
+                "INSERT INTO `z_logintoken` (`token`, `userId`, `userId_exec`) VALUES (?, 404, 404)",
+                "s", $token,
+            )->getInsertId();
+            db()->exec("DELETE FROM `z_logintoken` WHERE `id` = ?", "i", $id);
+            $duplicate = "inserted";
+        } catch(\Throwable $e) {
+            $duplicate = $e->getMessage();
+        }
+
+        echo(json_encode([
+            'index'     => $index["INDEX_NAME"] ?? null,
+            'unique'    => isset($index["NON_UNIQUE"]) && 0 == $index["NON_UNIQUE"],
+            'lookupKey' => $plan["key"] ?? null,
+            'duplicate' => $duplicate,
+        ]));
+    }
+
 
     /**
      *
