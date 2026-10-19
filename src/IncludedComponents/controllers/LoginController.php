@@ -15,42 +15,10 @@
     class LoginController extends z_controller {
 
         // True once the account used up its login tries in the current window.
-        // Warns the owner on the way, at most once per window. Both the password
-        // and the two factor step run through this, so wrong codes count the same
-        // as wrong passwords.
-        private function blockedByLoginLimit(Request $req, Response $res, User $user): bool {
-            $loginModel = $req->getModel("z_login", $req->getZRoot());
-
-            $timespanStart = date('Y-m-d H:i:s', strtotime('-' . $req->getBooterSettings("maxLoginTriesTimespan")));
-            $recentTries = $loginModel->countLoginTriesByTimeSpan($user->id(), $timespanStart);
-
-            if($recentTries <= $req->getBooterSettings("maxLoginTriesPerTimespan")) return false;
-
-            // Warn the owner once per window, and only for a valid client IP.
-            $clientIp = filter_var($req->ip(), FILTER_VALIDATE_IP);
-            if($clientIp && $loginModel->sendTooManyLoginsEmailByUserId($user->id())) {
-                $res->sendEmailToUser(
-                    $user->id(),
-                    [
-                        "DE_Formal" => "Sicherheitsmeldung",
-                        "en" => "Security alert",
-                    ],
-                    "email_too_many_logins.php",
-                    [
-                        "user" => $user->getAll(),
-                        "date" => date("Y-m-d H:i:s"),
-                        "ip" => $clientIp,
-                    ],
-                );
-            }
-
-            $loginModel->addTooManyLoginsEmailByUserId($user->id());
-
-            logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
-                "userId" => $user->id(),
-            ]);
-
-            return true;
+        // Both the password and the two factor step run through this, so wrong
+        // codes count the same as wrong passwords.
+        private function blockedByLoginLimit(User $user): bool {
+            return !Login::checkLoginTries($user);
         }
 
         /**
@@ -85,7 +53,7 @@
                 return $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
             }
 
-            if($this->blockedByLoginLimit($req, $res, $user)) {
+            if($this->blockedByLoginLimit($user)) {
                 return $res->error("Too many login tries. Try again later.");
             }
 
@@ -133,7 +101,7 @@
             $user = User::byId($challengeObj["userId"]);
             if(is_null($user)) return $res->error("Invalid challenge");
 
-            if($this->blockedByLoginLimit($req, $res, $user)) {
+            if($this->blockedByLoginLimit($user)) {
                 return $res->error("Too many login tries. Try again later.");
             }
 
