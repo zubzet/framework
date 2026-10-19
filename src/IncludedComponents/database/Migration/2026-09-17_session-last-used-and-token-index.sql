@@ -1,3 +1,2 @@
 ALTER TABLE `z_logintoken`
-    ADD COLUMN IF NOT EXISTS `last_used` TIMESTAMP NULL DEFAULT NULL AFTER `expires_at`,
-    ADD INDEX IF NOT EXISTS `token` (`token`);
+    ADD COLUMN IF NOT EXISTS `last_used` TIMESTAMP NULL DEFAULT NULL AFTER `expires_at`;
