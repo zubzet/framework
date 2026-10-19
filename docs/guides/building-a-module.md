@@ -582,8 +582,8 @@ back. The same ordering applies to `module:setup`: for shared keys like `guestbo
 first module in module order provides the merged default.
 
 A view-only module can shadow framework views the same way. The sample theme also ships
-`app/Views/email_too_many_logins.blade.php`, replacing the framework's security notification email
-for the whole application.
+`app/Views/email_too_many_logins.blade.php`, replacing the framework's view of the same name for the
+whole application. The framework keeps that view but no longer sends the security alert itself.
 
 ## Testing Your Module
 

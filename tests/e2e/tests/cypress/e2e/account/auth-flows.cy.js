@@ -270,7 +270,7 @@ describe('Auth flows', () => {
 
     // ---------------------------------------------------------------------
     describe('action_index - rate limiting', () => {
-        it('blocks login after configured threshold and emails a security alert', () => {
+        it('blocks login after configured threshold', () => {
             cy.setConfigSetting('maxLoginTriesPerTimespan', '2');
             clearMailhog();
 
