@@ -12,7 +12,7 @@
         private const IV_LENGTH = 12;
         private const TAG_LENGTH = 16;
 
-        public function encrypt(string $key, string $plaintext): string {
+        public function encrypt(#[\SensitiveParameter] string $key, #[\SensitiveParameter] string $plaintext): string {
             $iv = random_bytes(self::IV_LENGTH);
             $tag = "";
 
@@ -24,7 +24,7 @@
             return $iv . $tag . $ciphertext;
         }
 
-        public function decrypt(string $key, string $payload): string {
+        public function decrypt(#[\SensitiveParameter] string $key, string $payload): string {
             if(strlen($payload) < self::IV_LENGTH + self::TAG_LENGTH) {
                 throw new DecryptionException("The encrypted value is malformed.");
             }

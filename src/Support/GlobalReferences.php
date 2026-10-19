@@ -177,7 +177,7 @@
              * @param string $plaintext Value to encrypt
              * @return string Encrypted value, safe to store as text
              */
-            function encryptSecret(string $plaintext): string {
+            function encryptSecret(#[\SensitiveParameter] string $plaintext): string {
                 return Encryption::encryptSecret($plaintext);
             }
         });

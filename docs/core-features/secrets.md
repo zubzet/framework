@@ -28,6 +28,13 @@ Generate a random one, for example with:
 php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
 ```
 
+Wrap a key that contains `=` or `!`, such as a base64 one, in double quotes, otherwise
+`z_settings.ini` cannot be parsed:
+
+```ini
+encryption_key = "0WLTPAWOP15mDT/gBrdw/RMbctM7TFVXaPViz3y8AtA="
+```
+
 !!! warning "Keep the key out of the repository and never lose it"
     Anyone with the key and the database can decrypt every value, so provide it through the
     environment (`CONFIG_ENCRYPTION_KEY` with `allow_env_config = true`, see
@@ -89,6 +96,11 @@ A missing `encryption_key`, or one shorter than 32 bytes, throws a `RuntimeExcep
 misconfiguration is noticed before anything is stored. Decryption checks the value first: a value
 that is not in the encrypted format throws the `DecryptionException` even when the key is missing.
 
+!!! note "Stack traces"
+    PHP copies the first 15 bytes of every argument into an exception's stack trace, which the
+    framework logs. From PHP 8.2 on, `#[\SensitiveParameter]` hides the secret and the key there.
+    On PHP 8.0 and 8.1 set `zend.exception_ignore_args = On` in `php.ini`.
+
 ## Storage format
 
 An encrypted value is plain text of the form `zenc:aes-256-gcm:` followed by base64url. Encrypting
@@ -114,7 +126,7 @@ $credentials = json_decode(decryptSecret($stored), true);
 ```
 
 The cipher key is derived from `encryption_key` with HKDF-SHA256, so the setting may be any
-sufficiently long random string.
+sufficiently long random string, in double quotes if it contains `=` or `!`.
 
 ## Changing the algorithm
 

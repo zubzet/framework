@@ -14,13 +14,13 @@
          * @param string $key 32 raw bytes
          * @return string Raw bytes, including everything decrypt() needs besides the key
          */
-        public function encrypt(string $key, string $plaintext): string;
+        public function encrypt(#[\SensitiveParameter] string $key, #[\SensitiveParameter] string $plaintext): string;
 
         /**
          * @param string $key 32 raw bytes
          * @throws DecryptionException When the key is wrong or the payload is malformed or modified
          */
-        public function decrypt(string $key, string $payload): string;
+        public function decrypt(#[\SensitiveParameter] string $key, string $payload): string;
 
     }
 

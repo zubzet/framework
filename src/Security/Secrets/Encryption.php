@@ -28,7 +28,7 @@
             "aes-256-gcm" => AesGcmCipher::class,
         ];
 
-        public static function encryptSecret(string $plaintext): string {
+        public static function encryptSecret(#[\SensitiveParameter] string $plaintext): string {
             $cipherClass = self::CIPHERS[self::DEFAULT_CIPHER];
             $cipher = new $cipherClass();
             $key = self::key(self::DEFAULT_CIPHER);
