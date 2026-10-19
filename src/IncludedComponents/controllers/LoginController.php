@@ -3,6 +3,7 @@
      * This file holds the login controller
      */
 
+    use ZubZet\Framework\Authentication\Login;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
@@ -61,8 +62,6 @@
          * @param Response $res The response object
          */
         public function action_index($req, $res) {
-            $loginModel = $req->getModel("z_login", $req->getZRoot());
-
             // No credentials submitted yet: render the login form.
             if($req->getPost("name", false) === false) {
                 return $res->render("login.php", [
@@ -92,7 +91,7 @@
 
             // Wrong password: record the attempt so it counts toward the rate limit.
             if(!$user->verifyPassword($req->getPost("password"))) {
-                $loginModel->newLoginTry($user->id());
+                Login::recordTry($user);
                 return $res->error("Username or password is wrong");
             }
 
