@@ -36,6 +36,10 @@ x-built-application-image: &built-application-image
     - ../../:/var/www/html
     - ../../../../:/var/www/framework
     - ./site-000-default.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+    # COMPOSER_VENDOR_DIR lives outside the bind mount, so it is a named volume
+    # shared with the worker: `composer install` runs once, in the application
+    # container, and the workers see the same dependencies.
+    - vendor:/var/www/vendor
   depends_on:
     database:
       condition: service_healthy
@@ -63,6 +67,38 @@ services:
     <<: *built-application-image
     ports:
       - 8080:80
+
+  # Background task workers
+  #
+  # The same image as the application, started with the worker command instead
+  # of the web server. This is the whole deployment story for background work:
+  # no extra image, no broker, no additional stateful service. The supervisor
+  # keeps four worker processes alive inside this one container, and the queue
+  # lives in the database the application already depends on.
+  worker:
+    container_name: worker
+    <<: *built-application-image
+    # An init as PID 1 reaps exited workers and, more importantly, forwards
+    # SIGTERM: the kernel ignores default signal dispositions for PID 1, so
+    # without this the supervisor would never see a stop and could not drain.
+    init: true
+    # The application image is an Apache image, and Apache images declare
+    # STOPSIGNAL SIGWINCH (its graceful-stop signal). PHP ignores SIGWINCH, so
+    # without this the supervisor would never hear a stop and every worker
+    # would be killed mid-task once the grace period ran out.
+    stop_signal: SIGTERM
+    # Long enough for a worker to finish the task it is running.
+    stop_grace_period: 45s
+    # Workers recycle every 15 minutes, so a leak in application code can never
+    # accumulate across a long lived process; the supervisor replaces them.
+    #
+    # The wait keeps the container from crash looping while `npm run start`
+    # installs dependencies into the shared vendor volume. It probes the
+    # console rather than the autoloader file, so a half written vendor
+    # directory counts as not ready too.
+    command: >
+      sh -c 'until php index.php list >/dev/null 2>&1; do sleep 2; done;
+             exec php index.php queue:work --workers=4 --time-limit=900'
 
   # Backend Services
   #
@@ -171,3 +207,4 @@ volumes:
   mariadb2:
   mariadb3:
   rabbitmq:
+  vendor:

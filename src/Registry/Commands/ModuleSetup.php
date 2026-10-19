@@ -98,6 +98,7 @@
             "health_endpoint_enabled", "uploadFolder", "rootDirectory",
             "host", "defaultIndex", "execution_type",
             "modules", "modules_disabled",
+            "task_endpoint_enabled", "task_max_attempts", "task_reservation_timeout",
         ];
         private const RESERVED_PREFIXES = ["db", "logger_", "mail_", "z_", "config_"];
 
