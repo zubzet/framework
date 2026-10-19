@@ -11,7 +11,7 @@
         $(function() {
             var form = Z.Forms.create({dom: "form"});
 
-            var inputName = form.createField({name: "name", type: "name", text: <?= json_encode(__("admin.roles.name")) ?>, value: "<?php echo $opt["name"]; ?>"});
+            var inputName = form.createField({name: "name", type: "name", text: <?= json_encode(__("admin.roles.name")) ?>, value: <?= json_encode($opt["name"], JSON_HEX_TAG | JSON_HEX_AMP); ?>});
 
             form.createField({
                 name: "is_org_assignable",

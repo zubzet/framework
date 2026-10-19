@@ -10,16 +10,18 @@
                 type: "text",
                 text: "Name",
                 required: true,
-                value: <?= json_encode($opt["name"]); ?>,
+                value: <?= json_encode($opt["name"], JSON_HEX_TAG | JSON_HEX_AMP); ?>,
             });
 
-            form.createActionButton("Delete organization", "btn-danger", function() {
-                if(!confirm("Do you really want to delete this organization?")) return;
+            <?php if($opt["user"]->checkPermission("admin.organizations.delete")) { ?>
+                form.createActionButton("Delete organization", "btn-danger", function() {
+                    if(!confirm("Do you really want to delete this organization?")) return;
 
-                Z.Request.action("delete", {}, function() {
-                    window.location.replace("<?= $opt["root"] . "z/organizations/"; ?>");
+                    Z.Request.action("delete", {}, function() {
+                        window.location.replace("<?= $opt["root"] . "z/organizations/"; ?>");
+                    });
                 });
-            });
+            <?php } ?>
         });
     </script>
 

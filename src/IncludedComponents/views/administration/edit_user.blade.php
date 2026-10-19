@@ -13,7 +13,7 @@
                 type: "select",
                 text: "Organization",
                 food: <?= $opt["organizations"]; ?>,
-                value: <?=  json_encode($opt["organizationId"] ?? ""); ?>,
+                value: <?=  json_encode($opt["organizationId"] ?? "", JSON_HEX_TAG | JSON_HEX_AMP); ?>,
             });
 
             form.addSeperator();

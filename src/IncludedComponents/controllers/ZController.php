@@ -58,6 +58,8 @@
                 (new FormField("organization"))->in(array_column($this->getOrganizations($req), "id")),
             ]);
 
+            if(is_array($req->getPost("organization"))) $formResult->addCustomError("organization", "in");
+
             $email = $req->getPost("email");
             if(!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $formResult->addCustomError("email", "filter");
@@ -128,6 +130,8 @@
                     $organizationField,
                 ]);
 
+                if(is_array($req->getPost("organization"))) $formResult->addCustomError("organization", "in");
+
                 $subformResult = $req->validateCED("roles", [
                     (new FormField("role"))->required()->in(array_column($roles, "id")),
                 ]);
@@ -151,7 +155,9 @@
 
                 // After the roles CED, so the group membership it maintains is
                 // the last word on which group the organization contributes.
-                $this->applyOrganization($userId, $req->getPost("organization"));
+                if(array_key_exists("organization", $req->getPost())) {
+                    $this->applyOrganization($userId, $req->getPost("organization"));
+                }
 
                 logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
                     "userId" => $userId,
@@ -161,13 +167,15 @@
                 return $res->success();
             }
 
+            $organizations = $this->getOrganizations($req);
+
             return $res->render("administration/edit_user.php", [
                 "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
                 "roles" => $this->makeFood($roles, "id", "name"),
                 "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
                 "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
-                "organizations" => $this->makeFood($this->getOrganizations($req), "id", "name"),
-                "organizationId" => $user["organizationId"],
+                "organizations" => $this->makeFood($organizations, "id", "name"),
+                "organizationId" => in_array($user["organizationId"], array_column($organizations, "id")) ? $user["organizationId"] : "",
                 "result" => "success",
                 "email" => $user["email"],
                 "userId" => $userId,
@@ -336,15 +344,19 @@
                 return $res->render("administration/add_organization.php");
             }
 
+            $name = $req->getPost("name");
+            if(is_string($name)) $name = trim($name);
+
             $formResult = $req->validateForm([
                 (new FormField("name"))->required()->length(3, 249),
-            ]);
+            ], ["name" => $name]);
+
+            if(is_array($name)) $formResult->addCustomError("name", "filter");
 
             if($formResult->hasErrors) {
                 return $res->formErrors($formResult->errors);
             }
 
-            $name = $req->getPost("name");
             $createGroup = "1" == $req->getPost("create_group");
             $groupName = $name . "_Group";
 
@@ -382,15 +394,32 @@
             }
 
             if($req->hasFormData()) {
+                $name = $req->getPost("name");
+                if(is_string($name)) $name = trim($name);
+
                 $formResult = $req->validateForm([
                     (new FormField("name"))->required()->length(3, 249),
-                ]);
+                ], ["name" => $name]);
+
+                if(is_array($name)) $formResult->addCustomError("name", "filter");
 
                 if($formResult->hasErrors) {
                     return $res->formErrors($formResult->errors);
                 }
 
-                $organization->updateName($req->getPost("name"));
+                // Only a group created by create_group follows the rename
+                $group = $organization->getGroup();
+                $renameGroup = !is_null($group)
+                    && $group->name() === $organization->getField("name") . "_Group"
+                    && $name !== $organization->getField("name");
+
+                if($renameGroup && !db()->checkIfUnique("z_role", "name", $name . "_Group")) {
+                    $formResult->addCustomError("name", "unique");
+                    return $res->formErrors($formResult->errors);
+                }
+
+                if($renameGroup) $group->update($name . "_Group");
+                $organization->updateName($name);
                 return $res->success();
             }
 
@@ -450,7 +479,7 @@
 
             $organization = empty($organizationId) ? null : Organization::byId($organizationId);
 
-            if($user->organization()?->id() === $organization?->id()) return;
+            if($user->getField("organizationId") == $organization?->id()) return;
 
             $user->updateOrganization($organization);
         }

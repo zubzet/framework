@@ -647,7 +647,7 @@ describe('Z-Admin Panel', () => {
         });
 
         it('rejects create_group when a group of that name already exists', () => {
-            // Group 950 is seeded as "zadmin_OrganizationDetail_Group", which is
+            // Group 252 is seeded as "zadmin_OrganizationDetail_Group", which is
             // exactly the name this organization would ask for.
             postForm('/z/add_organization', { name: 'zadmin_OrganizationDetail', create_group: '1' }).then((out) => {
                 expect(out.result).to.eq('formErrors');
@@ -677,7 +677,7 @@ describe('Z-Admin Panel', () => {
 
             cy.form('name').should('have.value', 'zadmin_OrganizationDetail');
             cy.query('organization-group').should('contain', 'zadmin_OrganizationDetail_Group');
-            cy.query('organization-user-950').should('contain', 'zpanel_organizationMember@cypress.test');
+            cy.query('organization-user-563').should('contain', 'zpanel_organizationMember@cypress.test');
         });
 
         it('renames an organization', () => {
@@ -730,41 +730,54 @@ describe('Z-Admin Panel', () => {
         });
 
         it('assigns an organization to a user and adds them to its group', () => {
-            // User 951 is seeded without an organization; 953 is backed by group 951.
-            postForm('/z/edit_user/951', {
+            // User 564 is seeded without an organization; 563 is backed by group 253.
+            postForm('/z/edit_user/564', {
                 email: 'zpanel_organizationAssignTarget@cypress.test',
                 organization: '953',
             }).then((out) => {
                 expect(out.result).to.eq('success');
             });
 
-            cy.visit('/z/edit_user/951');
-            cy.form('organization').should('have.value', '953');
+            cy.visit('/z/edit_user/564');
+            cy.form('organization').should('have.value', '563');
             // The group membership rides in the roles CED, which lists z_user_role.
-            cy.get('select[name=role] option[value="951"]:selected').should('exist');
+            cy.get('select[name=role] option[value="253"]:selected').should('exist');
         });
 
         it('unassigns an organization and removes the user from its group', () => {
-            // User 952 is seeded into organization 953 and its group 951.
-            postForm('/z/edit_user/952', {
+            // User 565 is seeded into organization 563 and its group 253.
+            postForm('/z/edit_user/565', {
                 email: 'zpanel_organizationUnassignTarget@cypress.test',
                 organization: '',
             }).then((out) => {
                 expect(out.result).to.eq('success');
             });
 
-            cy.visit('/z/edit_user/952');
+            cy.visit('/z/edit_user/565');
             cy.form('organization').should('have.value', '');
-            cy.get('select[name=role] option[value="951"]:selected').should('not.exist');
+            cy.get('select[name=role] option[value="253"]:selected').should('not.exist');
+        });
+
+        it('keeps the organization when the request carries no organization field', () => {
+            // User 563 is seeded into organization 562 and its group 252.
+            postForm('/z/edit_user/563', {
+                email: 'zpanel_organizationMember@cypress.test',
+            }).then((out) => {
+                expect(out.result).to.eq('success');
+            });
+
+            cy.visit('/z/edit_user/563');
+            cy.form('organization').should('have.value', '562');
+            cy.get('select[name=role] option[value="252"]:selected').should('exist');
         });
 
         it('rejects an organization that does not exist', () => {
-            postForm('/z/edit_user/951', {
+            postForm('/z/edit_user/564', {
                 email: 'zpanel_organizationAssignTarget@cypress.test',
                 organization: '999999',
             }).then((out) => {
                 expect(out.result).to.eq('formErrors');
-                expect(out.formErrors).to.deep.include({ name: 'organization', type: 'exist' });
+                expect(out.formErrors).to.deep.include({ name: 'organization', type: 'in' });
             });
         });
 

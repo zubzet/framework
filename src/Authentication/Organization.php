@@ -110,6 +110,8 @@
             // Detach the members first, their group only resolves while the organization is active
             foreach($this->getUsers() as $user) $user->updateOrganization(null);
 
+            $this->getGroup()?->remove();
+
             model("z_organization")->remove($this);
         }
     }
