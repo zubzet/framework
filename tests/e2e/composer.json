@@ -27,7 +27,7 @@
     "require": {
         "zubzet/example-guestbook": "^0.1",
         "zubzet/example-theme": "^0.1",
-        "qtnoe/zubzet-framework": "*@dev"
+        "zubzet/framework": "*@dev"
     },
 
     "require-dev": {

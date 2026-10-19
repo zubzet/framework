@@ -54,9 +54,9 @@ fi
 # The framework from source because the dist archive leaves out tests/, everything else as dist
 docker run --rm -u "$owner" -e HOME=/tmp -v "$directory":/app --entrypoint sh ghcr.io/zubzet/php:8.5-apache -c '
     mkdir /tmp/installer && cd /tmp/installer &&
-    echo "{\"config\":{\"preferred-install\":{\"qtnoe/zubzet-framework\":\"source\",\"*\":\"dist\"}}}" > composer.json &&
-    composer require -q qtnoe/zubzet-framework:dev-feat/install-command &&
-    cd vendor/qtnoe/zubzet-framework/tests/e2e && COMPOSER_VENDOR_DIR=/tmp/installer/vendor php index.php install /app
+    echo "{\"config\":{\"preferred-install\":{\"zubzet/framework\":\"source\",\"*\":\"dist\"}}}" > composer.json &&
+    composer require -q zubzet/framework:dev-develop &&
+    cd vendor/zubzet/framework/tests/e2e && COMPOSER_VENDOR_DIR=/tmp/installer/vendor php index.php install /app
 ' || exit 1
 ```
 

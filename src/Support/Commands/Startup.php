@@ -74,7 +74,7 @@
         }
 
         private function getInstalledVersion(): string {
-            return InstalledVersions::getPrettyVersion('qtnoe/zubzet-framework') ?? 'unknown';
+            return InstalledVersions::getPrettyVersion('zubzet/framework') ?? 'unknown';
         }
 
         // Projects built by the install command carry a project.sh, the framework's own dev stack uses npm
