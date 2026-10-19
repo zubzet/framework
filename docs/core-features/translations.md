@@ -59,6 +59,15 @@ The active locale is picked in this order:
 2. The best entry of the request's `Accept-Language` header that a catalogue covers. The entries are tried by their quality, and each is matched against the locales of the loaded catalogues with the RFC 4647 lookup, so `de-AT` finds `de` when there is no `de_AT` catalogue. This takes the PHP `intl` extension.
 3. The first of `fallback_locales`.
 
+`Translation::locale()` returns the active locale. Given a user, `Translation::locale($user)` puts that user's `locale_bcp_47` first, for texts addressed to someone else, such as a mail:
+
+```php
+use ZubZet\Framework\Translation\Translation;
+
+$locale = Translation::locale($recipient);
+__("email.password_reset.subject", locale: $locale);
+```
+
 | Setting | Default | Meaning |
 | ------- | ------- | ------- |
 | `fallback_locales` | `en` | Comma separated locales. The first is the locale of last resort, and a message missing in the active locale is looked up in them in order. |

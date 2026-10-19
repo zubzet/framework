@@ -98,6 +98,7 @@
     },
     "email": {
         "password_reset": {
+            "subject": "Passwort zurücksetzen",
             "title": "Passwort zurücksetzen",
             "text": "Für Ihr Konto wurde das Zurücksetzen des Passworts angefordert. Wenn Sie das waren, wählen Sie über den Link unten ein neues Passwort. Wenn nicht, können Sie diese E-Mail ignorieren.",
             "link": "Klicken Sie auf diesen Link, um Ihr Passwort zurückzusetzen!",

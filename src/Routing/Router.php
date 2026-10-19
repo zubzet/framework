@@ -36,10 +36,10 @@
 
             $uri = rawurldecode($uri);
 
-            // Routes are defined relative to the root directory
+            // Routes are defined relative to the root directory, a doubled slash after it counts as one
             $rootFolder = config("rootFolder");
             if("/" !== $rootFolder && str_starts_with("$uri/", $rootFolder)) {
-                $uri = "/" . substr($uri, strlen($rootFolder));
+                $uri = "/" . ltrim(substr($uri, strlen($rootFolder)), "/");
             }
 
             // Strip trailing slashes internally so /test/abc/ matches the same route as /test/abc

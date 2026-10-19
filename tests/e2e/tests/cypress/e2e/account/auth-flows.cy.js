@@ -90,8 +90,7 @@ describe('Auth flows', () => {
                 // bundled view, landed in mailhog carrying the reset link.
                 fetchLatestMail().then((mail) => {
                     expect(mail.to[0]).to.eq('auth_forgot@cypress.test');
-                    expect(JSON.stringify(mail.subject).toLowerCase())
-                        .to.match(/password reset|passwort/);
+                    expect(mail.subject).to.eq('Password Reset');
 
                     cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
                         expect(res.body).to.include('Reset your password');
@@ -134,6 +133,7 @@ describe('Auth flows', () => {
 
             fetchLatestMail().then((mail) => {
                 expect(mail.to[0]).to.eq('auth_forgot_de@cypress.test');
+                expect(mail.subject).to.eq('Passwort zurücksetzen');
                 cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
                     expect(res.body).to.include('Passwort zurücksetzen');
                     expect(res.body).to.not.include('Reset your password');

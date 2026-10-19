@@ -69,6 +69,12 @@ describe('Root directory', () => {
         cy.request('/sub/Advanced/aliases').its('body').should('eq', 'Controller Action');
     });
 
+    // App code that still appends "/x" to the root now builds "/sub//x"
+    it('answers a doubled slash after the root like a single one', () => {
+        cy.request('/sub//test').its('body').should('include', 'TestRoute Executed');
+        cy.request('/sub//Response/rerouteNonAlias').its('body').should('eq', 'Controller Action');
+    });
+
     it('redirects to the root on logout', () => {
         cy.request({ url: '/sub/login/logout', followRedirect: false }).then((res) => {
             expect(res.status).to.eq(302);

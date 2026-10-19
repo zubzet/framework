@@ -57,6 +57,8 @@
                 for($i = 0; $i < $rootDirectoryLength; $i++) {
                     array_shift($urlParts);
                 }
+                // A doubled slash after the root (root . "/x") is no segment, as in the Router
+                while("" === ($urlParts[0] ?? null)) array_shift($urlParts);
             }
 
             $this->urlParts = $urlParts;

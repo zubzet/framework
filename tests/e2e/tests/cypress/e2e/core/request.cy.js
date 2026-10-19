@@ -349,4 +349,11 @@ describe('Request', () => {
             expect(res.body).to.deep.equal(['urlPartsProbe_stripSlashes', 'x', 'y']);
         });
     });
+
+    // Built by app code that appends "/x" to a root ending with a slash
+    it('getUrlParts() skips a doubled slash after the rootDirectory', () => {
+        cy.request('/Routing/urlPartsProbe_strip2//x/y').then((res) => {
+            expect(res.body).to.deep.equal(['x', 'y']);
+        });
+    });
 });

@@ -2,6 +2,7 @@
 
     namespace ZubZet\Framework\Translation;
 
+    use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Registry\Registry;
     use ZubZet\Framework\Support\StaticCache;
     use Symfony\Component\Translation\Translator;
@@ -74,10 +75,10 @@
             return StaticCache::set("translation", "catalogues", $catalogues);
         }
 
-        // The preferred locale from the user in bcp47 format
-        public static function locale(): string {
+        // The preferred locale of the given or else the logged in user in bcp47 format
+        public static function locale(?User $user = null): string {
             // User locale
-            $userBcp47 = user()?->fields["locale_bcp_47"] ?? null;
+            $userBcp47 = $user?->getField("locale_bcp_47") ?? user()?->fields["locale_bcp_47"] ?? null;
             if(!is_null($userBcp47)) return $userBcp47;
 
             // Available locales from the loaded catalogues
