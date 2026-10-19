@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Message;
 
     use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Authentication\Organization;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
@@ -283,6 +284,30 @@
                 : user()->checkPermission($permission);
 
             if(!$hasPermission) {
+                if($boolResult) return false;
+                zubzet()->executePath(["error", "403"]);
+                exit;
+            }
+
+            return true;
+        }
+
+        /**
+         * Checks if the current user belongs to an organization. If the user is not logged in, they will be redirected to the login page.
+         * If the user is logged in but does not belong to an organization, they will be redirected to 403.
+         * @param bool $boolResult If true, the function will return a boolean result instead of redirecting
+         */
+        public function requireOrganization(bool $boolResult = false): bool {
+            if(!user()->isLoggedIn) {
+                if($boolResult) return false;
+                zubzet()->executePath(["login", "index"]);
+                exit;
+            }
+
+            // byId() skips removed organizations, so their former members are denied
+            $hasOrganization = !is_null(user()->orgId) && !is_null(Organization::byId(user()->orgId));
+
+            if(!$hasOrganization) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
                 exit;
