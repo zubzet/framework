@@ -87,12 +87,20 @@ when tables were created under different server or database defaults, e.g. older
 before a server upgrade next to newer ones.
 
 The framework creates its tables as `utf8mb4` with the collation `utf8mb4_uca1400_ai_ci`
-(`ZubZet\Framework\Database\Connection::COLLATION`). The command converts **every** table of the
-database to it, framework and application tables alike, with
+(`ZubZet\Framework\Database\Connection::COLLATION`). The command converts the framework tables
+(`z_` prefix) to it with
 `ALTER TABLE ... CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci`:
 
 ```bash
 php index.php repair:database-collation
+```
+
+Application tables and the database default are left alone. Add `--include-app-tables` to convert
+every table of the database and to set the database default to the same collation, so tables
+created later without an explicit collation match:
+
+```bash
+php index.php repair:database-collation --include-app-tables
 ```
 
 Only tables whose own collation or any text column's collation differs are converted; a rerun

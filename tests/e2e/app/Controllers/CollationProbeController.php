@@ -5,7 +5,7 @@
     // Probes for #184 and repair:database-collation; spec is tests/cypress/e2e/database/collation.cy.js
     class CollationProbeController extends z_controller {
 
-        // Tables off the framework collation, and whether the permission UNION runs
+        // Framework tables and all tables off the framework collation, the database default, and whether the permission UNION runs
         public function action_state(Request $req, Response $res) {
             try {
                 model("z_user")->getPermissionsByUserId(1);
@@ -17,12 +17,17 @@
             return $res->json([
                 "collation" => Connection::COLLATION,
                 "misaligned" => model("z_migration")->tablesNotInCollation(Connection::COLLATION),
+                "misalignedAll" => model("z_migration")->tablesNotInCollation(Connection::COLLATION, true),
+                "databaseCollation" => db()->exec(
+                    "SELECT DEFAULT_COLLATION_NAME AS name FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()"
+                )->resultToLine()["name"],
                 "permissions" => $permissions,
             ]);
         }
 
-        // Reproduces #184 on a framework table, plus an application table created under another default
+        // Reproduces #184 on a framework table, plus an application table created under another default and a database default to match
         public function action_misalign(Request $req, Response $res) {
+            db()->exec("ALTER DATABASE `" . config("dbname") . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
             db()->exec("ALTER TABLE `z_user_permission` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
             db()->exec("DROP TABLE IF EXISTS `collation_probe`");
             db()->exec(

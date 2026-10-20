@@ -1,9 +1,11 @@
 // Tables with mixed collations break queries across them (#184), e.g. the
 // UNION of the permission lookup on every authenticated request. Fresh
 // installs create every framework table with the framework collation;
-// repair:database-collation converts an existing database, every table.
+// repair:database-collation converts the framework tables of an existing
+// database, with --include-app-tables the application tables and the
+// database default as well.
 describe('Database collation', () => {
-    const repair = () => cy.exec('docker exec application php index.php repair:database-collation', {
+    const repair = (options = '') => cy.exec(`docker exec application php index.php repair:database-collation ${options}`, {
         failOnNonZeroExit: false,
     });
 
@@ -26,21 +28,36 @@ describe('Database collation', () => {
         });
     });
 
-    it('converts every table with another collation', () => {
+    it('converts only the framework tables by default', () => {
         cy.request('/CollationProbe/misalign').its('body').then((state) => {
-            expect(state.misaligned).to.include.members(['collation_probe', 'z_user_permission']);
+            expect(state.misaligned).to.deep.equal(['z_user_permission']);
+            expect(state.misalignedAll).to.include.members(['collation_probe', 'z_user_permission']);
             expect(state.permissions).to.match(/Illegal mix of collations/);
         });
 
         repair().then((result) => {
             expect(result.exitCode).to.eq(0);
-            expect(result.stdout).to.include('Converting collation_probe');
             expect(result.stdout).to.include('Converting z_user_permission');
+            expect(result.stdout).not.to.include('collation_probe');
         });
 
         cy.request('/CollationProbe/state').its('body').then((state) => {
             expect(state.misaligned).to.deep.equal([]);
+            expect(state.misalignedAll).to.deep.equal(['collation_probe']);
+            expect(state.databaseCollation).to.eq('utf8mb4_general_ci');
             expect(state.permissions).to.eq('ok');
+        });
+    });
+
+    it('converts the application tables and sets the database default with --include-app-tables', () => {
+        repair('--include-app-tables').then((result) => {
+            expect(result.exitCode).to.eq(0);
+            expect(result.stdout).to.include('Converting collation_probe');
+        });
+
+        cy.request('/CollationProbe/state').its('body').then((state) => {
+            expect(state.misalignedAll).to.deep.equal([]);
+            expect(state.databaseCollation).to.eq('utf8mb4_uca1400_ai_ci');
         });
     });
 

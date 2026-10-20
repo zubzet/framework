@@ -35,8 +35,8 @@
             return !empty($result);
         }
 
-        // Every table of the database whose own or any column's collation differs from the given one
-        public function tablesNotInCollation(string $collation): array {
+        // Every framework (z_) table, or with $includeAppTables every table of the database, whose own or any column's collation differs from the given one
+        public function tablesNotInCollation(string $collation, bool $includeAppTables = false): array {
             $query = $this->dbSelect(["name" => "t.TABLE_NAME"], [
                 "t" => "information_schema.TABLES",
             ])->distinct()->leftJoin([
@@ -44,14 +44,14 @@
             ], [
                 "c.TABLE_SCHEMA = t.TABLE_SCHEMA",
                 "c.TABLE_NAME = t.TABLE_NAME",
-            ])->where([
+            ])->where(array_merge([
                 "t.TABLE_SCHEMA = DATABASE()",
                 "t.TABLE_TYPE" => "BASE TABLE",
                 "OR" => [
                     "t.TABLE_COLLATION !=" => $collation,
                     "c.COLLATION_NAME !=" => $collation,
                 ],
-            ])->orderAsc("t.TABLE_NAME");
+            ], $includeAppTables ? [] : ["t.TABLE_NAME LIKE" => "z\\_%"]))->orderAsc("t.TABLE_NAME");
 
             return array_column($this->exec($query)->resultToArray(), "name");
         }
