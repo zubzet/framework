@@ -52,12 +52,16 @@ fi
 # ----------------
 
 # The framework from source because the dist archive leaves out tests/, everything else as dist
+echo "[1/2] Downloading the ZubZet framework (this can take a while, the first run also pulls the Docker image)..."
 docker run --rm -u "$owner" -e HOME=/tmp -v "$directory":/app --entrypoint sh ghcr.io/zubzet/php:8.5-apache -c '
     mkdir /tmp/installer && cd /tmp/installer &&
     echo "{\"config\":{\"preferred-install\":{\"zubzet/framework\":\"source\",\"*\":\"dist\"}}}" > composer.json &&
-    composer require -q zubzet/framework:dev-develop &&
+    composer require --no-ansi zubzet/framework:dev-develop &&
+    echo "[2/2] Setting up the project and installing its dependencies..." &&
     cd vendor/zubzet/framework/tests/e2e && COMPOSER_VENDOR_DIR=/tmp/installer/vendor php index.php install /app
 ' || exit 1
+
+echo "Done. ZubZet is installed in $directory"
 ```
 
 ## Start the project
