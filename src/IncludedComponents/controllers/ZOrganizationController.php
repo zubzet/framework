@@ -11,13 +11,16 @@
             $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
             if(is_null($organization)) return $res->error("invalid_organization");
 
+            $name = $req->getPost("name");
+            if(is_string($name)) $name = trim($name);
+
             $formResult = $req->validateForm([
                 (new FormField("name"))->required()->length(3, 255),
-            ]);
+            ], ["name" => $name]);
 
             if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 
-            $organization->updateName($req->getPost("name"));
+            $organization->updateName($name);
             return $res->success();
         }
 

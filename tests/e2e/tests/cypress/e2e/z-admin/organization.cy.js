@@ -110,6 +110,23 @@ describe('Z-Admin - Organization', () => {
             });
         });
 
+        it('rejects a name of only spaces', () => {
+            post('/_zubzet/organization/rename', { isFormData: 1, formAction: 'z-organization-rename', name: '     ' }).then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'name', type: 'required' });
+            });
+        });
+
+        it('trims the name', () => {
+            post('/_zubzet/organization/rename', {
+                isFormData: 1,
+                formAction: 'z-organization-rename',
+                name: '  zorg_Trimmed  ',
+            }).its('result').should('eq', 'success');
+
+            cy.visit('/z/organization');
+            cy.form('name').should('have.value', 'zorg_Trimmed');
+        });
+
         it('keeps a name with markup from closing the script tag', () => {
             post('/_zubzet/organization/rename', {
                 isFormData: 1,
