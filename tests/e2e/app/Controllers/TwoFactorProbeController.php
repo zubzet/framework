@@ -1,6 +1,6 @@
 <?php
 
-    use OTPHP\TOTP;
+    use PragmaRX\Google2FA\Google2FA;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Session;
 
@@ -22,7 +22,7 @@
 
             echo json_encode([
                 "found" => !is_null($secret),
-                "code" => is_null($secret) ? null : TOTP::create($secret)->at(time() + $offset),
+                "code" => is_null($secret) ? null : (new Google2FA())->oathTotp($secret, (int) floor((time() + $offset) / 30)),
             ]);
         }
 
@@ -31,7 +31,7 @@
             $secret = (string) $req->getParameters(0, 1);
 
             echo json_encode([
-                "code" => TOTP::create($secret)->now(),
+                "code" => (new Google2FA())->getCurrentOtp($secret),
             ]);
         }
 

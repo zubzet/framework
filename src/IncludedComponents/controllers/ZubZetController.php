@@ -170,13 +170,8 @@
             // session cannot quietly swap the secret for one it holds itself
             if($account->hasTwoFactor()) return $res->error("Two factor is already active");
 
-            $totp = $account->startTwoFactor();
-
             // The single moment the secret is readable to its owner
-            return $res->success([
-                "secret" => $totp->getSecret(),
-                "uri" => $totp->getProvisioningUri(),
-            ]);
+            return $res->success($account->startTwoFactor());
         }
 
         public function confirmTwoFactor(Request $req, Response $res) {
