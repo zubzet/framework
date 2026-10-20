@@ -34,7 +34,7 @@ describe('Two factor gate', () => {
     });
 
     function guard(path) {
-        return cy.request({
+        return cy.zRequest({
             method: 'POST',
             url: `/TwoFactorProbe/${path}`,
             form: true,
@@ -182,7 +182,7 @@ describe('Two factor gate', () => {
 
     // ---------------------------------------------------------------------
     describe('renewing the check', () => {
-        const refresh = (body) => cy.request({
+        const refresh = (body) => cy.zRequest({
             method: 'POST',
             url: '/_zubzet/two-factor/refresh',
             form: true,

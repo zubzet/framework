@@ -103,7 +103,7 @@ describe('Auth flows', () => {
         it('translates the password reset email into the active locale', () => {
             clearMailhog();
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -123,7 +123,7 @@ describe('Auth flows', () => {
             clearMailhog();
 
             // A guest browser asking in English must not override the recipient's locale
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,

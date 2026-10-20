@@ -367,7 +367,7 @@ describe('Z-Admin Panel', () => {
         });
 
         it('only stores 0 or 1', () => {
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/z/roles/248',
                 form: true,
@@ -376,7 +376,7 @@ describe('Z-Admin Panel', () => {
                 expect(JSON.parse(res.body).formErrors).to.deep.include({ name: 'is_org_assignable', type: 'in' });
             });
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/z/roles/248',
                 form: true,
@@ -622,7 +622,7 @@ describe('Z-Admin Panel', () => {
 
         // hasFormData() requires the isFormData flag (set by Z.Forms).
         function postForm(url, body) {
-            return cy.request({
+            return cy.zRequest({
                 method: 'POST',
                 url: url,
                 form: true,
@@ -709,7 +709,7 @@ describe('Z-Admin Panel', () => {
             cy.visit('/z/organizations');
             cy.query('organization-561').should('exist');
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/z/organizations/561',
                 form: true,

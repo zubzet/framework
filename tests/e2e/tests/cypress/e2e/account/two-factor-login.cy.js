@@ -12,7 +12,7 @@ describe('Two factor login', () => {
         probe(`/TwoFactorProbe/code/${userId}?offset=${offset}`).then((out) => out.code);
 
     function login(name, password = PASSWORD) {
-        return cy.request({
+        return cy.zRequest({
             method: 'POST',
             url: '/login',
             form: true,
@@ -22,7 +22,7 @@ describe('Two factor login', () => {
     }
 
     function redeem(body) {
-        return cy.request({
+        return cy.zRequest({
             method: 'POST',
             url: '/_zubzet/two-factor/login',
             form: true,

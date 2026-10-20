@@ -280,7 +280,7 @@ describe('Request', () => {
         // accept either shape so the test is robust to that behavior.
         const parseBody = (body) => (typeof body === 'string' ? JSON.parse(body) : body);
 
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/Core/requestBody',
             body: payload, // cypress JSON-serializes objects

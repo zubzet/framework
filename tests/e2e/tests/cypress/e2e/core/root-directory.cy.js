@@ -85,7 +85,7 @@ describe('Root directory', () => {
     // A cookie path of "/sub/" would not be sent for the bare "/sub"
     it('scopes the maintenance bypass cookie to the root without a trailing slash', () => {
         cy.loginAs('admin');
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/sub/z/maintenance',
             form: true,
@@ -120,7 +120,7 @@ describe('Root directory', () => {
 
     it('mails a working password reset link', () => {
         cy.request({ method: 'DELETE', url: 'http://localhost:3300/api/v1/messages', failOnStatusCode: false });
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/sub/login/forgot-password/check',
             form: true,
