@@ -75,6 +75,9 @@
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
 
+            // A key or session that has not passed a check cannot end the owner's logins
+            $req->requireFreshTwoFactor();
+
             Session::clearForUser($account);
 
             return $res->success();
@@ -123,6 +126,9 @@
 
             if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
 
+            // Revoking a key or login is as final as clearing them
+            $req->requireFreshTwoFactor();
+
             $token->invalidate();
 
             return $res->success();
@@ -134,6 +140,9 @@
 
             $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
             if(is_null($account)) return $res->error("Not logged in");
+
+            // A new key outlives the session that asks for it, so a stale one may not mint it
+            $req->requireFreshTwoFactor();
 
             // The name is client input and the column takes 255 characters
             $name = $req->getPost("name", "");

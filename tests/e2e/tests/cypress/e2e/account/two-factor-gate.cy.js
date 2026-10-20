@@ -163,6 +163,63 @@ describe('Two factor gate', () => {
     });
 
     // ---------------------------------------------------------------------
+    describe('the profile actions', () => {
+        const profile = (action, body = {}) => cy.zRequest({
+            method: 'POST',
+            url: `/_zubzet/profile/${action}`,
+            form: true,
+            failOnStatusCode: false,
+            body: { action, ...body },
+        }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
+
+        const guarded = {
+            'create-api-key': { lifetime: '7' },
+            'clear-sessions': {},
+            'revoke-token': { type: 'api-key', uuid: '00000000-0000-7000-8000-000000000856' },
+        };
+
+        Object.entries(guarded).forEach(([action, body]) => {
+            it(`turns an api key away from ${action} while the account carries two factor`, () => {
+                login('0854c');
+
+                profile(action, body).then(expectRenew);
+            });
+
+            it(`turns a session away from ${action} that never passed a check`, () => {
+                login('0854a');
+                age('0854a');
+
+                profile(action, body).then(expectRenew);
+            });
+        });
+
+        it('leaves the logins and keys of the account alone when it turns a request away', () => {
+            login('0854c');
+
+            profile('clear-sessions').then(expectRenew);
+
+            sessionState('0854a').then((out) => expect(out.active).to.eq(1));
+            sessionState('0854c').then((out) => expect(out.active).to.eq(1));
+        });
+
+        it('lets a fresh session create a key', () => {
+            login('0854a');
+            age('0854a', 10);
+
+            profile('create-api-key', { lifetime: '7' }).then((out) => {
+                expect(out.result).to.eq('success');
+                expect(out.token).to.match(/^zub-[0-9a-f]{64}$/);
+            });
+        });
+
+        it('lets a key create a key while the account carries no two factor', () => {
+            login('0855b');
+
+            profile('create-api-key', { lifetime: '7' }).then((out) => expect(out.result).to.eq('success'));
+        });
+    });
+
+    // ---------------------------------------------------------------------
     describe('without boolResult', () => {
         it('answers a stale session with a renew error', () => {
             login('0854a');
