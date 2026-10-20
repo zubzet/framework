@@ -26,13 +26,13 @@
             $req->checkPermission("admin.maintenance");
 
             if($req->isAction("bypass-maintenance")) {
-                $res->setCookie(
-                    MaintenanceHandler::$COOKIE_KEY,
-                    "true",
-                    time() + TIMESPAN_DAY_1,
+                $res->setCookie(MaintenanceHandler::$COOKIE_KEY, "true", [
+                    "expires" => time() + TIMESPAN_DAY_1,
                     // Without the trailing slash, so the bare root sends it too
-                    rtrim($req->getRootFolder(), "/") ?: "/",
-                );
+                    "path" => rtrim($req->getRootFolder(), "/") ?: "/",
+                    "secure" => $res->cookieSecure(),
+                    "samesite" => "Lax",
+                ]);
                 return $res->success();
             }
 
@@ -187,15 +187,21 @@
         public function action_login_as(Request $req, Response $res) {
             $req->checkPermission("admin.su");
 
-            $userId = $req->getParameters(0, 1);
-            if(empty($userId) && $userId !== '0') return;
+            // A GET link could be fired from another site, so only the CSRF checked post logs in
+            if($req->isAction("login_as")) {
+                $userId = $req->getParameters(0, 1);
+                if(empty($userId) && $userId !== '0') return;
 
-            // The admin may state a reason; the column takes 255 characters
-            $reason = trim((string) $req->getGet("reason", ""));
-            if(empty($reason)) $reason = "z-admin impersonation";
+                // The admin may state a reason; the column takes 255 characters
+                $reason = trim((string) $req->getPost("reason", ""));
+                if(empty($reason)) $reason = "z-admin impersonation";
 
-            $res->loginAs($userId, $req->getRequestingUser()->execUserId, reason: mb_substr($reason, 0, 255));
-            return $res->rerouteUrl();
+                $res->loginAs($userId, $req->getRequestingUser()->execUserId, reason: mb_substr($reason, 0, 255));
+                return $res->success();
+            }
+
+            http_response_code(405);
+            return $res->generateRestError(405, "login_as needs a post");
         }
 
 

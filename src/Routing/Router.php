@@ -9,6 +9,7 @@
     use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Registry\Registry;
     use Symfony\Component\Console\Input\ArgvInput;
+    use ZubZet\Framework\Security\CSRF;
 
     trait Router {
 
@@ -22,6 +23,9 @@
             if(!is_null($customUrlParts)) {
                 request()->urlParts = $customUrlParts;
             }
+
+            // CSRF defense: issue a token on every request, dispatch verifies it before the route runs.
+            new CSRF();
 
             $dispatcher = $this->getRouteDispatcher();
 

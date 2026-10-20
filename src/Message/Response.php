@@ -74,6 +74,28 @@
         }
 
         /**
+         * Whether the framework's own cookies carry the `Secure` attribute:
+         * derived from the configured `host`, so an HTTPS deployment needs no
+         * setting and a plain-HTTP one is not locked out.
+         */
+        public function cookieSecure(): bool {
+            return str_starts_with((string) config("host"), "https://");
+        }
+
+        // One attribute set for z_login_token and z_csrf, so the two can never drift apart
+        public function setFrameworkCookie(string $name, string $value, int $lifetime, bool $hostOnly = false): void {
+            // Not HttpOnly: Z.js reads the token, the session watcher in the body component the login cookie
+            $this->setCookie($name, $value, [
+                "expires" => time() + $lifetime,
+                "path" => "/",
+                "domain" => $hostOnly ? "" : $this->getCookieDomainScope(),
+                "secure" => $this->cookieSecure(),
+                "httponly" => false,
+                "samesite" => "Lax",
+            ]);
+        }
+
+        /**
          * Removes a cookie at the client
          * @param string $name Name of the cookie
          * @param string $path Path on the server
@@ -275,12 +297,10 @@
             $session = model("z_login", $this->booter->z_framework_root)
                 ->createLoginToken($userId, $user_exec, $name, $reason, recordTwoFactor: $recordTwoFactor);
 
-            $this->setCookie(
+            $this->setFrameworkCookie(
                 "z_login_token",
                 $session->token(),
-                time() + (int) config("loginTimeoutSeconds", default: TIMESPAN_DAY_7),
-                "/",
-                $this->getCookieDomainScope(),
+                (int) config("loginTimeoutSeconds", default: TIMESPAN_DAY_7),
             );
             $this->deleteOldLoginCookieDomainScope();
 

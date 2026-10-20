@@ -4,7 +4,7 @@ describe('Z-Admin - Organization', () => {
     });
 
     function post(url, body = {}) {
-        return cy.request({ method: 'POST', url: url, form: true, body: body })
+        return cy.zRequest({ method: 'POST', url: url, form: true, body: body })
             .then((res) => JSON.parse(res.body));
     }
 

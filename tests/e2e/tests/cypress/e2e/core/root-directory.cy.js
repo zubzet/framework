@@ -85,7 +85,7 @@ describe('Root directory', () => {
     // A cookie path of "/sub/" would not be sent for the bare "/sub"
     it('scopes the maintenance bypass cookie to the root without a trailing slash', () => {
         cy.loginAs('admin');
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/sub/z/maintenance',
             form: true,
@@ -120,7 +120,7 @@ describe('Root directory', () => {
 
     it('mails a working password reset link', () => {
         cy.request({ method: 'DELETE', url: 'http://localhost:3300/api/v1/messages', failOnStatusCode: false });
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/sub/login/forgot-password/check',
             form: true,
@@ -191,10 +191,16 @@ describe('Root directory', () => {
     it('keeps the admin login-as button and its redirect below the root', () => {
         cy.loginAs('admin');
 
-        cy.request('/sub/z/edit_user/5').its('body').should('include', '"/sub/z/login_as/5"');
-        cy.request({ url: '/sub/z/login_as/5', followRedirect: false }).then((res) => {
-            expect(res.status).to.eq(302);
-            expect(res.headers.location).to.match(/^\/sub\//);
+        cy.request('/sub/z/edit_user/5').its('body')
+            .should('include', 'Z.Request.root("z/login_as/5"')
+            .and('include', 'window.location.href = "/sub/"');
+        cy.zRequest({
+            method: 'POST',
+            url: '/sub/z/login_as/5',
+            form: true,
+            body: { action: 'login_as' },
+        }).then((res) => {
+            expect(res.status).to.eq(200);
         });
     });
 });

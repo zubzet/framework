@@ -7,7 +7,7 @@ describe('Two factor', () => {
     const login = (prefix) => cy.setCookie('z_login_token', token(prefix));
 
     function post(action, body, url = '/_zubzet/profile') {
-        return cy.request({
+        return cy.zRequest({
             method: 'POST',
             url: `${url}/${action}`,
             form: true,
@@ -499,7 +499,7 @@ describe('Two factor', () => {
         it('is closed to an account without admin.user.edit', () => {
             login('0851a');
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/z/edit_user/851',
                 form: true,

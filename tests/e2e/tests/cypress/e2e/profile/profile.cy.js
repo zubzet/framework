@@ -17,7 +17,7 @@ describe('Profile', () => {
         // The marker Z.js sends along: Z.Forms for the password change, Z.Request for the rest
         const marker = 'change-password' === action ? { isFormData: 1 } : { action };
 
-        return cy.request({
+        return cy.zRequest({
             method: 'POST',
             url: `/_zubzet/profile/${action}`,
             form: !isRaw,
@@ -31,13 +31,13 @@ describe('Profile', () => {
         login('0900a');
 
         ['change-password', 'clear-sessions', 'revoke-token', 'rename-token', 'create-api-key', 'start-two-factor', 'confirm-two-factor', 'disable-two-factor'].forEach((action) => {
-            cy.request({ method: 'POST', url: `/_zubzet/profile/${action}`, form: true, body: {} })
+            cy.zRequest({ method: 'POST', url: `/_zubzet/profile/${action}`, form: true, body: {} })
                 .then((res) => JSON.parse(res.body))
                 .should('deep.include', { result: 'error', message: 'Invalid request' });
         });
 
         ['login', 'refresh'].forEach((action) => {
-            cy.request({ method: 'POST', url: `/_zubzet/two-factor/${action}`, form: true, body: {} })
+            cy.zRequest({ method: 'POST', url: `/_zubzet/two-factor/${action}`, form: true, body: {} })
                 .then((res) => JSON.parse(res.body))
                 .should('deep.include', { result: 'error', message: 'Invalid request' });
         });

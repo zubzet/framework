@@ -7,6 +7,7 @@
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Translation\Translation;
+    use ZubZet\Framework\Security\CSRF;
 
     /**
      * The Login controller handles all login/logout stuff
@@ -29,13 +30,16 @@
          * @param Response $res The response object
          */
         public function action_index($req, $res) {
-            // No credentials submitted yet: render the login form.
-            if($req->getPost("name", false) === false) {
+            // Only the Z.Request call, which carries the csrf token, submits credentials: render the login form.
+            if(!$req->isAction("login")) {
                 return $res->render("login.php", [
                     "title" => "Login ",
                     "noLayout" => $req->getGet("noLayout", false),
                 ], "layout/min_layout.php");
             }
+
+            // checkPermission() reaches this action internally, past the dispatch check of an opted-out route
+            CSRF::verify();
 
             // Look the account up by the submitted login (its email).
             $user = User::byEmail($req->getPost("name"));
