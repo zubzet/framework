@@ -214,10 +214,10 @@ Verification status is time-aware and can be set or queried at arbitrary points 
 
 The account side of [two factor authentication](two-factor-authentication.md). The secret lives in `z_user.two_factor_secret`, and only a confirmed enrollment (`two_factor_confirmed_at`) turns two factor on.
 
-* Starts an enrollment: stores a fresh secret that does not count yet and returns it as an `OTPHP\TOTP`. `getSecret()` and `getProvisioningUri()` are the two shapes an authenticator takes it in. The label is the user's email and the issuer the `pageName`. Starting again replaces the secret and turns an active two factor off until the new one is confirmed, which is why the profile page refuses to start while two factor is on.
+* Starts an enrollment: stores a fresh secret that does not count yet and returns it as an array with the `secret` and the provisioning `uri`, the two shapes an authenticator takes it in. The label is the user's email and the issuer the `pageName`. Starting again replaces the secret and turns an active two factor off until the new one is confirmed, which is why the profile page refuses to start while two factor is on.
 
     ```php
-    $user->startTwoFactor(): TOTP
+    $user->startTwoFactor(): array
     ```
 
 * Turns two factor on when the code matches the stored secret. Returns `false` for a wrong code and for an account that already has two factor.
