@@ -80,8 +80,8 @@
             {
                 return $this->anonymousRequest();
             }
-            // The session is valid, so this request is what `ip_last` describes
-            model("z_login")->recordSessionIp($session);
+            // The session is valid, so this request is what `last_used` describes
+            model("z_login")->recordSessionUse($session);
 
             $this->userId = $session->userId();
             $this->execUserId = $session->userIdExec();

@@ -17,5 +17,20 @@
             Route::post('/invites/{id:\d+}/revoke', [ZOrganizationController::class, 'revoke']);
             Route::post('/invitations/{token}/accept', [ZOrganizationController::class, 'accept']);
         });
+
+        // What the account components post to, so they work on any page
+        Route::group('/profile', function() {
+            Route::post('/change-password', [ZubZetController::class, 'changePassword']);
+            Route::post('/clear-sessions', [ZubZetController::class, 'clearSessions']);
+            Route::post('/revoke-token', [ZubZetController::class, 'revokeToken']);
+            Route::post('/rename-token', [ZubZetController::class, 'renameToken']);
+            Route::post('/create-api-key', [ZubZetController::class, 'createApiKey']);
+            Route::post('/start-two-factor', [ZubZetController::class, 'startTwoFactor']);
+            Route::post('/confirm-two-factor', [ZubZetController::class, 'confirmTwoFactor']);
+            Route::post('/disable-two-factor', [ZubZetController::class, 'disableTwoFactor']);
+        });
+
+        Route::post('/two-factor/login', [LoginController::class, 'twoFactorLogin']);
+        Route::post('/two-factor/refresh', [ZubZetController::class, 'refreshTwoFactor']);
     });
 ?>
