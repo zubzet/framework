@@ -20,29 +20,34 @@ describe('Galera failover', () => {
 
         // Bring the killed node back (whichever it was; start is a no-op on
         // running nodes) and wait until the cluster is whole again, so
-        // everything after this file sees a healthy stack. Each node is asked
-        // itself: the cluster size reaches three while the rejoining node still
-        // receives its state transfer, and a node that is not synced answers
-        // with "WSREP has not yet prepared node", which db:seed does not retry.
+        // everything after this file sees a healthy stack.
+        //
+        // Each node is asked directly, not through the proxy: a request via
+        // the endpoint lands on a healthy node, which reports size 3 and
+        // Synced as soon as the joiner is back in the membership, while the
+        // joiner is still receiving its state transfer (no listener yet, so
+        // the proxy never routes to it) and the donor sits in Donor/Desynced,
+        // answering reads with 1047 because of wsrep_sync_wait. The seed of
+        // the next spec goes through executeMultiQuery(), which does not
+        // retry, so that window (measured ~30 s) must be over before leaving.
         cy.exec('docker start galera1 galera2 galera3', { timeout: 30000 });
         const NODES = ['galera1', 'galera2', 'galera3'];
-        const waitForSynced = (retriesLeft) => {
-            const states = [];
-            NODES.forEach((node) => {
-                cy.exec(
-                    `docker exec ${node} mariadb -uroot -proot_password --silent -e ` +
-                    `"SELECT CONCAT(s.VARIABLE_VALUE, '/', r.VARIABLE_VALUE) FROM information_schema.GLOBAL_STATUS s, information_schema.GLOBAL_STATUS r ` +
-                    `WHERE s.VARIABLE_NAME = 'wsrep_local_state_comment' AND r.VARIABLE_NAME = 'wsrep_ready'"`,
-                    { failOnNonZeroExit: false, timeout: 15000 }
-                ).then(({ stdout }) => states.push(`${node}=${stdout.trim() || 'down'}`));
-            });
-            cy.then(() => {
-                if (states.every((state) => state.endsWith('=Synced/ON'))) return;
-                expect(retriesLeft, `cluster rejoin attempts left (${states.join(', ')})`).to.be.greaterThan(0);
-                cy.wait(2000).then(() => waitForSynced(retriesLeft - 1));
+        // One labelled line per node; a node without a listener prints its
+        // label alone, so a missing node can never pass as a synced one.
+        const nodeState = (node) =>
+            `echo "${node} $(docker exec ${node} mariadb -uroot -proot_password --silent ` +
+            `-e "SHOW STATUS WHERE Variable_name IN ('wsrep_ready', 'wsrep_local_state_comment')" ` +
+            `2>/dev/null | awk '{print $2}' | paste -sd ' ')"`;
+        const waitForWholeCluster = (retriesLeft) => {
+            cy.exec(NODES.map(nodeState).join('; ')).then(({ stdout }) => {
+                const states = stdout.trim().split('\n').map((line) => line.trim());
+                const whole = NODES.every((node, i) => states[i] === `${node} Synced ON`);
+                if (whole) return;
+                expect(retriesLeft, `cluster rejoin attempts left (${states.join(' | ')})`).to.be.greaterThan(0);
+                cy.wait(2000).then(() => waitForWholeCluster(retriesLeft - 1));
             });
         };
-        waitForSynced(90);
+        waitForWholeCluster(90);
     });
 
     it('a request survives its database node dying mid-flight', () => {
@@ -77,9 +82,12 @@ describe('Galera failover', () => {
         // The compose restart policy brings the killed node back on its own
         // and the join-aware bootstrap re-admits it, so membership may
         // already be back at three here; availability is the contract.
+        // The node answering may be the one donating the state transfer to
+        // the rejoining node; it is still serving (wsrep_ready ON).
         cy.request('/DatabaseClusterProbe/status').then((res) => {
             expect(res.body.clusterSize, 'cluster keeps quorum').to.be.within(2, 3);
-            expect(res.body.state).to.eq('Synced');
+            expect(res.body.ready, 'node is serving').to.eq('ON');
+            expect(res.body.state).to.be.oneOf(['Synced', 'Donor/Desynced']);
         });
     });
 });
