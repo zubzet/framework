@@ -640,7 +640,7 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     $organization->updateName(string $name);
     ```
 
-* Soft deletes the organization (`active = 0`). Users that referenced it will then return `null` from `$user->organization()`, even though their `organizationId` column is preserved.
+* Soft deletes the organization (`active = 0`). Its active members are detached first (`organizationId` is set to `NULL` and the membership in the linked group is removed) and the linked group is deactivated, so `$user->organization()` returns `null` for them.
 
     ```php
     $organization->remove();

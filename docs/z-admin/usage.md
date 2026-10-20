@@ -17,6 +17,8 @@ It has following categories:
 | Roles | User permission managment |
 | Organization | [Organization management](organization-management.md) by its own members |
 | Profile | [Own password, two factor, sessions and api keys](profile.md) |
+| Organizations | List of organizations plus a detail page to rename or delete one |
+| Add Organization | Form to create an organization, optionally with a permission group |
 
 
 ## Permissions
@@ -30,6 +32,10 @@ To be able to use all functions, the following permissions are needed:
 - admin.roles.create
 - admin.roles.edit
 - admin.roles.delete
+- admin.organizations.list
+- admin.organizations.create
+- admin.organizations.edit
+- admin.organizations.delete
 - admin.log
 - [admin.su](login-as-another-user.md)
 
@@ -51,3 +57,10 @@ After you set a role, you can either add more roles or save the user by clicking
 
 ## Two factor
 An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.edit`.
+## Organizations
+Add Organization creates an [organization](../core-features/access-control.md). Ticking **Create a permission group** also creates a [group](../core-features/permission-system.md) named after the organization (`{name}_Group`) and links it to the organization. Organization names may repeat, group names may not, so the checkbox reports an error when a group of that name already exists.
+
+Organizations lists every active organization; opening one shows a form to rename it, the linked group, the users assigned to it, and a button to delete it. Renaming also renames the linked group when it is named `{organization name}_Group`, as created by the checkbox above, and fails with a uniqueness error when a group of the new name already exists. Deleting is a soft delete, the organization is set to inactive, its members are detached and the linked group is deactivated. The Delete button requires `admin.organizations.delete`.
+
+## Assigning organizations
+Both Add User and Edit User carry an Organization select. Picking an entry assigns the user to that organization, the empty entry (`---`) unassigns them. The assignment goes through `User::updateOrganization()`, so the group of the previous organization is removed from the user and the group of the new one is added. An Edit User request without the `organization` field leaves the organization unchanged.

@@ -28,7 +28,7 @@
                     "text" => $text,
                 ];
             }
-            return json_encode($food);
+            return json_encode($food, JSON_HEX_TAG | JSON_HEX_AMP);
         }
 
         /**

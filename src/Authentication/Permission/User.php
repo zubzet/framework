@@ -225,7 +225,7 @@ class User extends AuthenticationObject {
         model('z_user')->updateUserOrganization($this, $organization);
 
         $newGroup = $organization?->getGroup();
-        if(!is_null($newGroup)) {
+        if(!is_null($newGroup) && !in_array($newGroup->id(), array_map(fn($group) => $group->id(), Group::byUser($this)))) {
             $this->groupsAdd($newGroup);
         }
 

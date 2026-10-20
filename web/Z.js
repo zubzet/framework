@@ -1757,7 +1757,7 @@ class ZFormField {
     badge.classList.add("badge", "badge-primary", "mr-1", "mb-1", "p-2");
     badge.style.cursor = "pointer";
     badge.setAttribute("data-value", value);
-    badge.innerHTML = "&times; " + text;
+    badge.textContent = "\u00d7 " + text;
     badge.addEventListener("click", () => {
       // A disabled multi-select must not let badges be removed either.
       if (this.isDisabled()) return;
@@ -1887,7 +1887,7 @@ class ZFormField {
         this.foodMap[value] = text;
 
         var option = document.createElement("option");
-        option.innerHTML = text;
+        option.textContent = text;
         option.setAttribute("value", value);
         (currentOptgroup || this.input).appendChild(option);
         this.optionMap[value] = option;
@@ -1910,7 +1910,7 @@ class ZFormField {
     for (var data of food) {
       if(data.type == undefined || data.type == "option") {
         var option = document.createElement("option");
-        option.innerHTML = data.text;
+        option.textContent = data.text;
         option.setAttribute("value", data.value ?? data.text);
         if(this.optgroup != null) {
           this.optgroup.appendChild(option);
