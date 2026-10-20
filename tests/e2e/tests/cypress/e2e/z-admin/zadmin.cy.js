@@ -389,17 +389,18 @@ describe('Z-Admin Panel', () => {
 
     // ZController::action_login_as - the reason an admin may state for the sudo
     describe('action_login_as (reason)', () => {
-        function sudo(query) {
-            cy.request({
-                url: `/z/login_as/3${query}`,
-                followRedirect: false,
-                failOnStatusCode: false,
+        function sudo(reason) {
+            cy.zRequest({
+                method: 'POST',
+                url: '/z/login_as/3',
+                form: true,
+                body: reason === undefined ? { action: 'login_as' } : { action: 'login_as', reason },
             });
         }
 
         it('records the reason the admin stated', () => {
             cy.loginAs("admin");
-            sudo('?reason=' + encodeURIComponent('Ticket #4711'));
+            sudo('Ticket #4711');
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -409,7 +410,7 @@ describe('Z-Admin Panel', () => {
 
         it('falls back to a default reason when none is stated', () => {
             cy.loginAs("admin");
-            sudo('');
+            sudo();
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -419,7 +420,7 @@ describe('Z-Admin Panel', () => {
 
         it('falls back when the reason is only whitespace', () => {
             cy.loginAs("admin");
-            sudo('?reason=' + encodeURIComponent('   '));
+            sudo('   ');
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -429,7 +430,7 @@ describe('Z-Admin Panel', () => {
 
         it('cuts an overlong reason to what the column takes', () => {
             cy.loginAs("admin");
-            sudo('?reason=' + encodeURIComponent('R'.repeat(400)));
+            sudo('R'.repeat(400));
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -476,10 +477,22 @@ describe('Z-Admin Panel', () => {
                 adminUserId = out.userId;
             });
 
+            // A GET must not log in, it could be fired from another site
             cy.request({
-                url: '/z/login_as/3', // user 3 = customer
-                followRedirect: false,
+                url: '/z/login_as/3',
                 failOnStatusCode: false,
+            }).then((res) => {
+                expect(res.status).to.eq(405);
+            });
+            cy.request('/session/whoami').then((res) => {
+                expect(JSON.parse(res.body).userId, 'a get does not switch the user').to.eq(adminUserId);
+            });
+
+            cy.zRequest({
+                method: 'POST',
+                url: '/z/login_as/3', // user 3 = customer
+                form: true,
+                body: { action: 'login_as' },
             });
 
             // The cookie rotates to a fresh session token after sudo.
@@ -531,8 +544,11 @@ describe('Z-Admin Panel', () => {
         it('non-admin without admin.su gets denied', () => {
             cy.loginAs("customer");
 
-            cy.request({
+            cy.zRequest({
+                method: 'POST',
                 url: '/z/login_as/1',
+                form: true,
+                body: { action: 'login_as' },
                 failOnStatusCode: false,
             }).then((res) => {
                 expect(res.status).to.eq(403);
