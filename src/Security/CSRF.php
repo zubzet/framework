@@ -65,7 +65,7 @@
             // A raw HTML form cannot set the header and sends the field instead
             $header = request()->input->SERVER['HTTP_X_CSRF_TOKEN'] ?? request()->input->POST[self::FIELD] ?? null;
 
-            if(empty($cookie) || empty($header) || !hash_equals($cookie, $header)) {
+            if(!is_string($cookie) || !is_string($header) || empty($cookie) || empty($header) || !hash_equals($cookie, $header)) {
                 http_response_code(403);
                 header('Content-Type: application/json');
                 response()->generateRestError(403, 'csrf token mismatch');
@@ -83,8 +83,8 @@
         private function ensureToken(): void {
             $existing = request()->getCookie(self::COOKIE);
 
-            // Reuse the token the browser already holds.
-            if($existing) {
+            // Reuse the token the browser already holds; a cookie like z_csrf[]=x is no token.
+            if(is_string($existing) && !empty($existing)) {
                 self::$token = $existing;
                 return;
             }
