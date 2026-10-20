@@ -198,8 +198,8 @@ describe('Two factor gate', () => {
 
             profile('clear-sessions').then(expectRenew);
 
-            sessionState('0854a').then((out) => expect(out.active).to.eq(1));
-            sessionState('0854c').then((out) => expect(out.active).to.eq(1));
+            sessionState('0854a').then((out) => expect(out.active).to.eq(true));
+            sessionState('0854c').then((out) => expect(out.active).to.eq(true));
         });
 
         it('lets a fresh session create a key', () => {
