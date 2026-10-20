@@ -70,6 +70,7 @@ These todos should be as temporary as possible:
 1. Fixed - Below a non-empty `rootDirectory`, `$res->reroute()` and `zubzet()->reroute()` ended in a 404, because the rerouted request path lacked the root directory that `getUrlParts()` strips. The rerouted path now starts with the root directory, like a real request
 1. Fixed - `getUrlParts()` counted slashes around `rootDirectory` as segments, so `rootDirectory = sub/` stripped the controller as well
 1. Fixed - The debug bar loaded its assets from `/_zubzet/asset-proxy` regardless of `rootDirectory`; it now uses the asset proxy below the root directory
+1. Fixed #184 - Tables with different collations made the permission lookup fail with "Illegal mix of collations for operation 'UNION'": the bundled migrations took the database default, and `z_migration_lock` / `z_version` were created as `utf8mb3_unicode_ci` by Doctrine. Every framework table is now created as `utf8mb4` / `utf8mb4_uca1400_ai_ci` (`Connection::COLLATION`), and the new `repair:database-collation` command converts the framework (`z_`) tables to it; `--include-app-tables` converts the application tables too and sets the database default. See [Console Commands](docs/core-features/console-commands.md#repairdatabase-collation). **Migrator note:** existing installations are not converted automatically, because converting rewrites each table; run the command when you hit the error
 
 ## v1.2.0
 1. Added DEV Changelog

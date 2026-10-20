@@ -74,6 +74,43 @@ php index.php db:seed --skip-migrations
 
 See [Migrations](migrations/index.md) for the full migration workflow.
 
+### Repair commands
+
+Repair commands fix an installation that drifted into a broken state. They are never run
+automatically; run one when you hit the problem it names.
+
+#### repair:database-collation
+
+Tables with different collations make queries across them fail, for example with
+`Illegal mix of collations for operation 'UNION'` on every authenticated request. This happens
+when tables were created under different server or database defaults, e.g. older tables from
+before a server upgrade next to newer ones.
+
+The framework creates its tables as `utf8mb4` with the collation `utf8mb4_uca1400_ai_ci`
+(`ZubZet\Framework\Database\Connection::COLLATION`). The command converts the framework tables
+(`z_` prefix) to it with
+`ALTER TABLE ... CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci`:
+
+```bash
+php index.php repair:database-collation
+```
+
+Application tables and the database default are left alone. Add `--include-app-tables` to convert
+every table of the database and to set the database default to the same collation, so tables
+created later without an explicit collation match:
+
+```bash
+php index.php repair:database-collation --include-app-tables
+```
+
+Only tables whose own collation or any text column's collation differs are converted; a rerun
+with nothing left to convert changes nothing. Columns that deliberately use another collation
+(e.g. a case-sensitive `utf8mb4_bin` column) are converted as well.
+
+!!! warning
+    Converting rewrites the whole table and blocks writes to it meanwhile, which can take a
+    long time on large tables. Take a backup and run it in a maintenance window.
+
 ### module:setup
 
 Merges missing default settings from installed [modules](../advanced-features/modules.md) into
