@@ -30,7 +30,9 @@ describe('Database collation', () => {
 
     it('converts only the framework tables by default', () => {
         cy.request('/CollationProbe/misalign').its('body').then((state) => {
-            expect(state.misaligned).to.deep.equal(['z_user_permission']);
+            // z_test_timestamp_type is an application fixture with the z_ prefix, Doctrine 3 (PHP 8.0) creates it as utf8mb3
+            expect(state.misaligned).to.include('z_user_permission');
+            expect(state.misaligned).not.to.include('collation_probe');
             expect(state.misalignedAll).to.include.members(['collation_probe', 'z_user_permission']);
             expect(state.permissions).to.match(/Illegal mix of collations/);
         });
