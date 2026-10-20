@@ -20,9 +20,17 @@
 
             $secret = $row["two_factor_secret"] ?? null;
 
+            $code = null;
+            if(!is_null($secret)) {
+                // The offset is in seconds, the counter in steps of the library
+                $google2fa = new Google2FA();
+                $counter = (int) floor((time() + $offset) / $google2fa->getKeyRegeneration());
+                $code = $google2fa->oathTotp($secret, $counter);
+            }
+
             echo json_encode([
                 "found" => !is_null($secret),
-                "code" => is_null($secret) ? null : (new Google2FA())->oathTotp($secret, (int) floor((time() + $offset) / 30)),
+                "code" => $code,
             ]);
         }
 

@@ -540,7 +540,9 @@ class User extends AuthenticationObject {
 
         // One 30 second step each way, so a clock that drifts a little and a code
         // read just before its window turns still land
-        return false !== (new Google2FA())->verifyKey($secret, $code, 1);
+        $matched = (new Google2FA())->verifyKey($secret, $code, 1);
+
+        return (bool) $matched;
     }
 
     /**
