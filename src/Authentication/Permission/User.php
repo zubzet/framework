@@ -11,6 +11,8 @@ use ZubZet\Framework\Authentication\HandleTrait;
 use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\PasswordHash\Password;
 use ZubZet\Framework\Authentication\RetrievalTrait;
+use ZubZet\Framework\Logger\LogEventType;
+use ZubZet\Framework\Logger\Logger;
 
 class User extends AuthenticationObject {
 
@@ -214,6 +216,24 @@ class User extends AuthenticationObject {
         }
 
         return true;
+    }
+
+    // Records a failed login so it counts toward the rate limit
+    public function recordLoginTry(): void {
+        model("z_login")->newLoginTry($this->id());
+    }
+
+    // False when the account saw too many recent login tries
+    public function checkLoginTries(): bool {
+        $timespanStart = (new DateTime())->setTimestamp((int) strtotime('-' . config("maxLoginTriesTimespan")));
+        $recentTries = (int) model("z_login")->countLoginTriesByTimeSpan($this->id(), $timespanStart->format("Y-m-d H:i:s"));
+        if($recentTries <= config("maxLoginTriesPerTimespan")) return true;
+
+        logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
+            "userId" => $this->id(),
+        ]);
+
+        return false;
     }
 
     public function updateOrganization(?Organization $organization): void {

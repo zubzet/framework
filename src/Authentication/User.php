@@ -64,15 +64,17 @@
         }
 
         /**
-         * Checks if the user is registered. Checks by the z_login_token cookie. 
+         * Checks if the user is registered. Checks by the bearer token of the Authorization header, else by the z_login_token cookie.
          * The properties $isLoggedIn, $userId, and $execUserId will be set after calling this function.
          */
         public function identify() {
-            if(empty(request()->getCookie("z_login_token"))) {
+            // A bearer header wins over the cookie, even when its token turns out invalid
+            $token = request()->bearerToken() ?? request()->getCookie("z_login_token");
+            if(empty($token)) {
                 return $this->anonymousRequest();
             }
 
-            $session = Session::byToken(request()->getCookie("z_login_token"));
+            $session = Session::byToken($token);
             if(is_null($session) ||
                 !model("z_login")->validateSession($session) ||
                 is_null($session->userId()) ||

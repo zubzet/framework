@@ -199,3 +199,27 @@ INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `is_permanen
 (443, '0443a00000000000000000000000000000000000', 443, 443, 1, NULL, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 1),
 -- auth flow: young enough to pass the lifetime check, rejected by the expiry
 (444, '0444a00000000000000000000000000000000000', 444, 444, 0, NULL, '2000-01-01 12:00:00', NOW(), 1);
+
+
+-- Authentication by an `Authorization: Bearer` header (bearer.cy.js)
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+-- valid: the user behind the bearer token
+(450, 'session_bearer_valid@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- cookie: the user behind the cookie sent along with the header
+(451, 'session_bearer_cookie@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- expired: a login too old to authenticate
+(452, 'session_bearer_expired@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- api key: an exempt api key sent as bearer token
+(453, 'session_bearer_apikey@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- logout: the session is ended through the header
+(454, 'session_bearer_logout@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
+(450, '0450a00000000000000000000000000000000000', 450, 450, 0, 0, NULL, NOW(), 1),
+(451, '0451a00000000000000000000000000000000000', 451, 451, 0, 0, NULL, NOW(), 1),
+-- created in the year 2000 without extension, so it is expired
+(452, '0452a00000000000000000000000000000000000', 452, 452, 0, 0, NULL, '2000-01-01 12:00:00', 1),
+-- same age, kept alive by the exemption
+(453, '0453a00000000000000000000000000000000000', 453, 453, 1, 1, NULL, '2000-01-01 12:00:00', 1),
+(454, '0454a00000000000000000000000000000000000', 454, 454, 0, 0, NULL, NOW(), 1);
