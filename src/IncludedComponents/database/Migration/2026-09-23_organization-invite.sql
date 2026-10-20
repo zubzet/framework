@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS `z_organization_invite` (
     `token` VARCHAR(255) NOT NULL,
     `active` TINYINT(1) NOT NULL DEFAULT 1,
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;

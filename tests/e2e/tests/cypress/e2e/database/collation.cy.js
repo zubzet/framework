@@ -18,7 +18,7 @@ describe('Database collation', () => {
             'z_email_verify', 'z_file', 'z_interaction_log', 'z_interaction_log_category', 'z_language',
             'z_logintoken', 'z_login_too_many_tries', 'z_logintry', 'z_migration_lock', 'z_organization',
             'z_password_reset', 'z_role', 'z_role_permission', 'z_uniqueref', 'z_user', 'z_user_permission',
-            'z_user_role', 'z_version',
+            'z_user_role', 'z_version', 'z_two_factor_challenge', 'z_organization_invite',
         ];
 
         cy.request('/CollationProbe/state').its('body').then((state) => {
