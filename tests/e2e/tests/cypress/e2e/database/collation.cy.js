@@ -43,7 +43,9 @@ describe('Database collation', () => {
 
         cy.request('/CollationProbe/state').its('body').then((state) => {
             expect(state.misaligned).to.deep.equal([]);
-            expect(state.misalignedAll).to.deep.equal(['collation_probe']);
+            // model_test_insert has a JSON column, which MariaDB keeps as utf8mb4_bin, so it always shows up here
+            expect(state.misalignedAll).to.include('collation_probe');
+            expect(state.misalignedAll).not.to.include('z_user_permission');
             expect(state.databaseCollation).to.eq('utf8mb4_general_ci');
             expect(state.permissions).to.eq('ok');
         });
