@@ -853,8 +853,13 @@ Authorization: Bearer <token>
 ```
 
 The bearer token wins over the `z_login_token` cookie. If it is invalid or expired the request is
-anonymous, it does not fall back to the cookie. A header of another scheme, like `Basic`, is ignored
-and the cookie is used. `$req->bearerToken()` returns the token of the header, or `null`.
+anonymous, it does not fall back to the cookie.
+
+Only a header that carries exactly one token counts as a bearer token. A header of another scheme,
+like `Basic`, an empty `Bearer `, a value with more than one token like `Bearer a b`, and two
+`Authorization` headers (Apache merges them into one comma separated value) carry no token. The
+request then uses the cookie, if there is one. `$req->bearerToken()` returns the token of the
+header, or `null`.
 
 ---
 

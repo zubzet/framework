@@ -71,7 +71,7 @@ $req->acceptLanguage(); // "de-CH,de;q=0.9,en;q=0.8" -> ["de-CH", "de", "en"]
 [Translations](translations.md#locale) use it to pick the locale of a visitor without one of their own.
 
 ### Bearer token
-`$req->bearerToken()` returns the token of an `Authorization: Bearer <token>` header, or `null` when the header is missing or uses another scheme. The framework [authenticates by it](access-control.md#bearer-authentication) before the login cookie.
+`$req->bearerToken()` returns the token of an `Authorization: Bearer <token>` header, or `null` when the header is missing, uses another scheme or does not carry exactly one token (`Bearer `, `Bearer a b`). The framework [authenticates by it](access-control.md#bearer-authentication) before the login cookie.
 
 ## See also
 
