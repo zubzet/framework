@@ -450,6 +450,7 @@ describe('Authentication - Session', () => {
             url: '/login',
             form: true,
             body: {
+                action: 'login',
                 name: 'session_login_name@cypress.test',
                 password: 'password',
             },
