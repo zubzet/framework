@@ -1,6 +1,6 @@
 #!/bin/sh
-# Called via the project's project.sh, which sets ZUBZET_PROJECT_ROOT
-root="${ZUBZET_PROJECT_ROOT:?Run this via project.sh in your project root}"
+# Called via the project's project, which sets ZUBZET_PROJECT_ROOT
+root="${ZUBZET_PROJECT_ROOT:?Run this via project in your project root}"
 
 compose() {
     docker compose -f "$root/packaging/docker/docker-compose-base.yml" "$@"
@@ -60,5 +60,5 @@ if command -v php >/dev/null && [ -f "$root/index.php" ]; then
     exec php "$root/index.php" "$@"
 fi
 
-echo "Error: The project is not running and PHP was not found in your PATH. Start it with: ./project.sh start" >&2
+echo "Error: The project is not running and PHP was not found in your PATH. Start it with: ./project start" >&2
 exit 1

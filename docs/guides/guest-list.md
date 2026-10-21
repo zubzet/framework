@@ -251,7 +251,7 @@ The use of `$guest["first_name"]` corresponds to the column names defined in the
 - **View**: Display the data in an HTML table.
 
 This simple application demonstrates how to connect a model, controller, and view to create a guest list application.  
-To start your Website run "./project.sh start" inside your terminal.  
+To start your Website run "./project start" inside your terminal.  
 And to view your result, navigate to `http://localhost:8080/Guests/list` in your browser.
 
 ## Next Guide

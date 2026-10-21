@@ -13,14 +13,14 @@ describe('info:startup Command', () => {
         });
     });
 
-    describe('in a project that has a project.sh', () => {
-        // Projects built by the install command carry a project.sh, the e2e app has none
-        before(() => cy.exec('touch ../project.sh'));
-        after(() => cy.exec('rm -f ../project.sh'));
+    describe('in a project that has a project script', () => {
+        // Projects built by the install command carry a project script, the e2e app has none
+        before(() => cy.exec('touch ../project'));
+        after(() => cy.exec('rm -f ../project'));
 
-        it('points to project.sh to stop the server', () => {
+        it('points to ./project to stop the server', () => {
             cy.exec('docker exec application php index.php info:startup').then((result) => {
-                expect(result.stdout).to.include('./project.sh stop');
+                expect(result.stdout).to.include('./project stop');
                 expect(result.stdout).to.not.include('npm run stop');
             });
         });

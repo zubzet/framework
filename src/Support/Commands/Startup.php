@@ -77,9 +77,9 @@
             return InstalledVersions::getPrettyVersion('zubzet/framework') ?? 'unknown';
         }
 
-        // Projects built by the install command carry a project.sh, the framework's own dev stack uses npm
+        // Projects built by the install command carry a project script, the framework's own dev stack uses npm
         private function getStopCommand(): string {
-            return is_file("project.sh") ? "./project.sh stop" : "npm run stop";
+            return is_file("project") ? "./project stop" : "npm run stop";
         }
 
         private function getConfiguredHost(): string {

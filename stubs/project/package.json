@@ -1,11 +1,11 @@
 {
     "private": true,
     "scripts": {
-        "start": "./project.sh start",
-        "stop": "./project.sh stop",
-        "shell": "./project.sh shell",
-        "seed": "./project.sh db:seed",
-        "info": "./project.sh info:startup --pwd \"$(pwd)\"",
+        "start": "./project start",
+        "stop": "./project stop",
+        "shell": "./project shell",
+        "seed": "./project db:seed",
+        "info": "./project info:startup --pwd \"$(pwd)\"",
         "tests": "env -u ELECTRON_RUN_AS_NODE cypress run --project tests",
         "cypress": "cypress open --project tests"
     },

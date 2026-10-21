@@ -42,7 +42,7 @@ describe('install Command', () => {
 
         // copy() drops the executable bit, the command sets it again
         cy.exec(`docker exec application test -x ${PROJECT}/zubzet`);
-        cy.exec(`docker exec application test -x ${PROJECT}/project.sh`);
+        cy.exec(`docker exec application test -x ${PROJECT}/project`);
 
         // The framework landed in the project's own vendor folder
         cy.exec(`docker exec application test -f ${PROJECT}/vendor/autoload.php`);
@@ -65,7 +65,7 @@ describe('install Command', () => {
         cy.exec(INSTALL_COMMAND, INSTALL_OPTIONS).then((result) => {
             expect(result.exitCode, result.stdout + result.stderr).to.equal(0);
             expect(result.stdout).to.include('exists:  index.php');
-            expect(result.stdout).to.include('created: project.sh');
+            expect(result.stdout).to.include('created: project');
         });
 
         cy.exec(`docker exec application cat ${PROJECT}/index.php`).then((result) => {

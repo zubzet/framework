@@ -59,29 +59,29 @@ php index.php install /path/to/new-project
 
 The command copies the project template into the folder and prints a `created:` or `exists:` line
 per entry. Existing files are never overwritten, so it is safe to run on a folder that already
-contains files. It then makes `zubzet` and `project.sh` executable and runs `composer require` for
+contains files. It then makes `zubzet` and `project` executable and runs `composer require` for
 the framework inside the new project.
 
 It fails with a clear message if the folder does not exist, is not writable, or Composer is not
 in your `PATH`.
 
-### project.sh
+### project
 
-Every generated project ships a `project.sh` script in its root for the everyday tasks:
+Every generated project ships a `project` script in its root for the everyday tasks:
 
 | Command | Description |
 | ------- | ----------- |
-| `./project.sh start` | Build and start the Docker stack, then run `composer install`, `db:seed` and `info:startup`. |
-| `./project.sh stop` | Stop the stack and remove it, including its volumes. |
-| `./project.sh shell` | Open a shell inside the application container. |
-| `./project.sh tests` | Run the Cypress suite headless; extra arguments (e.g. `--spec`) are passed through. |
-| `./project.sh cypress` | Open the interactive Cypress UI. |
+| `./project start` | Build and start the Docker stack, then run `composer install`, `db:seed` and `info:startup`. |
+| `./project stop` | Stop the stack and remove it, including its volumes. |
+| `./project shell` | Open a shell inside the application container. |
+| `./project tests` | Run the Cypress suite headless; extra arguments (e.g. `--spec`) are passed through. |
+| `./project cypress` | Open the interactive Cypress UI. |
 
 Any other arguments are forwarded to `php index.php`: inside the application container when it
 is running, otherwise directly with the host's PHP.
 
 ```bash
-./project.sh db:status
+./project db:status
 ```
 
 `tests` and `cypress` need Node.js and Cypress on the host. They are never installed

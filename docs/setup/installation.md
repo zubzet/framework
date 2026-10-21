@@ -68,7 +68,7 @@ echo "Done. ZubZet is installed in $directory"
 Inside your project folder, run:
 
 ```bash
-./project.sh start
+./project start
 ```
 
 This single command:
@@ -78,7 +78,7 @@ This single command:
 3. Seeds the database with `db:seed`, which applies all pending migrations,
 4. Prints the startup info with `info:startup`.
 
-To stop and remove the stack (and its volumes), run `./project.sh stop`. `./project.sh shell` opens a shell inside the application container. See [console commands](../core-features/console-commands.md#projectsh) for all `project.sh` commands.
+To stop and remove the stack (and its volumes), run `./project stop`. `./project shell` opens a shell inside the application container. See [console commands](../core-features/console-commands.md#project) for all `project` commands.
 
 ## Access your application
 | Service | URL |

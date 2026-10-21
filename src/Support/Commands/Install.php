@@ -66,7 +66,7 @@
             }
 
             // copy() does not keep the executable bit
-            foreach(["zubzet", "project.sh"] as $script) {
+            foreach(["zubzet", "project"] as $script) {
                 if(chmod("{$project}/{$script}", 0755)) continue;
 
                 $out->writeln("<error>Could not make {$script} executable</error>");
