@@ -35,7 +35,7 @@ case "$1" in
         if [ ! -x "$root/node_modules/.bin/cypress" ]; then
             echo "Error: Cypress is required for '$1' but was not found in $root/node_modules." >&2
             echo "Install the test dependencies with:" >&2
-            echo "npm install --no-save --no-package-lock cypress@^15.2.0 chai@^6.0.1 mocha@^11.7.2 puppeteer@^24.19.0 unicode-substring@^1.0.0" >&2
+            echo "npm install" >&2
             exit 1
         fi
 
