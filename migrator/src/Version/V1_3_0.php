@@ -4,6 +4,7 @@
 
     use ZubZet\Tooling\Modifiers\ComposerModifier;
     use ZubZet\Tooling\Modifiers\FileContent;
+    use ZubZet\Tooling\Modifiers\RemoveFile;
     use ZubZet\Tooling\Modifiers\SettingsIni;
     use ZubZet\Tooling\Modifiers\ViewMigration;
     use ZubZet\Tooling\ReleaseState;
@@ -96,6 +97,13 @@
                     ]);
                 }
             }
+
+            // App-local copies of Z.js predate the CSRF header, the framework serves the current one itself
+            $zJsCopies = new RemoveFile($this, "remove-app-z-js");
+            $zJsCopies->from([
+                "./webroot/assets/js/Z.js",
+                "./assets/js/Z.js",
+            ]);
 
             // Upgrade composer dependencies (pulls in the Katana-backed framework).
             $composer = new ComposerModifier($this, "composer");
