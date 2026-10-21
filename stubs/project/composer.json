@@ -1,5 +1,19 @@
 {
     "type": "project",
+    "config": {
+        "audit": {
+            "ignore": {
+                "GHSA-2jx3-65f3-xr8r": {
+                    "apply": "block",
+                    "reason": "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x"
+                },
+                "GHSA-g7m4-839x-ch6v": {
+                    "apply": "block",
+                    "reason": "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x"
+                }
+            }
+        }
+    },
     "autoload": {
         "psr-4": {
             "App\\": "app/"
