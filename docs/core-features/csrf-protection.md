@@ -1,5 +1,5 @@
 # CSRF Protection
-Since version **1.4.0**, the framework defends every state-changing request against Cross-Site Request Forgery with a stateless double-submit cookie.
+Since version **1.3.0**, the framework defends every state-changing request against Cross-Site Request Forgery with a stateless double-submit cookie.
 
 Every request ensures a `z_csrf` cookie holding a random 40-character token: a fresh one is issued when the browser sends none, otherwise the existing one is reused. Z.js reads that cookie and echoes it back as an `X-CSRF-Token` header on every request it sends, so [`Z.Forms` and `Z.Request`](../frontend-integration/backend-requests.md) need no change. The server compares the two and answers a mismatch with `403` and a JSON error body:
 

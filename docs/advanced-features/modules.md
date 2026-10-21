@@ -1,6 +1,6 @@
 # Modules
 
-Since version **1.4.0**, ZubZet applications can be extended with **modules**: Composer packages of
+Since version **1.3.0**, ZubZet applications can be extended with **modules**: Composer packages of
 type `zubzet-module` whose layout mirrors an application. A module can contribute controllers,
 models, views, routes, migrations, seeds, and static assets. The framework resolves everything it
 loads by convention through a single precedence rule, so a module plugs in without any registration
