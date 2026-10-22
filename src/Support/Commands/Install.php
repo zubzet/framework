@@ -65,6 +65,28 @@
                 $out->writeln("<info>created: {$relativePath}</info>");
             }
 
+            // A project without an encryption key gets its own, an existing key is never replaced
+            $settingsFile = "{$project}/z_config/z_settings.ini";
+            $settings = parse_ini_file($settingsFile) ?: [];
+            if(empty($settings["encryption_key"])) {
+                $key = bin2hex(random_bytes(32));
+
+                // Matches the encryption_key line, whatever its value
+                $keyLine = '/^encryption_key\s*=.*$/m';
+
+                $content = file_get_contents($settingsFile);
+                $content = preg_match($keyLine, $content)
+                    ? preg_replace($keyLine, "encryption_key = {$key}", $content)
+                    : rtrim($content) . "\nencryption_key = {$key}\n";
+
+                if(false === file_put_contents($settingsFile, $content)) {
+                    $out->writeln("<error>Could not write the encryption key to z_config/z_settings.ini</error>");
+                    return Command::FAILURE;
+                }
+
+                $out->writeln("<info>generated: encryption_key in z_config/z_settings.ini</info>");
+            }
+
             // copy() does not keep the executable bit
             foreach(["zubzet", "project"] as $script) {
                 if(chmod("{$project}/{$script}", 0755)) continue;
