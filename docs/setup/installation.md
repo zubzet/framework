@@ -207,6 +207,10 @@ info_row() {
 
 echo
 echo "$rule"
+# Only when the project is not in the current directory
+if [ "$directory" != "$PWD" ]; then
+    info_row "Enter" "${bold}cd $(printf '%q' "$directory")${reset}"
+fi
 info_row "Start" "${bold}./project start${reset}"
 info_row "Stop" "${bold}./project stop${reset}"
 echo
