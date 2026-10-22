@@ -9,6 +9,11 @@
             $this->isOptional = true;
         }
 
+        private int $mode = 0644;
+        public function executable(): void {
+            $this->mode = 0755;
+        }
+
         private ?string $fromFile = null;
         public function from(string $file) {
             $this->fromFile = $this->version->upgrade->rootDir . DIRECTORY_SEPARATOR;
@@ -52,7 +57,7 @@
             $this->out->writeln("Moving included file <info>$fromFileName</info> to <info>$path</info>");
             if($this->upgrade->dry) return;
 
-            if(!copy($this->fromFile, $path) || !chmod($path, 0644)) {
+            if(!copy($this->fromFile, $path) || !chmod($path, $this->mode)) {
                 throw new \RuntimeException("Failed to copy the file to '$path'.");
             }
         }

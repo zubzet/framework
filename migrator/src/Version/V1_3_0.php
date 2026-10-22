@@ -4,6 +4,7 @@
 
     use ZubZet\Tooling\Modifiers\ComposerModifier;
     use ZubZet\Tooling\Modifiers\FileContent;
+    use ZubZet\Tooling\Modifiers\IncludedFile;
     use ZubZet\Tooling\Modifiers\JsonModifier;
     use ZubZet\Tooling\Modifiers\RemoveFile;
     use ZubZet\Tooling\Modifiers\SettingsIni;
@@ -162,6 +163,12 @@
                     "A script that relied on the inverted exit code has to be flipped, e.g. \"db:status && db:migrate\" now migrates only while unlocked.",
                 ]);
             }
+
+            // The project script forwards to the framework's scripts/project.sh, which drives the Docker stack
+            $projectScript = new IncludedFile($this, "project-script");
+            $projectScript->executable();
+            $projectScript->from("project");
+            $projectScript->to("./");
 
             // Upgrade composer dependencies (pulls in the Katana-backed framework).
             $composer = new ComposerModifier($this, "composer");
