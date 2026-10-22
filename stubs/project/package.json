@@ -6,8 +6,8 @@
         "shell": "./project shell",
         "seed": "./project db:seed",
         "info": "./project info:startup --pwd \"$(pwd)\"",
-        "tests": "env -u ELECTRON_RUN_AS_NODE cypress run --project tests",
-        "cypress": "cypress open --project tests"
+        "tests": "env -u ELECTRON_RUN_AS_NODE ./project tests",
+        "cypress": "./project cypress"
     },
     "devDependencies": {
         "cypress": "^15.16.0"

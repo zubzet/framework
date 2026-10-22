@@ -177,6 +177,41 @@
             $projectScript->from("project");
             $projectScript->to("./");
 
+            // The package.json scripts go through ./project now, changed scripts are kept as they are
+            $packageScripts = new JsonModifier($this, "package-json-project-script");
+            $packageScripts->optional();
+            $packageScripts->from("package.json");
+            $packageScripts->modify(function(array $data): ?array {
+                // The scripts as the 1.2.0 template shipped them
+                $oldScripts = [
+                    "start" => "rm -f composer.lock && npm install && npm run docker-compose -- up --remove-orphans --build -d && docker exec application composer install && npm run seed && npm run info",
+                    "stop" => "npm run docker-compose -- down -v",
+                    "shell" => "docker exec -it application bash",
+                    "seed" => "docker exec application php index.php db:seed",
+                    "info" => "docker exec application php index.php info:startup --pwd \"$(pwd)\"",
+                    "tests" => "env -u ELECTRON_RUN_AS_NODE cypress run --project tests",
+                    "cypress" => "cypress open --project tests",
+                ];
+
+                // The scripts as the 1.3.0 template ships them
+                $newScripts = [
+                    "start" => "./project start",
+                    "stop" => "./project stop",
+                    "shell" => "./project shell",
+                    "seed" => "./project db:seed",
+                    "info" => "./project info:startup --pwd \"$(pwd)\"",
+                    "tests" => "env -u ELECTRON_RUN_AS_NODE ./project tests",
+                    "cypress" => "./project cypress",
+                ];
+
+                foreach($oldScripts as $name => $oldScript) {
+                    if($oldScript !== ($data["scripts"][$name] ?? null)) continue;
+                    $data["scripts"][$name] = $newScripts[$name];
+                }
+
+                return $data;
+            });
+
             // The 1.2.0 upgrade added two VSCode tasks that start and stop the dev environment
             $tasksFile = ".vscode/tasks.json";
             $tasks = is_file($tasksFile) ? json_decode(file_get_contents($tasksFile), true) : null;
