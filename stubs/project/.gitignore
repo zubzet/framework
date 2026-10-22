@@ -2,3 +2,6 @@ node_modules
 vendor
 **/cypress/videos
 **/cypress/screenshots
+logs/
+z_config/z_automated_setting.ini
+.coverage
