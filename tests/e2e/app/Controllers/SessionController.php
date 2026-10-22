@@ -490,6 +490,15 @@ class SessionController extends z_controller {
     }
 
     /**
+     * Removes user 414 while its session 416 (token 0414a...) stays active,
+     * so the subsequent whoami request with that cookie must be rejected.
+     */
+    public function action_removeUserForAuth(Request $req, Response $res): void {
+        User::byId(414)->remove();
+        echo(json_encode(['done' => true]));
+    }
+
+    /**
      * After an expired session (415) has been used once (which auto-invalidates it),
      * this action tries to call setExtensionTime on it.
      *

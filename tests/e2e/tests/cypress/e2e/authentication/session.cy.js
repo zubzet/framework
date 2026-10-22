@@ -530,6 +530,23 @@ describe('Authentication - Session', () => {
         });
     });
 
+    it('should reject a request whose user was removed', () => {
+        // Session 416, user 414 — active, recently created
+        cy.session('auth_removed_414', () => {
+            cy.setCookie('z_login_token', '0414a00000000000000000000000000000000000');
+        });
+        requestJson('/session/whoami').then((output) => {
+            expect(output.isLoggedIn).to.be.true;
+            expect(output.userId).to.equal(414);
+        });
+        // Soft deletes user 414 (active → 0), its session stays active in the DB
+        requestJson('/session/removeUserForAuth');
+        // Cookie and session are still valid, but the user is gone → rejected
+        requestJson('/session/whoami').then((output) => {
+            expect(output.isLoggedIn).to.be.false;
+        });
+    });
+
     it('should reject a request that carries an expired session cookie', () => {
         // Session 413: created year 2000, no extension — long expired
         cy.session('auth_expired_411', () => {

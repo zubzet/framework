@@ -60,7 +60,9 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
 -- auth_extended: session is long expired but has a large extension → still valid
 (412, 'session_auth_extended@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
 -- auth_extend_after_expire: expired session, will be accessed (auto-invalidated), then extension is attempted
-(413, 'session_auth_extend_after_expire@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+(413, 'session_auth_extend_after_expire@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- auth_removed: the user is removed while its session stays active
+(414, 'session_auth_removed@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
 
 INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `extended_seconds`, `created`, `active`) VALUES
 -- auth_valid: active, recently created session
@@ -72,7 +74,9 @@ INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `extended_se
 -- auth_extended: created year 2000, large extension (~63 years) → still valid
 (414, '0412a00000000000000000000000000000000000', 412, 412, 2000000000, '2000-01-01 12:00:00', 1),
 -- auth_extend_after_expire: expired, will be auto-invalidated on first use, then extension attempted
-(415, '0413a00000000000000000000000000000000000', 413, 413, NULL, '2000-01-01 12:00:00', 1);
+(415, '0413a00000000000000000000000000000000000', 413, 413, NULL, '2000-01-01 12:00:00', 1),
+-- auth_removed: active, recently created; its user is removed via /session/removeUserForAuth
+(416, '0414a00000000000000000000000000000000000', 414, 414, NULL, NOW(), 1);
 
 
 /*
