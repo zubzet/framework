@@ -4,6 +4,7 @@
 
     use ZubZet\Tooling\Modifiers\ComposerModifier;
     use ZubZet\Tooling\Modifiers\FileContent;
+    use ZubZet\Tooling\Modifiers\Folder;
     use ZubZet\Tooling\Modifiers\IncludedFile;
     use ZubZet\Tooling\Modifiers\JsonModifier;
     use ZubZet\Tooling\Modifiers\RemoveFile;
@@ -175,6 +176,31 @@
             $projectScript->executable();
             $projectScript->from("project");
             $projectScript->to("./");
+
+            // The 1.2.0 upgrade added two VSCode tasks that start and stop the dev environment
+            $tasksFile = ".vscode/tasks.json";
+            $tasks = is_file($tasksFile) ? json_decode(file_get_contents($tasksFile), true) : null;
+            if(is_array($tasks)) {
+                $tasks["tasks"] = array_values(array_filter(
+                    $tasks["tasks"] ?? [],
+                    fn($task) => !in_array($task["label"] ?? null, [
+                        "Start Dev Environment", "Stop Dev Environment"
+                    ]),
+                ));
+
+                // Nothing but the version is left, so the file goes
+                if(empty($tasks["tasks"]) && empty(array_diff_key($tasks, ["version" => true, "tasks" => true]))) {
+                    $vscodeTasks = new RemoveFile($this, "remove-vscode-tasks");
+                    $vscodeTasks->from($tasksFile);
+                } else {
+                    $vscodeTasks = new JsonModifier($this, "remove-vscode-tasks");
+                    $vscodeTasks->from($tasksFile);
+                    $vscodeTasks->modify(fn() => $tasks);
+                }
+            }
+
+            $vscodeFolder = new Folder($this, "remove-vscode-folder");
+            $vscodeFolder->shouldNotExistIfEmpty(".vscode");
 
             // Upgrade composer dependencies (pulls in the Katana-backed framework).
             $composer = new ComposerModifier($this, "composer");
