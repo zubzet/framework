@@ -1,4 +1,4 @@
-ARG PHP_TAG=8.4-apache
+ARG PHP_TAG=8.5-apache
 FROM ghcr.io/zubzet/php:${PHP_TAG}
 
 ARG USER_UID=1000
