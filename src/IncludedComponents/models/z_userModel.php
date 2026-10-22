@@ -284,7 +284,8 @@
          * @param int $userId;
          */
         function createVerifyToken($userId) {
-            $token = uniqid("v_");
+            // Random, so a token cannot be guessed from the time it was created
+            $token = "v_".bin2hex(random_bytes(32));
             $endDate = date('Y-m-d H:i:s', strtotime('+1 day'));
             $sql = "INSERT INTO `z_email_verify`(token, user, end) VALUES (?, ?, ?)";
             $this->exec($sql, "sis", $token, $userId, $endDate);

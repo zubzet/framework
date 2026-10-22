@@ -200,7 +200,7 @@
 
                     $code = $req->getModel("z_login", $req->getZRoot())->addResetCode(
                         $user["id"],
-                        $req->getModel("z_general")->getUniqueRef(),
+                        null,
                         "forgot"
                     );
 
