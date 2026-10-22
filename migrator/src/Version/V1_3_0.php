@@ -45,6 +45,11 @@
             $healthEndpoint->addProperty("health_endpoint_enabled", "true");
             $healthEndpoint->save();
 
+            // Environment variables only override existing settings, so CONFIG_ENCRYPTION_KEY needs the empty line
+            $encryptionKey = new SettingsIni($this, "encryption-key-settings");
+            $encryptionKey->addProperty("encryption_key", "");
+            $encryptionKey->save();
+
             // Every POST needs the CSRF token now, a raw HTML form can only carry it as hidden _csrf field
             $addCsrfField = function(string $content, string $field): string {
                 // Forms do not nest, so each part up to the next </form> holds at most one form
