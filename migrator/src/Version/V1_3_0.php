@@ -4,6 +4,7 @@
 
     use ZubZet\Tooling\Modifiers\ComposerModifier;
     use ZubZet\Tooling\Modifiers\FileContent;
+    use ZubZet\Tooling\Modifiers\JsonModifier;
     use ZubZet\Tooling\Modifiers\RemoveFile;
     use ZubZet\Tooling\Modifiers\SettingsIni;
     use ZubZet\Tooling\Modifiers\ViewMigration;
@@ -122,6 +123,28 @@
                 "./webroot/assets/js/Z.js",
                 "./assets/js/Z.js",
             ]);
+
+            // PHP 8.0 stays on otphp 10, which composer refuses to install because of two advisories
+            $auditIgnore = new JsonModifier($this, "composer-audit-ignore-otphp");
+            $auditIgnore->from("composer.json");
+            $auditIgnore->modify(function(array $data): ?array {
+                $ignore = $data["config"]["audit"]["ignore"] ?? [];
+
+                // The list form ignores an advisory everywhere, the map form needs the same meaning per id
+                if(array_values($ignore) === $ignore) {
+                    $ignore = array_fill_keys($ignore, "Ignored before the ZubZet 1.3.0 upgrade");
+                }
+
+                foreach(["GHSA-2jx3-65f3-xr8r", "GHSA-g7m4-839x-ch6v"] as $advisory) {
+                    $ignore[$advisory] ??= [
+                        "apply" => "block",
+                        "reason" => "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x",
+                    ];
+                }
+
+                $data["config"]["audit"]["ignore"] = $ignore;
+                return $data;
+            });
 
             // Upgrade composer dependencies (pulls in the Katana-backed framework).
             $composer = new ComposerModifier($this, "composer");
