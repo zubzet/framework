@@ -127,6 +127,18 @@
             $importFile = new RemoveFile($this, "remove-import-script");
             $importFile->from("./app/Database/import.php");
 
+            // Since 1.0.0 the console finds an action only by its method name, so a dash in a run call becomes an underscore
+            // Matches "index.php run" or "zubzet run" with the controller and action behind it
+            // Cron jobs and workers live in package.json and the packaging folder
+            foreach(array_filter(["./package.json", ...glob("./packaging/*/*")], "is_file") as $path) {
+                $console = new FileContent($this, "console-action-names-" . basename($path));
+                $console->find(basename($path), dirname($path));
+
+                // Matches a run call with a dash in its controller or action name
+                $console->shouldChangeIfPattern('/(index\.php|zubzet) run .*-/');
+                $console->demandChange("ZubZet 1.0.0 runs a console action only by its method name, with underscores instead of dashes.");
+            }
+
 
             // Check if any existing Migration doesn't follow the new naming convention and warn about it
             $sqlFinder = new Finder();

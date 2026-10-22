@@ -248,6 +248,16 @@
             $editorSetting->addProperty("development_editor", "vscode");
             $editorSetting->save();
 
+            // Models get db() and zubzet() since 1.2.0, which cannot be passed by reference
+            foreach(glob("./app/Models/*.php") as $path) {
+                $model = new FileContent($this, "model-constructor-" . basename($path));
+                $model->find(basename($path), "./app/Models");
+
+                // Matches a constructor with any parameter taken by reference
+                $model->shouldChangeIfPattern('/__construct\([^)]*&/');
+                $model->demandChange("ZubZet 1.2.0 no longer passes the database and the framework to a model by reference.");
+            }
+
             // Upgrade composer dependencies
             $composer = new ComposerModifier($this, "composer");
             $composer->upgradeToCurrentVersion();
