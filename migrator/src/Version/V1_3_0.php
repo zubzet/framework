@@ -151,6 +151,18 @@
                 return $data;
             });
 
+            // db:status flipped its exit code, find() alone would also search vendor/ and node_modules/
+            if(is_file("package.json")) {
+                $dbStatus = new FileContent($this, "db-status-exit-code");
+                $dbStatus->optional();
+                $dbStatus->find("package.json");
+                $dbStatus->shouldChangeIfIncludes("db:status");
+                $dbStatus->demandChange([
+                    "ZubZet 1.3.0 flips the exit code of db:status: 0 while the migration table is unlocked, 1 while it is locked.",
+                    "A script that relied on the inverted exit code has to be flipped, e.g. \"db:status && db:migrate\" now migrates only while unlocked.",
+                ]);
+            }
+
             // Upgrade composer dependencies (pulls in the Katana-backed framework).
             $composer = new ComposerModifier($this, "composer");
             $composer->upgradeToCurrentVersion();
