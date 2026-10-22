@@ -168,7 +168,7 @@
 
             // Add Maintenance Mode to ini settings
             $maintenanceMode = new SettingsIni($this, "maintenance-mode-settings");
-            $maintenanceMode->addProperty("maintenance_mode", "off");
+            $maintenanceMode->addProperty("maintenance_mode", "disabled");
             $maintenanceMode->save();
 
             // Add config_automated_file to ini settings
