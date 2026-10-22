@@ -15,6 +15,24 @@
         public string $stability = ReleaseState::Alpha;
 
         public function upgrade(): bool {
+            // The 1.3.0 migrations need MariaDB 11.7 or newer
+            // Matches "mariadb:" followed by a version tag starting with 5, 10 or 11.0 to 11.6, including its digest
+            $outdatedMariaDb = '/mariadb:(?:5|10|11\.[0-6])\b[\w.\-@:]*/';
+
+            $database = new FileContent($this, "mariadb-docker");
+            $database->optionalIfNotFound();
+            $database->find("docker-compose-base.yml", "packaging");
+            $database->shouldChangeIfPattern($outdatedMariaDb);
+            $database->automateChange(function(string $content) use ($outdatedMariaDb): string {
+                return preg_replace($outdatedMariaDb, "mariadb:11.8", $content);
+            });
+            $database->demandChange([
+                "ZubZet 1.3.0 requires MariaDB 11.7 or newer.",
+                "Upgrade the database server before applying the migrations of this release.",
+                "",
+                "Documentation: https://zubzet.com/docs/v1.3.0/setup/upgrade/1.2.0-to-1.3.0/",
+            ]);
+
             // ZubZet 1.3.0 replaces the return-type view renderer with the Katana
             // Blade engine. Convert every legacy view and layout to .blade.php.
             $views = new ViewMigration($this, "blade-view-migration");
