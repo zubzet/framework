@@ -1594,20 +1594,19 @@ class ZFormField {
 
       this.lockAutocompleteAge = 0;
 
-      this.input.addEventListener("keyup", (e) => {
+      var onKeyup = (e, answered) => {
         if (e.key == "Shift") return;
         if (e.target.value.length < this.autocompleteMinCharacters) return;
 
-        var currentAge = this.lockAutocompleteAge;
+        var currentAge = ++this.lockAutocompleteAge;
 
-        if(this.autocompleteBindingUrl && e.target.value != "") {
+        if(this.autocompleteBindingUrl && e.target.value != "" && !answered) {
           Z.Request.root(this.autocompleteBindingUrl, "autocomplete", {
             "value": e.target.value
           }, (res) => {
-            if(currentAge >= this.lockAutocompleteAge) {
-              this.lockAutocompleteAge++;
+            if(currentAge == this.lockAutocompleteAge) {
               this.autocompleteData = res.data;
-              console.log(this.autocompleteData);
+              onKeyup(e, true);
             }
           });
         }
@@ -1644,7 +1643,8 @@ class ZFormField {
             });
           }
         }
-      });
+      };
+      this.input.addEventListener("keyup", onKeyup);
 
       document.addEventListener("click", function() {
         completeDiv.innerHTML = "";
