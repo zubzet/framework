@@ -23,7 +23,7 @@
         "components/jquery": "3.7.*",
         "components/bootstrap": "4.6.*",
         "components/font-awesome": "6.5.*",
-        "katanaphp/blade": "^0.2",
+        "katanaphp/blade": "^0.3.0",
         "spomky-labs/otphp": "^10.0 || ^11.3"
     },
     "require-dev": {

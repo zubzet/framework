@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "615eb094c1dd07b32124773f36ee7413",
+    "content-hash": "336a32bfb4836671334dec3a52dd153d",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -788,16 +788,16 @@
         },
         {
             "name": "katanaphp/blade",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/katanaphp/blade.git",
-                "reference": "f441e130702b0639b8d10097fa18d110d543809c"
+                "reference": "24e50c7b9cead4a3c23b665874358af9b2ac3c6f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/katanaphp/blade/zipball/f441e130702b0639b8d10097fa18d110d543809c",
-                "reference": "f441e130702b0639b8d10097fa18d110d543809c",
+                "url": "https://api.github.com/repos/katanaphp/blade/zipball/24e50c7b9cead4a3c23b665874358af9b2ac3c6f",
+                "reference": "24e50c7b9cead4a3c23b665874358af9b2ac3c6f",
                 "shasum": ""
             },
             "require": {
@@ -824,9 +824,15 @@
             "description": "Standalone version of Laravel Blade",
             "support": {
                 "issues": "https://github.com/katanaphp/blade/issues",
-                "source": "https://github.com/katanaphp/blade/tree/0.2.0"
+                "source": "https://github.com/katanaphp/blade/tree/0.3.0"
             },
-            "time": "2026-08-03T17:01:54+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/soysudhanshu",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-10-01T07:23:33+00:00"
         },
         {
             "name": "league/mime-type-detection",
