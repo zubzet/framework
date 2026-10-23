@@ -63,6 +63,15 @@ the router will call the `show()` method inside the `UserController` and pass th
 
 ---
 
+### Case and Spelling
+
+Since version **1.3.0**, routes match regardless of case: `GET /Users/42` reaches the route above as well.
+Route parameters keep the spelling of the request, so `{id}` of `/USERS/AbC` is `AbC`.
+
+The pattern of a route parameter ignores case too, `/codes/{code:[A-Z]+}` also matches `/codes/abc`.
+
+---
+
 ## Route Groups
 
 Sometimes multiple routes share the same prefix (for example, `/api/v1/...`).
@@ -166,6 +175,14 @@ Every request to `/api/{apiVersion}/users` or `/api/{apiVersion}/users/{id}`:
   1. First passes through `checkAuth` `(middleware)`  
   2. Then executes the route  
   3. Finally runs `logRequest` `(afterMiddleware)`
+
+A group also guards the [controller-based actions](controllers-and-actions.md) below its prefix, so a group without routes is enough for them:
+
+```php
+Route::group('/admin')->middleware([AuthController::class, 'checkAuth']);
+```
+
+`checkAuth` runs before every action of the `AdminController`, in every spelling that reaches it: `/admin/users`, `/Admin/users` and `/%41dmin/users` alike. The prefix is compared the way the controller name is resolved: decoded, with `-` as `_`, `.` as `§2E` and `ä`, `ö`, `ü` as `ae`, `oe`, `ue`, regardless of case. A group `/admin-panel` therefore also covers `/admin_panel/...`.
 
 ---
 
