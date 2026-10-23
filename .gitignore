@@ -6,7 +6,8 @@ log.sql
 sql.log
 **/cypress/screenshots/**
 **/cypress/videos/**
-uploads
+**/uploads/*
+!**/uploads/.htaccess
 .claude
 .coverage
 
