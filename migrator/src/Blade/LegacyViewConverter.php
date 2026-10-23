@@ -274,18 +274,27 @@
 
         /** Reconstruct template text from closure-body tokens, stripping the wrapping tags. */
         private static function detokenizeTemplate(array $bodyTokens): string {
+            $leading = [];
             while($bodyTokens && is_array($bodyTokens[0]) && $bodyTokens[0][0] === T_WHITESPACE) {
-                array_shift($bodyTokens);
+                $leading[] = array_shift($bodyTokens);
             }
-            if($bodyTokens && is_array($bodyTokens[0]) && $bodyTokens[0][0] === T_CLOSE_TAG) {
-                array_shift($bodyTokens);
-            }
+            $trailing = [];
             while($bodyTokens && is_array($bodyTokens[count($bodyTokens) - 1]) && $bodyTokens[count($bodyTokens) - 1][0] === T_WHITESPACE) {
-                array_pop($bodyTokens);
+                array_unshift($trailing, array_pop($bodyTokens));
             }
-            if($bodyTokens && is_array($bodyTokens[count($bodyTokens) - 1])
+            if(!$bodyTokens) return "";
+
+            // The body is in PHP mode at both edges: strip the tag found there, or open/close one for edge code.
+            if(is_array($bodyTokens[0]) && $bodyTokens[0][0] === T_CLOSE_TAG) {
+                array_shift($bodyTokens);
+            } else {
+                $bodyTokens = ["<?php", ...$leading, ...$bodyTokens];
+            }
+            if(is_array($bodyTokens[count($bodyTokens) - 1])
                 && in_array($bodyTokens[count($bodyTokens) - 1][0], [T_OPEN_TAG, T_OPEN_TAG_WITH_ECHO], true)) {
                 array_pop($bodyTokens);
+            } else {
+                $bodyTokens = [...$bodyTokens, ...$trailing, "?>"];
             }
 
             $out = "";
