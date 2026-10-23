@@ -444,5 +444,21 @@
             ]);
         }
 
+        // Fixture for an autocomplete field that queries its suggestions here
+        public function action_autocomplete(Request $req, Response $res) {
+            if($req->isAction("autocomplete")) {
+                $value = strtolower($req->getPost("value"));
+
+                return $res->generateRest([
+                    "data" => array_values(array_filter(
+                        ["Aachen", "Aalen", "Berlin"],
+                        fn($city) => str_contains(strtolower($city), $value),
+                    )),
+                ]);
+            }
+
+            return $res->render("form/autocomplete");
+        }
+
     }
 ?>
