@@ -26,6 +26,44 @@ describe('Routing', () => {
             route: "/abc/U13/P12",
             expected: "TestRoute ExecutedArray ( [userId] => U13 [postId] => P12 ) "
         },
+        // Routes match regardless of case, route parameters keep their spelling
+        {
+            route: "/ABC/UserX/PostY",
+            expected: "TestRoute ExecutedArray ( [userId] => UserX [postId] => PostY ) "
+        },
+        {
+            route: "/routedeny/CHECK",
+            expected: "Route Middleware Accept ExecutedArray ( ) Route Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/ROUTEACCEPT/Check",
+            expected: "Route Middleware Accept ExecutedArray ( ) Middleware Accept Executed Route Afterware ExecutedArray ( )"
+        },
+        // Group middleware in front of a convention route, in every spelling of its path
+        {
+            route: "/Routing/group-guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/routing/group-guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/%52outing/group-guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/Routing/Group-Guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/Routing/group_guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/Routing/group%2Dguarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
         {   // First Middleware accepts the request and the second one blocks it
             route: "/rm-accept/rm-block",
             expected: "Route Middleware Accept ExecutedArray ( ) Route Middleware Blocked ExecutedArray ( ) "
