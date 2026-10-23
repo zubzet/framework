@@ -208,7 +208,7 @@ describe('Two factor gate', () => {
 
             profile('create-api-key', { lifetime: '7' }).then((out) => {
                 expect(out.result).to.eq('success');
-                expect(out.token).to.match(/^zub-[0-9a-f]{64}$/);
+                expect(out.token).to.match(/^zub-sha256-[0-9a-f]{64}$/);
             });
         });
 
