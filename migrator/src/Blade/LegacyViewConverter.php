@@ -226,7 +226,8 @@
                 $bodyTokens = []; $depth = 0;
                 for(; $i < $n; $i++) {
                     $t = $tokens[$i];
-                    if($t === '{') { $depth++; }
+                    // "{$x}" and "${x}" open with their own token but close with a plain "}"
+                    if($t === '{' || (is_array($t) && in_array($t[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true))) { $depth++; }
                     elseif($t === '}') {
                         if($depth === 0) { $i++; break; }
                         $depth--;
@@ -265,7 +266,7 @@
             $bodyTokens = []; $depth = 0;
             for(; $i < $n; $i++) {
                 $t = $tokens[$i];
-                if($t === '{') $depth++;
+                if($t === '{' || (is_array($t) && in_array($t[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true))) $depth++;
                 elseif($t === '}') { if($depth === 0) break; $depth--; }
                 $bodyTokens[] = $t;
             }
