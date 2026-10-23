@@ -146,7 +146,7 @@ class SessionController extends z_controller {
                AND COLUMN_NAME = 'token' AND SEQ_IN_INDEX = 1"
         )->resultToLine();
 
-        $token = Session::byId(404)->token();
+        $token = Session::byId(404)->storedToken();
         $plan = db()->exec(
             "EXPLAIN SELECT * FROM `z_logintoken` WHERE `token` = ? AND `active` = 1 LIMIT 1",
             "s", $token,
@@ -195,6 +195,62 @@ class SessionController extends z_controller {
         $user = User::byId(434);
         $session = Session::add($user, name: 'Named session');
         echo(json_encode($this->getSession($session)));
+    }
+
+    // GET /session/tokenAtRest, a fresh session and api key next to what z_logintoken holds for them
+    public function action_tokenAtRest(Request $req, Response $res): void {
+        $issued = [
+            'session' => Session::add(User::byId(421)),
+            'apiKey'  => APIKey::add(User::byId(437)),
+        ];
+
+        echo(json_encode(array_map(fn(Session|APIKey $token) => [
+            'userId' => (int) $token->userId(),
+            'token'  => $token->token(),
+            'stored' => db()->exec(
+                "SELECT `token` FROM `z_logintoken` WHERE `id` = ?",
+                "i", $token->id(),
+            )->resultToLine()["token"],
+            'sha256' => hash('sha256', $token->token()),
+        ], $issued)));
+    }
+
+    // GET /session/tokenKnown, which ways of loading a hashed session still know its token
+    public function action_tokenKnown(Request $req, Response $res): void {
+        $user = User::byId(422);
+        $added = Session::add($user);
+
+        echo(json_encode([
+            'added'   => $added->token(),
+            'byToken' => Session::byToken($added->token())->token(),
+            'byId'    => Session::byId($added->id())->token(),
+            'byUser'  => array_map(fn(Session $session) => $session->token(), Session::byUser($user)),
+        ]));
+    }
+
+    // GET /session/extendHashed, extends a hashed session loaded by id and by token
+    public function action_extendHashed(Request $req, Response $res): void {
+        $added = Session::add(User::byId(423));
+        $stored = fn() => (int) Session::byId($added->id())->extendedSeconds();
+
+        $byId = Session::byId($added->id());
+        $byId->setExtensionTime(100);
+        $setById = $stored();
+        $byId->extend(50);
+        $extendedById = $stored();
+
+        $byToken = Session::byToken($added->token());
+        $byToken->setExtensionTime(300);
+        $setByToken = $stored();
+        $byToken->extend(25);
+        $extendedByToken = $stored();
+
+        echo(json_encode([
+            'setById'         => $setById,
+            'extendedById'    => $extendedById,
+            'setByToken'      => $setByToken,
+            'extendedByToken' => $extendedByToken,
+        ]));
     }
 
     /** Without loginTimeoutSeconds a new session lives for the documented 7 days. */

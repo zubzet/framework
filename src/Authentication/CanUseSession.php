@@ -11,10 +11,14 @@
 
         protected bool $shouldRefresh = false;
 
+        // The row stores the token hashed, so only the object created or looked up by it knows it
+        private ?string $token = null;
 
-        public function __construct(array $data) {
+
+        public function __construct(array $data, ?string $token = null) {
             parent::__construct($data);
             $this->loadObject($data);
+            $this->token = $token;
         }
 
         public function loadObject(array $data) {
@@ -46,9 +50,9 @@
 
             if(is_null($result)) return null;
 
-            if($result["is_apikey"]) return new APIKey($result);
+            if($result["is_apikey"]) return new APIKey($result, $token);
 
-            return new Session($result);
+            return new Session($result, $token);
         }
 
         /**
@@ -244,6 +248,13 @@
         }
 
         public function token(): ?string {
+            $this->checkInstance();
+
+            return $this->token;
+        }
+
+        // The value z_logintoken holds for the token, see LoginToken
+        public function storedToken(): string {
             return $this->getField("token");
         }
 

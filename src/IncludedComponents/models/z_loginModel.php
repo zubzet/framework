@@ -4,6 +4,7 @@
      */
 
     use ZubZet\Framework\Authentication\APIKey;
+    use ZubZet\Framework\Authentication\LoginToken;
     use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Database\IsInternalModel;
     use ZubZet\Framework\Authentication\PasswordHash\Password;
@@ -29,7 +30,9 @@
                     WHERE `token` = ?
                     AND `active` = 1
                     LIMIT 1";
-            return $this->exec($sql, "s", $token)->resultToLine();
+            $hash = LoginToken::hash($token);
+
+            return $this->exec($sql, "s", $hash)->resultToLine();
         }
 
         /**
@@ -63,7 +66,7 @@
                     SET `extended_seconds` = ?
                     WHERE `token` = ?
                     AND `active` = 1";
-            $this->exec($sql, "is", $seconds, $session->token());
+            $this->exec($sql, "is", $seconds, $session->storedToken());
         }
 
         /**
@@ -77,7 +80,7 @@
                     SET `extended_seconds` = COALESCE(`extended_seconds`, 0) + ?
                     WHERE `token` = ?
                     AND `active` = 1";
-            $this->exec($sql, "is", $seconds, $session->token());
+            $this->exec($sql, "is", $seconds, $session->storedToken());
         }
 
         /**
@@ -233,7 +236,7 @@
             bool $isApiKey = false,
             bool $recordTwoFactor = false
         ): Session|APIKey {
-            $token = "zub-".bin2hex(random_bytes(32));
+            $token = LoginToken::generate();
 
             // The user agent is client controlled, so it is cut to what the column takes
             $userAgent = request()->userAgent();
@@ -242,7 +245,8 @@
             $insertArray = [
                 "userId" => $userId,
                 "userId_exec" => $exec_userId,
-                "token" => $token,
+                // The plaintext reaches the client only through the session returned below
+                "token" => LoginToken::hash($token),
                 "name" => $name,
                 "device" => $device,
                 "reason" => $reason,
