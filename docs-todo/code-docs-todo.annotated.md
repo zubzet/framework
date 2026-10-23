@@ -1,0 +1,1707 @@
+# Code Documentation To-Do List - ZubZet Framework (annotated)
+
+What to fix in the code documentation itself: wrong, vague or missing docblocks and missing parameter and return types in `src/` (PHP) and `web/Z.js` (JSDoc). Derived from a full parse of every function, method, closure and class in `src/` plus a manual review of every docblock against the real behaviour; claims about wrong or vague docblocks and the proposed types were re-verified by a second pass.
+
+- Snapshot: branch `main`, commit `79f5fc7`, generated 2026-10-01.
+- Size: 431 docblock items (section 1) and 333 type items (section 2).
+- Hierarchy: area -> class (or file) -> function -> finding. Findings read "Wrong docblock: ...", "Vague docblock: ...", "Missing docblock: ..." or "Add types: ...".
+- Scope rules: missing docblocks are only listed for public API (public methods and classes of non-`@internal` code, global helpers, public Z.js API). Missing types are listed for ALL functions, methods, closures and arrow functions. Proposed types are PHP 8.0 compatible (the package supports 8.0 to 8.5).
+- Tags: `[low confidence]` = the proposed type is uncertain; `[needs decision]` = adding the type as proposed is not safe (reason given).
+- Priority markers: `//urgent//`, `//important//`, `//should-do//`, `//nice-to-have//`, `//extra-effort//`, `//optional//` (highest to lowest). `//urgent//` = a wrong docblock on a public API that misleads callers; `//important//` = core public API; `//should-do//` = other public API; `//nice-to-have//` = protected or private code and wording; `//extra-effort//` = bulk or enrichment work; `//optional//` = internal code, closures, trivial members.
+- This is the annotated view: each item ends with `{src: file:line}`.
+
+## 1. Docblocks: wrong, vague or missing
+- [ ] Framework entry class (`src/ZubZet.php`)
+  - [ ] `ZubZet` (`src/ZubZet.php`)
+    - [ ] Missing class docblock; should cover: Framework root object: boot sequence, config, request/response, db, user. //important// {src: src/ZubZet.php:24}
+    - [ ] `__construct($params)`
+      - [ ] Wrong docblock: Stale: db connection is lazy, not opened here; also boots config, maintenance gate, logging, error handling, request/response, user; @param $params (overrides existing settings only) missing. //important// {src: src/ZubZet.php:60}
+    - [ ] `setRequestResponse($request, $response)`
+      - [ ] Missing docblock; should cover: Appends to requestStack and responseStack, which are never popped. //should-do// {src: src/ZubZet.php:103}
+    - [ ] `replaceRequest($newState)`
+      - [ ] Missing docblock; should cover: Used by Router::reroute; keeps response, appends to requestStack. //should-do// {src: src/ZubZet.php:110}
+- [ ] Authentication (`src/Authentication`)
+  - [ ] `AuthenticationObject` (`src/Authentication/AuthenticationObject.php`)
+    - [ ] Missing class docblock; should cover: Base of User, Role, Group, Session, Organization; explain field cache and refresh(). //should-do// {src: src/Authentication/AuthenticationObject.php:5}
+    - [ ] `checkInstance()`
+      - [ ] Missing docblock; should cover: Throws InvalidArgumentException once the object was detached via nullId(). //nice-to-have// {src: src/Authentication/AuthenticationObject.php:33}
+    - [ ] `getField($field)`
+      - [ ] Missing docblock; should cover: Throws InvalidArgumentException for unknown fields or detached objects. //important// {src: src/Authentication/AuthenticationObject.php:39}
+    - [ ] `clearFields()`
+      - [ ] Missing docblock; should cover: Empties all cached fields; getters throw until refresh() is called. //important// {src: src/Authentication/AuthenticationObject.php:50}
+    - [ ] `getAll()`
+      - [ ] Missing docblock; should cover: Raw row plus internal cache entries (roles, permissions, ...); throws if detached. //should-do// {src: src/Authentication/AuthenticationObject.php:57}
+    - [ ] `id()`
+      - [ ] Missing docblock; should cover: Throws InvalidArgumentException after remove()/invalidate() detached the object. //should-do// {src: src/Authentication/AuthenticationObject.php:72}
+    - [ ] `nullId()`
+      - [ ] Missing docblock; should cover: Detaches the object: id and data become null, later calls throw. //should-do// {src: src/Authentication/AuthenticationObject.php:78}
+  - [ ] `HandleTrait` (`src/Authentication/HandleTrait.php`) [trait]
+    - [ ] `refresh()`
+      - [ ] Wrong docblock: @throws is incomplete: a detached instance throws InvalidArgumentException, fields are cleared before the RuntimeException check, and the '(user or role)' wording omits Session and Organization. //important// {src: src/Authentication/HandleTrait.php:13}
+  - [ ] `Organization` (`src/Authentication/Organization.php`)
+    - [ ] Missing class docblock; should cover: Tenant container, optionally linked to a permission Group. //should-do// {src: src/Authentication/Organization.php:8}
+    - [ ] Public properties without docblock: `$dbTable`, `$dbExpression`. //extra-effort// {src: src/Authentication/Organization.php:8}
+    - [ ] `loadObject($data)`
+      - [ ] Missing docblock; should cover: Replaces data and resets lazily loaded users/group caches. //should-do// {src: src/Authentication/Organization.php:21}
+    - [ ] `add($name, $createGroup, $groupName)`
+      - [ ] Missing docblock; should cover: Inserts row; with $createGroup also creates Group named $groupName or '<name>_Group'. //important// {src: src/Authentication/Organization.php:27}
+    - [ ] `updateName($name)`
+      - [ ] Missing docblock; should cover: Writes DB and updates the cached name; no refresh needed. //should-do// {src: src/Authentication/Organization.php:70}
+    - [ ] `name()`
+      - [ ] Missing docblock: public API without any docblock. //optional// {src: src/Authentication/Organization.php:76}
+    - [ ] `getUsers()`
+      - [ ] Missing docblock; should cover: Lazily loaded and cached; call refreshUsers() to reload. //should-do// {src: src/Authentication/Organization.php:80}
+    - [ ] `refreshUsers()`
+      - [ ] Missing docblock; should cover: Reloads the cached users from the database. //should-do// {src: src/Authentication/Organization.php:86}
+    - [ ] `getGroup()`
+      - [ ] Missing docblock; should cover: Returns null when no group is linked; lazily cached. //should-do// {src: src/Authentication/Organization.php:91}
+    - [ ] `refreshGroup()`
+      - [ ] Missing docblock; should cover: No-op when the organization has no linked groupId. //should-do// {src: src/Authentication/Organization.php:97}
+    - [ ] `remove()`
+      - [ ] Missing docblock; should cover: Soft delete (active=0); the instance is not detached. //important// {src: src/Authentication/Organization.php:105}
+  - [ ] `Password` (`src/Authentication/PasswordHash/Password.php`)
+    - [ ] Public constants without docblock: `NATIVE`, `LEGACY`, `ONION`, `MIN_LENGTH_BYTES`, `MAX_LENGTH_BYTES`. //nice-to-have// {src: src/Authentication/PasswordHash/Password.php:16}
+    - [ ] `hash($password)`
+      - [ ] Vague docblock: No @param/@throws: throws InvalidArgumentException when the password is shorter than 3 or longer than 1024 bytes; returns an Argon2id hash string. //important// {src: src/Authentication/PasswordHash/Password.php:40}
+    - [ ] `verify($password, $stored, $scheme, $salt)`
+      - [ ] Vague docblock: Lacks @param/@return: returns a Verification (never bool), wrong/empty/out-of-range input gives an incorrect result, explicit null scheme counts as wrong, legacy/onion without salt throws InvalidArgumentException. //important// {src: src/Authentication/PasswordHash/Password.php:56}
+  - [ ] `Group` (`src/Authentication/Permission/Group.php`)
+    - [ ] Missing class docblock; should cover: Role variant (is_group=1) used for user and organization group membership. //should-do// {src: src/Authentication/Permission/Group.php:5}
+    - [ ] Public properties without docblock: `$dbExpression`. //extra-effort// {src: src/Authentication/Permission/Group.php:5}
+  - [ ] `Permission` (`src/Authentication/Permission/Permission.php`) [trait]
+    - [ ] `hasAccessAll($permissionNames)`
+      - [ ] Vague docblock: Does not mention wildcard matching ('*.*', 'edit.*' cover 'edit.article'), and for User it checks combined direct and role-inherited permissions, not just direct ones. //important// {src: src/Authentication/Permission/Permission.php:39}
+    - [ ] `hasAccessAnyOf($permissionNames)`
+      - [ ] Vague docblock: Does not mention wildcard matching ('*.*', 'edit.*' cover 'edit.article'), and for User it checks combined direct and role-inherited permissions, not just direct ones. //important// {src: src/Authentication/Permission/Permission.php:77}
+  - [ ] `Role` (`src/Authentication/Permission/Role.php`)
+    - [ ] Missing class docblock; should cover: Group extends this class; explain permissions and refresh() semantics. //important// {src: src/Authentication/Permission/Role.php:9}
+    - [ ] Public properties without docblock: `$dbTable`, `$dbPermissionsTable`, `$dbPermissionsObjectColumn`. //extra-effort// {src: src/Authentication/Permission/Role.php:9}
+    - [ ] `byAccessToAll($permissionNames)`
+      - [ ] Missing docblock; should cover: Roles holding every permission; wildcard grants ('*.*', 'edit.*') count as a match. //important// {src: src/Authentication/Permission/Role.php:59}
+    - [ ] `byAccessToAnyOf($permissionNames)`
+      - [ ] Missing docblock; should cover: Roles holding at least one permission; wildcard grants count as a match. //important// {src: src/Authentication/Permission/Role.php:76}
+    - [ ] `update($newName)`
+      - [ ] Vague docblock: Only renames, yet clears all cached fields: name() and other getters throw InvalidArgumentException until refresh() is called. //important// {src: src/Authentication/Permission/Role.php:130}
+    - [ ] `remove()`
+      - [ ] Vague docblock: Does not state that the instance is detached afterwards (nullId), so every later call on it throws InvalidArgumentException. //should-do// {src: src/Authentication/Permission/Role.php:141}
+  - [ ] `User` (`src/Authentication/Permission/User.php`)
+    - [ ] Missing class docblock; should cover: DB-backed user model, distinct from request-scoped Authentication\User (alias User). //important// {src: src/Authentication/Permission/User.php:13}
+    - [ ] Public properties without docblock: `$dbTable`, `$dbPermissionsTable`, `$dbPermissionsObjectColumn`, `$dbExpression`. //extra-effort// {src: src/Authentication/Permission/User.php:13}
+    - [ ] `byGroup($group)`
+      - [ ] Missing docblock; should cover: Active users with the given group assigned. //important// {src: src/Authentication/Permission/User.php:46}
+    - [ ] `byOrganization($organization)`
+      - [ ] Missing docblock; should cover: Active users belonging to the organization. //important// {src: src/Authentication/Permission/User.php:50}
+    - [ ] `byAccessToAll($permissionNames)`
+      - [ ] Missing docblock; should cover: Users holding ALL permissions via direct grants or roles; wildcards match. //important// {src: src/Authentication/Permission/User.php:74}
+    - [ ] `byAccessToAnyOf($permissionNames)`
+      - [ ] Missing docblock; should cover: Users holding ANY permission via direct grants or roles; wildcards match. //important// {src: src/Authentication/Permission/User.php:87}
+    - [ ] `add($email, $password, $verified)`
+      - [ ] Wrong docblock: @param string $email contradicts ?string signature; also omits InvalidArgumentException thrown for passwords outside 3-1024 bytes after the user row was already inserted. //important// {src: src/Authentication/Permission/User.php:124}
+    - [ ] `updateEmail($email)`
+      - [ ] Wrong docblock: @param string $email contradicts ?string signature (null clears the email); also omits that all cached fields are cleared, so getters throw until refresh(). //important// {src: src/Authentication/Permission/User.php:140}
+    - [ ] `updatePassword($password)`
+      - [ ] Vague docblock: Omits that all the user's sessions are deactivated, InvalidArgumentException is thrown for passwords outside 3-1024 bytes, and cached fields are cleared (refresh() needed). //important// {src: src/Authentication/Permission/User.php:152}
+    - [ ] `verifyPassword($password)`
+      - [ ] Vague docblock: Omits that Password::verify throws InvalidArgumentException for legacy/onion rows without a salt, and that cached fields are not refreshed after an upgrade. //nice-to-have// {src: src/Authentication/Permission/User.php:167}
+    - [ ] `updateOrganization($organization)`
+      - [ ] Missing docblock; should cover: Syncs organization group membership; null unsets; clears cached fields. //important// {src: src/Authentication/Permission/User.php:187}
+    - [ ] `remove()`
+      - [ ] Vague docblock: Does not say the instance is detached afterwards (nullId), so every later call on it throws InvalidArgumentException. //should-do// {src: src/Authentication/Permission/User.php:217}
+    - [ ] `verify($date)`
+      - [ ] Vague docblock: Only repeats the method name; does not say it writes the verified timestamp to the database and clears cached fields (refresh() required). //important// {src: src/Authentication/Permission/User.php:232}
+    - [ ] `rolesAdd($roles)`
+      - [ ] Vague docblock: Omits that all cached fields are cleared, so getters and permission checks throw InvalidArgumentException until refresh() is called. //important// {src: src/Authentication/Permission/User.php:246}
+    - [ ] `groupsAdd($groups)`
+      - [ ] Vague docblock: Omits that all cached fields are cleared, so getters and permission checks throw InvalidArgumentException until refresh() is called. //important// {src: src/Authentication/Permission/User.php:264}
+    - [ ] `rolesRemove($roles)`
+      - [ ] Vague docblock: Omits that all cached fields are cleared, so getters and permission checks throw InvalidArgumentException until refresh() is called. //important// {src: src/Authentication/Permission/User.php:282}
+    - [ ] `groupsRemove($groups)`
+      - [ ] Vague docblock: Omits that all cached fields are cleared, so getters and permission checks throw InvalidArgumentException until refresh() is called. //important// {src: src/Authentication/Permission/User.php:300}
+    - [ ] `email()`
+      - [ ] Wrong docblock: @return string is wrong: email is nullable (add/updateEmail accept null), so the declared string type throws TypeError; should be ?string, as docs/access-control.md states. //urgent// {src: src/Authentication/Permission/User.php:316}
+    - [ ] `organization()`
+      - [ ] Missing docblock; should cover: Lazily loaded; null when the user has no active organization. //important// {src: src/Authentication/Permission/User.php:320}
+    - [ ] `isVerified($at)`
+      - [ ] Vague docblock: $at format unspecified: accepts 'NOW' or any strtotime()-parseable datetime string; unparsable values silently yield false. //nice-to-have// {src: src/Authentication/Permission/User.php:348}
+    - [ ] `getUserPermissions()`
+      - [ ] Wrong docblock: @return string[] is wrong: returns rows shaped [['name' => 'perm'], ...], unlike Role::getPermissions() which returns plain permission names. //urgent// {src: src/Authentication/Permission/User.php:391}
+    - [ ] `getPermissions()`
+      - [ ] Wrong docblock: @return string[] is wrong: returns rows shaped [['name' => 'perm'], ...] (verified by e2e output), unlike Role::getPermissions() which returns plain permission names. //urgent// {src: src/Authentication/Permission/User.php:402}
+    - [ ] `refreshPermissions()`
+      - [ ] Wrong docblock: Copy-pasted 'Reset the permissions cache': it eagerly reloads only the user's direct permissions (user-permissions), not role-inherited ones. //important// {src: src/Authentication/Permission/User.php:413}
+    - [ ] `refreshAllPermissions()`
+      - [ ] Vague docblock: Identical to refreshPermissions() docblock; should say it eagerly reloads direct plus role/group-inherited permissions from the database. //should-do// {src: src/Authentication/Permission/User.php:422}
+  - [ ] `RetrievalTrait` (`src/Authentication/RetrievalTrait.php`) [trait]
+    - [ ] `all()`
+      - [ ] Vague docblock: Says '(user or role)' but trait also serves Session and Organization; @return object[] should be static[]; only active rows are returned. //important// {src: src/Authentication/RetrievalTrait.php:12}
+    - [ ] `byId($id)`
+      - [ ] Vague docblock: @return object|null loses the concrete type (use ?static); wording omits Session/Organization; inactive or unknown ids return null. //important// {src: src/Authentication/RetrievalTrait.php:31}
+    - [ ] `byIds($ids)`
+      - [ ] Vague docblock: @return object[] should be static[]; inactive or unknown ids are silently skipped, and calling it with no ids throws a database exception. //important// {src: src/Authentication/RetrievalTrait.php:45}
+  - [ ] `Session` (`src/Authentication/Session.php`)
+    - [ ] Missing class docblock; should cover: Login session (z_logintoken); expiry = created + loginTimeoutSeconds + extended seconds. //important// {src: src/Authentication/Session.php:7}
+    - [ ] Public properties without docblock: `$dbTable`, `$dbExpression`. //extra-effort// {src: src/Authentication/Session.php:7}
+    - [ ] `loadObject($data)`
+      - [ ] Missing docblock; should cover: Replaces data; row must contain userId, userId_exec, extended_seconds, created. //should-do// {src: src/Authentication/Session.php:23}
+    - [ ] `add($user, $userExec)`
+      - [ ] Missing docblock; should cover: Only inserts the DB session, no login cookie; $userExec defaults to $user. //important// {src: src/Authentication/Session.php:31}
+    - [ ] `byToken($token)`
+      - [ ] Missing docblock; should cover: Returns null for unknown or inactive tokens; expiry is not checked. //important// {src: src/Authentication/Session.php:37}
+    - [ ] `byUser($user)`
+      - [ ] Missing docblock; should cover: Active sessions only; may include expired ones not yet invalidated. //important// {src: src/Authentication/Session.php:45}
+    - [ ] `setExtensionTime($seconds)`
+      - [ ] Missing docblock; should cover: Replaces extended_seconds (not additive); cached data reloads lazily. //important// {src: src/Authentication/Session.php:58}
+    - [ ] `extend($seconds)`
+      - [ ] Missing docblock; should cover: Adds seconds to existing extension (additive); cached data reloads lazily. //important// {src: src/Authentication/Session.php:66}
+    - [ ] `invalidate()`
+      - [ ] Missing docblock; should cover: Deactivates the session in the DB and detaches this object. //important// {src: src/Authentication/Session.php:74}
+    - [ ] `expiresAt($refresh)`
+      - [ ] Missing docblock; should cover: Y-m-d H:i:s; created + loginTimeoutSeconds config + extended seconds. //important// {src: src/Authentication/Session.php:79}
+    - [ ] `isExpired()`
+      - [ ] Missing docblock; should cover: True once expiresAt() is in the past; reloads stale data first. //important// {src: src/Authentication/Session.php:89}
+    - [ ] `token()`
+      - [ ] Missing docblock; should cover: Secret login credential; value of the z_login_token cookie. //should-do// {src: src/Authentication/Session.php:97}
+    - [ ] `userId()`
+      - [ ] Missing docblock: public API without any docblock. //optional// {src: src/Authentication/Session.php:101}
+    - [ ] `userIdExec()`
+      - [ ] Missing docblock; should cover: Differs from userId() when the session was created via login-as. //should-do// {src: src/Authentication/Session.php:105}
+    - [ ] `extendedSeconds()`
+      - [ ] Missing docblock; should cover: Seconds added to the base lifetime; null if never extended. //nice-to-have// {src: src/Authentication/Session.php:109}
+    - [ ] `created()`
+      - [ ] Missing docblock; should cover: Creation timestamp as Y-m-d H:i:s string. //nice-to-have// {src: src/Authentication/Session.php:113}
+  - [ ] `User` (`src/Authentication/User.php`)
+    - [ ] Vague class docblock: One-liner only; does not say it is the per-request user (user() helper, alias User) built from the z_login_token cookie, not Permission\User. //should-do// {src: src/Authentication/User.php:8}
+    - [ ] `identify()`
+      - [ ] Vague docblock: Omits that it also sets $orgId, $fields and the session token, invalidates expired sessions in the DB, and returns nothing. //important// {src: src/Authentication/User.php:63}
+    - [ ] `checkPermission($permission)`
+      - [ ] Vague docblock: Does not mention wildcard matching ('*.*', 'edit.*'), that anonymous users always get false, or that it checks the effective user, not the sudo exec user. //important// {src: src/Authentication/User.php:100}
+    - [ ] `checkSuperPermission($permission)`
+      - [ ] Missing docblock; should cover: Also true if the sudo (exec) user has it; false for anonymous. //important// {src: src/Authentication/User.php:105}
+    - [ ] `checkPermissionOf($permission, $userId)`
+      - [ ] Missing docblock; should cover: Wildcard-aware; permissions cached per user id for the request. //important// {src: src/Authentication/User.php:125}
+    - [ ] `getSessionToken()`
+      - [ ] Missing docblock; should cover: Token of the session that identified this request; null if anonymous. //should-do// {src: src/Authentication/User.php:147}
+- [ ] Bootstrap (`src/Bootstrap`)
+  - [ ] `Configuration` (`src/Bootstrap/Configuration.php`) [trait]
+    - [ ] `loadConfiguration($frameworkRoot, $params)`
+      - [ ] Missing docblock; should cover: Params only override keys present in ini; env and automated settings win. //should-do// {src: src/Bootstrap/Configuration.php:12}
+- [ ] Console (`src/Console`)
+  - [ ] `Application` (`src/Console/Application.php`)
+    - [ ] Missing class docblock; should cover: Builds the Symfony CLI app; invoked by Router for CLI requests. //extra-effort// {src: src/Console/Application.php:16}
+    - [ ] `bootstrap($booter)`
+      - [ ] Missing docblock; should cover: $booter is unused; registers a fixed list of built-in commands. //nice-to-have// {src: src/Console/Application.php:17}
+- [ ] Core base classes (`src/Core`)
+  - [ ] `CanRetrieveBooterSettings` (`src/Core/CanRetrieveBooterSettings.php`) [trait]
+    - [ ] `getBooterSettings($key, $useDefault, $default)`
+      - [ ] Wrong docblock: Missing @param for $useDefault/$default; $key is nullable (null/empty returns all settings); undocumented InvalidArgumentException when key is missing and $useDefault is false. //important// {src: src/Core/CanRetrieveBooterSettings.php:12}
+  - [ ] `CanRetrieveModel` (`src/Core/CanRetrieveModel.php`) [trait]
+    - [ ] `getModel($model, $dir)`
+      - [ ] Vague docblock: Omits dotted sub-folder names, per-request instance caching, framework-model fallback, \Exception when missing and the trailing-slash need of $dir (which is ?string, not string). //important// {src: src/Core/CanRetrieveModel.php:16}
+  - [ ] `Constants` (`src/Core/Constants.php`)
+    - [ ] Missing class docblock; should cover: Autoload stub for global UPLOAD_*, FILE_SIZE_*, TIMESPAN_* constants; explain purpose. //nice-to-have// {src: src/Core/Constants.php:7}
+  - [ ] `Controller` (`src/Core/Controller.php`)
+    - [ ] `makeFood($table, $valueField, $textField, $optionalTextField)`
+      - [ ] Wrong docblock: Missing @param $optionalTextField (appended to text with a space) and @return: result is a JSON string (json_encode), not an array; valueField/textField are column keys. //important// {src: src/Core/Controller.php:20}
+    - [ ] `makeCEDFood($table, $fields, $escape)`
+      - [ ] Wrong docblock: Missing @param $escape (callable($value, $field)) and @return; result is a hand-built JS array string, not valid JSON, unescaped without $escape, and rows need 'id'. //important// {src: src/Core/Controller.php:39}
+  - [ ] `Model` (`src/Core/Model.php`)
+    - [ ] Wrong class docblock: Protected property $lastInsertId (@var int, 'holds the last insert ID') is never written; getInsertId() reads from the connection instead. //nice-to-have// {src: src/Core/Model.php:17}
+    - [ ] `exec($query, $types, $params)`
+      - [ ] Wrong docblock: @param string $query omits Query (signature is string|Query); $types/$params are ignored for Query objects, and 'Returning this' is misleading since the Connection is returned. //urgent// {src: src/Core/Model.php:57}
+    - [ ] `getInsertId()`
+      - [ ] Wrong docblock: Claim 'ignores inserts done by log' holds only for the slow-query warning, not other DatabaseLogger writes on the shared Connection; @return int can also be string|null. //important// {src: src/Core/Model.php:68}
+    - [ ] `resultToArray()`
+      - [ ] Vague docblock: Signature declares no params but forwards func_get_args() to Connection::resultToArray($out); also throws an Error if the last query had no result set. //should-do// {src: src/Core/Model.php:76}
+    - [ ] `getFullTable($table, $fields)`
+      - [ ] Vague docblock: Does not say $table and $fields are interpolated into the SQL unescaped, so they must never contain user input. //should-do// {src: src/Core/Model.php:94}
+    - [ ] `getTableWhere($table, $fields, $where)`
+      - [ ] Wrong docblock: Omits $types and $values (forwarded via func_get_args) for placeholders in $where; the inline 'a = 4' example invites unsafe SQL; table, fields and where are unescaped. //important// {src: src/Core/Model.php:105}
+- [ ] Database and migrations (`src/Database`)
+  - [ ] `Connection` (`src/Database/Connection.php`)
+    - [ ] Missing class docblock; should cover: Lazy mysqli wrapper behind db(); prepared statements only; document usage and lifecycle. //important// {src: src/Database/Connection.php:18}
+    - [ ] Public properties without docblock: `$queryBuilderConnection`, `$booter`, `$lastConnect`, `$lastHeartbeat`, `$connectTimeout`. //nice-to-have// {src: src/Database/Connection.php:18}
+    - [ ] `switchUser($user, $password)`
+      - [ ] Missing docblock; should cover: closes and reopens the connection immediately with the new credentials. //should-do// {src: src/Database/Connection.php:90}
+    - [ ] `assertConnection()`
+      - [ ] Missing docblock; should cover: connects lazily; reconnects after timeout or failed ping. //should-do// {src: src/Database/Connection.php:96}
+    - [ ] `exec($query)`
+      - [ ] Vague docblock: Does not document the extra args ($types, ...$values) read via func_get_args, nor the \Exception thrown on SQL errors or slow-query logging. //important// {src: src/Database/Connection.php:174}
+    - [ ] `executeMultiQuery($query, $throwOnFailure)`
+      - [ ] Missing docblock; should cover: no placeholders; returns false instead of throwing when $throwOnFailure is false. //should-do// {src: src/Database/Connection.php:257}
+    - [ ] `getDatabaseConnection()`
+      - [ ] Missing docblock; should cover: returns raw mysqli handle after ensuring the connection is open. //should-do// {src: src/Database/Connection.php:299}
+  - [ ] `Interaction` (`src/Database/Interaction.php`) [trait]
+    - [ ] `getInsertId()`
+      - [ ] Vague docblock: Does not say mysqli returns 0 when the last query generated no AUTO_INCREMENT id; null only occurs before the first query. //should-do// {src: src/Database/Interaction.php:32}
+    - [ ] `resultToArray($out)`
+      - [ ] Vague docblock: $out (existing rows array the result rows are appended to) is undocumented, and the call throws an Error when the last query returned no result set (non-SELECT). //important// {src: src/Database/Interaction.php:40}
+    - [ ] `mergeAsGroup($groupBy, $subElement)`
+      - [ ] Vague docblock: Typos ('the only a', 'thr groupBy'); $subElement is nullable and, when set, groups hold plain column values instead of full rows. //should-do// {src: src/Database/Interaction.php:53}
+    - [ ] `resultToLine()`
+      - [ ] Wrong docblock: @return mixed[] contradicts the ?array signature: each call returns the next row and null once the result is exhausted or empty. //important// {src: src/Database/Interaction.php:73}
+    - [ ] `getFullTable($table, $fields)`
+      - [ ] Vague docblock: Does not say $table and $fields are interpolated unescaped (unlike checkIfUnique, which warns), so they must never contain user input. //should-do// {src: src/Database/Interaction.php:83}
+    - [ ] `getTableWhere($table, $fields, $where, $types, $values)`
+      - [ ] Vague docblock: Table, fields and where are interpolated unescaped (only $values are bound), the default empty $where yields invalid SQL 'WHERE ', and the first sentence is garbled. //important// {src: src/Database/Interaction.php:98}
+    - [ ] `checkIfUnique($table, $field, $value, $ignoreField, $ignoreValue)`
+      - [ ] Vague docblock: $ignoreField/$ignoreValue default to null but are documented as string (value can be int), the $ignoreValue wording is garbled, and the exclusion semantics are unstated. //should-do// {src: src/Database/Interaction.php:133}
+  - [ ] `IsInternalModel` (`src/Database/IsInternalModel.php`) [trait]
+    - [ ] Public properties without docblock: `$isInternalModel`. //optional// {src: src/Database/IsInternalModel.php:5}
+  - [ ] `Seed` (`src/Database/Migration/Commands/Seed.php`)
+    - [ ] `configure()`
+      - [ ] Vague docblock: Description 'Execute a database seeding task.' hides that without --skip-migrations db:seed drops and recreates the whole database before migrating and seeding. //should-do// {src: src/Database/Migration/Commands/Seed.php:18}
+  - [ ] `Sync` (`src/Database/Migration/Commands/Sync.php`)
+    - [ ] `configure()`
+      - [ ] Wrong docblock: Help text of option 'endVersion' is copy-pasted from startVersion ('Version from which migrations should be synced'); it should say 'until which'. //should-do// {src: src/Database/Migration/Commands/Sync.php:15}
+  - [ ] `Migration` (`src/Database/Migration/Migration.php`)
+    - [ ] Missing class docblock; should cover: Base class for PHP migrations; methods queue actions, SQL is generated afterwards. //should-do// {src: src/Database/Migration/Migration.php:7}
+    - [ ] Public properties without docblock: `$manual`, `$skip`, `$environment`, `$fromSchema`. //nice-to-have// {src: src/Database/Migration/Migration.php:7}
+    - [ ] `tableCreate($name)`
+      - [ ] Missing docblock; should cover: returns Doctrine Table by reference; add columns and indexes to it. //should-do// {src: src/Database/Migration/Migration.php:21}
+    - [ ] `tableAlter($name)`
+      - [ ] Missing docblock; should cover: works on a clone of the existing table; throws if table missing. //should-do// {src: src/Database/Migration/Migration.php:32}
+    - [ ] `tableDrop($name)`
+      - [ ] Missing docblock; should cover: queues DROP TABLE; nothing runs until the import. //should-do// {src: src/Database/Migration/Migration.php:45}
+    - [ ] `tableRename($oldName, $newName)`
+      - [ ] Missing docblock; should cover: queues a table rename; nothing runs until the import. //should-do// {src: src/Database/Migration/Migration.php:52}
+    - [ ] `run($sql)`
+      - [ ] Missing docblock; should cover: queues raw SQL, kept in order with other actions. //should-do// {src: src/Database/Migration/Migration.php:60}
+    - [ ] `execute()`
+      - [ ] Missing docblock; should cover: abstract; only queues actions, also called for dry run and db:sync. //should-do// {src: src/Database/Migration/Migration.php:71}
+    - [ ] `skip()`
+      - [ ] Missing docblock; should cover: import marks migration as executed without running it. //should-do// {src: src/Database/Migration/Migration.php:73}
+    - [ ] `setEnvironment($env)`
+      - [ ] Missing docblock; should cover: default is 'default'; matched against db:migrate environment options. //should-do// {src: src/Database/Migration/Migration.php:77}
+    - [ ] `setManual($manual)`
+      - [ ] Missing docblock; should cover: import stops at this file and leaves the migration lock set. //should-do// {src: src/Database/Migration/Migration.php:81}
+  - [ ] `MigrationFile` (`src/Database/Migration/Parser/MigrationFile.php`)
+    - [ ] Public properties without docblock: `$filename`, `$date`, `$version`, `$name`, `$sqlBuffer`, `$skip`, `$manual`, `$environment`. //optional// {src: src/Database/Migration/Parser/MigrationFile.php:6}
+  - [ ] `MigrationPHP` (`src/Database/Migration/Parser/MigrationPHP.php`)
+    - [ ] Wrong class docblock: The comment above the class says 'Loads a SQL migration file' but this class loads PHP migration files. //should-do// {src: src/Database/Migration/Parser/MigrationPHP.php:12}
+  - [ ] `SeedSQL` (`src/Database/Migration/Parser/SeedSQL.php`)
+    - [ ] Wrong class docblock: The comment above the class says 'Loads a PHP migration file' but this class loads SQL seed files. //should-do// {src: src/Database/Migration/Parser/SeedSQL.php:5}
+  - [ ] `Seed` (`src/Database/Migration/Seed.php`)
+    - [ ] Missing class docblock; should cover: Base class for PHP seeds; queries not registered via insert()/addQuery() never run. //should-do// {src: src/Database/Migration/Seed.php:7}
+    - [ ] Public properties without docblock: `$queries`. //extra-effort// {src: src/Database/Migration/Seed.php:7}
+    - [ ] `run()`
+      - [ ] Missing docblock; should cover: abstract; queue queries here via insert()/addQuery(). //should-do// {src: src/Database/Migration/Seed.php:13}
+    - [ ] `addQuery($query)`
+      - [ ] Missing docblock; should cover: queries not added via addQuery() are never executed. //should-do// {src: src/Database/Migration/Seed.php:15}
+    - [ ] `insert($table, $data)`
+      - [ ] Missing docblock; should cover: queues an INSERT via dbInsert(); $data is column => value. //should-do// {src: src/Database/Migration/Seed.php:19}
+  - [ ] `TimeStamp` (`src/Database/Migration/Type/TimeStamp.php`)
+    - [ ] Missing class docblock; should cover: Doctrine type 'timestamp': TIMESTAMP on MySQL/PostgreSQL, else DATETIME. //nice-to-have// {src: src/Database/Migration/Type/TimeStamp.php:9}
+- [ ] Error handling and debug bar (`src/ErrorHandling`)
+  - [ ] `BehaviorOption` (`src/ErrorHandling/BehaviorOption.php`)
+    - [ ] Missing class docblock; should cover: Values for the showErrors setting: NONE, EXCEPTIONS, ALL. //should-do// {src: src/ErrorHandling/BehaviorOption.php:5}
+    - [ ] `isValidOption($option)`
+      - [ ] Missing docblock; should cover: Valid values are NONE, EXCEPTIONS, ALL (0, 1, 2). //should-do// {src: src/ErrorHandling/BehaviorOption.php:10}
+  - [ ] `CanCollect` (`src/ErrorHandling/DebugBar/CanCollect.php`) [trait]
+    - [ ] `collectQuery($sql, $durationSeconds, $rowCount, $values, $model)`
+      - [ ] Missing docblock; should cover: Silent no-op unless debug bar enabled (execution_type=test). //nice-to-have// {src: src/ErrorHandling/DebugBar/CanCollect.php:11}
+    - [ ] `collectTemplate($name, $data, $type, $layout)`
+      - [ ] Missing docblock; should cover: Silent no-op unless debug bar enabled (execution_type=test). //nice-to-have// {src: src/ErrorHandling/DebugBar/CanCollect.php:15}
+    - [ ] `collectLogger($logger)`
+      - [ ] Missing docblock; should cover: No-op unless debug bar enabled; attaches collector as Monolog handler. //nice-to-have// {src: src/ErrorHandling/DebugBar/CanCollect.php:19}
+  - [ ] `QueryCollector` (`src/ErrorHandling/DebugBar/Collectors/QueryCollector.php`)
+    - [ ] `addQuery($sql, $durationSeconds, $rowCount, $values, $model)`
+      - [ ] Missing docblock; should cover: Skips internal-model queries when debugbar_hide_internal_queries is true. //nice-to-have// {src: src/ErrorHandling/DebugBar/Collectors/QueryCollector.php:15}
+  - [ ] `TemplateCollector` (`src/ErrorHandling/DebugBar/Collectors/TemplateCollector.php`)
+    - [ ] `addTemplate($name, $data, $type, $layout)`
+      - [ ] Missing docblock; should cover: $type is the template engine; params are dumped via DataFormatter. //nice-to-have// {src: src/ErrorHandling/DebugBar/Collectors/TemplateCollector.php:18}
+  - [ ] `DebugBarBridge` (`src/ErrorHandling/DebugBar/DebugBarBridge.php`)
+    - [ ] Missing class docblock; should cover: Static facade for php-debugbar; only active when execution_type is test. //should-do// {src: src/ErrorHandling/DebugBar/DebugBarBridge.php:14}
+    - [ ] `bootstrap()`
+      - [ ] Missing docblock; should cover: No-op unless execution_type is test; registers asset-proxy source. //nice-to-have// {src: src/ErrorHandling/DebugBar/DebugBarBridge.php:21}
+    - [ ] `isEnabled()`
+      - [ ] Missing docblock; should cover: True only after bootstrap() ran in the test environment. //should-do// {src: src/ErrorHandling/DebugBar/DebugBarBridge.php:44}
+    - [ ] `renderHead()`
+      - [ ] Missing docblock; should cover: Returns empty string when the debug bar is disabled. //should-do// {src: src/ErrorHandling/DebugBar/DebugBarBridge.php:48}
+    - [ ] `renderBody()`
+      - [ ] Missing docblock; should cover: Returns empty string when the debug bar is disabled. //should-do// {src: src/ErrorHandling/DebugBar/DebugBarBridge.php:53}
+  - [ ] `ExceptionBehavior` (`src/ErrorHandling/ExceptionBehavior.php`) [trait]
+    - [ ] `setExceptionBehavior($state)`
+      - [ ] Missing docblock; should cover: Installs global error and exception handlers; throws InvalidArgumentException for invalid option. //should-do// {src: src/ErrorHandling/ExceptionBehavior.php:52}
+  - [ ] `NotInstantiatedException` (`src/ErrorHandling/GenericException/NotInstantiatedException.php`)
+    - [ ] Missing class docblock; should cover: Thrown by zubzet(), request(), db() helpers before the framework booted. //should-do// {src: src/ErrorHandling/GenericException/NotInstantiatedException.php:5}
+  - [ ] `WhoopsHandler` (`src/ErrorHandling/WhoopsHandler.php`)
+    - [ ] Missing class docblock; should cover: Whoops page integration; test environment only; editor links, masks sensitive keys. //nice-to-have// {src: src/ErrorHandling/WhoopsHandler.php:10}
+    - [ ] `initialize()`
+      - [ ] Missing docblock; should cover: No-op unless execution_type is test; registers Whoops globally. //nice-to-have// {src: src/ErrorHandling/WhoopsHandler.php:23}
+- [ ] Forms and validation (`src/Form`)
+  - [ ] `Upload` (`src/Form/Upload.php`)
+    - [ ] `upload($file, $uploadDir, $maxSize, $typeArray)`
+      - [ ] Vague docblock: Does not state side effects: creates $uploadDir, inserts a z_file row, fills ref/fileId/filePath, and success is UPLOAD_SUCCESS (0), so error checks use truthiness. //should-do// {src: src/Form/Upload.php:47}
+    - [ ] `image($file, $uploadDir, $maxSize)`
+      - [ ] Wrong docblock: $file is a $_FILES entry array (getFile(), not getPost()), $maxSize is int bytes, not string; allowed extensions (jpg, jpeg, png, bmp) are not listed. //important// {src: src/Form/Upload.php:96}
+    - [ ] `video($file, $uploadDir, $maxSize)`
+      - [ ] Wrong docblock: $file is a $_FILES entry array (getFile(), not getPost()), $maxSize is int bytes, not string; allowed extensions (mp4, mov, webm, mkv, avi...) are not listed. //important// {src: src/Form/Upload.php:112}
+    - [ ] `audio($file, $uploadDir, $maxSize)`
+      - [ ] Wrong docblock: $file is a $_FILES entry array (getFile(), not getPost()), $maxSize is int bytes, not string; allowed extensions (mp3, wav, wma, ogg, m4a, aiff, aac) are not listed. //important// {src: src/Form/Upload.php:128}
+  - [ ] `CanValidateForm` (`src/Form/Validation/CanValidateForm.php`) [trait]
+    - [ ] `validateForm($fields, $data)`
+      - [ ] Vague docblock: Does not say $data defaults to getPost()+getFiles() (also when an empty array is passed) and that rules other than required() skip empty values. //important// {src: src/Form/Validation/CanValidateForm.php:16}
+  - [ ] `CanValidateMultiForm` (`src/Form/Validation/CanValidateMultiForm.php`) [trait]
+    - [ ] `validateCED($name, $rules)`
+      - [ ] Vague docblock: $rules is a Field[] (not 'rules'); undocumented that it reads rows from getPost($name), sets doNothing if absent and adds subname/index to errors. //important// {src: src/Form/Validation/CanValidateMultiForm.php:17}
+  - [ ] `Field` (`src/Form/Validation/Field.php`)
+    - [ ] Wrong class docblock: Property $rules is documented as object[] but holds a list of associative arrays (name, type plus rule-specific keys). //should-do// {src: src/Form/Validation/Field.php:8}
+    - [ ] `filter($filter)`
+      - [ ] Vague docblock: 'All filter_var filters are available' is misleading: the rule fails when filter_var() returns a falsy value (0, false), and no filter options/flags can be passed. //should-do// {src: src/Form/Validation/Field.php:76}
+    - [ ] `unique($table, $field, $ignoreField, $ignoreValue)`
+      - [ ] Wrong docblock: $ignoreField/$ignoreValue are optional (default null) but documented as plain strings, and $table/$field are inserted unescaped into the SQL. //important// {src: src/Form/Validation/Field.php:100}
+    - [ ] `exists($table, $field)`
+      - [ ] Vague docblock: Does not warn that $table and $field are inserted unescaped into the SQL, so they must never come from user input. //should-do// {src: src/Form/Validation/Field.php:123}
+    - [ ] `checked()`
+      - [ ] Vague docblock: Does not say the rule is skipped when the key is missing from the request (non-Z.js clients), so chain required() to enforce it. //should-do// {src: src/Form/Validation/Field.php:165}
+    - [ ] `required()`
+      - [ ] Vague docblock: Does not say required() must be the first rule on a field, otherwise it overwrites the value cast by earlier rules like integer(). //should-do// {src: src/Form/Validation/Field.php:176}
+    - [ ] `length($min, $max)`
+      - [ ] Wrong docblock: 'chars' is wrong: scalar values are measured with strlen(), i.e. bytes, so multi-byte UTF-8 characters count more than once. //important// {src: src/Form/Validation/Field.php:198}
+    - [ ] `date($format)`
+      - [ ] Wrong docblock: $format is never used: validateForm() only checks strtotime(), so any parseable date passes and the documented format is not enforced. //urgent// {src: src/Form/Validation/Field.php:261}
+    - [ ] `file($maxSize, $types)`
+      - [ ] Vague docblock: Does not state $maxSize is in bytes or that $types are lowercase extensions without dot (empty array allows any type); error types file/file_to_big/file_type unlisted. //should-do// {src: src/Form/Validation/Field.php:277}
+    - [ ] `regex($expression, $exceptions)`
+      - [ ] Vague docblock: Does not explain semantics: value passes only if removing all matches leaves nothing, and $exceptions are stripped from the value first; not preg_match. //should-do// {src: src/Form/Validation/Field.php:299}
+  - [ ] `Result` (`src/Form/Validation/Result.php`)
+    - [ ] Wrong class docblock: $errors is documented object[] but holds associative arrays (name, type, info); $name is documented string but typed ?string and uninitialized outside validateCED(). //important// {src: src/Form/Validation/Result.php:10}
+    - [ ] `getValue($name)`
+      - [ ] Vague docblock: No @return: the validated (rule-cast, array for multi-select) value, or null when the field is unknown or its input was empty. //important// {src: src/Form/Validation/Result.php:51}
+    - [ ] `addCustomError($name, $type)`
+      - [ ] Vague docblock: Does not list valid $type values (rule names such as filter, unique, required that Z.js maps to messages) nor say hasErrors is set to true. //should-do// {src: src/Form/Validation/Result.php:63}
+- [ ] Bundled controllers (`src/IncludedComponents/controllers`)
+  - [ ] `ErrorController` (`src/IncludedComponents/controllers/ErrorController.php`)
+    - [ ] `action_403($req, $res)`
+      - [ ] Vague docblock: Typo 'Access Denies' should be 'Denied'; the rest of the docblock is adequate for a trivial error action. //nice-to-have// {src: src/IncludedComponents/controllers/ErrorController.php:19}
+  - [ ] `IndexController` (`src/IncludedComponents/controllers/IndexController.php`)
+    - [ ] Wrong class docblock: Root URL requests run the controller from config defaultIndex (default DashboardController); this bundled controller is only reached via /index, not 'by default'. //should-do// {src: src/IncludedComponents/controllers/IndexController.php:9}
+  - [ ] `LoginController` (`src/IncludedComponents/controllers/LoginController.php`)
+    - [ ] Vague class docblock: Describes only login/logout, but the controller also serves signup, forgot_password, reset, verify, create_password and change_password. //extra-effort// {src: src/IncludedComponents/controllers/LoginController.php:13}
+    - [ ] `action_index($req, $res)`
+      - [ ] Vague docblock: Not described: renders the login form unless POST 'name' is set, otherwise rate-limits, verifies the password, logs in and answers JSON (exits). //should-do// {src: src/IncludedComponents/controllers/LoginController.php:23}
+    - [ ] `action_logout($req, $res)`
+      - [ ] Vague docblock: Does not mention that it invalidates the session, switches back to the executing user when sudoed, then redirects to the root URL and exits. //nice-to-have// {src: src/IncludedComponents/controllers/LoginController.php:99}
+    - [ ] `action_signup($req, $res)`
+      - [ ] Vague docblock: With POST action 'signup' it validates, creates the user, assigns config registerRoleId[Secondary], mails the verification link and answers JSON; otherwise renders the form. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:108}
+    - [ ] `action_forgot_password($req, $res)`
+      - [ ] Wrong docblock: Does not reset the password: it emails a reset link to an existing user and answers JSON then exits; the actual reset happens in action_reset. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:164}
+    - [ ] `action_reset($req, $res)`
+      - [ ] Vague docblock: Omits: an invalid code dies with a plain-text error; a POSTed password is saved, the code disabled and the client redirected to root. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:217}
+    - [ ] `action_verify($req, $res)`
+      - [ ] Vague docblock: Not described: verifies the URL token; with POST 'email' it resends the verification mail and renders the wait page, otherwise renders the result view. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:259}
+    - [ ] `action_create_password($req, $res)`
+      - [ ] Wrong docblock: Reroutes internally (no HTTP redirect) without the reset code, so action_reset dies as 'code not valid'; the described first-time-password flow does not work. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:294}
+    - [ ] `action_change_password($req, $res)`
+      - [ ] Wrong docblock: Reroutes internally (no HTTP redirect) without a reset code, so action_reset dies as 'code not valid'; the described change-password flow does not work. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:306}
+- [ ] Bundled models (`src/IncludedComponents/models`)
+  - [ ] `z_fileModel` (`src/IncludedComponents/models/z_fileModel.php`)
+    - [ ] `getById($fileId)`
+      - [ ] Wrong docblock: '@return string[] The id of the created dataset' is copy-pasted; it returns the z_file row as associative array, or null when not found. //should-do// {src: src/IncludedComponents/models/z_fileModel.php:36}
+  - [ ] `z_generalModel` (`src/IncludedComponents/models/z_generalModel.php`)
+    - [ ] `getLanguageByValue($value, $defaultLanguageId)`
+      - [ ] Wrong docblock: Missing @param int $defaultLanguageId (default 1), the value returned when no language matches the given short form. //nice-to-have// {src: src/IncludedComponents/models/z_generalModel.php:40}
+  - [ ] `z_loginModel` (`src/IncludedComponents/models/z_loginModel.php`)
+    - [ ] `getSessionsByUserId($user)`
+      - [ ] Wrong docblock: Returns raw z_logintoken row arrays, not session objects; Session::byUser() wraps them into Session instances. //should-do// {src: src/IncludedComponents/models/z_loginModel.php:40}
+    - [ ] `getUserByLogin($email)`
+      - [ ] Wrong docblock: Returns the user row array or false when no user matches; it never returns null or true, so bool|array|null is inaccurate. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:134}
+    - [ ] `addResetCode($userId, $ref, $reason)`
+      - [ ] Wrong docblock: Returns the generated reset code ('ZIT-<crc32 ref>-<crc32 time>', stored as refId), not the passed $ref, which only seeds it. //should-do// {src: src/IncludedComponents/models/z_loginModel.php:268}
+    - [ ] `getResetCode($code, $timespan)`
+      - [ ] Wrong docblock: Return tag is malformed as '@param false|array The'; $timespan is a relative interval like '60 minutes' for strtotime('-...'), not an SQL time. //should-do// {src: src/IncludedComponents/models/z_loginModel.php:281}
+    - [ ] `sendTooManyLoginsEmailByUserId($userId)`
+      - [ ] Wrong docblock: Sends nothing: returns true when no warning was recorded in the last 10 minutes, i.e. a mail may be sent; '@return bool RES' is meaningless. //should-do// {src: src/IncludedComponents/models/z_loginModel.php:312}
+  - [ ] `z_organizationModel` (`src/IncludedComponents/models/z_organizationModel.php`)
+    - [ ] Missing class docblock; should cover: Add class docblock marked @internal like sibling models; only Organization calls it. //nice-to-have// {src: src/IncludedComponents/models/z_organizationModel.php:6}
+  - [ ] `z_permissionModel` (`src/IncludedComponents/models/z_permissionModel.php`)
+    - [ ] `getById($id, $table, $expression)`
+      - [ ] Wrong docblock: Missing @param ?array $expression (optional extra where-condition, e.g. the Role/Group is_group filter). //nice-to-have// {src: src/IncludedComponents/models/z_permissionModel.php:27}
+    - [ ] `getByIds($table, $ids, $expression)`
+      - [ ] Wrong docblock: '@param int ...$ids' is copied from User::byIds: the real parameter is array $ids (not variadic, after $table); @param $expression is missing. //should-do// {src: src/IncludedComponents/models/z_permissionModel.php:47}
+    - [ ] `getAll($table, $expression)`
+      - [ ] Wrong docblock: Missing @param ?array $expression (optional extra where-condition, e.g. the Role/Group is_group filter). //nice-to-have// {src: src/IncludedComponents/models/z_permissionModel.php:64}
+  - [ ] `z_userModel` (`src/IncludedComponents/models/z_userModel.php`)
+    - [ ] `getUserById($userid)`
+      - [ ] Wrong docblock: Returns the user row array or false when no row matches; it never returns null or true, so bool|array|null is inaccurate. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:29}
+    - [ ] `getUserByEmail($email)`
+      - [ ] Wrong docblock: Returns the user row array or false when no row matches; it never returns null or true, so bool|array|null is inaccurate. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:44}
+    - [ ] `getUserList()`
+      - [ ] Wrong docblock: Returns only rows with active = 1, not all user data; rows include the password hash and salt columns. //should-do// {src: src/IncludedComponents/models/z_userModel.php:58}
+    - [ ] `add($email, $passwordString, $verified)`
+      - [ ] Wrong docblock: @param $verified (SQL datetime; null = unverified) is missing; $email accepts null (nullable column) and $passwordString is optional, unlike documented. //should-do// {src: src/IncludedComponents/models/z_userModel.php:71}
+    - [ ] `changeRoleStateByUserIdAndRoleId($userId, $roleId, $shouldHaveRole)`
+      - [ ] Wrong docblock: Missing @param bool $shouldHaveRole (default true; false deactivates all active grants of the role instead of adding it). //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:172}
+    - [ ] `getRoleIdByRoleName($name)`
+      - [ ] Wrong docblock: '@return int' is wrong: the method returns ?int and null when no role has this name. //should-do// {src: src/IncludedComponents/models/z_userModel.php:299}
+- [ ] Bundled view templates (`src/IncludedComponents/views`)
+  - [ ] Global functions in `src/IncludedComponents/views/layout/layout_essentials.php`
+    - [ ] `essentialsHead($opt, $customBootstrap)`
+      - [ ] Wrong docblock: Missing @param bool $customBootstrap (true skips bootstrap.min.js); $opt is called an object but is an array. //should-do// {src: src/IncludedComponents/views/layout/layout_essentials.php:12}
+    - [ ] `essentialsBody($opt)`
+      - [ ] Vague docblock: Does not mention it prints a script reloading the page when the z_login_token cookie disappears (logged-in users), plus the debug bar body. //nice-to-have// {src: src/IncludedComponents/views/layout/layout_essentials.php:48}
+- [ ] Logging (`src/Logger`)
+  - [ ] `BacktraceProcessor` (`src/Logger/BacktraceProcessor.php`)
+    - [ ] Missing class docblock; should cover: Adds traceId and logger context to extra; drops callType. //nice-to-have// {src: src/Logger/BacktraceProcessor.php:6}
+  - [ ] `JsonFormatter` (`src/Logger/JsonFormatter.php`)
+    - [ ] Missing class docblock; should cover: Adds user and source environment to each record before JSON encoding. //nice-to-have// {src: src/Logger/JsonFormatter.php:7}
+  - [ ] `LogEventType` (`src/Logger/LogEventType.php`)
+    - [ ] Missing class docblock; should cover: Event-type strings used as message of framework log records. //should-do// {src: src/Logger/LogEventType.php:5}
+  - [ ] `Logger` (`src/Logger/Logger.php`)
+    - [ ] Missing class docblock; should cover: Monolog Logger with a per-instance context merged into every record. //important// {src: src/Logger/Logger.php:6}
+    - [ ] `contextAdd($context)`
+      - [ ] Missing docblock; should cover: Merged into extra of every record from this logger instance. //important// {src: src/Logger/Logger.php:13}
+    - [ ] `contextMergeFrom($logger)`
+      - [ ] Missing docblock; should cover: Copies another channel's context; throws if name empty or channel unknown. //important// {src: src/Logger/Logger.php:18}
+    - [ ] `contextInspect($callback)`
+      - [ ] Missing docblock; should cover: Callback receives context array and must return the new context. //important// {src: src/Logger/Logger.php:28}
+    - [ ] `contextClear()`
+      - [ ] Missing docblock; should cover: Removes all context added via contextAdd/contextMergeFrom. //important// {src: src/Logger/Logger.php:33}
+    - [ ] `getTraceId()`
+      - [ ] Missing docblock; should cover: Per-request 32-char hex id, generated lazily on first call. //important// {src: src/Logger/Logger.php:38}
+    - [ ] `setTraceId($traceId)`
+      - [ ] Missing docblock; should cover: Overrides trace id for all later records; call before first log. //important// {src: src/Logger/Logger.php:42}
+  - [ ] `LoggerFactory` (`src/Logger/LoggerFactory.php`)
+    - [ ] Missing class docblock; should cover: Creates, caches and registers channel loggers from logger_* config. //should-do// {src: src/Logger/LoggerFactory.php:14}
+    - [ ] `register($name, $logger)`
+      - [ ] Wrong docblock: @param Logger|LoggerInterface misleads: a plain Monolog Logger (as in logging.md) is cached, then register() and logger() throw TypeError; only the ZubZet Logger works. //urgent// {src: src/Logger/LoggerFactory.php:33}
+    - [ ] `getOrCreateLogger($name)`
+      - [ ] Vague docblock: @throws should name InvalidArgumentException; description omits config keys logger_enabled, logger_type, logger_level, logger_stream_url and that a disabled logger gets a NullHandler. //should-do// {src: src/Logger/LoggerFactory.php:45}
+    - [ ] `getTraceId()`
+      - [ ] Missing docblock; should cover: Lazily generates a 32-char hex id; same value as Logger::getTraceId. //should-do// {src: src/Logger/LoggerFactory.php:86}
+    - [ ] `getLogger($name)`
+      - [ ] Missing docblock; should cover: Returns null if channel not created yet; never creates one. //should-do// {src: src/Logger/LoggerFactory.php:95}
+    - [ ] `handleSlowRequest()`
+      - [ ] Missing docblock; should cover: Registers shutdown hook; logs SLOW_REQUEST above logger_slow_request_ms; call once. //nice-to-have// {src: src/Logger/LoggerFactory.php:100}
+  - [ ] `DatabaseLogger` (`src/Logger/Method/DatabaseLogger.php`)
+    - [ ] Missing class docblock; should cover: Best-effort: drops records without DB connection or on insert failure. //nice-to-have// {src: src/Logger/Method/DatabaseLogger.php:7}
+  - [ ] `StreamLogger` (`src/Logger/Method/StreamLogger.php`)
+    - [ ] Missing class docblock; should cover: StreamHandler formatting records with the environment-aware JsonFormatter. //nice-to-have// {src: src/Logger/Method/StreamLogger.php:8}
+- [ ] Maintenance mode (`src/Maintenance`)
+  - [ ] `MaintenanceHandler` (`src/Maintenance/MaintenanceHandler.php`)
+    - [ ] Public properties without docblock: `$COOKIE_KEY`. //optional// {src: src/Maintenance/MaintenanceHandler.php:16}
+  - [ ] `MaintenanceMode` (`src/Maintenance/MaintenanceMode.php`)
+    - [ ] Public constants without docblock: `DISABLED`, `SOFT`, `ENABLED`, `FULL`. //optional// {src: src/Maintenance/MaintenanceMode.php:8}
+- [ ] Request and response (`src/Message`)
+  - [ ] `CanRetrieveFromInput` (`src/Message/Input/CanRetrieveFromInput.php`) [trait]
+    - [ ] `getGet($key, $default)`
+      - [ ] Wrong docblock: @param string $key is actually ?string (default null); undocumented that a null key returns the whole GET array, which @return string|mixed hides. //important// {src: src/Message/Input/CanRetrieveFromInput.php:12}
+    - [ ] `getPost($key, $default)`
+      - [ ] Vague docblock: Does not mention that a null $key returns the whole POST array, so @return string|mixed is misleading. //important// {src: src/Message/Input/CanRetrieveFromInput.php:28}
+    - [ ] `getFile($key, $default)`
+      - [ ] Vague docblock: Does not mention that a null $key returns all files, or that an entry is a $_FILES array (name, type, tmp_name, error, size). //important// {src: src/Message/Input/CanRetrieveFromInput.php:44}
+    - [ ] `getCookie($key, $default)`
+      - [ ] Wrong docblock: @param string $key is actually ?string (default null); undocumented that a null key returns all cookies as an array. //important// {src: src/Message/Input/CanRetrieveFromInput.php:68}
+  - [ ] `State` (`src/Message/Input/State.php`)
+    - [ ] Missing class docblock; should cover: Mutable snapshot of request superglobals; with* methods mutate and return $this. //should-do// {src: src/Message/Input/State.php:5}
+    - [ ] Public properties without docblock: `$previous`, `$body`, `$SERVER`, `$GET`, `$POST`, `$FILES`, `$REQUEST`, `$SESSION`, `$COOKIE`. //extra-effort// {src: src/Message/Input/State.php:5}
+    - [ ] `fromRequest()`
+      - [ ] Missing docblock; should cover: Decodes <#decURI#>-prefixed POST values; reads php://input into body. //should-do// {src: src/Message/Input/State.php:18}
+    - [ ] `fromOverwrite($input, $overwriteData)`
+      - [ ] Missing docblock; should cover: Clones state, links previous; throws InvalidArgumentException on unknown type. //should-do// {src: src/Message/Input/State.php:45}
+    - [ ] `withUrl($url)`
+      - [ ] Missing docblock; should cover: Mutates and returns $this; sets scheme, host, GET and path from URL. //should-do// {src: src/Message/Input/State.php:61}
+    - [ ] `withPath($path)`
+      - [ ] Missing docblock; should cover: Mutates $this; rewrites REQUEST_URI and REDIRECT_URL, keeps query string. //should-do// {src: src/Message/Input/State.php:86}
+    - [ ] `withGet($get)`
+      - [ ] Missing docblock; should cover: Mutates $this; replaces GET, QUERY_STRING, REQUEST_URI query and rebuilds REQUEST. //should-do// {src: src/Message/Input/State.php:95}
+    - [ ] `withBody($body)`
+      - [ ] Missing docblock: public API without any docblock. //optional// {src: src/Message/Input/State.php:107}
+    - [ ] `withPost($post)`
+      - [ ] Missing docblock; should cover: Mutates $this; also rebuilds REQUEST. //nice-to-have// {src: src/Message/Input/State.php:112}
+    - [ ] `withFiles($files)`
+      - [ ] Missing docblock: public API without any docblock. //optional// {src: src/Message/Input/State.php:118}
+    - [ ] `withSession($session)`
+      - [ ] Missing docblock: public API without any docblock. //optional// {src: src/Message/Input/State.php:123}
+    - [ ] `withCookies($cookie)`
+      - [ ] Missing docblock; should cover: Mutates $this; also rebuilds REQUEST. //nice-to-have// {src: src/Message/Input/State.php:128}
+    - [ ] `withMethod($method)`
+      - [ ] Missing docblock: public API without any docblock. //optional// {src: src/Message/Input/State.php:134}
+    - [ ] `withPreviousAsReferer()`
+      - [ ] Missing docblock; should cover: Throws LogicException if no previous state or it lacks HTTP_HOST/REQUEST_SCHEME. //should-do// {src: src/Message/Input/State.php:139}
+    - [ ] `withReferer($referer)`
+      - [ ] Missing docblock: public API without any docblock. //optional// {src: src/Message/Input/State.php:164}
+    - [ ] `withArgs($args)`
+      - [ ] Missing docblock; should cover: Keeps first two argv entries, replaces the rest with $args. //should-do// {src: src/Message/Input/State.php:169}
+  - [ ] `State` (`src/Message/Output/State.php`)
+    - [ ] Missing class docblock; should cover: Empty placeholder for Response::$output; state purpose or remove. //optional// {src: src/Message/Output/State.php:5}
+  - [ ] `Request` (`src/Message/Request.php`)
+    - [ ] Wrong class docblock: Copy of the RequestResponseHandler text: Request is not a base class but represents the incoming request (input, URL parts, permission and form helpers). //important// {src: src/Message/Request.php:14}
+    - [ ] Public properties without docblock: `$urlParameters`, `$urlParts`. //nice-to-have// {src: src/Message/Request.php:14}
+    - [ ] `getRouteParameter($key)`
+      - [ ] Missing docblock; should cover: Returns all route parameters as array when key is null; null for unknown key. //important// {src: src/Message/Request.php:31}
+    - [ ] `getUrlParts()`
+      - [ ] Missing docblock; should cover: Path segments below rootDirectory, cached; empty array for root. //important// {src: src/Message/Request.php:41}
+    - [ ] `ip()`
+      - [ ] Wrong docblock: @return says False when no IP is found, but the type is ?string (getenv() false coerces to ''); also trusts spoofable HTTP_CLIENT_IP/X_FORWARDED_FOR first. //important// {src: src/Message/Request.php:67}
+    - [ ] `referer()`
+      - [ ] Missing docblock; should cover: Null when header is missing; client-controlled value. //nice-to-have// {src: src/Message/Request.php:90}
+    - [ ] `userAgent()`
+      - [ ] Missing docblock; should cover: Null when header is missing; client-controlled value. //nice-to-have// {src: src/Message/Request.php:94}
+    - [ ] `getExecutionTime()`
+      - [ ] Missing docblock; should cover: Seconds as float since REQUEST_TIME_FLOAT; null if unavailable. //should-do// {src: src/Message/Request.php:98}
+    - [ ] `getCurrentURL()`
+      - [ ] Vague docblock: 'actual current path' is imprecise: REQUEST_URI is appended, so the result includes the root directory and the query string. //nice-to-have// {src: src/Message/Request.php:107}
+    - [ ] `getDomain()`
+      - [ ] Vague docblock: Does not say scheme, slashes and port are stripped from host (https://example.com:8080/ becomes example.com). //nice-to-have// {src: src/Message/Request.php:123}
+    - [ ] `getParameters($offset, $length, $val)`
+      - [ ] Wrong docblock: Controller and action are excluded, not included; @return omits false (length 1, missing part) and the bool comparison result returned when $val is given. //urgent// {src: src/Message/Request.php:141}
+    - [ ] `getReadableParameter($offset)`
+      - [ ] Wrong docblock: Returns an associative array with keys 'id' and 'text', not a positional [id, text] list; both are strings, empty when the URL segment is missing. //important// {src: src/Message/Request.php:164}
+    - [ ] `getRequestingUser()`
+      - [ ] Vague docblock: Uses the global \User alias instead of the FQCN and omits that a user object is also returned for anonymous visitors (check isLoggedIn). //nice-to-have// {src: src/Message/Request.php:179}
+    - [ ] `getRootFolder()`
+      - [ ] Wrong docblock: Returns the URL base path of the app ("/" plus rootDirectory), used to prefix links and cookie paths, not a filesystem path to the project. //urgent// {src: src/Message/Request.php:187}
+    - [ ] `checkSuperPermission($permission, $boolResult)`
+      - [ ] Missing docblock; should cover: Like checkPermission but the sudo-executing user's permissions also count. //important// {src: src/Message/Request.php:191}
+    - [ ] `checkPermission($permission, $boolResult, $includeSuperUser)`
+      - [ ] Wrong docblock: Missing @param $includeSuperUser and @return; 'console' passes only on CLI; failures render login/403 via executePath and exit instead of HTTP-redirecting. //important// {src: src/Message/Request.php:201}
+    - [ ] `hasFormData()`
+      - [ ] Vague docblock: Does not say it only checks the POST flag isFormData sent by Z.js ZForm, so plain HTML form posts return false. //should-do// {src: src/Message/Request.php:232}
+    - [ ] `isAction($type)`
+      - [ ] Vague docblock: Only loosely compares the POST field `action` to $type; it does not verify that the request is actually an AJAX request. //should-do// {src: src/Message/Request.php:241}
+    - [ ] `getBody()`
+      - [ ] Wrong docblock: Returns null, not an empty string, when the body is empty or unavailable (State stores `$body ?: null`, so a body of "0" is null too). //important// {src: src/Message/Request.php:252}
+  - [ ] `RequestResponseHandler` (`src/Message/RequestResponseHandler.php`)
+    - [ ] `getZViews()`
+      - [ ] Vague docblock: Does not say this is the project's own views directory (config z_views, relative, trailing slash), not the framework's IncludedComponents views. //nice-to-have// {src: src/Message/RequestResponseHandler.php:30}
+  - [ ] `Response` (`src/Message/Response.php`)
+    - [ ] Public properties without docblock: `$output`. //optional// {src: src/Message/Response.php:25}
+    - [ ] `reroute($path, $alias, $final)`
+      - [ ] Vague docblock: Does not say it re-dispatches internally without an HTTP redirect, or that alias overlays $path onto the current URL parts before dispatching. //important// {src: src/Message/Response.php:43}
+    - [ ] `rerouteUrl($url, $root)`
+      - [ ] Vague docblock: Does not say it sends a Location header and calls exit; $root defaults to the app's rootFolder and is concatenated directly with $url. //important// {src: src/Message/Response.php:61}
+    - [ ] `setCookie()`
+      - [ ] Wrong docblock: @param ...$args is documented but the method declares no parameters (uses func_get_args()), so IDEs show none; the setcookie() result is discarded. //important// {src: src/Message/Response.php:72}
+    - [ ] `unsetCookie($name, $path, $domainScope)`
+      - [ ] Vague docblock: Does not say it also removes the cookie from the current request's input, and that $path/$domainScope must match those used when setting it. //nice-to-have// {src: src/Message/Response.php:82}
+    - [ ] `generateRest($payload, $die)`
+      - [ ] Vague docblock: Does not say it echoes the payload as pretty-printed JSON with an added `meta` block (no Content-Type header) and exits by default. //important// {src: src/Message/Response.php:117}
+    - [ ] `json($data, $encodingOptions)`
+      - [ ] Vague docblock: Does not say that, unlike generateRest()/success(), it does not exit, so later output is appended to the JSON. //should-do// {src: src/Message/Response.php:130}
+    - [ ] `generateRestError($code, $message)`
+      - [ ] Vague docblock: Does not say it logs a REST_ERROR warning, outputs {error:{code,message}} JSON without setting an HTTP status, then exits. //should-do// {src: src/Message/Response.php:140}
+    - [ ] `sendEmail($to, $subject, $document, $lang, $options, $layout, $attachments)`
+      - [ ] Vague docblock: $layout lacks naming rules (.php stripped, _layout suffix added, layout/ prefix) and the default 'email' needs an app email_layout; framework ships only mail_layout. //nice-to-have// {src: src/Message/Response.php:159}
+    - [ ] `sendEmailToUser($userId, $subject, $document, $options, $layout)`
+      - [ ] Wrong docblock: $subject also accepts a language-keyed array; @return bool and @throws Exception (user not found or no email address) are missing. //important// {src: src/Message/Response.php:248}
+    - [ ] `loginAs($userId, $user_exec)`
+      - [ ] Vague docblock: Does not say a null $user_exec makes it a normal login, that it sets the z_login_token cookie, logs the event and does no permission check. //important// {src: src/Message/Response.php:269}
+    - [ ] `getCookieDomainScope()`
+      - [ ] Missing docblock; should cover: Returns '.domain' if login_scope_allow_subdomains is 'true', else empty string. //should-do// {src: src/Message/Response.php:292}
+    - [ ] `error($message)`
+      - [ ] Vague docblock: Does not say it sends {result:error,message} JSON via generateRest() and exits the script. //important// {src: src/Message/Response.php:304}
+    - [ ] `formErrors($errors)`
+      - [ ] Wrong docblock: Real signature takes any number of error arrays (func_get_args(), merged); `object[]` is wrong since entries are associative arrays; extra arguments undocumented. //important// {src: src/Message/Response.php:312}
+    - [ ] `logout()`
+      - [ ] Vague docblock: Omits that it invalidates the DB session, clears or swaps the login cookie (sudo returns to exec user), redirects to root and exits. //important// {src: src/Message/Response.php:330}
+    - [ ] `insertOrUpdateDatabase($table, $pkField, $pkType, $pkValue, $validationResult, $fixed)`
+      - [ ] Wrong docblock: @param string $pkValue but IDs are passed as int; @return is missing: returns $pkValue after an update or the new insert id after an insert. //important// {src: src/Message/Response.php:385}
+    - [ ] `updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult, $fixed)`
+      - [ ] Wrong docblock: Missing @param array $fixed (extra column=>value pairs bound as strings); undocumented that file fields are uploaded first and array values stored as JSON. //important// {src: src/Message/Response.php:404}
+    - [ ] `insertDatabase($table, $validationResult, $fixed)`
+      - [ ] Vague docblock: Missing @return: the insert id (int|string|null); also undocumented that file fields are uploaded first and array values are stored as JSON. //important// {src: src/Message/Response.php:450}
+    - [ ] `doCED($table, $validationResult, $fix)`
+      - [ ] Vague docblock: Omits per-row `Z` behaviour: create inserts, edit updates WHERE id=dbId, delete only sets active=0; columns id/active required, names unescaped. //important// {src: src/Message/Response.php:518}
+- [ ] Query builder (`src/QueryBuilder`)
+  - [ ] `CanBuildQuery` (`src/QueryBuilder/CanBuildQuery.php`) [trait]
+    - [ ] `dbSelect($fields, $table, $types)`
+      - [ ] Vague docblock: Does not say the query is only built: run it via exec()/execQuery(), because the wrapped CakePHP connection has no credentials for ->execute(). //important// {src: src/QueryBuilder/CanBuildQuery.php:14}
+    - [ ] `dbUpdate($table, $values, $conditions, $types)`
+      - [ ] Vague docblock: Same as dbSelect: does not say the query must be run via exec()/execQuery() instead of ->execute(). //should-do// {src: src/QueryBuilder/CanBuildQuery.php:31}
+    - [ ] `dbDelete($table, $conditions, $types)`
+      - [ ] Vague docblock: Same as dbSelect: does not say the query must be run via exec()/execQuery() instead of ->execute(). //should-do// {src: src/QueryBuilder/CanBuildQuery.php:48}
+    - [ ] `dbInsert($table, $values, $types)`
+      - [ ] Vague docblock: Same as dbSelect: does not say the query must be run via exec()/execQuery() instead of ->execute(). //should-do// {src: src/QueryBuilder/CanBuildQuery.php:60}
+    - [ ] `getQueryBuilder()`
+      - [ ] Missing docblock; should cover: existing /* comment is not a docblock; returns the CakePHP Connection. //important// {src: src/QueryBuilder/CanBuildQuery.php:69}
+- [ ] Rendering (`src/Rendering`)
+  - [ ] `CanRenderView` (`src/Rendering/CanRenderView.php`) [trait]
+    - [ ] `render($document, $opt, $options)`
+      - [ ] Vague docblock: Does not say output is echoed (not returned), that response/request/root/host/absRoot/title/user are injected into $opt, or that missing views render the 500 view. //important// {src: src/Rendering/CanRenderView.php:63}
+  - [ ] `HandlesDefaultLayout` (`src/Rendering/HandlesDefaultLayout.php`) [trait]
+    - [ ] `setGlobalDefaultLayout($layout)`
+      - [ ] Missing docblock; should cover: Replaces the whole request-wide layout stack with $layout. //should-do// {src: src/Rendering/HandlesDefaultLayout.php:23}
+    - [ ] `pushGlobalDefaultLayout($layout)`
+      - [ ] Missing docblock; should cover: Every push must be matched by one pop. //should-do// {src: src/Rendering/HandlesDefaultLayout.php:27}
+    - [ ] `popGlobalDefaultLayout()`
+      - [ ] Missing docblock; should cover: Returns popped layout; throws UnderflowException on empty stack. //should-do// {src: src/Rendering/HandlesDefaultLayout.php:31}
+    - [ ] `setDefaultLayout($layout)`
+      - [ ] Missing docblock; should cover: Replaces this instance's layout stack with $layout. //should-do// {src: src/Rendering/HandlesDefaultLayout.php:40}
+    - [ ] `pushDefaultLayout($layout)`
+      - [ ] Missing docblock; should cover: Every push must be matched by one pop. //should-do// {src: src/Rendering/HandlesDefaultLayout.php:44}
+    - [ ] `popDefaultLayout()`
+      - [ ] Missing docblock; should cover: Returns popped layout; throws UnderflowException on empty stack. //should-do// {src: src/Rendering/HandlesDefaultLayout.php:48}
+  - [ ] `ViewNotFoundException` (`src/Rendering/ViewNotFoundException.php`)
+    - [ ] Missing class docblock; should cover: Thrown by sendEmail() when a view or layout cannot be resolved. //nice-to-have// {src: src/Rendering/ViewNotFoundException.php:5}
+- [ ] Asset proxy and resources (`src/Resources`)
+  - [ ] `AssetProxy` (`src/Resources/AssetProxy.php`)
+    - [ ] Missing class docblock; should cover: Reachable as zubzet()->assetProxy; mounts are checked in registration order. //should-do// {src: src/Resources/AssetProxy.php:7}
+    - [ ] `registerWebRootSource($sourceRoot, $urlPrefix)`
+      - [ ] Vague docblock: No @param for $urlPrefix; says it 'fails' on request, but a missing directory only yields 404; first-registered mount wins is unmentioned. //should-do// {src: src/Resources/AssetProxy.php:23}
+    - [ ] `serve($assetPath)`
+      - [ ] Missing docblock; should cover: Streams file with detected Content-Type; prints 404 text if no mount matches. //should-do// {src: src/Resources/AssetProxy.php:27}
+  - [ ] `BundledPackage` (`src/Resources/BundledPackage.php`)
+    - [ ] Public properties without docblock: `$package`, `$directoryInPackage`, `$urlPrefix`. //extra-effort// {src: src/Resources/BundledPackage.php:25}
+    - [ ] `mount($proxy)`
+      - [ ] Missing docblock; should cover: Skips unknown packages silently; throws RuntimeException when Composer has no install path. //nice-to-have// {src: src/Resources/BundledPackage.php:37}
+  - [ ] `Mount` (`src/Resources/Mount.php`)
+    - [ ] Public properties without docblock: `$sourceRoot`, `$urlPrefix`. //extra-effort// {src: src/Resources/Mount.php:10}
+    - [ ] `resolve($assetPath)`
+      - [ ] Vague docblock: Does not mention it also returns null for missing, non-file or unreadable paths, and throws RuntimeException when the resolved path escapes the source root. //nice-to-have// {src: src/Resources/Mount.php:21}
+- [ ] Routing (`src/Routing`)
+  - [ ] `HttpMethod` (`src/Routing/HttpMethod.php`) [trait]
+    - [ ] `any($endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Matches GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD; registered when result is destroyed. //important// {src: src/Routing/HttpMethod.php:6}
+    - [ ] `get($endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Action is [Controller::class, 'method'] or closure; registered on destruct; chain ->middleware(). //important// {src: src/Routing/HttpMethod.php:10}
+    - [ ] `post($endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Action is [Controller::class, 'method'] or closure; registered on destruct; chain ->middleware(). //important// {src: src/Routing/HttpMethod.php:14}
+    - [ ] `put($endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Action is [Controller::class, 'method'] or closure; registered on destruct; chain ->middleware(). //important// {src: src/Routing/HttpMethod.php:18}
+    - [ ] `delete($endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Action is [Controller::class, 'method'] or closure; registered on destruct; chain ->middleware(). //important// {src: src/Routing/HttpMethod.php:22}
+    - [ ] `patch($endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Action is [Controller::class, 'method'] or closure; registered on destruct; chain ->middleware(). //important// {src: src/Routing/HttpMethod.php:26}
+    - [ ] `options($endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Action is [Controller::class, 'method'] or closure; registered on destruct; chain ->middleware(). //important// {src: src/Routing/HttpMethod.php:30}
+    - [ ] `define($method, $endpoint, $action, $arguments)`
+      - [ ] Missing docblock; should cover: Custom HTTP method string (case-insensitive); otherwise same semantics as get(). //important// {src: src/Routing/HttpMethod.php:34}
+  - [ ] `PendingAction` (`src/Routing/PendingAction.php`)
+    - [ ] Public properties without docblock: `$action`. //optional// {src: src/Routing/PendingAction.php:6}
+  - [ ] `PendingGroup` (`src/Routing/PendingGroup.php`)
+    - [ ] Missing class docblock; should cover: Group registers on destruct; chain ->middleware() before it goes out of scope. //should-do// {src: src/Routing/PendingGroup.php:5}
+  - [ ] `PendingRoute` (`src/Routing/PendingRoute.php`)
+    - [ ] Missing class docblock; should cover: Route is registered in __destruct; do not store the object. //should-do// {src: src/Routing/PendingRoute.php:5}
+  - [ ] `PendingRoutingState` (`src/Routing/PendingRoutingState.php`)
+    - [ ] Missing class docblock; should cover: Shared base providing fluent middleware and afterMiddleware chaining. //should-do// {src: src/Routing/PendingRoutingState.php:5}
+    - [ ] Public properties without docblock: `$middleware`, `$afterMiddleware`. //extra-effort// {src: src/Routing/PendingRoutingState.php:5}
+    - [ ] `middleware($middleware, $arguments)`
+      - [ ] Missing docblock; should cover: Takes [Controller::class, 'method']; must return true to continue; chainable. //important// {src: src/Routing/PendingRoutingState.php:10}
+    - [ ] `afterMiddleware($afterMiddleware, $arguments)`
+      - [ ] Missing docblock; should cover: Takes [Controller::class, 'method']; runs after the action; chainable. //important// {src: src/Routing/PendingRoutingState.php:15}
+  - [ ] `Route` (`src/Routing/Route.php`)
+    - [ ] Missing class docblock; should cover: Static route-definition facade; routes register via destructors of returned objects. //important// {src: src/Routing/Route.php:10}
+    - [ ] Public properties without docblock: `$storedPrefixedGroups`. //extra-effort// {src: src/Routing/Route.php:10}
+    - [ ] `init($booter, $collector)`
+      - [ ] Vague docblock: No @param ($booter is unused); does not state it also resets prefix stack, group state and stored groups, discarding earlier registrations. //nice-to-have// {src: src/Routing/Route.php:37}
+    - [ ] `group($prefix, $callback)`
+      - [ ] Missing docblock; should cover: Nested routes inherit prefix and middleware; registered when result is destroyed. //important// {src: src/Routing/Route.php:54}
+    - [ ] `performStoredGroupsMatchingPrefix($urlParts, $callback)`
+      - [ ] Vague docblock: No @param; hides that it runs matched group middlewares, calls exit if one returns non-true, executes $callback, then runs after-middlewares. //nice-to-have// {src: src/Routing/Route.php:62}
+    - [ ] `performGroup($prefix, $callback, $middlewares, $afterMiddleware)`
+      - [ ] Vague docblock: No @param; does not say it stores prefix and middleware for fallback matching, runs $callback with group state pushed, then pops it. //nice-to-have// {src: src/Routing/Route.php:106}
+    - [ ] `performRoute($method, $endpoint, $action, $middlewares, $afterMiddleware)`
+      - [ ] Missing docblock; should cover: Internal: called from PendingRoute::__destruct; consider @internal. //nice-to-have// {src: src/Routing/Route.php:128}
+    - [ ] `performCallableAction($action, $args)`
+      - [ ] Vague docblock: Does not say arguments are injected by type: array gets route args, Request/Response get current instances, else default value or null; any parameter count works. //nice-to-have// {src: src/Routing/Route.php:209}
+  - [ ] `Router` (`src/Routing/Router.php`) [trait]
+    - [ ] Missing class docblock; should cover: Trait on ZubZet: FastRoute first, controller/action fallback, reroute limit. //nice-to-have// {src: src/Routing/Router.php:12}
+    - [ ] `execute($customUrlParts)`
+      - [ ] Missing docblock; should cover: Entry point called from index.php; FastRoute first, then controller fallback or CLI. //important// {src: src/Routing/Router.php:20}
+    - [ ] `executeControllerAction($controller, $action, $params, $arguments)`
+      - [ ] Missing docblock; should cover: Loads controller, runs action, else action_fallback; reroutes to error/404 or 500. //important// {src: src/Routing/Router.php:96}
+    - [ ] `reroute($parts)`
+      - [ ] Vague docblock: Does not mention it replaces the current request state (path and args) via replaceRequest and then returns to the caller, which keeps running. //should-do// {src: src/Routing/Router.php:160}
+    - [ ] `executePath($parts)`
+      - [ ] Vague docblock: Omits that it overwrites urlParts, dies after $maxReroutes reroutes, maps parts to <Name>Controller::action_<name> with defaultIndex/action_index fallbacks, and returns nothing. //important// {src: src/Routing/Router.php:178}
+- [ ] Support helpers (`src/Support`)
+  - [ ] `CanCheckpoint` (`src/Support/Checkpoint/CanCheckpoint.php`) [trait]
+    - [ ] `checkpointCurrentState($properties, $attributeClass)`
+      - [ ] Vague docblock: No @param: null $properties discovers all non-static properties; the default null $attributeClass applies no IncludeInCheckpoint filtering; only public properties can be restored. //should-do// {src: src/Support/Checkpoint/CanCheckpoint.php:13}
+    - [ ] `checkpointablePropertyNames($attributeClass)`
+      - [ ] Vague docblock: No @param; 'when given' hides that the default is IncludeInCheckpoint::class and null disables filtering; result includes non-public properties. //nice-to-have// {src: src/Support/Checkpoint/CanCheckpoint.php:21}
+  - [ ] `Checkpoint` (`src/Support/Checkpoint/Checkpoint.php`)
+    - [ ] `restore()`
+      - [ ] Missing docblock; should cover: Writes captured values back and unsets formerly uninitialized properties. //nice-to-have// {src: src/Support/Checkpoint/Checkpoint.php:29}
+  - [ ] `Checkpointable` (`src/Support/Checkpoint/Checkpointable.php`) [interface]
+    - [ ] `checkpointCurrentState($properties, $attributeClass)`
+      - [ ] Missing docblock; should cover: Document $properties/$attributeClass semantics; implementers need not use CanCheckpoint. //nice-to-have// {src: src/Support/Checkpoint/Checkpointable.php:11}
+  - [ ] `IncludeInCheckpoint` (`src/Support/Checkpoint/IncludeInCheckpoint.php`)
+    - [ ] Wrong class docblock: False: the default snapshot includes all non-static properties; the attribute filters only when IncludeInCheckpoint::class is explicitly passed as $attributeClass. //should-do// {src: src/Support/Checkpoint/IncludeInCheckpoint.php:6}
+  - [ ] Global functions in `src/Support/GlobalReferences.php`
+    - [ ] `zubzet()`
+      - [ ] Vague docblock: Does not document the NotInstantiatedException thrown when the framework has not been constructed yet. //nice-to-have// {src: src/Support/GlobalReferences.php:25}
+    - [ ] `model($model, $dir)`
+      - [ ] Vague docblock: Undocumented: $model omits the 'Model' suffix and dots map to subfolders, $dir needs a trailing slash, instances are cached, \Exception when not found. //important// {src: src/Support/GlobalReferences.php:39}
+    - [ ] `request()`
+      - [ ] Vague docblock: Does not document the NotInstantiatedException thrown when no Request instance exists yet. //nice-to-have// {src: src/Support/GlobalReferences.php:50}
+    - [ ] `config($key, $useDefault, $default)`
+      - [ ] Wrong docblock: Description says 'request handler' but values come from the booter settings; undocumented InvalidArgumentException when $useDefault is false and the key is missing. //important// {src: src/Support/GlobalReferences.php:76}
+    - [ ] `user()`
+      - [ ] Wrong docblock: @return User omits null (signature is ?User) and 'logged-in' misleads: it returns the requesting User object for guests too, so check isLoggedIn. //important// {src: src/Support/GlobalReferences.php:87}
+    - [ ] `db($connection, $allowUnsetConnection)`
+      - [ ] Vague docblock: No @param descriptions; does not say $allowUnsetConnection returns null instead of throwing NotInstantiatedException (itself undocumented) when no connection exists yet. //important// {src: src/Support/GlobalReferences.php:99}
+    - [ ] `logger($name)`
+      - [ ] Missing docblock; should cover: Returns cached Logger per channel name; defaults to Logger::APP. //important// {src: src/Support/GlobalReferences.php:128}
+    - [ ] `isCli()`
+      - [ ] Missing docblock; should cover: True only for the 'cli' SAPI (phpdbg and cli-server are false). //important// {src: src/Support/GlobalReferences.php:134}
+  - [ ] `HasDynamicAttributes` (`src/Support/HasDynamicAttributes.php`) [trait]
+    - [ ] Missing class docblock; should cover: Backs zubzet() settings: dynamic attribute store; reading unset names throws. //should-do// {src: src/Support/HasDynamicAttributes.php:5}
+    - [ ] `__set($name, $value)`
+      - [ ] Missing docblock; should cover: Any name accepted; read back via __get, which throws for unset names. //should-do// {src: src/Support/HasDynamicAttributes.php:9}
+    - [ ] `__get($name)`
+      - [ ] Missing docblock; should cover: Throws InvalidArgumentException for unset names; 'settings' returns the whole store. //should-do// {src: src/Support/HasDynamicAttributes.php:13}
+    - [ ] `getAllAttributes()`
+      - [ ] Missing docblock; should cover: Returns the whole attribute store; same as reading 'settings'. //should-do// {src: src/Support/HasDynamicAttributes.php:36}
+    - [ ] `setAttributes($attributes)`
+      - [ ] Missing docblock; should cover: Replaces the entire store, dropping existing attributes. //should-do// {src: src/Support/HasDynamicAttributes.php:40}
+    - [ ] `overwriteAttributes($attributes)`
+      - [ ] Missing docblock; should cover: Merges via array_merge; given values win, other existing attributes stay. //should-do// {src: src/Support/HasDynamicAttributes.php:44}
+  - [ ] Global functions in `src/Support/Helpers.php`
+    - [ ] `getCaller($depth)`
+      - [ ] Wrong docblock: @return mixed is really the caller's function name (string), and $depth above 1 is unsupported because the backtrace is limited to 3 frames. //should-do// {src: src/Support/Helpers.php:13}
+    - [ ] `e($value)`
+      - [ ] Missing docblock; should cover: Strips tags then escapes; single quotes unescaped on PHP 8.0; null stays null. //important// {src: src/Support/Helpers.php:17}
+    - [ ] `makeSlug($str)`
+      - [ ] Missing docblock; should cover: Drops chars outside [A-Za-z0-9-_ ] (umlauts vanish); spaces/underscores become '-'. //should-do// {src: src/Support/Helpers.php:23}
+    - [ ] `uecho($value)`
+      - [ ] Missing docblock; should cover: Echoes the escaped value (tags stripped first) instead of returning it. //should-do// {src: src/Support/Helpers.php:36}
+    - [ ] `var_swap($x, $y)`
+      - [ ] Missing docblock; should cover: Swaps two variables passed by reference. //should-do// {src: src/Support/Helpers.php:41}
+    - [ ] `shortenStr($str, $maxlength, $cutDescriptor)`
+      - [ ] Missing docblock; should cover: $maxlength includes the cut marker; fitting text keeps a trailing space; multibyte safe. //should-do// {src: src/Support/Helpers.php:47}
+    - [ ] `emptyToNull($value)`
+      - [ ] Missing docblock; should cover: By reference: sets empty values (0, '0', []) and string 'null' to null. //should-do// {src: src/Support/Helpers.php:63}
+    - [ ] `de_strtolower($string)`
+      - [ ] Missing docblock; should cover: Lowercases incl. Ä Ö Ü and transliterates ß to 'ss'. //should-do// {src: src/Support/Helpers.php:69}
+  - [ ] `Rest` (`src/Support/Rest.php`)
+    - [ ] Wrong class docblock: Property docblock of private $data says '@var object' but it holds an array (meta block plus payload keys). //nice-to-have// {src: src/Support/Rest.php:8}
+    - [ ] `__construct($data, $urlParts)`
+      - [ ] Vague docblock: Omits that $data is merged after an auto-generated 'meta' block (endpoint, request, timestamp) and can overwrite it; 'should be send' is unclear. //should-do// {src: src/Support/Rest.php:25}
+    - [ ] `ShowError($code, $message)`
+      - [ ] Wrong docblock: @param string $code is wrong, callers pass ints like 400 (use string|int); also omits that it replaces the payload and exits via execute(). //should-do// {src: src/Support/Rest.php:43}
+    - [ ] `execute($die)`
+      - [ ] Vague docblock: 'Sends the rest stuff' is vague: it echoes pretty-printed JSON without a Content-Type header and calls exit unless $die is false. //should-do// {src: src/Support/Rest.php:57}
+  - [ ] `StaticCache` (`src/Support/StaticCache.php`)
+    - [ ] Missing class docblock; should cover: Process-wide static cache bucketed by type, then key. //nice-to-have// {src: src/Support/StaticCache.php:5}
+    - [ ] `set($type, $key, $value)`
+      - [ ] Missing docblock; should cover: Returns the stored value; creates the type bucket on demand. //nice-to-have// {src: src/Support/StaticCache.php:9}
+    - [ ] `get($type, $key, $allowNull)`
+      - [ ] Missing docblock; should cover: Throws InvalidArgumentException for unknown type/key unless $allowNull; stored null counts as missing. //should-do// {src: src/Support/StaticCache.php:16}
+    - [ ] `getOrNull($type, $key)`
+      - [ ] Missing docblock; should cover: Like get() with $allowNull true; null also means stored null. //nice-to-have// {src: src/Support/StaticCache.php:28}
+    - [ ] `has($type, $key)`
+      - [ ] Missing docblock; should cover: False for keys holding null (isset semantics). //nice-to-have// {src: src/Support/StaticCache.php:32}
+- [ ] Frontend client library (Z.js) (`web/Z.js`)
+  - [ ] `Z namespace and typedefs`
+    - [ ] `Z (namespace)`
+      - [ ] Vague docblock: `@type {object} Z` misuses @type with a name; use `@namespace Z` so IDEs group the Z.Forms, Z.Request, Z.Lang and Z.Presets members. //nice-to-have// {src: web/Z.js:18}
+    - [ ] `Z.debug`
+      - [ ] Wrong docblock: Documented as a debug mode, but Z.debug is never read anywhere in Z.js; ZForm.send checks its own `this.debug` instead. //should-do// {src: web/Z.js:23}
+    - [ ] `Z.Forms.create`
+      - [ ] Wrong docblock: `options` is typed `*`, shows optional options as required, omits hidehints, sendOnSubmitClick, customEndpoint, collectOnly and inputHook, and has no @returns. //important// {src: web/Z.js:37}
+    - [ ] `Z.Request.action`
+      - [ ] Wrong docblock: Says data goes 'to the client' (it is POSTed to the server); handler runs only if the response parses as JSON; data gets mutated. //important// {src: web/Z.js:50}
+    - [ ] `Z.Request.root`
+      - [ ] Wrong docblock: Documents `action` as the sub-action checked by isAction(), but it is the URL path; the real `subaction` parameter is missing and `data` is argument three. //urgent// {src: web/Z.js:72}
+      - [ ] Wrong docblock: `async`, `parse` and `additionalParameters` are undocumented; handler is optional (default null) and receives the raw response when parsing is skipped or fails. //important// {src: web/Z.js:72}
+    - [ ] `Z.Lang keys`
+      - [ ] Missing JSDoc; should cover: Per-key docs: [0]/[1] placeholders, error_<type> lookup. //extra-effort// {src: web/Z.js:102}
+    - [ ] `Z.Presets`
+      - [ ] Vague docblock: 'Holds some presets to create fix effects' is unclear; say these are ready-made login, forgot-password and signup flows bound to the login controller. //nice-to-have// {src: web/Z.js:130}
+    - [ ] `Z.Presets.Login`
+      - [ ] Vague docblock: Does not state it posts to the login controller (URL 'login', action 'login'), toggles #loading and the error label, reloads if optional redirect is empty. //should-do// {src: web/Z.js:138}
+    - [ ] `Z.Presets.ForgotPassword`
+      - [ ] Wrong docblock: Description is copy-pasted from Login ('create a user login'); the function posts a password-reset request to login/forgot_password, and `redirect` is optional. //important// {src: web/Z.js:184}
+    - [ ] `Z.Presets.Signup`
+      - [ ] Wrong docblock: `alertErrors` is said to replace the error label, but server errors are written to the label and also alerted; redirect/additionalData are unmarked optional. //should-do// {src: web/Z.js:220}
+    - [ ] `InvalidError`
+      - [ ] Wrong docblock: Missing `name` (read by ZForm.send to find the field), `index` and `subname` (read by ZCED/ZCEDItem); `info` is optional, not required. //should-do// {src: web/Z.js:284}
+    - [ ] `CEDBlueprint`
+      - [ ] Wrong docblock: Lacks smallButton and deleteHook (both read by ZCEDItem), shows optional properties as required, and uses bare `array`/`Array` types for fields and value. //should-do// {src: web/Z.js:290}
+    - [ ] `CEDBlueprint.value`
+      - [ ] Wrong docblock: References PHP function createCEDFood, which does not exist; the helper is Controller::makeCEDFood. //important// {src: web/Z.js:294}
+    - [ ] `saveHook`
+      - [ ] Wrong docblock: Says data comes from the server, but with collectOnly the hook receives the form's getValues() result instead; no callback summary. //should-do// {src: web/Z.js:684}
+    - [ ] `formErrorHook`
+      - [ ] Vague docblock: No callback description; does not say fields are already marked invalid when it runs or that data is the parsed response with formErrors. //nice-to-have// {src: web/Z.js:689}
+    - [ ] `ZFormOptions typedef`
+      - [ ] Missing JSDoc; should cover: Shared options typedef for ZForm constructor and Z.Forms.create. //important// {src: web/Z.js:711}
+    - [ ] `Food`
+      - [ ] Wrong docblock: Omits the `type` ('option'|'optgroup') that feedData reads, marks `value` required though it falls back to text, and autocomplete does not use Food. //important// {src: web/Z.js:1191}
+    - [ ] `FormFieldOptions`
+      - [ ] Vague docblock: 'All parameters are optional' is misleading: a field without `name` posts as 'undefined' and collides in form.fields; missing `type` renders a plain text input. //should-do// {src: web/Z.js:1203}
+    - [ ] `FormFieldOptions.required`
+      - [ ] Vague docblock: Only adds the asterisk and drops the empty select option; it sets no HTML required attribute and blocks nothing client-side, validation is server-side. //important// {src: web/Z.js:1205}
+    - [ ] `FormFieldOptions.food`
+      - [ ] Wrong docblock: Typed as a single `Food`, but it is passed to feedData which iterates it; it must be `Food[]`, and only select types use it. //urgent// {src: web/Z.js:1214}
+    - [ ] `FormFieldOptions.autocompleteData / autocompleteTextCB / autocompleteCB`
+      - [ ] Wrong docblock: autocompleteData entries are plain strings, not Food[]; autocompleteTextCB is called with (highlightedHtml, value) and has no `text` default; autocompleteCB receives the picked string. //urgent// {src: web/Z.js:1220}
+    - [ ] `FormFieldOptions.autocompleteData (backend path)`
+      - [ ] Vague docblock: Backend-path mode does not document its contract: posts action 'autocomplete' with {value}, expects {data: string[]}, and shows results from the next keystroke. //should-do// {src: web/Z.js:1220}
+  - [ ] `ZCED`
+    - [ ] `ZCED`
+      - [ ] Vague docblock: 'Class that handles CED items' never says CED means create/edit/delete or that it renders a repeatable group of sub-fields. //extra-effort// {src: web/Z.js:302}
+    - [ ] `ZCED.constructor`
+      - [ ] Wrong docblock: Mentions nonexistent createCEDFood (real name makeCEDFood), documents blueprint as required although it defaults to {}, and omits deleteHook. //important// {src: web/Z.js:314}
+    - [ ] `ZCED instance properties`
+      - [ ] Missing JSDoc; should cover: items, name, dom, itemDom, buttonAdd, listeners; zform is unused. //extra-effort// {src: web/Z.js:318}
+    - [ ] `ZCED.createItem`
+      - [ ] Wrong docblock: `@returns {void}` is wrong: it returns the new ZCEDItem and also emits the 'change' event. //urgent// {src: web/Z.js:393}
+    - [ ] `ZCED.addItem`
+      - [ ] Wrong docblock: Param type `CEDItem` does not exist (class is ZCEDItem), the param has no description, and setting item.ced plus appending item.dom is not mentioned. //should-do// {src: web/Z.js:405}
+    - [ ] `ZCED.on`
+      - [ ] Vague docblock: Does not say which event types exist; only 'change' is ever emitted, and handlers are called without arguments. //should-do// {src: web/Z.js:418}
+    - [ ] `ZCED.emit`
+      - [ ] Wrong docblock: Says emit should only be called privately, yet ZCEDItem calls ced.emit('change') from outside; reword or tag @protected/@internal. //nice-to-have// {src: web/Z.js:430}
+    - [ ] `ZCED.updateMargins`
+      - [ ] Missing JSDoc; should cover: Internal helper; document margin handling or mark @private. //should-do// {src: web/Z.js:459}
+    - [ ] `ZCED.isDisabled / ZCED.reset`
+      - [ ] Missing JSDoc; should cover: Stub methods; shared comment attaches only to isHidden. //optional// {src: web/Z.js:477}
+  - [ ] `ZCEDItem`
+    - [ ] `ZCEDItem`
+      - [ ] Vague docblock: 'Class for an item in the CED' does not explain it is one repeatable row/card of sub-fields with a remove button and a dbId. //extra-effort// {src: web/Z.js:485}
+    - [ ] `ZCEDItem instance properties`
+      - [ ] Missing JSDoc; should cover: fields, dbId (-1 = unsaved), deleted, ced, dom, inputSpace. //extra-effort// {src: web/Z.js:507}
+    - [ ] `ZCEDItem.getFormData`
+      - [ ] Wrong docblock: `@returns {string}` is wrong; it returns a boolean, true when the item was appended and false when skipped (deleted, never saved). //should-do// {src: web/Z.js:591}
+    - [ ] `ZCEDItem.value (setter)`
+      - [ ] Vague docblock: Described only as 'Value'; does not say the property is write-only, takes {fieldName: value} plus optional dbId, and throws for unknown field names. //should-do// {src: web/Z.js:641}
+    - [ ] `ZCEDItem.addField`
+      - [ ] Missing JSDoc; should cover: Appends ZFormField, lays out rows, forwards input to CED change. //should-do// {src: web/Z.js:651}
+  - [ ] `ZForm`
+    - [ ] `ZForm.constructor options.customEndpoint`
+      - [ ] Wrong docblock: Documented as the URL send() posts to, but only the built-in submit button passes it; calling send() directly ignores it. //important// {src: web/Z.js:707}
+    - [ ] `ZForm.constructor`
+      - [ ] Wrong docblock: `options` has a default object but is documented as required; omitting it gives doReload true while passing {} gives false, undocumented. //should-do// {src: web/Z.js:711}
+    - [ ] `ZForm.fields`
+      - [ ] Missing JSDoc; should cover: Map of field name to ZFormField or ZCED. //should-do// {src: web/Z.js:720}
+    - [ ] `ZForm.dom`
+      - [ ] Missing JSDoc; should cover: Form root element; append it manually when options.dom is unused. //should-do// {src: web/Z.js:742}
+    - [ ] `ZForm instance properties`
+      - [ ] Missing JSDoc; should cover: buttonSubmit, alert, inputSpace, options, ceds. //extra-effort// {src: web/Z.js:754}
+    - [ ] `ZForm.getPostString`
+      - [ ] Vague docblock: Does not mention it calls markValid() on every field (clearing error states) and prepends the isFormData=true marker. //should-do// {src: web/Z.js:787}
+    - [ ] `ZForm.getFormData`
+      - [ ] Vague docblock: Does not mention it calls markValid() on every field (clearing error states) and sets the isFormData=1 marker the backend needs. //should-do// {src: web/Z.js:801}
+    - [ ] `ZForm.setValues`
+      - [ ] Vague docblock: `data` has no description, `options` has a default but is not marked optional, @returns is missing, and reset() leaves `meta` untouched. //important// {src: web/Z.js:840}
+    - [ ] `ZForm.addCustomHTML`
+      - [ ] Vague docblock: No @param for `html`, which is inserted as raw innerHTML into its own div. //should-do// {src: web/Z.js:861}
+    - [ ] `ZForm.send`
+      - [ ] Vague docblock: `customUrl` is undocumented, and the doc omits that calls are ignored while sending or within 300 ms and that the form is disabled meanwhile. //important// {src: web/Z.js:874}
+    - [ ] `ZForm.debug`
+      - [ ] Missing JSDoc; should cover: Set externally; send() logs FormData and responses; unrelated to Z.debug. //nice-to-have// {src: web/Z.js:885}
+    - [ ] `ZForm.addField`
+      - [ ] Vague docblock: Does not mention it forces doReload for CEDs, registers input/change listeners (unsaved hint, inputHook) and requires the global bsCustomFileInput. //should-do// {src: web/Z.js:941}
+    - [ ] `ZForm.createField`
+      - [ ] Wrong docblock: `options` is an out-of-sync copy of FormFieldOptions (lacks disabled and hidden; food and autocomplete options are mistyped); use `{FormFieldOptions}`. //urgent// {src: web/Z.js:1049}
+    - [ ] `ZForm.createEmpty`
+      - [ ] Wrong docblock: `size` defaults to 12 but is documented as required, and the description does not say it breaks the current row. //nice-to-have// {src: web/Z.js:1060}
+    - [ ] `ZForm.createActionButton`
+      - [ ] Vague docblock: Missing @returns for the HTMLButtonElement it returns; does not say `action` receives the click event or that the button is appended after submit. //important// {src: web/Z.js:1110}
+    - [ ] `ZForm.reset`
+      - [ ] Wrong docblock: Says it clears all values, but fields return to their `default`; CED fields and `meta` are untouched; @returns is missing. //important// {src: web/Z.js:1140}
+    - [ ] `ZForm.enable / ZForm.disable`
+      - [ ] Vague docblock: 'Enables the form' just repeats the name; does not say the submit button is toggled and individually disabled fields stay disabled. //nice-to-have// {src: web/Z.js:1149}
+    - [ ] `ZForm.isDisabled`
+      - [ ] Vague docblock: Does not state it also returns true while a submit request is in flight. //nice-to-have// {src: web/Z.js:1165}
+  - [ ] `ZFormField`
+    - [ ] `ZFormField instance properties`
+      - [ ] Missing JSDoc; should cover: name, type, label, errorLabel, hintText, width, default. //extra-effort// {src: web/Z.js:1242}
+    - [ ] `ZFormField.dom`
+      - [ ] Missing JSDoc; should cover: Field root element (column) inserted into the form layout. //should-do// {src: web/Z.js:1274}
+    - [ ] `ZFormField.input`
+      - [ ] Missing JSDoc; should cover: Underlying input/select/textarea/button element; wrapped for multi-select. //should-do// {src: web/Z.js:1291}
+    - [ ] `ZFormField.value`
+      - [ ] Vague docblock: `@type {any}` without description; does not say value is boolean for checkbox, a copied string[] for multi-select, string otherwise, nor how the setter coerces. //important// {src: web/Z.js:1527}
+    - [ ] `ZFormField.markInvalid`
+      - [ ] Vague docblock: Does not mention it sets custom validity, adds is-invalid and smooth-scrolls the field into view; the message comes from Z.Lang['error_' + type]. //should-do// {src: web/Z.js:1652}
+    - [ ] `ZFormField.feedData`
+      - [ ] Wrong docblock: Claims to feed autocomplete inputs, but only select and multi-select work (others just warn); `{=boolean} clear` is invalid syntax and its default true is unstated. //important// {src: web/Z.js:1684}
+    - [ ] `ZFormField.getPostString`
+      - [ ] Vague docblock: Does not mention the <#decURI#> prefix that the PHP backend strips and decodes, or the special checkbox ('1'/'0') and multi-select (name[]) encoding. //should-do// {src: web/Z.js:1761}
+    - [ ] `ZFormField.isDisabled`
+      - [ ] Missing JSDoc; should cover: True if the form is disabled or sending, or field disabled. //nice-to-have// {src: web/Z.js:1844}
+    - [ ] `ZFormField.hide`
+      - [ ] Missing JSDoc; should cover: Rebuilds form layout; no visible effect without a form. //should-do// {src: web/Z.js:1859}
+    - [ ] `ZFormField.show`
+      - [ ] Missing JSDoc; should cover: Shows field again; rebuilds form layout. //should-do// {src: web/Z.js:1864}
+    - [ ] `ZFormField.isHidden`
+      - [ ] Missing JSDoc; should cover: Trivial getter. //optional// {src: web/Z.js:1869}
+## 2. Type declarations: missing parameter and return types
+- [ ] Framework entry class (`src/ZubZet.php`)
+  - [ ] `ZubZet` (`src/ZubZet.php`)
+    - [ ] `setRequestResponse($request, $response)`
+      - [ ] Add return type `void`. Note: Callers: ZubZet::__construct only; result is unused. //should-do// {src: src/ZubZet.php:103}
+    - [ ] `replaceRequest($newState)`
+      - [ ] Add return type `void`. Note: Only caller is Router::reroute, which ignores the result. //should-do// {src: src/ZubZet.php:110}
+- [ ] Authentication (`src/Authentication`)
+  - [ ] `AuthenticationObject` (`src/Authentication/AuthenticationObject.php`)
+    - [ ] `checkInstance()`
+      - [ ] Add return type `void`. Note: Pure guard; throws InvalidArgumentException when detached; no caller uses a return value. //should-do// {src: src/Authentication/AuthenticationObject.php:33}
+    - [ ] `getField($field)`
+      - [ ] Add return type `mixed`. Note: Returns arbitrary cached values (scalars, null, arrays, User/Role/Organization objects); mixed is the honest type. $field is already typed. //important// {src: src/Authentication/AuthenticationObject.php:39}
+    - [ ] `id()`
+      - [ ] Add return type `int`. Note: Property is ?int but checkInstance() throws on null; docs/access-control.md claims int|string|null and should be updated. //important// {src: src/Authentication/AuthenticationObject.php:72}
+    - [ ] `nullId()`
+      - [ ] Add return type `void`. Note: Sets id and data to null; callers (Role/User::remove, Session::invalidate) ignore the result. //should-do// {src: src/Authentication/AuthenticationObject.php:78}
+  - [ ] `Organization` (`src/Authentication/Organization.php`)
+    - [ ] `loadObject($data)`
+      - [ ] Add return type `void`. Note: Compatible with User::loadObject(): void; only called from the constructor and HandleTrait::refresh(). //should-do// {src: src/Authentication/Organization.php:21}
+  - [ ] `Role` (`src/Authentication/Permission/Role.php`)
+    - [ ] `loadObject($data)`
+      - [ ] Add return type `void`. Note: Compatible with User::loadObject(): void; docblock already says @return void. Group inherits it. //should-do// {src: src/Authentication/Permission/Role.php:99}
+    - [ ] `refreshUsers()`
+      - [ ] Add return type `void`. Note: Private; docblock already says @return void. //nice-to-have// {src: src/Authentication/Permission/Role.php:174}
+    - [ ] `refreshPermissions()`
+      - [ ] Add return type `void`. Note: Matches User::refreshPermissions(): void; Permission trait calls it without using a result. //important// {src: src/Authentication/Permission/Role.php:196}
+  - [ ] `Session` (`src/Authentication/Session.php`)
+    - [ ] `loadObject($data)`
+      - [ ] Add return type `void`. Note: Called from constructor and HandleTrait::refresh(); same as User::loadObject(): void. //should-do// {src: src/Authentication/Session.php:23}
+  - [ ] `User` (`src/Authentication/User.php`)
+    - [ ] `identify()`
+      - [ ] Add return type `void`. Note: Body uses 'return $this->anonymousRequest();' which is illegal in void functions; split into call plus bare return. //important// {src: src/Authentication/User.php:63}
+    - [ ] `anonymousRequest()`
+      - [ ] Add return type `void`. Note: Private; body only sets isLoggedIn and returns bare. //nice-to-have// {src: src/Authentication/User.php:90}
+    - [ ] `checkPermission($permission)`
+      - [ ] Add types: `string $permission`. Note: Only caller Request::checkPermission passes a string; return type already declared. //important// {src: src/Authentication/User.php:100}
+    - [ ] `checkSuperPermission($permission)`
+      - [ ] Add types: `string $permission`. Note: Only caller Request::checkPermission passes a string; return type already declared. //important// {src: src/Authentication/User.php:105}
+    - [ ] `checkPermissionOf($permission, $userId)`
+      - [ ] Add types: `string $permission`. Note: $userId is already int; only $permission is untyped; callers pass strings. //important// {src: src/Authentication/User.php:125}
+- [ ] Bootstrap (`src/Bootstrap`)
+  - [ ] `Configuration` (`src/Bootstrap/Configuration.php`) [trait]
+    - [ ] `loadConfiguration($frameworkRoot, $params)`
+      - [ ] Add return type `void`. Note: Only caller is ZubZet::__construct; no value returned, so void is safe. //should-do// {src: src/Bootstrap/Configuration.php:12}
+- [ ] Console (`src/Console`)
+  - [ ] `ActionDiscovery` (`src/Console/ActionDiscovery.php`)
+    - [ ] closure in `find()` at line 42
+      - [ ] Add types: `\ReflectionMethod $method`; return `bool`. Note: array_filter callback over ReflectionClass::getMethods(). //optional// {src: src/Console/ActionDiscovery.php:42}
+    - [ ] closure in `find()` at line 49
+      - [ ] Add types: `\ReflectionMethod $method`; return `string`. Note: array_map callback; returns lowercase action name without action_ prefix. //optional// {src: src/Console/ActionDiscovery.php:49}
+- [ ] Core base classes (`src/Core`)
+  - [ ] `CanRetrieveBooterSettings` (`src/Core/CanRetrieveBooterSettings.php`) [trait]
+    - [ ] `getBooterSettings($key, $useDefault, $default)`
+      - [ ] Add types: `?string $key = null`, `bool $useDefault = true`, `mixed $default = null`; return `mixed`. Note: Callers pass non-bool 2nd arg (LoginController:317 '', Session.php:82 int); coerces in weak mode. config() helper forwards same args. //important// {src: src/Core/CanRetrieveBooterSettings.php:12}
+  - [ ] `CanRetrieveModel` (`src/Core/CanRetrieveModel.php`) [trait]
+    - [ ] `getModel($model, $dir)`
+      - [ ] Add return type `Model`. Note: Returns cached instance; models not extending Model would raise TypeError. Subclasses overriding getModel need compatible return type. //important// {src: src/Core/CanRetrieveModel.php:16}
+  - [ ] `Controller` (`src/Core/Controller.php`)
+    - [ ] `makeFood($table, $valueField, $textField, $optionalTextField)`
+      - [ ] Add types: `array $table`, `string $valueField`, `string $textField`, `?string $optionalTextField = null`; return `string|false`. Note: Returns json_encode() output (false on invalid UTF-8); echoed into views as a JS literal. //important// {src: src/Core/Controller.php:20}
+    - [ ] `makeCEDFood($table, $fields, $escape)`
+      - [ ] Add types: `array $table`, `array $fields`, `?callable $escape = null`; return `string`. Note: Returns hand-built JS array literal, not JSON; $escape is called as ($value, $field). //important// {src: src/Core/Controller.php:39}
+  - [ ] `Model` (`src/Core/Model.php`)
+    - [ ] `exec($query, $types, $params)`
+      - [ ] Add types: `string $types = ""`, `mixed $params = null`. Note: Real args are read via func_get_args(); $params is only a placeholder. Return type already declared. //important// {src: src/Core/Model.php:57}
+    - [ ] `getInsertId()`
+      - [ ] Add return type `int|string|null`. Note: Docblock says int; mysqli insert_id may be string for huge ids, null before the first query. //important// {src: src/Core/Model.php:68}
+    - [ ] `getFullTable($table, $fields)`
+      - [ ] Add types: `string $table`, `string $fields = "*"`; return `array`. //important// {src: src/Core/Model.php:94}
+    - [ ] `getTableWhere($table, $fields, $where)`
+      - [ ] Add types: `string $table`, `string $fields`, `string $where`; return `array`. Note: Signature lacks $types/$values, but ZController passes 5 args via func_get_args(); consider declaring them. //important// {src: src/Core/Model.php:105}
+    - [ ] `countTableEntries($table)`
+      - [ ] Add types: `string $table`; return `int`. Note: COUNT(*) via prepared statement is int; e2e callers cast (int). //important// {src: src/Core/Model.php:114}
+    - [ ] `heartbeat($waitForTimeout)`
+      - [ ] Add types: `bool $waitForTimeout = true`; return `void`. Note: Deprecated since 1.2.0; discards the bool that Connection::heartbeat returns. //nice-to-have// {src: src/Core/Model.php:128}
+    - [ ] `getResult()`
+      - [ ] Add return type `\mysqli_result|bool|null`. Note: Matches the @return and Interaction::$result; null before the first query, false for non-SELECT. //important// {src: src/Core/Model.php:136}
+    - [ ] `countResults()`
+      - [ ] Add return type `int`. Not safe as proposed: Unsafe: after a non-SELECT query $result is false, num_rows is read on false (warning) and null is returned; an int return type would turn that into a TypeError. Use ?int or fix the body first [needs decision] //important// {src: src/Core/Model.php:144}
+- [ ] Database and migrations (`src/Database`)
+  - [ ] `Connection` (`src/Database/Connection.php`)
+    - [ ] `connect()`
+      - [ ] Add return type `void`. Note: Private; no return value. //nice-to-have// {src: src/Database/Connection.php:57}
+    - [ ] arrow function in `connect()` at line 67
+      - [ ] Add types: `mixed $v`; return `bool`. Note: Arrow fn in array_filter over config values. //optional// {src: src/Database/Connection.php:67}
+    - [ ] `assertConnection()`
+      - [ ] Add return type `void`. Note: Only bare returns. //should-do// {src: src/Database/Connection.php:96}
+    - [ ] `execQuery($query)`
+      - [ ] Add return type `Connection`. Note: Returns the result of exec(), i.e. $this; Query param is already typed. //important// {src: src/Database/Connection.php:127}
+    - [ ] `exec($query)`
+      - [ ] Add types: `string $query`; return `Connection`. Note: Extra args ($types, ...$values) come via func_get_args(); Model::exec forwards them. Consider ?string $types, mixed ...$params. //important// {src: src/Database/Connection.php:174}
+    - [ ] `heartbeat($waitForTimeout, $timeoutBuffer)`
+      - [ ] Add types: `bool $waitForTimeout = true`, `int $timeoutBuffer = 30`. Note: Deprecated since 1.2.0; return type already declared. //nice-to-have// {src: src/Database/Connection.php:318}
+    - [ ] `disconnect()`
+      - [ ] Add return type `void`. Note: Only bare return. //should-do// {src: src/Database/Connection.php:362}
+  - [ ] `Interaction` (`src/Database/Interaction.php`) [trait]
+    - [ ] `getInsertId()`
+      - [ ] Add return type `int|string|null`. Note: insertId is null before first query, otherwise mysqli insert_id (int|string). //important// {src: src/Database/Interaction.php:32}
+    - [ ] `resultToArray($out)`
+      - [ ] Add types: `array $out = []`. Note: Return type array already declared; Model::resultToArray declares no params but forwards func_get_args(). //important// {src: src/Database/Interaction.php:40}
+    - [ ] `mergeAsGroup($groupBy, $subElement)`
+      - [ ] Add types: `string $groupBy`, `?string $subElement = null`; return `array`. Note: Callers pass column names as strings. //important// {src: src/Database/Interaction.php:53}
+    - [ ] `getFullTable($table, $fields)`
+      - [ ] Add types: `string $table`, `string $fields = "*"`; return `array`. //important// {src: src/Database/Interaction.php:83}
+    - [ ] `getTableWhere($table, $fields, $where, $types, $values)`
+      - [ ] Add types: `string $table`, `string $fields = "*"`, `string $where = ""`, `string $types = ""`, `array $values = []`; return `array`. Note: Default $where='' yields invalid SQL; callers pass ('i', [1]) style args. //important// {src: src/Database/Interaction.php:98}
+    - [ ] `countTableEntries($table)`
+      - [ ] Add types: `string $table`; return `int`. Note: Returns the CNT column of a prepared COUNT(*) query. //important// {src: src/Database/Interaction.php:109}
+    - [ ] `countResults()`
+      - [ ] Add return type `int`. Not safe as proposed: Unsafe: returns null (plus warning) after a non-SELECT query; an int return type would TypeError. Use ?int or return 0 for non-result queries first [needs decision] //important// {src: src/Database/Interaction.php:117}
+    - [ ] `checkIfUnique($table, $field, $value, $ignoreField, $ignoreValue)`
+      - [ ] Add types: `string $table`, `string $field`, `mixed $value`, `?string $ignoreField = null`, `mixed $ignoreValue = null`; return `bool`. Note: Form validation passes rule values; ignoreValue may be int. //important// {src: src/Database/Interaction.php:133}
+    - [ ] `checkIfExists($table, $field, $value)`
+      - [ ] Add types: `string $table`, `string $field`, `mixed $value`; return `bool`. //important// {src: src/Database/Interaction.php:152}
+  - [ ] `Migrate` (`src/Database/Migration/Commands/Migrate.php`)
+    - [ ] arrow function in `execute()` at line 149
+      - [ ] Add types: `MigrationFile $m`; return `string`. Note: Arrow fn mapping MigrationFile to ->name. //optional// {src: src/Database/Migration/Commands/Migrate.php:149}
+    - [ ] arrow function in `execute()` at line 153
+      - [ ] Add types: `MigrationFile $f`; return `bool`. Note: Arrow fn in array_filter over pending migrations. //optional// {src: src/Database/Migration/Commands/Migrate.php:153}
+    - [ ] arrow function in `executeSqlBuffer()` at line 236
+      - [ ] Add types: `string $s`; return `bool`. Note: Arrow fn over trimmed SQL parts. //optional// {src: src/Database/Migration/Commands/Migrate.php:236}
+  - [ ] `Seed` (`src/Database/Migration/Commands/Seed.php`)
+    - [ ] `resetDatabase($out)`
+      - [ ] Add return type `void`. Note: Ignores exit code of the nested db:migrate run. //nice-to-have// {src: src/Database/Migration/Commands/Seed.php:88}
+    - [ ] `executeBufferedStatements($out)`
+      - [ ] Add return type `void`. Note: Only bare return. //nice-to-have// {src: src/Database/Migration/Commands/Seed.php:110}
+    - [ ] `importFile($filePath, $out)`
+      - [ ] Add types: `string $filePath`; return `void`. Note: Callers pass paths from getFiles(); throws Exception for unsupported extension. //nice-to-have// {src: src/Database/Migration/Commands/Seed.php:119}
+    - [ ] `executePHPStatements($filePath)`
+      - [ ] Add types: `string $filePath`; return `void`. //nice-to-have// {src: src/Database/Migration/Commands/Seed.php:138}
+    - [ ] `executeSQLStatements($filepath)`
+      - [ ] Add types: `string $filepath`; return `void`. //nice-to-have// {src: src/Database/Migration/Commands/Seed.php:148}
+  - [ ] `Sync` (`src/Database/Migration/Commands/Sync.php`)
+    - [ ] arrow function in `execute()` at line 139
+      - [ ] Add types: `MigrationFile $m`; return `string`. Note: Arrow fn mapping MigrationFile to ->name. //optional// {src: src/Database/Migration/Commands/Sync.php:139}
+    - [ ] arrow function in `execute()` at line 143
+      - [ ] Add types: `MigrationFile $f`; return `bool`. Note: Arrow fn in array_filter over pending migrations. //optional// {src: src/Database/Migration/Commands/Sync.php:143}
+  - [ ] `DatabaseConnection` (`src/Database/Migration/Commands/Traits/DatabaseConnection.php`) [trait]
+    - [ ] `setDatabaseConnection()`
+      - [ ] Add return type `void`. Note: Private trait method; no return value. //nice-to-have// {src: src/Database/Migration/Commands/Traits/DatabaseConnection.php:5}
+  - [ ] `Migration` (`src/Database/Migration/Migration.php`)
+    - [ ] `tableDrop($name)`
+      - [ ] Add return type `void`. Note: Only queues an action; BC risk only if a user migration overrides it. //should-do// {src: src/Database/Migration/Migration.php:45}
+    - [ ] `tableRename($oldName, $newName)`
+      - [ ] Add return type `void`. Note: Only queues an action. //should-do// {src: src/Database/Migration/Migration.php:52}
+    - [ ] `run($sql)`
+      - [ ] Add return type `void`. Note: Only queues an action. //should-do// {src: src/Database/Migration/Migration.php:60}
+  - [ ] `MigrationFile` (`src/Database/Migration/Parser/MigrationFile.php`)
+    - [ ] `extractData()`
+      - [ ] Add return type `void`. Note: Fills sqlBuffer/skip/environment/manual by reference via the parser. //should-do// {src: src/Database/Migration/Parser/MigrationFile.php:25}
+  - [ ] `MigrationPHP` (`src/Database/Migration/Parser/MigrationPHP.php`)
+    - [ ] `extractSqlFromMigration($migration, $fromSchema, $schemaManager, $platform)`
+      - [ ] Add types: `\Doctrine\DBAL\Schema\AbstractSchemaManager $schemaManager`. Note: Exists in DBAL 3.10 and 4.x; return type array already declared. //nice-to-have// {src: src/Database/Migration/Parser/MigrationPHP.php:60}
+    - [ ] `createAction($sqlBuffer, $action, $platform)`
+      - [ ] Add types: `array $sqlBuffer`, `array $action`; return `void`. Note: sqlBuffer is by reference. //nice-to-have// {src: src/Database/Migration/Parser/MigrationPHP.php:90}
+    - [ ] `alterAction($sqlBuffer, $action, $fromSchema, $platform, $comparator)`
+      - [ ] Add types: `array $sqlBuffer`, `array $action`, `\Doctrine\DBAL\Schema\Comparator $comparator`; return `void`. Note: sqlBuffer is by reference; comparator comes from createComparator(). //nice-to-have// {src: src/Database/Migration/Parser/MigrationPHP.php:97}
+    - [ ] `dropAction($sqlBuffer, $action, $platform)`
+      - [ ] Add types: `array $sqlBuffer`, `array $action`; return `void`. Note: sqlBuffer is by reference. //nice-to-have// {src: src/Database/Migration/Parser/MigrationPHP.php:114}
+    - [ ] `renameAction($sqlBuffer, $action, $platform)`
+      - [ ] Add types: `array $sqlBuffer`, `array $action`; return `void`. Note: sqlBuffer is by reference. //nice-to-have// {src: src/Database/Migration/Parser/MigrationPHP.php:118}
+  - [ ] `SeedPHP` (`src/Database/Migration/Parser/SeedPHP.php`)
+    - [ ] `loadPhpSeed($filePath)`
+      - [ ] Add types: `string $filePath`; return `array`. Note: Returns the Seed::$queries array (Cake Query objects). //should-do// {src: src/Database/Migration/Parser/SeedPHP.php:7}
+  - [ ] `Seed` (`src/Database/Migration/Seed.php`)
+    - [ ] `run()`
+      - [ ] Add return type `void`. Not safe as proposed: BC break: Seed::run() is abstract and user seeds (docs/core-features/migrations/index.md:331 and tests/e2e/app/Database/seed/Test.php) declare run() without a return type, which becomes a fatal incompatibility [needs decision] //should-do// {src: src/Database/Migration/Seed.php:13}
+    - [ ] `addQuery($query)`
+      - [ ] Add return type `void`. Note: Query param already typed. //should-do// {src: src/Database/Migration/Seed.php:15}
+    - [ ] `insert($table, $data)`
+      - [ ] Add types: `string $table`; return `void`. Note: Forwards to dbInsert(?string). //should-do// {src: src/Database/Migration/Seed.php:19}
+- [ ] Error handling and debug bar (`src/ErrorHandling`)
+  - [ ] `MonologCollector` (`src/ErrorHandling/DebugBar/Collectors/MonologCollector.php`)
+    - [ ] `write($record)`
+      - [ ] Add types: `mixed $record`. Note: Do not narrow to array: php-debugbar parent write() is untyped (Monolog 3 LogRecord); narrowing is a fatal error. //nice-to-have// {src: src/ErrorHandling/DebugBar/Collectors/MonologCollector.php:13}
+  - [ ] `QueryCollector` (`src/ErrorHandling/DebugBar/Collectors/QueryCollector.php`)
+    - [ ] closure in `interpolatePlaceholders()` at line 42
+      - [ ] Add types: `array $match`; return `string`. Note: preg_replace_callback callback; always receives the match array. //optional// {src: src/ErrorHandling/DebugBar/Collectors/QueryCollector.php:42}
+    - [ ] `getName()`
+      - [ ] Add return type `string`. Note: Vendor DataCollectorInterface::getName is untyped, so adding string is compatible; TemplateCollector already uses string. //should-do// {src: src/ErrorHandling/DebugBar/Collectors/QueryCollector.php:50}
+    - [ ] `getAssets()`
+      - [ ] Add return type `array`. Note: Vendor AssetProvider::getAssets is untyped, so array is compatible; TemplateCollector::getAssets already uses array. //should-do// {src: src/ErrorHandling/DebugBar/Collectors/QueryCollector.php:65}
+  - [ ] `TemplateCollector` (`src/ErrorHandling/DebugBar/Collectors/TemplateCollector.php`)
+    - [ ] arrow function in `addTemplate()` at line 19
+      - [ ] Add types: `mixed $value`; return `string`. Note: DataFormatter::formatVar returns a trimmed string; values are arbitrary template data. //optional// {src: src/ErrorHandling/DebugBar/Collectors/TemplateCollector.php:19}
+  - [ ] `ExceptionBehavior` (`src/ErrorHandling/ExceptionBehavior.php`) [trait]
+    - [ ] closure in `setExceptionBehavior()` at line 65
+      - [ ] Add types: `int $severity`, `string $message`, `string $file`, `int $line`; return `bool`. Note: set_error_handler callback; returns false when severity is not reported, otherwise throws ErrorException. //optional// {src: src/ErrorHandling/ExceptionBehavior.php:65}
+    - [ ] closure in `setExceptionBehavior()` at line 75
+      - [ ] Add types: `int $severity`, `string $message`, `string $file`, `int $line`; return `bool`. Note: set_error_handler callback; always returns false so PHP's default handler continues. //optional// {src: src/ErrorHandling/ExceptionBehavior.php:75}
+    - [ ] closure in `registerExceptionHandler()` at line 99
+      - [ ] Add return type `void`. Note: Throwable already typed; handler never returns a value, rethrows when Whoops is inactive. //optional// {src: src/ErrorHandling/ExceptionBehavior.php:99}
+  - [ ] `WhoopsHandler` (`src/ErrorHandling/WhoopsHandler.php`)
+    - [ ] `initialize()`
+      - [ ] Add return type `void`. Note: Only caller is setExceptionBehavior, which ignores the result. //should-do// {src: src/ErrorHandling/WhoopsHandler.php:23}
+    - [ ] closure in `configureEditorLink()` at line 48
+      - [ ] Add types: `string $file`, `int $line`; return `?string`. Note: Whoops docs the args as string and int (cast in template); a null return means no editor link. //optional// {src: src/ErrorHandling/WhoopsHandler.php:48}
+- [ ] Forms and validation (`src/Form`)
+  - [ ] `Upload` (`src/Form/Upload.php`)
+    - [ ] `upload($file, $uploadDir, $maxSize, $typeArray)`
+      - [ ] Add types: `?array $file`, `string $uploadDir`, `int $maxSize`, `array $typeArray`; return `int`. Note: $file is a $_FILES entry from getFile() (null if missing); callers passing ''/false would now TypeError. //should-do// {src: src/Form/Upload.php:47}
+    - [ ] `image($file, $uploadDir, $maxSize)`
+      - [ ] Add types: `?array $file`, `string $uploadDir`, `int $maxSize = FILE_SIZE_2MB`; return `int`. Note: Delegates to upload(); keep compatible with its ?array $file. //should-do// {src: src/Form/Upload.php:96}
+    - [ ] `video($file, $uploadDir, $maxSize)`
+      - [ ] Add types: `?array $file`, `string $uploadDir`, `int $maxSize = FILE_SIZE_100MB`; return `int`. Note: Delegates to upload(); keep compatible with its ?array $file. //should-do// {src: src/Form/Upload.php:112}
+    - [ ] `audio($file, $uploadDir, $maxSize)`
+      - [ ] Add types: `?array $file`, `string $uploadDir`, `int $maxSize = FILE_SIZE_10MB`; return `int`. Note: Delegates to upload(); keep compatible with its ?array $file. //should-do// {src: src/Form/Upload.php:128}
+  - [ ] `CanValidateForm` (`src/Form/Validation/CanValidateForm.php`) [trait]
+    - [ ] `validateForm($fields, $data)`
+      - [ ] Add types: `array $fields`, `?array $data = null`; return `Result`. Note: validateCED passes POST rows that may be non-array on tampered input (would TypeError); [] falls back to POST. Only safe together with an is_array() guard in validateCED(): a tampered POST row (string instead of array) would otherwise turn from a silent null value into a TypeError/500. Empty array still falls back to POST+FILES via the loose == null check. //important// {src: src/Form/Validation/CanValidateForm.php:16}
+  - [ ] `CanValidateMultiForm` (`src/Form/Validation/CanValidateMultiForm.php`) [trait]
+    - [ ] `validateCED($name, $rules)`
+      - [ ] Add types: `string $name`, `array $rules`; return `Result`. Note: $rules is an array of Field objects. //important// {src: src/Form/Validation/CanValidateMultiForm.php:17}
+  - [ ] `Field` (`src/Form/Validation/Field.php`)
+    - [ ] `__construct($name, $dbName)`
+      - [ ] Add types: `string $name`, `?string $dbName = null`. Note: Constructor, no return type. //important// {src: src/Form/Validation/Field.php:55}
+    - [ ] `filter($filter)`
+      - [ ] Add types: `int $filter`; return `static`. Note: Returns $this; subclass overrides must declare a compatible return type. //important// {src: src/Form/Validation/Field.php:76}
+    - [ ] `unique($table, $field, $ignoreField, $ignoreValue)`
+      - [ ] Add types: `string $table`, `string $field`, `?string $ignoreField = null`, `string|int|null $ignoreValue = null`; return `static`. Note: ZController passes an int user id as $ignoreValue; it is bound as string. //important// {src: src/Form/Validation/Field.php:100}
+    - [ ] `exists($table, $field)`
+      - [ ] Add types: `string $table`, `string $field`; return `static`. //important// {src: src/Form/Validation/Field.php:123}
+    - [ ] `in($allowedValues)`
+      - [ ] Add return type `static`. Note: Param already array; only return type is missing. //important// {src: src/Form/Validation/Field.php:146}
+    - [ ] `checked()`
+      - [ ] Add return type `static`. //important// {src: src/Form/Validation/Field.php:165}
+    - [ ] `required()`
+      - [ ] Add return type `static`. //important// {src: src/Form/Validation/Field.php:176}
+    - [ ] `length($min, $max)`
+      - [ ] Add types: `int $min`, `int $max`; return `static`. //important// {src: src/Form/Validation/Field.php:198}
+    - [ ] `integer()`
+      - [ ] Add return type `static`. //important// {src: src/Form/Validation/Field.php:219}
+    - [ ] `range($min, $max)`
+      - [ ] Add types: `int|float $min`, `int|float $max`; return `static`. Note: Docblock says float; int|float keeps int bounds intact in the error info payload. //important// {src: src/Form/Validation/Field.php:240}
+    - [ ] `date($format)`
+      - [ ] Add types: `string $format = "Y-m-d"`; return `static`. Note: The format is currently unused by validateForm(). //important// {src: src/Form/Validation/Field.php:261}
+    - [ ] `file($maxSize, $types)`
+      - [ ] Add types: `int $maxSize`, `array $types = []`; return `static`. //important// {src: src/Form/Validation/Field.php:277}
+    - [ ] `regex($expression, $exceptions)`
+      - [ ] Add types: `string $expression`, `array $exceptions = []`; return `static`. //important// {src: src/Form/Validation/Field.php:299}
+  - [ ] `Result` (`src/Form/Validation/Result.php`)
+    - [ ] `getValue($name)`
+      - [ ] Add types: `string $name`; return `mixed`. Note: Returns the field value (scalar or array) or null. //important// {src: src/Form/Validation/Result.php:51}
+    - [ ] `addCustomError($name, $type)`
+      - [ ] Add types: `string $name`, `string $type`; return `void`. //important// {src: src/Form/Validation/Result.php:63}
+- [ ] Bundled controllers (`src/IncludedComponents/controllers`)
+  - [ ] `ErrorController` (`src/IncludedComponents/controllers/ErrorController.php`)
+    - [ ] `action_403($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. Note: Request and Response are global class aliases of ZubZet\Framework\Message classes; docs examples already use them. //should-do// {src: src/IncludedComponents/controllers/ErrorController.php:19}
+    - [ ] `action_404($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. //should-do// {src: src/IncludedComponents/controllers/ErrorController.php:32}
+    - [ ] `action_500($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. //should-do// {src: src/IncludedComponents/controllers/ErrorController.php:45}
+  - [ ] `IndexController` (`src/IncludedComponents/controllers/IndexController.php`)
+    - [ ] `action_index($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. //should-do// {src: src/IncludedComponents/controllers/IndexController.php:19}
+  - [ ] `LoginController` (`src/IncludedComponents/controllers/LoginController.php`)
+    - [ ] `action_index($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. Note: Body uses 'return $res->render()/error()/success()'; a void method cannot return a value, so drop those returns. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:23}
+    - [ ] `action_logout($req, $res)`
+      - [ ] Add types: `Request $req`; return `void`. Note: Body is 'return $res->logout()'; rewrite as plain call when adding void. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:99}
+    - [ ] `action_signup($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. Note: Several 'return $res->error()/success()' statements must lose the return before adding void. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:108}
+    - [ ] `action_forgot_password($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:164}
+    - [ ] `action_reset($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:217}
+    - [ ] `action_verify($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:259}
+    - [ ] `action_create_password($req, $res)`
+      - [ ] Add types: `Request $req`, `Response $res`; return `void`. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:294}
+    - [ ] `action_change_password($req, $res)`
+      - [ ] Add return type `void`. //should-do// {src: src/IncludedComponents/controllers/LoginController.php:306}
+    - [ ] `send_verify_mail($req, $res, $userId)`
+      - [ ] Add types: `int $userId`; return `void`. Note: Callers pass the new insert id or a user row id; numeric strings coerce to int. //nice-to-have// {src: src/IncludedComponents/controllers/LoginController.php:310}
+  - [ ] `ZController` (`src/IncludedComponents/controllers/ZController.php`)
+    - [ ] `action_index($req, $res)`
+      - [ ] Add return type `void`. Note: Body uses 'return $res->render()'; remove the return keyword when adding void. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:18}
+    - [ ] `action_maintenance($req, $res)`
+      - [ ] Add return type `void`. Note: Body uses 'return $res->success()/render()'; remove the return keyword when adding void. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:23}
+    - [ ] `action_add_user($req, $res)`
+      - [ ] Add return type `void`. Note: Several 'return $res->...' statements must drop the return when adding void. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:44}
+    - [ ] `action_edit_user($req, $res)`
+      - [ ] Add return type `void`. Note: Several 'return $res->...' statements must drop the return when adding void. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:79}
+    - [ ] `action_login_as($req, $res)`
+      - [ ] Add return type `void`. Note: Has bare 'return;' plus 'return $res->rerouteUrl()' (exits); drop the value return. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:139}
+    - [ ] `action_groups($req, $res)`
+      - [ ] Add return type `void`. Note: Body uses 'return $res->render()'; remove the return keyword when adding void. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:150}
+    - [ ] `action_roles($req, $res)`
+      - [ ] Add return type `void`. Note: Many 'return $res->...' statements (generateRest, error, success, formErrors) must drop the return. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:159}
+    - [ ] `action_database($req, $res)`
+      - [ ] Add return type `void`. Note: Also 'return exportToCsv()' and 'return $res->render()' must drop the return when adding void. //nice-to-have// {src: src/IncludedComponents/controllers/ZController.php:210}
+- [ ] Bundled models (`src/IncludedComponents/models`)
+  - [ ] `z_adminDashboardModel` (`src/IncludedComponents/models/z_adminDashboardModel.php`)
+    - [ ] arrow function in `getTableStatus()` at line 20
+      - [ ] Add types: `array $a`, `array $b`; return `int`. Note: Rows from SHOW TABLE STATUS; returns the spaceship result. //optional// {src: src/IncludedComponents/models/z_adminDashboardModel.php:20}
+    - [ ] arrow function in `getTableStatus()` at line 26
+      - [ ] Add types: `?int $carry`, `array $t`; return `int`. Note: array_reduce has no initial value, so carry starts as null; add initial 0 to use plain int. //optional// {src: src/IncludedComponents/models/z_adminDashboardModel.php:26}
+    - [ ] arrow function in `getRowStatus()` at line 35
+      - [ ] Add types: `array $t`; return `string`. Note: Returns the table name column of a SHOW TABLE STATUS row. //optional// {src: src/IncludedComponents/models/z_adminDashboardModel.php:35}
+    - [ ] `exportToCsv($table)`
+      - [ ] Add return type `void`. Note: Streams CSV and returns without exit; ZController does 'return exportToCsv()', adjust that caller too. //nice-to-have// {src: src/IncludedComponents/models/z_adminDashboardModel.php:90}
+  - [ ] `z_fileModel` (`src/IncludedComponents/models/z_fileModel.php`)
+    - [ ] `add($ref, $type, $name, $extension, $size)`
+      - [ ] Add types: `string $ref`, `string $type`, `string $name`, `string $extension`, `int $size`; return `int`. Note: Returns getInsertId() of the INT auto-increment z_file.id. //nice-to-have// {src: src/IncludedComponents/models/z_fileModel.php:25}
+    - [ ] `getById($fileId)`
+      - [ ] Add types: `int $fileId`; return `?array`. Note: Docblock says string[] but resultToLine() returns the row or null; no callers in src. //nice-to-have// {src: src/IncludedComponents/models/z_fileModel.php:36}
+  - [ ] `z_generalModel` (`src/IncludedComponents/models/z_generalModel.php`)
+    - [ ] `getLanguageList()`
+      - [ ] Add return type `array`. //nice-to-have// {src: src/IncludedComponents/models/z_generalModel.php:20}
+    - [ ] `getLanguageById($id)`
+      - [ ] Add types: `int $id`; return `?array`. Note: Response::sendEmailToUser passes z_user.languageId, which is INT NOT NULL. //nice-to-have// {src: src/IncludedComponents/models/z_generalModel.php:29}
+    - [ ] `getLanguageByValue($value, $defaultLanguageId)`
+      - [ ] Add types: `string $value`, `int $defaultLanguageId = 1`; return `int`. //nice-to-have// {src: src/IncludedComponents/models/z_generalModel.php:40}
+    - [ ] `getUniqueRef()`
+      - [ ] Add return type `string`. //nice-to-have// {src: src/IncludedComponents/models/z_generalModel.php:50}
+    - [ ] `checkUniqueRef($ref)`
+      - [ ] Add types: `string $ref`; return `bool`. //nice-to-have// {src: src/IncludedComponents/models/z_generalModel.php:64}
+    - [ ] `getGroups()`
+      - [ ] Add return type `array`. //nice-to-have// {src: src/IncludedComponents/models/z_generalModel.php:70}
+  - [ ] `z_loggerModel` (`src/IncludedComponents/models/z_loggerModel.php`)
+    - [ ] `appendEnvironment($logRecord)`
+      - [ ] Add types: `array $logRecord`; return `void`. Note: By-reference parameter (&$logRecord); Monolog 2 record array from JsonFormatter and log(). //nice-to-have// {src: src/IncludedComponents/models/z_loggerModel.php:33}
+    - [ ] `log($logRecord)`
+      - [ ] Add return type `void`. //nice-to-have// {src: src/IncludedComponents/models/z_loggerModel.php:42}
+  - [ ] `z_loginModel` (`src/IncludedComponents/models/z_loginModel.php`)
+    - [ ] `validateSession($session)`
+      - [ ] Add return type `bool`. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:83}
+    - [ ] `getUserByLogin($email)`
+      - [ ] Add types: `?string $email`; return `array|false`. Note: LoginController passes getPost(), which is null when absent; docblock says bool|array|null but null/true never returned. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:134}
+    - [ ] `newLoginTry($userId)`
+      - [ ] Add types: `int $userId`; return `void`. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:244}
+    - [ ] `countLoginTriesByTimeSpan($userId, $datetime)`
+      - [ ] Add types: `int $userId`, `string $datetime`; return `int`. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:255}
+    - [ ] `addResetCode($userId, $ref, $reason)`
+      - [ ] Add types: `int $userId`, `string $ref`, `string $reason`; return `string`. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:268}
+    - [ ] `getResetCode($code, $timespan)`
+      - [ ] Add types: `string $code`, `?string $timespan`; return `array|false`. Note: LoginController passes getParameters(0,1), false when missing; coerces to ''. timespan is e.g. '60 minutes'. config forgotPasswordTimeSpan has no framework default, so getBooterSettings() can pass null; a plain string type would TypeError there (today it silently makes every reset code valid forever). $code may be false (coerces to ''). Timespan is a relative interval like '60 minutes'. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:281}
+    - [ ] `disableResetCode($id)`
+      - [ ] Add types: `int $id`; return `void`. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:293}
+    - [ ] `addTooManyLoginsEmailByUserId($userId)`
+      - [ ] Add types: `int $userId`; return `void`. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:302}
+    - [ ] `sendTooManyLoginsEmailByUserId($userId)`
+      - [ ] Add types: `int $userId`; return `bool`. //nice-to-have// {src: src/IncludedComponents/models/z_loginModel.php:312}
+  - [ ] `z_migrationModel` (`src/IncludedComponents/models/z_migrationModel.php`)
+    - [ ] `markAsExecuted($migration, $date, $version)`
+      - [ ] Add types: `string $date`, `string|int $version`. Note: Callers pass Y-m-d string and MigrationFile::$version (string); DB column is integer. Method already returns void; keep it. //nice-to-have// {src: src/IncludedComponents/models/z_migrationModel.php:106}
+    - [ ] closure in `sortMigrations()` at line 149
+      - [ ] Add return type `int`. //optional// {src: src/IncludedComponents/models/z_migrationModel.php:149}
+    - [ ] `parseMigration($cleanFilename)`
+      - [ ] Add return type `MigrationFile`. Note: Private; throws InvalidArgumentException on malformed file names. //nice-to-have// {src: src/IncludedComponents/models/z_migrationModel.php:163}
+  - [ ] `z_permissionModel` (`src/IncludedComponents/models/z_permissionModel.php`)
+    - [ ] `removeUser($user)`
+      - [ ] Add return type `void`. //nice-to-have// {src: src/IncludedComponents/models/z_permissionModel.php:204}
+    - [ ] closure in `getNotVerifiedUsers()` at line 297
+      - [ ] Add types: `QueryExpression $exp`; return `QueryExpression`. Note: CakePHP 4 passes a QueryExpression and gt() returns $this; class already imports QueryExpression. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:297}
+    - [ ] arrow function in `removeRolesGroupsFromUser()` at line 406
+      - [ ] Add types: `Role|Group $role`; return `int|string`. Note: AuthenticationObject::id() is itself untyped. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:406}
+    - [ ] closure in `getRolesByAccessToAnyOf()` at line 443
+      - [ ] Add types: `QueryExpression $exp`; return `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:443}
+    - [ ] closure in `getRolesByAccessToAll()` at line 474
+      - [ ] Add types: `QueryExpression $exp`; return `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:474}
+    - [ ] closure in `getUsersByAccessToAll()` at line 503
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:503}
+    - [ ] closure in `getUsersByAccessToAll()` at line 520
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:520}
+    - [ ] closure in `getUsersByAccessToAll()` at line 540
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:540}
+    - [ ] arrow function in `getUsersByAccessToAll()` at line 544
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:544}
+    - [ ] closure in `getUsersByAccessToAnyOf()` at line 568
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:568}
+    - [ ] closure in `getUsersByAccessToAnyOf()` at line 589
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:589}
+    - [ ] closure in `getUsersByAccessToAnyOf()` at line 603
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:603}
+    - [ ] arrow function in `getUsersByAccessToAnyOf()` at line 607
+      - [ ] Add return type `QueryExpression`. //optional// {src: src/IncludedComponents/models/z_permissionModel.php:607}
+  - [ ] `z_userModel` (`src/IncludedComponents/models/z_userModel.php`)
+    - [ ] `getUserById($userid)`
+      - [ ] Add types: `int $userid`; return `array|false`. Note: ZController passes a URL string (non-numeric would TypeError); Response::sendEmailToUser checks is_null() but false is returned. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:29}
+    - [ ] `getUserByEmail($email)`
+      - [ ] Add types: `string $email`; return `array|false`. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:44}
+    - [ ] `getUserList()`
+      - [ ] Add return type `array`. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:58}
+    - [ ] `add($email, $passwordString, $verified)`
+      - [ ] Add types: `?string $email`, `?string $passwordString = null`, `?string $verified = null`; return `int`. Note: User::add passes ?string datetime; email column is nullable; insert id is int|string in mysqli. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:71}
+    - [ ] `getCount()`
+      - [ ] Add return type `int`. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:104}
+    - [ ] `updateAccountSettings($id, $email, $language)`
+      - [ ] Add types: `int $id`, `?string $email`, `int $language`; return `void`. Note: No callers in src; email column is nullable. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:114}
+    - [ ] `getRoles($userId)`
+      - [ ] Add types: `int $userId`; return `array`. Note: ZController passes a URL string; cast to int there to avoid TypeError on non-numeric input. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:129}
+    - [ ] `createRole()`
+      - [ ] Add return type `int`. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:139}
+    - [ ] `deactivateRole($roleId)`
+      - [ ] Add types: `int $roleId`; return `void`. Note: ZController passes a URL string; cast to int there to avoid TypeError on non-numeric input. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:152}
+    - [ ] `addRoleToUserByRoleId($userId, $roleId)`
+      - [ ] Add types: `int $userId`, `int $roleId`; return `void`. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:162}
+    - [ ] `changeRoleStateByUserIdAndRoleId($userId, $roleId, $shouldHaveRole)`
+      - [ ] Add types: `int $userId`, `int $roleId`, `bool $shouldHaveRole = true`; return `void`. Note: Deactivate branch does 'return $this->exec()' (a Connection); no caller uses it, change to plain call. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:172}
+    - [ ] `getPermissionsByUserId($userId)`
+      - [ ] Add types: `int $userId`; return `array`. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:204}
+    - [ ] `verifyUser($token)`
+      - [ ] Add types: `string $token`. Note: Only param is untyped; return type bool exists. LoginController passes getParameters() (false when missing), coerced to ''. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:240}
+    - [ ] `createVerifyToken($userId)`
+      - [ ] Add types: `int $userId`; return `string`. Note: Returns the generated 'v_' token. //nice-to-have// {src: src/IncludedComponents/models/z_userModel.php:286}
+- [ ] Bundled routes (`src/IncludedComponents/routes`)
+  - [ ] Global functions in `src/IncludedComponents/routes/DefaultRoutes.php`
+    - [ ] closure at line 4
+      - [ ] Add return type `void`. //optional// {src: src/IncludedComponents/routes/DefaultRoutes.php:4}
+    - [ ] closure at line 5
+      - [ ] Add return type `void`. Note: Route::performCallableAction inspects the array type to inject $args; keep it. //optional// {src: src/IncludedComponents/routes/DefaultRoutes.php:5}
+- [ ] Bundled view templates (`src/IncludedComponents/views`)
+  - [ ] Global functions in `src/IncludedComponents/views/403.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/403.php:6}
+    - [ ] closure (key "body") at line 113
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/403.php:113}
+  - [ ] Global functions in `src/IncludedComponents/views/404.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/404.php:6}
+    - [ ] closure (key "body") at line 113
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/404.php:113}
+  - [ ] Global functions in `src/IncludedComponents/views/500.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/500.php:6}
+    - [ ] closure (key "body") at line 113
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/500.php:113}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/add_user.php`
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/add_user.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/dashboard.php`
+    - [ ] closure (key "body") at line 8
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/dashboard.php:8}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/edit_user.php`
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/edit_user.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/groups.php`
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/groups.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/maintenance.php`
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/maintenance.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/role_select.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/role_select.php:6}
+    - [ ] closure (key "body") at line 8
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/role_select.php:8}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/roles.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/roles.php:6}
+    - [ ] closure (key "body") at line 8
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/roles.php:8}
+  - [ ] Global functions in `src/IncludedComponents/views/administration/user_select.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/user_select.php:6}
+    - [ ] closure (key "body") at line 8
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/administration/user_select.php:8}
+  - [ ] Global functions in `src/IncludedComponents/views/database/rows.php`
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/database/rows.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/database/tables.php`
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/database/tables.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/email_too_many_logins.php`
+    - [ ] closure (key "head") at line 1
+      - [ ] Add return type `void`. Note: Layout calls $head($opt); extra argument is ignored by PHP closures. //optional// {src: src/IncludedComponents/views/email_too_many_logins.php:1}
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/email_too_many_logins.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/email_verify.php`
+    - [ ] closure (key "head") at line 1
+      - [ ] Add return type `void`. //optional// {src: src/IncludedComponents/views/email_verify.php:1}
+    - [ ] closure (key "body") at line 1
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/email_verify.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/index.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add return type `void`. //optional// {src: src/IncludedComponents/views/index.php:6}
+    - [ ] closure (key "body") at line 9
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/index.php:9}
+  - [ ] Global functions in `src/IncludedComponents/views/layout/default_layout.php`
+    - [ ] closure (key "layout") at line 1
+      - [ ] Add types: `array $opt`, `callable $body`, `callable $head`; return `void`. Note: Called by CanRenderView::render; body/head are view closures or empty fallback closures. //optional// {src: src/IncludedComponents/views/layout/default_layout.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/layout/empty.php`
+    - [ ] closure (key "layout") at line 1
+      - [ ] Add types: `array $opt`, `callable $body`, `callable $head`; return `void`. //optional// {src: src/IncludedComponents/views/layout/empty.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/layout/layout_essentials.php`
+    - [ ] `essentialsHead($opt, $customBootstrap)`
+      - [ ] Add types: `array $opt`, `bool $customBootstrap`; return `void`. Note: Only called via the $opt['layout_essentials_head'] wrapper, which defaults customBootstrap to false; consider the same default. //should-do// {src: src/IncludedComponents/views/layout/layout_essentials.php:12}
+    - [ ] `essentialsBody($opt)`
+      - [ ] Add types: `array $opt`; return `void`. //should-do// {src: src/IncludedComponents/views/layout/layout_essentials.php:48}
+  - [ ] Global functions in `src/IncludedComponents/views/layout/mail_layout.php`
+    - [ ] closure (key "layout") at line 2
+      - [ ] Add types: `array $opt`, `callable $body`, `callable $head`; return `void`. //optional// {src: src/IncludedComponents/views/layout/mail_layout.php:2}
+  - [ ] Global functions in `src/IncludedComponents/views/layout/min_layout.php`
+    - [ ] closure (key "layout") at line 6
+      - [ ] Add types: `array $opt`, `callable $body`, `callable $head`; return `void`. //optional// {src: src/IncludedComponents/views/layout/min_layout.php:6}
+  - [ ] Global functions in `src/IncludedComponents/views/layout/z_admin_layout.php`
+    - [ ] closure (key "layout") at line 1
+      - [ ] Add types: `array $opt`, `callable $body`, `callable $head`; return `void`. //optional// {src: src/IncludedComponents/views/layout/z_admin_layout.php:1}
+  - [ ] Global functions in `src/IncludedComponents/views/login.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login.php:6}
+    - [ ] closure (key "body") at line 8
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login.php:8}
+  - [ ] Global functions in `src/IncludedComponents/views/login_forgotpassword.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_forgotpassword.php:6}
+    - [ ] closure (key "body") at line 15
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_forgotpassword.php:15}
+  - [ ] Global functions in `src/IncludedComponents/views/login_reset.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_reset.php:6}
+    - [ ] closure (key "body") at line 21
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_reset.php:21}
+  - [ ] Global functions in `src/IncludedComponents/views/login_signup.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_signup.php:6}
+    - [ ] closure (key "body") at line 13
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_signup.php:13}
+  - [ ] Global functions in `src/IncludedComponents/views/login_verify.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_verify.php:6}
+    - [ ] closure (key "body") at line 13
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_verify.php:13}
+  - [ ] Global functions in `src/IncludedComponents/views/login_verify_wait.php`
+    - [ ] closure (key "head") at line 6
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_verify_wait.php:6}
+    - [ ] closure (key "body") at line 13
+      - [ ] Add types: `array $opt`; return `void`. //optional// {src: src/IncludedComponents/views/login_verify_wait.php:13}
+- [ ] Logging (`src/Logger`)
+  - [ ] `BacktraceProcessor` (`src/Logger/BacktraceProcessor.php`)
+    - [ ] `__construct($logger, $level, $skipClassesPartials, $skipStackFramesCount)`
+      - [ ] Add types: `Logger $logger`, `int|string $level = Logger::DEBUG`. Note: Logger resolves to the ZubZet Logger in this namespace; Monolog 2.11 parent leaves $level untyped. Drop the pointless return parent::__construct. //should-do// {src: src/Logger/BacktraceProcessor.php:10}
+  - [ ] `LoggerFactory` (`src/Logger/LoggerFactory.php`)
+    - [ ] closure in `handleSlowRequest()` at line 101
+      - [ ] Add return type `void`. Note: Shutdown callback; only bare returns. //optional// {src: src/Logger/LoggerFactory.php:101}
+  - [ ] `StreamLogger` (`src/Logger/Method/StreamLogger.php`)
+    - [ ] `__construct($stream, $args)`
+      - [ ] Add types: `mixed $stream`, `mixed $args`. Note: resource|string cannot be expressed in PHP 8.0, so mixed; matches untyped Monolog 2.11 StreamHandler. Only caller passes a string. //should-do// {src: src/Logger/Method/StreamLogger.php:10}
+- [ ] Request and response (`src/Message`)
+  - [ ] `State` (`src/Message/Input/State.php`)
+    - [ ] closure in `fromRequest()` at line 30
+      - [ ] Add types: `mixed $item`; return `void`. Note: array_walk_recursive callback taking item by reference; leaf POST values are strings. //optional// {src: src/Message/Input/State.php:30}
+    - [ ] `updateRequest()`
+      - [ ] Add return type `void`. Note: Private; rebuilds REQUEST from GET, POST, COOKIE. //nice-to-have// {src: src/Message/Input/State.php:177}
+  - [ ] `Request` (`src/Message/Request.php`)
+    - [ ] `getRouteParameter($key)`
+      - [ ] Add types: `?string $key = null`; return `mixed`. Note: Router passes FastRoute vars (strings); mixed is the safe fallback since urlParameters is public. urlParameters is a public untyped-content array, so values need not be strings; array|string|null could TypeError. Keep mixed. //important// {src: src/Message/Request.php:31}
+    - [ ] `getParameters($offset, $length, $val)`
+      - [ ] Add types: `int $offset = 0`, `?int $length = null`, `string|int|null $val = null`. Note: Return is already mixed (array|string|bool); $val is compared loosely, so int is allowed. //important// {src: src/Message/Request.php:141}
+    - [ ] `getReadableParameter($offset)`
+      - [ ] Add types: `int $offset = 0`. Note: Return type already array. //important// {src: src/Message/Request.php:164}
+  - [ ] `RequestResponseHandler` (`src/Message/RequestResponseHandler.php`)
+    - [ ] `getZViews()`
+      - [ ] Add return type `string`. //should-do// {src: src/Message/RequestResponseHandler.php:30}
+    - [ ] `getZRoot()`
+      - [ ] Add return type `string`. //should-do// {src: src/Message/RequestResponseHandler.php:38}
+  - [ ] `Response` (`src/Message/Response.php`)
+    - [ ] `reroute($path, $alias, $final)`
+      - [ ] Add types: `array $path = []`, `bool $alias = false`, `bool $final = false`; return `void`. Note: Exits only when $final is true. //important// {src: src/Message/Response.php:43}
+    - [ ] `rerouteUrl($url, $root)`
+      - [ ] Add types: `string $url = ""`, `?string $root = null`; return `void`. Note: Always exits (never not allowed on 8.0); logout() uses `return $this->rerouteUrl()`. //important// {src: src/Message/Response.php:61}
+    - [ ] `setCookie()`
+      - [ ] Add return type `void`. Note: No declared params (func_get_args()); declare variadic `mixed ...$args`; setcookie() bool is discarded. //important// {src: src/Message/Response.php:72}
+    - [ ] `unsetCookie($name, $path, $domainScope)`
+      - [ ] Add return type `void`. //important// {src: src/Message/Response.php:82}
+    - [ ] `generateRestError($code, $message)`
+      - [ ] Add types: `string|int $code`, `string $message`; return `void`. Note: Callers pass int codes (400, 403); always exits. //important// {src: src/Message/Response.php:140}
+    - [ ] `sendEmail($to, $subject, $document, $lang, $options, $layout, $attachments)`
+      - [ ] Add types: `string $to`, `string|array $subject`, `string $document`, `?string $lang = "en"`, `array $options = []`, `string $layout = "email"`; return `bool`. Note: $subject may be a language-keyed array; $lang may be null (sendEmailToUser); returns false on mailer error. //important// {src: src/Message/Response.php:159}
+    - [ ] `sendEmailToUser($userId, $subject, $document, $options, $layout)`
+      - [ ] Add types: `int $userId`, `string|array $subject`, `string $document`, `array $options = []`, `string $layout = "mail"`; return `bool`. Note: Returns sendEmail() result; throws Exception for unknown user or missing email. //important// {src: src/Message/Response.php:248}
+    - [ ] `loginAs($userId, $user_exec)`
+      - [ ] Add return type `void`. Note: Params already typed. //important// {src: src/Message/Response.php:269}
+    - [ ] `error($message)`
+      - [ ] Add types: `string $message = ""`; return `void`. Note: Always exits via generateRest(). //important// {src: src/Message/Response.php:304}
+    - [ ] `formErrors($errors)`
+      - [ ] Add types: `array $errors`; return `void`. Note: Callers pass several arrays via func_get_args(); consider `array ...$errors`; non-arrays are filtered silently today. //important// {src: src/Message/Response.php:312}
+    - [ ] closure in `formErrors()` at line 313
+      - [ ] Add types: `mixed $var`; return `bool`. Note: array_filter callback. //optional// {src: src/Message/Response.php:313}
+    - [ ] `success($payload)`
+      - [ ] Add types: `array $payload = []`; return `void`. Note: Always exits via generateRest(). //important// {src: src/Message/Response.php:321}
+    - [ ] `logout()`
+      - [ ] Add return type `void`. Note: Contains `return $this->rerouteUrl()` which must become call plus bare return once void. //important// {src: src/Message/Response.php:330}
+    - [ ] `insertOrUpdateDatabase($table, $pkField, $pkType, $pkValue, $validationResult, $fixed)`
+      - [ ] Add types: `string|int|null $pkValue`; return `int|string|null`. Note: Returns $pkValue on update or getInsertId() (int|string|null) on insert. insertOrUpdateDatabase is documented and tested with $pkValue = null (docs auto-form-validation.md: $employee["id"] ?? null), so null must be allowed; string|int would TypeError. //important// {src: src/Message/Response.php:385}
+    - [ ] `updateDatabase($table, $pkField, $pkType, $pkValue, $validationResult, $fixed)`
+      - [ ] Add types: `string|int $pkValue`; return `void`. Note: Callers pass int or string URL parameters (getParameters may even give false). //important// {src: src/Message/Response.php:404}
+    - [ ] `insertDatabase($table, $validationResult, $fixed)`
+      - [ ] Add return type `int|string|null`. Note: Returns Interaction::getInsertId(), documented int|string|null. //important// {src: src/Message/Response.php:450}
+    - [ ] `uploadFromForm($validationResult)`
+      - [ ] Add return type `void`. Note: Private; may exit through error() on upload failure. //nice-to-have// {src: src/Message/Response.php:489}
+    - [ ] `doCED($table, $validationResult, $fix)`
+      - [ ] Add types: `string $table`, `Result $validationResult`, `array $fix = []`; return `void`. Note: Only bare returns; callers pass validateCED() results. //important// {src: src/Message/Response.php:518}
+- [ ] Query builder (`src/QueryBuilder`)
+  - [ ] `CanBuildQuery` (`src/QueryBuilder/CanBuildQuery.php`) [trait]
+    - [ ] `dbSelect($fields, $table, $types)`
+      - [ ] Add types: `\Cake\Database\ExpressionInterface|callable|array|string $fields = []`, `array|string $table = []`; return `\Cake\Database\Query\SelectQuery`. Note: Mirrors Cake Connection::selectQuery docblock; callable is allowed in parameter unions on PHP 8.0. //important// {src: src/QueryBuilder/CanBuildQuery.php:14}
+    - [ ] `dbUpdate($table, $values, $conditions, $types)`
+      - [ ] Add types: `\Cake\Database\ExpressionInterface|string|null $table = null`; return `\Cake\Database\Query\UpdateQuery`. Note: Mirrors Cake Connection::updateQuery docblock. //important// {src: src/QueryBuilder/CanBuildQuery.php:31}
+    - [ ] `dbDelete($table, $conditions, $types)`
+      - [ ] Add return type `\Cake\Database\Query\DeleteQuery`. Note: Cake 4.5+ (required ^4.5) provides DeleteQuery. //important// {src: src/QueryBuilder/CanBuildQuery.php:48}
+    - [ ] `dbInsert($table, $values, $types)`
+      - [ ] Add return type `\Cake\Database\Query\InsertQuery`. Note: Cake 4.5+ (required ^4.5) provides InsertQuery. //important// {src: src/QueryBuilder/CanBuildQuery.php:60}
+    - [ ] `getQueryBuilder()`
+      - [ ] Add return type `\Cake\Database\Connection`. Note: Returns db()->queryBuilderConnection, typed as Cake Connection. //important// {src: src/QueryBuilder/CanBuildQuery.php:69}
+  - [ ] `ZubZetValueBinder` (`src/QueryBuilder/ZubZetValueBinder.php`)
+    - [ ] `bind($param, $value, $type)`
+      - [ ] Add types: `mixed $param`, `mixed $value`, `mixed $type = null`. Note: Parent Cake ValueBinder::bind is untyped, so narrower types would be fatal; keep mixed. Return void already declared. //nice-to-have// {src: src/QueryBuilder/ZubZetValueBinder.php:17}
+    - [ ] `generateManyNamed($values, $type)`
+      - [ ] Add types: `mixed $type = null`. Note: Parent signature is untyped ($type = null); narrower type would be incompatible. Return array already declared. //nice-to-have// {src: src/QueryBuilder/ZubZetValueBinder.php:25}
+- [ ] Rendering (`src/Rendering`)
+  - [ ] `CanRenderView` (`src/Rendering/CanRenderView.php`) [trait]
+    - [ ] `render($document, $opt, $options)`
+      - [ ] Add types: `string $document`, `array $opt = []`, `array|string $options = []`; return `void`. Note: Echoes output; global view() helper already uses array|string for $options. //important// {src: src/Rendering/CanRenderView.php:63}
+    - [ ] closure in `render()` at line 91
+      - [ ] Add types: `array $opt`; return `void`. Note: Template callback delegating to essentialsBody(). //optional// {src: src/Rendering/CanRenderView.php:91}
+    - [ ] closure in `render()` at line 94
+      - [ ] Add types: `array $opt`, `bool $customBootstrap = false`; return `void`. Note: Template callback delegating to essentialsHead(). //optional// {src: src/Rendering/CanRenderView.php:94}
+    - [ ] closure in `render()` at line 121
+      - [ ] Add types: `string $url`, `bool $root = true`; return `void`. Note: Echoes the link; used as $opt['generateResourceLink'] in views. //optional// {src: src/Rendering/CanRenderView.php:121}
+    - [ ] closure in `render()` at line 126
+      - [ ] Add types: `mixed $val`; return `void`. Note: htmlspecialchars() needs string; views may pass int or null. [low confidence] //optional// {src: src/Rendering/CanRenderView.php:126}
+    - [ ] closure in `render()` at line 131
+      - [ ] Add return type `void`. Note: Empty default for view body. //optional// {src: src/Rendering/CanRenderView.php:131}
+    - [ ] closure in `render()` at line 132
+      - [ ] Add return type `void`. Note: Empty default for view head. //optional// {src: src/Rendering/CanRenderView.php:132}
+- [ ] Asset proxy and resources (`src/Resources`)
+  - [ ] `BundledPackage` (`src/Resources/BundledPackage.php`)
+    - [ ] `__construct($package, $directoryInPackage, $urlPrefix)`
+      - [ ] Add types: `string $package`, `string $directoryInPackage = ""`, `string $urlPrefix = ""`. Note: Only BundledAssets calls it, with named arguments; keep parameter names. Properties are already typed string. //should-do// {src: src/Resources/BundledPackage.php:31}
+- [ ] Routing (`src/Routing`)
+  - [ ] `Route` (`src/Routing/Route.php`)
+    - [ ] closure in `group()` at line 55
+      - [ ] Add return type `void`. Note: Empty default callback for Route::group(). //optional// {src: src/Routing/Route.php:55}
+    - [ ] closure in `performRoute()` at line 141
+      - [ ] Add return type `void`. Note: FastRoute handler; only bare returns, result is discarded by Router::execute. //optional// {src: src/Routing/Route.php:141}
+    - [ ] closure in `performCallableAction()` at line 212
+      - [ ] Add return type `mixed`. Note: array_map callback returning route args, Request, Response, default value or null. //optional// {src: src/Routing/Route.php:212}
+  - [ ] `Router` (`src/Routing/Router.php`) [trait]
+    - [ ] `execute($customUrlParts)`
+      - [ ] Add return type `mixed`. Note: Entry point called from index.php; always yields null in practice. void impossible while 'return $handler($vars)' stays. //important// {src: src/Routing/Router.php:20}
+    - [ ] closure in `execute()` at line 64
+      - [ ] Add return type `mixed`. Note: Returns the result of a void method; 'void' only works if the 'return' keyword is dropped. //optional// {src: src/Routing/Router.php:64}
+    - [ ] closure in `getRouteDispatcher()` at line 79
+      - [ ] Add return type `void`. Note: FastRoute simpleDispatcher definition callback. //optional// {src: src/Routing/Router.php:79}
+    - [ ] `executeControllerAction($controller, $action, $params, $arguments)`
+      - [ ] Add types: `string $controller`, `string $action`; return `mixed`. Note: Callers (Route::callControllerAction, executePath) pass strings; returns the action result or null after error reroutes. //important// {src: src/Routing/Router.php:96}
+    - [ ] `executePath($parts)`
+      - [ ] Add types: `array $parts`; return `void`. Note: All callers pass arrays; dies on too many reroutes. Callers using 'return $this->executePath()' stay valid in mixed-returning methods. //important// {src: src/Routing/Router.php:178}
+- [ ] Support helpers (`src/Support`)
+  - [ ] Global functions in `src/Support/GlobalReferences.php`
+    - [ ] closure at line 19
+      - [ ] Add return type `void`. Note: Declaration closure passed to FunctionConflictResolution::requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:19}
+    - [ ] closure at line 31
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:31}
+    - [ ] `model($model, $dir)`
+      - [ ] Add types: `string $model`, `?string $dir = null`; return `Model`. Note: Use ZubZet\Framework\Core\Model; getModel() has no return type and returns user subclasses; phpstorm.meta maps names to concrete models. //important// {src: src/Support/GlobalReferences.php:39}
+    - [ ] closure at line 44
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:44}
+    - [ ] closure at line 56
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:56}
+    - [ ] closure at line 67
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:67}
+    - [ ] `config($key, $useDefault, $default)`
+      - [ ] Add types: `?string $key = null`, `bool $useDefault = true`, `mixed $default = null`; return `mixed`. Note: Callers use the named argument default:; keep parameter names. getBooterSettings has the same untyped signature. //important// {src: src/Support/GlobalReferences.php:76}
+    - [ ] closure at line 81
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:81}
+    - [ ] closure at line 92
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:92}
+    - [ ] closure at line 113
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:113}
+    - [ ] `view($document, $opt, $options)`
+      - [ ] Add return type `void`. Note: Drop the 'return' in the body first: render() has no return value and docblock already says void (the mechanical hint is a false positive). //important// {src: src/Support/GlobalReferences.php:122}
+    - [ ] closure at line 127
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:127}
+    - [ ] closure at line 133
+      - [ ] Add return type `void`. Note: Declaration closure passed to requireAndThen; result ignored. //optional// {src: src/Support/GlobalReferences.php:133}
+  - [ ] Global functions in `src/Support/Helpers.php`
+    - [ ] `getCaller($depth)`
+      - [ ] Add types: `int $depth = 1`; return `?string`. Note: Docblock says mixed; real value is the function name. depth above 1 gives an undefined-key warning and null (3-frame limit). //should-do// {src: src/Support/Helpers.php:13}
+    - [ ] `makeSlug($str)`
+      - [ ] Add types: `string $str`; return `string`. Note: Only e2e tests call it, with strings. //should-do// {src: src/Support/Helpers.php:23}
+    - [ ] `uecho($value)`
+      - [ ] Add types: `?string $value`; return `void`. Note: ?string keeps null callers working (strip_tags(null) is deprecated on 8.1+); ints/floats are coerced. //should-do// {src: src/Support/Helpers.php:36}
+    - [ ] `var_swap($x, $y)`
+      - [ ] Add types: `mixed $x`, `mixed $y`; return `void`. Note: By-reference parameters; keep the & markers in the signature. //should-do// {src: src/Support/Helpers.php:41}
+    - [ ] `shortenStr($str, $maxlength, $cutDescriptor)`
+      - [ ] Add types: `string $str`, `int $maxlength = 10`, `string $cutDescriptor = "..."`; return `string`. Note: Only tests call it; numeric strings for maxlength are coerced to int. //should-do// {src: src/Support/Helpers.php:47}
+    - [ ] `emptyToNull($value)`
+      - [ ] Add types: `mixed $value`; return `void`. Note: By-reference parameter; mutates the argument. //should-do// {src: src/Support/Helpers.php:63}
+    - [ ] `de_strtolower($string)`
+      - [ ] Add types: `string $string`; return `string`. Note: Only tests call it, with strings. //should-do// {src: src/Support/Helpers.php:69}
+  - [ ] `Rest` (`src/Support/Rest.php`)
+    - [ ] `__construct($data, $urlParts)`
+      - [ ] Add types: `array $data`, `array $urlParts`. Note: Only Response::getNewRest constructs it (array payload, getUrlParts()); class is also aliased globally as Rest. //should-do// {src: src/Support/Rest.php:25}
+    - [ ] `ShowError($code, $message)`
+      - [ ] Add types: `string|int $code`, `string $message`; return `void`. Note: Docblock says string but callers pass ints (400, 404); the method exits via execute() so void is the best 8.0-compatible type. //should-do// {src: src/Support/Rest.php:43}
+    - [ ] `execute($die)`
+      - [ ] Add types: `bool $die = true`; return `void`. Note: Exits when $die is true instead of returning; Response::generateRest already passes a bool. //should-do// {src: src/Support/Rest.php:57}
+- [ ] Testing and coverage (`src/Testing`)
+  - [ ] `Collector` (`src/Testing/Coverage/Collector.php`)
+    - [ ] closure in `initialize()` at line 35
+      - [ ] Add return type `void`. Note: Shutdown callback in an @internal class. //optional// {src: src/Testing/Coverage/Collector.php:35}
+  - [ ] `Stop` (`src/Testing/Coverage/Commands/Stop.php`)
+    - [ ] closure in `execute()` at line 52
+      - [ ] Add return type `void`. Note: Shutdown callback that only calls Collector::cleanup(). //optional// {src: src/Testing/Coverage/Commands/Stop.php:52}
+- [ ] Frontend client library (Z.js) (`web/Z.js`)
+  - [ ] `Z namespace and typedefs`
+    - [ ] `Z.Forms.create`
+      - [ ] Replace `@param {*} options` with a ZFormOptions typedef (the ZForm constructor options) and add `@returns {ZForm}`. //important// {src: web/Z.js:37}
+    - [ ] `Z.Request.action`
+      - [ ] Add `@returns {void}`, type `data` as `{Object<string, any>}` and `handler` as `{function(object): void}`. //important// {src: web/Z.js:50}
+    - [ ] `Z.Request.root`
+      - [ ] Add `@param {string} subaction`, `@param {function(*): void} [handler=null]`, `@param {boolean} [async=true]`, `@param {boolean} [parse=true]`, `@param {object} [additionalParameters={}]` and `@returns {void}`. //important// {src: web/Z.js:72}
+    - [ ] `Z.Presets.Login`
+      - [ ] Add `@returns {void}` and mark redirect optional as `@param {string} [redirect=""]`. //should-do// {src: web/Z.js:138}
+    - [ ] `Z.Presets.ForgotPassword`
+      - [ ] Add `@returns {void}` and mark redirect optional as `@param {string} [redirect=""]`. //should-do// {src: web/Z.js:184}
+    - [ ] `Z.Presets.Signup`
+      - [ ] Add `@returns {void}` and mark `[redirect=""]`, `[alertErrors=false]` and `[additionalData={}]` optional. //should-do// {src: web/Z.js:220}
+  - [ ] `ZCED`
+    - [ ] `ZCED.updateMargins`
+      - [ ] Add `@returns {void}`. //nice-to-have// {src: web/Z.js:459}
+    - [ ] `ZCED.isHidden`
+      - [ ] Add `@returns {boolean}` (the shared stub comment has no tags). //optional// {src: web/Z.js:476}
+    - [ ] `ZCED.isDisabled`
+      - [ ] Add `@returns {boolean}`. //optional// {src: web/Z.js:477}
+    - [ ] `ZCED._updateDisabled`
+      - [ ] Add `@returns {void}`. //optional// {src: web/Z.js:478}
+    - [ ] `ZCED.reset`
+      - [ ] Add `@returns {void}`. //optional// {src: web/Z.js:479}
+  - [ ] `ZCEDItem`
+    - [ ] `ZCEDItem.addField`
+      - [ ] Add `@param {ZFormField} field` and `@returns {void}`. //should-do// {src: web/Z.js:651}
+  - [ ] `ZForm`
+    - [ ] `ZForm.setValues`
+      - [ ] Add `@returns {void}` and make options optional as `@param {{resetUnknown?: boolean}} [options={}]`. //important// {src: web/Z.js:840}
+    - [ ] `ZForm.addCustomHTML`
+      - [ ] Add `@param {string} html`. //important// {src: web/Z.js:861}
+    - [ ] `ZForm.send`
+      - [ ] Add `@param {?string} [customUrl=null]`. //important// {src: web/Z.js:874}
+    - [ ] `ZForm.addField onFieldChange`
+      - [ ] Add `@returns {void}` to the named onFieldChange arrow function. //optional// {src: web/Z.js:946}
+    - [ ] `ZForm._appendFieldToLayout`
+      - [ ] Add `@param {(ZFormField|ZCED)} field` and `@returns {void}`. //nice-to-have// {src: web/Z.js:967}
+    - [ ] `ZForm._updateLayout`
+      - [ ] Add `@returns {void}`. //nice-to-have// {src: web/Z.js:994}
+    - [ ] `ZForm.createActionButton`
+      - [ ] Add `@returns {HTMLButtonElement}` and type `action` as `{function(MouseEvent): void}`. //important// {src: web/Z.js:1110}
+    - [ ] `ZForm.reset`
+      - [ ] Add `@returns {void}`. //important// {src: web/Z.js:1140}
+    - [ ] `ZForm.enable`
+      - [ ] Add `@returns {void}`. //important// {src: web/Z.js:1149}
+    - [ ] `ZForm.disable`
+      - [ ] Add `@returns {void}`. //important// {src: web/Z.js:1157}
+    - [ ] `ZForm._updateDisabled`
+      - [ ] Add `@returns {void}`. //nice-to-have// {src: web/Z.js:1173}
+  - [ ] `ZFormField`
+    - [ ] `ZFormField constructor autocomplete keyup handler`
+      - [ ] Add `@param {KeyboardEvent} e` and `@returns {void}` to the autocomplete keyup handler. //optional// {src: web/Z.js:1383}
+    - [ ] `ZFormField._updateOptgroupVisibility`
+      - [ ] Add `@param {(HTMLElement|null)} parent` and `@returns {void}`. //nice-to-have// {src: web/Z.js:1623}
+    - [ ] `ZFormField.on`
+      - [ ] Add `@param {string} type`, `@param {EventListenerOrEventListenerObject} listener`, `@param {(boolean|AddEventListenerOptions)} [options]` and `@returns {void}`. //should-do// {src: web/Z.js:1643}
+    - [ ] `ZFormField.feedData`
+      - [ ] Replace `{=boolean} clear` with `@param {boolean} [clear=true]`. //should-do// {src: web/Z.js:1684}
+    - [ ] `ZFormField.reset`
+      - [ ] Add `@returns {void}`. //should-do// {src: web/Z.js:1816}
+    - [ ] `ZFormField.disable`
+      - [ ] Add `@returns {void}`. //should-do// {src: web/Z.js:1831}
+    - [ ] `ZFormField.enable`
+      - [ ] Add `@returns {void}`. //should-do// {src: web/Z.js:1839}
+    - [ ] `ZFormField.isDisabled`
+      - [ ] Add `@returns {boolean}`. //should-do// {src: web/Z.js:1844}
+    - [ ] `ZFormField._updateDisabled`
+      - [ ] Add `@returns {void}`. //nice-to-have// {src: web/Z.js:1855}
+    - [ ] `ZFormField.hide`
+      - [ ] Add `@returns {void}`. //should-do// {src: web/Z.js:1859}
+    - [ ] `ZFormField.show`
+      - [ ] Add `@returns {void}`. //should-do// {src: web/Z.js:1864}
+    - [ ] `ZFormField.isHidden`
+      - [ ] Add `@returns {boolean}`. //should-do// {src: web/Z.js:1869}
