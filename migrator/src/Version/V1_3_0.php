@@ -237,6 +237,14 @@
             $vscodeFolder = new Folder($this, "remove-vscode-folder");
             $vscodeFolder->shouldNotExistIfEmpty(".vscode");
 
+            // Uploads land in the webroot, the .htaccess keeps uploaded php files from running
+            $uploadFolder = new Folder($this, "upload-folder");
+            $uploadFolder->shouldExist(["webroot/uploads"]);
+
+            $uploadProtection = new IncludedFile($this, "upload-folder-htaccess");
+            $uploadProtection->from("uploads/.htaccess");
+            $uploadProtection->to("webroot/uploads");
+
             // Upgrade composer dependencies (pulls in the Katana-backed framework).
             $composer = new ComposerModifier($this, "composer");
             $composer->upgradeToCurrentVersion();

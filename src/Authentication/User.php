@@ -91,7 +91,7 @@
 
             if (!is_null($this->userId)) {
                 $user = model("z_user")->getUserById($this->userId);
-                if ($user !== false) {
+                if ($user !== false && 1 === $user["active"]) {
                     $this->orgId = $user["organizationId"];
                     $this->isLoggedIn = true;
                     $this->fields = $user;

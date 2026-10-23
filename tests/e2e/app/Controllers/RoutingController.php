@@ -19,6 +19,11 @@
             print_r("Middleware Accept Executed\n");
         }
 
+        // Behind the blocking /Routing/group-guarded group, so never reached
+        public function action_group_guarded(Request $req, Response $res) {
+            print_r("Group Guarded Executed");
+        }
+
         // Default test route
         public function TestRoute(Request $req, Response $res) {
             print_r("TestRoute Executed");

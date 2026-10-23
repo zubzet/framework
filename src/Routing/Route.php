@@ -12,6 +12,15 @@
 
         use HttpMethod;
 
+        // How url segments become controller and action names, see Router::executeControllerAction()
+        public const NAME_REPLACEMENTS = [
+            "-" => "_",
+            "." => "§2E",
+            "ä" => "ae",
+            "ö" => "oe",
+            "ü" => "ue",
+        ];
+
         /**
          * The active FastRoute collector.
          */
@@ -61,8 +70,8 @@
          * Performs middleware matching for stored groups based on the current URL parts.
          */
         public static function performStoredGroupsMatchingPrefix(array $urlParts, \Closure|callable $callback): void {
-            // Construct the current path from URL parts
-            $currentPath = '/' . implode('/', $urlParts);
+            // Normalized like the controller name it resolves to, the url parts themselves stay as sent
+            $currentPath = strtolower(strtr(urldecode('/' . implode('/', $urlParts)), self::NAME_REPLACEMENTS));
 
             // Collect middlewares to execute
             $toExecuteMiddlewares = [];
@@ -71,6 +80,7 @@
 
             foreach(self::$storedPrefixedGroups as $groupPath => $prefixGroup) {
                 // Check if the current path matches the group prefix
+                $groupPath = strtolower(strtr(urldecode($groupPath), self::NAME_REPLACEMENTS));
                 $isExactMatch = $currentPath === $groupPath;
                 $isMatch = $isExactMatch || str_starts_with($currentPath, $groupPath . '/');
                 if(!$isMatch) continue;

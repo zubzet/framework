@@ -23,3 +23,8 @@ When using [Z-Forms](auto-form-validation.md), files will be stored and error fe
 (new FormField("file")) -> file(FILE_SIZE_1MB, ["txt", "jpg", "png"])
 ```
 Files uploaded with this method will always be moved into the "uploads/" directory.
+
+## Security
+Uploads land in the folder passed to `upload()`, with Z-Forms in the `uploadFolder` setting, which is `webroot/uploads/` in a new or migrated project. The `.htaccess` in that folder keeps PHP files from running, but every file in it is served from the application's own domain and the browser displays what it can. A file the browser renders as a page runs its scripts with the session of whoever opens it.
+
+Which types are accepted is up to the project.
