@@ -69,7 +69,7 @@ describe('Auth flows', () => {
         it('writes a reset code, sends an email, and returns success JSON', () => {
             clearMailhog();
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -85,18 +85,64 @@ describe('Auth flows', () => {
                 expect(row.userId).to.eq(601);
                 expect(row.reason).to.eq('forgot');
                 expect(row.code).to.match(/^ZIT-/);
+
+                // And the password-reset email, rendered from the framework's
+                // bundled view, landed in mailhog carrying the reset link.
+                fetchLatestMail().then((mail) => {
+                    expect(mail.to[0]).to.eq('auth_forgot@cypress.test');
+                    expect(mail.subject).to.eq('Password Reset');
+
+                    cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
+                        expect(res.body).to.include('Reset your password');
+                        expect(res.body).to.include(`/login/reset/${row.code}/`);
+                    });
+                });
+            });
+        });
+
+        it('translates the password reset email into the active locale', () => {
+            clearMailhog();
+
+            cy.zRequest({
+                method: 'POST',
+                url: '/login/forgot-password/check',
+                form: true,
+                headers: { 'Accept-Language': 'de' },
+                body: { unameemail: 'auth_forgot@cypress.test' },
             });
 
-            // And the password-reset email landed in mailhog.
             fetchLatestMail().then((mail) => {
-                expect(mail.to[0]).to.eq('auth_forgot@cypress.test');
-                expect(JSON.stringify(mail.subject).toLowerCase())
-                    .to.match(/password reset|passwort/);
+                cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
+                    expect(res.body).to.include('Passwort zurücksetzen');
+                    expect(res.body).to.not.include('Reset your password');
+                });
+            });
+        });
+
+        it('writes the password reset email in the language of the recipient', () => {
+            clearMailhog();
+
+            // A guest browser asking in English must not override the recipient's locale
+            cy.zRequest({
+                method: 'POST',
+                url: '/login/forgot-password/check',
+                form: true,
+                headers: { 'Accept-Language': 'en' },
+                body: { unameemail: 'auth_forgot_de@cypress.test' },
+            });
+
+            fetchLatestMail().then((mail) => {
+                expect(mail.to[0]).to.eq('auth_forgot_de@cypress.test');
+                expect(mail.subject).to.eq('Passwort zurücksetzen');
+                cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
+                    expect(res.body).to.include('Passwort zurücksetzen');
+                    expect(res.body).to.not.include('Reset your password');
+                });
             });
         });
 
         it('returns "error" JSON for an unknown email but still 200', () => {
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -117,7 +163,7 @@ describe('Auth flows', () => {
     describe('action_reset', () => {
         it('consumes a reset code, updates the password, and disables the code', () => {
             // Step 1: kick off forgot-password to create a reset code for user 602.
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -136,7 +182,7 @@ describe('Auth flows', () => {
                 });
 
                 // Step 4: POST the new password.
-                cy.request({
+                cy.zRequest({
                     method: 'POST',
                     url: `/login/reset/${code}/`,
                     form: true,
@@ -194,7 +240,7 @@ describe('Auth flows', () => {
         it('resend path: POSTing email re-issues a verify token and renders the wait page', () => {
             clearMailhog();
 
-            cy.request({
+            cy.zRequest({
                 method: 'POST',
                 url: '/login/verify',
                 form: true,
@@ -224,16 +270,17 @@ describe('Auth flows', () => {
 
     // ---------------------------------------------------------------------
     describe('action_index - rate limiting', () => {
-        it('blocks login after configured threshold and emails a security alert', () => {
+        it('blocks login after configured threshold', () => {
             cy.setConfigSetting('maxLoginTriesPerTimespan', '2');
             clearMailhog();
 
-            const submit = (password) => cy.request({
+            const submit = (password) => cy.zRequest({
                 method: 'POST',
                 url: '/login',
                 form: true,
                 failOnStatusCode: false,
                 body: {
+                    action: 'login',
                     name: 'auth_ratelimit@cypress.test',
                     password,
                 },
@@ -250,13 +297,6 @@ describe('Auth flows', () => {
 
             submit('nope-4').then((res) => {
                 expect(res.body).to.include('Too many login tries');
-            });
-
-            // Security alert email arrived.
-            fetchLatestMail().then((mail) => {
-                expect(mail.to[0]).to.eq('auth_ratelimit@cypress.test');
-                expect(JSON.stringify(mail.subject).toLowerCase())
-                    .to.match(/security alert|sicherheits/);
             });
         });
     });

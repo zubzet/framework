@@ -3,6 +3,8 @@
     namespace ZubZet\Framework\Message;
 
     use ZubZet\Framework\Authentication\User;
+    use ZubZet\Framework\Authentication\Organization;
+    use ZubZet\Framework\Authentication\Session;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
@@ -49,11 +51,15 @@
             $path = trim($path, '/');
 
             $urlParts = empty($path) ? [] : explode("/", $path);
-            if(!empty(config("rootDirectory"))) {
-                $rootDirectoryLength = count(explode("/", config("rootDirectory")));
+            // Surrounding slashes are no segments, "sub/" strips one
+            $rootDirectory = trim((string) config("rootDirectory"), '\/');
+            if("" !== $rootDirectory) {
+                $rootDirectoryLength = count(explode("/", $rootDirectory));
                 for($i = 0; $i < $rootDirectoryLength; $i++) {
                     array_shift($urlParts);
                 }
+                // A doubled slash after the root (root . "/x") is no segment, as in the Router
+                while("" === ($urlParts[0] ?? null)) array_shift($urlParts);
             }
 
             $this->urlParts = $urlParts;
@@ -93,6 +99,82 @@
 
         public function userAgent(): ?string {
             return $this->input->SERVER['HTTP_USER_AGENT'] ?? null;
+        }
+
+        // The token of an `Authorization: Bearer <token>` header, null for any other scheme
+        public function bearerToken(): ?string {
+            $header = $this->input->SERVER['HTTP_AUTHORIZATION'] ?? null;
+
+            // "Bearer" in any case, whitespace, then a single token with no spaces in it
+            if(!is_string($header) || !preg_match('/^Bearer\s+(\S+)$/i', trim($header), $match)) return null;
+
+            return $match[1];
+        }
+
+        public function acceptLanguage(): array {
+            $header = $this->input->SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
+            if(!is_string($header) || "" === trim($header)) return [];
+
+            // Cap the entries, because the header is client controlled
+            $entries = array_slice(explode(",", $header), 0, 50);
+
+            $accepted = [];
+
+            foreach($entries as $entry) {
+                // Split locale from optional parameters such as q=0.9
+                $parts = array_map("trim", explode(";", $entry));
+
+                $locale = array_shift($parts);
+                $quality = 1.0;
+
+                // Only well formed language tags: de, en-US, zh-Hans-CN, es-419
+                if(!preg_match('/^[a-z]{1,8}(?:-[a-z0-9]{1,8})*$/i', $locale)) continue;
+
+                // Read the optional quality value; omitted q values default to 1.0.
+                foreach($parts as $parameter) {
+                    if(!preg_match('/^q\s*=\s*(.*)$/i', $parameter, $match)) continue;
+
+                    // Valid is 0 to 0.999 or 1 followed by zeros. A malformed q must not
+                    // fall back to 1.0, that would rank the broken entry highest.
+                    if(!preg_match('/^(?:0(?:\.\d{1,3})?|1(?:\.0{1,3})?)$/', $match[1])) {
+                        $quality = 0.0;
+                        break;
+                    }
+
+                    $quality = (float) $match[1];
+                    break;
+                }
+
+                // q=0 explicitly means that the locale is not acceptable.
+                if($quality <= 0.0) continue;
+
+                // Canonical form, so that "en-us" and "EN-US" collapse into one entry.
+                $subtags = explode("-", strtolower($locale));
+
+                foreach($subtags as $index => $subtag) {
+                    if(0 === $index || !ctype_alpha($subtag)) continue;
+
+                    if(2 === strlen($subtag)) $subtags[$index] = strtoupper($subtag);   // region
+                    elseif(4 === strlen($subtag)) $subtags[$index] = ucfirst($subtag);  // script
+                }
+
+                $locale = implode("-", $subtags);
+
+                // Keep the first occurrence, but let a later duplicate raise its quality.
+                if(isset($accepted[$locale]) && $accepted[$locale]["quality"] >= $quality) continue;
+
+                $accepted[$locale] = [
+                    "locale"  => $locale,
+                    "quality" => $quality,
+                ];
+            }
+
+            $accepted = array_values($accepted);
+
+            // Sort by quality
+            usort($accepted, fn($a, $b) => $b["quality"] <=> $a["quality"]);
+
+            return array_column($accepted, "locale");
         }
 
         public function getExecutionTime(): ?float {
@@ -219,6 +301,65 @@
             if(!$hasPermission) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
+                exit;
+            }
+
+            return true;
+        }
+
+        /**
+         * Checks if the current user belongs to an organization. If the user is not logged in, they will be redirected to the login page.
+         * If the user is logged in but does not belong to an organization, they will be redirected to 403.
+         * @param bool $boolResult If true, the function will return a boolean result instead of redirecting
+         */
+        public function requireOrganization(bool $boolResult = false): bool {
+            if(!user()->isLoggedIn) {
+                if($boolResult) return false;
+                zubzet()->executePath(["login", "index"]);
+                exit;
+            }
+
+            // byId() skips removed organizations, so their former members are denied
+            $hasOrganization = !is_null(user()->orgId) && !is_null(Organization::byId(user()->orgId));
+
+            if(!$hasOrganization) {
+                if($boolResult) return false;
+                zubzet()->executePath(["error", "403"]);
+                exit;
+            }
+
+            return true;
+        }
+
+        /**
+         * Guards an action behind a recent two factor check. Answers true when the
+         * session passed one inside `two_factor_freshness_seconds`, and for every
+         * account that carries no two factor at all.
+         *
+         * Without $boolResult a stale session is answered with a json error carrying
+         * `twoFactorRenew`, which Z.js turns into the two factor modal. Pass true to
+         * answer the client yourself instead:
+         *
+         *     if(!$req->requireFreshTwoFactor(boolResult: true)) {
+         *         return $res->error("Two factor required", ["twoFactorRenew" => true]);
+         *     }
+         *
+         * @param ?int $freshnessSeconds How recent the check has to be, or null for the configured window
+         * @param bool $boolResult Return the answer rather than ending the request
+         * @return bool Whether the session is fresh enough
+         */
+        public function requireFreshTwoFactor(?int $freshnessSeconds = null, bool $boolResult = false): bool {
+            if(!user()->isLoggedIn) {
+                if($boolResult) return false;
+                zubzet()->executePath(["login", "index"]);
+                exit;
+            }
+
+            $session = Session::byToken(user()->getSessionToken());
+
+            if(is_null($session) || $session->requireRenew($freshnessSeconds)) {
+                if($boolResult) return false;
+                response()->error("Two factor required", ["twoFactorRenew" => true]);
                 exit;
             }
 

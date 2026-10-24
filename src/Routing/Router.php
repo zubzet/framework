@@ -2,13 +2,16 @@
 
     namespace ZubZet\Framework\Routing;
 
-    use FastRoute;
     use FastRoute\Dispatcher;
     use FastRoute\RouteCollector;
+    use FastRoute\RouteParser\Std;
+    use FastRoute\DataGenerator\GroupCountBased as GroupCountBasedDataGenerator;
+    use FastRoute\Dispatcher\GroupCountBased as GroupCountBasedDispatcher;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Registry\Registry;
     use Symfony\Component\Console\Input\ArgvInput;
+    use ZubZet\Framework\Security\CSRF;
 
     trait Router {
 
@@ -23,6 +26,9 @@
                 request()->urlParts = $customUrlParts;
             }
 
+            // CSRF defense: issue a token on every request, dispatch verifies it before the route runs.
+            new CSRF();
+
             $dispatcher = $this->getRouteDispatcher();
 
             $httpMethod = request()->input->SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -36,12 +42,24 @@
 
             $uri = rawurldecode($uri);
 
+            // Routes are defined relative to the root directory, a doubled slash after it counts as one
+            $rootFolder = config("rootFolder");
+            if("/" !== $rootFolder && str_starts_with("$uri/", $rootFolder)) {
+                $uri = "/" . ltrim(substr($uri, strlen($rootFolder)), "/");
+            }
+
             // Strip trailing slashes internally so /test/abc/ matches the same route as /test/abc
             if($uri !== '/') {
                 $uri = rtrim($uri, '/');
             }
 
-            $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+            // Static routes are stored lowercased, variable routes match case-insensitively
+            $routeInfo = $dispatcher->dispatch($httpMethod, strtolower($uri));
+
+            // A variable route is dispatched again with the original spelling, so its variables arrive as sent
+            if(Dispatcher::FOUND === $routeInfo[0] && !empty($routeInfo[2])) {
+                $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+            }
 
             switch($routeInfo[0]) {
                 // Route found, execute the handler with the extracted variables.
@@ -77,38 +95,37 @@
             }
 
             // Register routes and create the dispatcher on first access.
-            $this->routeDispatcher = FastRoute\simpleDispatcher(function(RouteCollector $collector) {
-                // Initialize the Route class with the current collector.
-                Route::init($this, $collector);
+            $collector = new RouteCollector(new Std(), new GroupCountBasedDataGenerator());
 
-                // Retrieve all php files from every routes root
-                // (userspace, then modules in order, then framework).
-                foreach(Registry::files("routes") as $file) {
-                    require_once $file;
+            // Initialize the Route class with the current collector.
+            Route::init($this, $collector);
+
+            // Retrieve all php files from every routes root
+            // (userspace, then modules in order, then framework).
+            foreach(Registry::files("routes") as $file) {
+                require_once $file;
+            }
+
+            // Routes match regardless of case
+            [$staticRoutes, $variableRoutes] = $collector->getData();
+            $staticRoutes = array_map(fn(array $routes) => array_change_key_case($routes, CASE_LOWER), $staticRoutes);
+
+            foreach($variableRoutes as $method => $chunks) {
+                foreach($chunks as $index => $chunk) {
+                    // Case-insensitive flag on the combined route regex
+                    $variableRoutes[$method][$index]["regex"] = $chunk["regex"] . "i";
                 }
-            });
+            }
 
+            $this->routeDispatcher = new GroupCountBasedDispatcher([$staticRoutes, $variableRoutes]);
             return $this->routeDispatcher;
         }
 
         public function executeControllerAction($controller, $action, array $params = [], array $arguments = []) {
             $this->req->urlParameters = $params;
 
-            $controller = urldecode($controller);
-            $method = urldecode($action);
-
-            $actionPatternReplacement = [
-                ["-", "_"],
-                [".", "§2E"],
-                ["ä", "ae"],
-                ["ö", "oe"],
-                ["ü", "ue"]
-            ];
-
-            foreach($actionPatternReplacement as $apr) {
-                $method = str_replace($apr[0], $apr[1], $method);
-                $controller = str_replace($apr[0], $apr[1], $controller);
-            }
+            $controller = strtr(urldecode($controller), Route::NAME_REPLACEMENTS);
+            $method = strtr(urldecode($action), Route::NAME_REPLACEMENTS);
 
             try {
                 $controllerFile = Registry::find("controllers", $controller);
@@ -156,8 +173,9 @@
          * @param array $parts The parts of the new route. Example: ["auth", "login"]
          */
         public function reroute(array $parts): void {
+            // Below the root directory, like a real request
             $newState = State::fromOverwrite(request()->input)
-                ->withPath(is_array($parts) ? implode("/", $parts) : $parts)
+                ->withPath(config("rootFolder") . ltrim(implode("/", $parts), "/"))
                 ->withArgs($parts);
             zubzet()->replaceRequest($newState);
             $this->execute();

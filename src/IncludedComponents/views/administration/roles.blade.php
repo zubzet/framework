@@ -11,22 +11,29 @@
         $(function() {
             var form = Z.Forms.create({dom: "form"});
 
-            var inputName = form.createField({name: "name", type: "name", text: "Name", value: "<?php echo $opt["name"]; ?>"});
+            var inputName = form.createField({name: "name", type: "name", text: <?= json_encode(__("admin.roles.name")) ?>, value: <?= json_encode($opt["name"], JSON_HEX_TAG | JSON_HEX_AMP); ?>});
+
+            form.createField({
+                name: "is_org_assignable",
+                type: "checkbox",
+                text: <?= json_encode(__("admin.roles.org_assignable")) ?>,
+                value: <?php echo json_encode($opt["isOrgAssignable"]); ?>,
+            });
 
             form.addSeperator();
 
             var ced = form.createCED({
                 name: "permissions",
-                text: "Permissions",
+                text: <?= json_encode(__("admin.roles.permissions")) ?>,
                 compact: true,
                 fields: [
-                    { name: "name", type: "text", text: "Permission", width: 11, compact: true}
+                    { name: "name", type: "text", text: <?= json_encode(__("admin.roles.permission")) ?>, width: 11, compact: true}
                 ],
                 value: <?php echo $opt["permissions"]; ?>
             });
 
-            form.createActionButton("Delete role", "btn-danger", function() {
-                if (confirm("Do you really want to delete this role?")) {
+            form.createActionButton(<?= json_encode(__("admin.roles.delete")) ?>, "btn-danger", function() {
+                if (confirm(<?= json_encode(__("admin.roles.delete_confirm")) ?>)) {
                     Z.Request.action("delete", {}, function() {
                         window.location.replace("<?php echo $opt["root"]. "z/roles/" ?>");
                     });
@@ -36,7 +43,7 @@
 
     </script>
 
-    <h2>Roles</h2>
+    <h2><?= e(__("admin.roles.title")) ?></h2>
 
     <div id="form"></div>
 @endsection

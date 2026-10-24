@@ -172,6 +172,46 @@ describe('Permission System - User', () => {
         });
     });
 
+    it('should reject invalid and already used emails', () => {
+        requestJson('/user/updateEmailRejected').then((output) => {
+            expect(output).to.deep.equal({
+                errors: [
+                    'Invalid email address.',
+                    'Invalid email address.',
+                    'Email address is already in use.',
+                ],
+                user: {
+                    id: 154,
+                    email: 'user_updateEmail_Rejected@cypress.test',
+                    isVerified: true,
+                    verified: '2000-01-01 12:00:00',
+                },
+            });
+        });
+    });
+
+    it('should allow saving the own email again', () => {
+        requestJson('/user/updateEmailSame').then((output) => {
+            expect(output).to.deep.equal({
+                id: 154,
+                email: 'user_updateEmail_Rejected@cypress.test',
+                isVerified: true,
+                verified: '2000-01-01 12:00:00',
+            });
+        });
+    });
+
+    it('should allow clearing the email', () => {
+        requestJson('/user/updateEmailNull').then((output) => {
+            expect(output).to.deep.equal({
+                id: 155,
+                email: null,
+                isVerified: true,
+                verified: '2000-01-01 12:00:00',
+            });
+        });
+    });
+
     it('should successfully update a user password', () => {
         requestJson('/user/updatePassword').then((output) => {
             expect(output).to.deep.equal({
@@ -261,6 +301,18 @@ describe('Permission System - User', () => {
             expect(output.passwordIsNull).to.equal(true);
             expect(output.saltIsNull).to.equal(true);
             expect(output.schemeIsNull).to.equal(true);
+        });
+    });
+
+    it('should reject invalid and already used emails on add', () => {
+        requestJson('/user/addRejected').then((output) => {
+            expect(output).to.deep.equal({
+                errors: [
+                    'Invalid email address.',
+                    'Invalid email address.',
+                    'Email address is already in use.',
+                ],
+            });
         });
     });
 

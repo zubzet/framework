@@ -12,12 +12,14 @@
      * - native: `password` is a password_hash() string; `salt` is null.
      * - legacy: `password` is the SHA-512 hex; `salt` is the per-row salt.
      * - onion : `password` is a native hash of the SHA-512 hex; `salt` is kept.
+     * - wordpress: `password` is a WordPress `$P$` or `$wp$` string; `salt` is null.
      */
     final class Password {
 
         public const NATIVE = "native";
         public const LEGACY = "legacy";
         public const ONION = "onion";
+        public const WORDPRESS = "wordpress";
 
         // The max is a DoS guard (rejected, never truncated).
         public const MIN_LENGTH_BYTES = 3;
@@ -74,6 +76,11 @@
                 return self::verifyLegacy($password, $salt, $stored);
             }
 
+            // Verifying a row imported from WordPress
+            if(self::WORDPRESS === $scheme) {
+                return self::verifyWordPress($password, $stored);
+            }
+
             // Otherwise, it can't be verified, so default wrong
             return Verification::createWrong();
         }
@@ -110,6 +117,18 @@
             }
 
             // Else, it is correct, but an upgrade is always needed for legacy hashes
+            return Verification::createCorrectWithUpgrade($password);
+        }
+
+        /** WordPress import, `$wp$` (6.8+) or `$P$` (phpass); the shims pick by prefix. Any match self-heals to native. */
+        private static function verifyWordPress(string $password, string $stored): Verification {
+            $match = WordPressBcryptHash::verify($password, $stored)
+                    || WordPressPortableHash::verify($password, $stored);
+
+            if(false === $match) {
+                return Verification::createWrong();
+            }
+
             return Verification::createCorrectWithUpgrade($password);
         }
     }

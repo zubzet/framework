@@ -3,6 +3,10 @@ describe('Webroot Directory', () => {
         cy.dbSeed();
     });
 
+    after(() => {
+        cy.exec("rm -f ../webroot/uploads/probe.php");
+    });
+
 
     const cases = [
         {
@@ -48,5 +52,14 @@ describe('Webroot Directory', () => {
             });
         });
 
+    });
+
+    it('Serves an uploaded php file without running it', () => {
+        cy.writeFile("../webroot/uploads/probe.php", "<?php echo 'php-' . 'executed'; ?>");
+
+        cy.request("/uploads/probe.php").then((response) => {
+            expect(response.body).to.contain("<?php");
+            expect(response.body).not.to.contain("php-executed");
+        });
     });
 });

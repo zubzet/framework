@@ -1,0 +1,4 @@
+# Files in the upload folder are only served, never run through PHP
+<Files "*">
+    SetHandler None
+</Files>

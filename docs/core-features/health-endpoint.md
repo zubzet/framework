@@ -1,5 +1,5 @@
 # Health Endpoint
-Since version **1.4.0**, the framework ships a public health check:
+Since version **1.3.0**, the framework ships a public health check:
 
 ```
 GET /_zubzet/health

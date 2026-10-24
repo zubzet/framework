@@ -1,6 +1,6 @@
 // Helper: every Z.Forms POST needs the isFormData flag so hasFormData()
 // returns true. Cypress is the back-end client here.
-const postForm = (url, body) => cy.request({
+const postForm = (url, body) => cy.zRequest({
     method: 'POST',
     url,
     form: true,
@@ -90,6 +90,19 @@ describe('Response', () => {
                 const login = headers.find((h) => h.startsWith('z_login_token='));
                 expect(login, 'Set-Cookie carrying z_login_token').to.exist;
                 expect(login.toLowerCase()).to.not.match(/(^|; ?)domain=/);
+            });
+            cy.clearCookie('z_login_token');
+        });
+
+        // Without the setting the cookie used to get a lifetime of 0 and
+        // expired the moment it was set, logging the user straight out.
+        it('loginAs falls back to a 7 day cookie without loginTimeoutSeconds', () => {
+            cy.request('/Response/loginAsWithoutTimeoutSetting').then((res) => {
+                const headers = [].concat(res.headers['set-cookie'] || []);
+                const login = headers.find((h) => h.startsWith('z_login_token='));
+                expect(login, 'Set-Cookie carrying z_login_token').to.exist;
+                const maxAge = Number(/max-age=(\d+)/i.exec(login)[1]);
+                expect(maxAge).to.be.within(7 * 24 * 60 * 60 - 5, 7 * 24 * 60 * 60);
             });
             cy.clearCookie('z_login_token');
         });

@@ -9,7 +9,7 @@
 
         public function __construct($logger, $level = Logger::DEBUG, array $skipClassesPartials = [], int $skipStackFramesCount = 0) {
             $this->logger = $logger;
-            return parent::__construct($level, $skipClassesPartials, $skipStackFramesCount);
+            parent::__construct($level, $skipClassesPartials, $skipStackFramesCount);
         }
 
         public function __invoke(array $record): array {

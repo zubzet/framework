@@ -47,7 +47,7 @@ describe('Request', () => {
     });
 
     it('POST', () => {
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/Core/Post',
             form: true,
@@ -69,15 +69,17 @@ describe('Request', () => {
 
             cy.intercept('POST', '/Core/File').as('fileUpload');
 
-            cy.window().then((win) => {
+            cy.request('/_zubzet/health');
+            cy.getCookie('z_csrf').then((csrf) => cy.window().then((win) => {
                 const xhr = new win.XMLHttpRequest();
                 xhr.open('POST', '/Core/File');
+                xhr.setRequestHeader('X-CSRF-Token', csrf.value);
                 xhr.onload = function () {
                     expect(xhr.status).to.eq(200);
                     expect(xhr.responseText).to.include('TestFile_Small.txt');
                 };
                 xhr.send(formData);
-            });
+            }));
 
             cy.wait('@fileUpload');
         });
@@ -280,7 +282,7 @@ describe('Request', () => {
         // accept either shape so the test is robust to that behavior.
         const parseBody = (body) => (typeof body === 'string' ? JSON.parse(body) : body);
 
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/Core/requestBody',
             body: payload, // cypress JSON-serializes objects
@@ -291,7 +293,7 @@ describe('Request', () => {
             expect(out.jsonError).to.eq(null);
         });
 
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/Core/requestBody',
             body: 'not-json{',
@@ -338,6 +340,21 @@ describe('Request', () => {
     // two-segment rootDirectory removes both leading parts.
     it('getUrlParts() strips two rootDirectory segments (multi-folder)', () => {
         cy.request('/Routing/urlPartsProbe_strip2/x/y').then((res) => {
+            expect(res.body).to.deep.equal(['x', 'y']);
+        });
+    });
+
+    // "rootDirectory = sub/" was the only way to get working links before
+    // v1.2.0, so the slashes must not count as extra segments.
+    it('getUrlParts() ignores slashes around the rootDirectory', () => {
+        cy.request('/Routing/urlPartsProbe_stripSlashes/x/y').then((res) => {
+            expect(res.body).to.deep.equal(['urlPartsProbe_stripSlashes', 'x', 'y']);
+        });
+    });
+
+    // Built by app code that appends "/x" to a root ending with a slash
+    it('getUrlParts() skips a doubled slash after the rootDirectory', () => {
+        cy.request('/Routing/urlPartsProbe_strip2//x/y').then((res) => {
             expect(res.body).to.deep.equal(['x', 'y']);
         });
     });

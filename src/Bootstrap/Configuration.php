@@ -16,6 +16,7 @@
                 "z_views" => "app/Views/",
                 "z_commands" => "app/Commands/",
                 "routes" => "app/Routes/",
+                "translations" => "app/Translations/",
                 "config_file" => "z_config/z_settings.ini",
                 "config_automated_file" => "z_config/z_automated_setting.ini",
                 "z_framework_root" => $frameworkRoot,
@@ -55,8 +56,9 @@
 
             // Format some default values to ensure they are in the expected format
             $rootDirectory = trim((string) $this->rootDirectory, '\/');
-            $this->rootFolder = "/{$rootDirectory}";
-            $this->root = "{$this->host}/{$rootDirectory}";
+            // Both end with a slash, callers append paths directly
+            $this->rootFolder = "" === $rootDirectory ? "/" : "/{$rootDirectory}/";
+            $this->root = $this->host . $this->rootFolder;
 
             // Load automated settings
             if(file_exists($this->config_automated_file)) {

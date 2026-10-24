@@ -1,0 +1,315 @@
+<?php
+    namespace ZubZet\Framework\Authentication;
+
+    use DateTime;
+    use ZubZet\Framework\Authentication\Permission\User;
+
+
+    trait CanUseSession {
+
+        public static string $dbTable = "z_logintoken";
+
+        protected bool $shouldRefresh = false;
+
+
+        public function __construct(array $data) {
+            parent::__construct($data);
+            $this->loadObject($data);
+        }
+
+        public function loadObject(array $data) {
+            $this->data = $data;
+            $this->setField("userId", $data["userId"]);
+            $this->setField("userId_exec", $data["userId_exec"]);
+            $this->setField("name", $data["name"]);
+            $this->setField("device", $data["device"]);
+            $this->setField("reason", $data["reason"]);
+            $this->setField("ip_creation", $data["ip_creation"]);
+            $this->setField("ip_last", $data["ip_last"]);
+            $this->setField("is_permanent", $data["is_permanent"]);
+            $this->setField("is_apikey", $data["is_apikey"]);
+            $this->setField("extended_seconds", $data["extended_seconds"]);
+            $this->setField("expires_at", $data["expires_at"]);
+            $this->setField("created", $data["created"]);
+            $this->setField("last_used", $data["last_used"]);
+        }
+
+        /**
+         * A session by its token, whichever kind the token opens
+         *
+         * A token does not say what it opens, so the row picks the class. This is
+         * the entry point of the authentication, which has to resolve both kinds -
+         * an api key must not be measured against the login timeout.
+         */
+        public static function byToken(string $token): Session|APIKey|null {
+            $result = model("z_login")->getSessionByToken($token);
+
+            if(is_null($result)) return null;
+
+            if($result["is_apikey"]) return new APIKey($result);
+
+            return new Session($result);
+        }
+
+        /**
+         * All active sessions of a user, of the kind the called class stands for
+         *
+         * @param User $user The user whose sessions are returned
+         * @return static[]
+         */
+        public static function byUser(User $user): array {
+            $result = model("z_login")->getSessionsByUserId($user, static::$dbExpression);
+
+            if(empty($result)) return [];
+
+            $sessions = [];
+            foreach($result as $data) {
+                $sessions[] = new static($data);
+            }
+
+            return $sessions;
+        }
+
+        public function setExtensionTime(int $seconds): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->setExtensionTime($this, $seconds);
+
+            $this->refreshOnNextUse();
+        }
+
+        public function extend(int $seconds): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->extendLoginToken($this, $seconds);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
+         * Fixes the point in time the session expires, or hands it back to the
+         * computed lifetime when null is passed. A fixed expiry replaces that
+         * lifetime, so extending the session no longer moves it.
+         */
+        public function setExpiresAt(?DateTime $expiresAt): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->setSessionExpiresAt($this, $expiresAt);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
+         * Names the session, or removes its name when null is passed
+         */
+        public function setName(?string $name): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->setSessionName($this, $name);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
+         * Subjects the session to expiring, or exempts it from it. A session that
+         * cannot expire is not invalidated on use, so an already expired one
+         * becomes usable again by turning this off.
+         *
+         * The column stores the exemption, so it is inverted here once.
+         */
+        public function setCanExpire(bool $canExpire): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->setSessionPermanent($this, !$canExpire);
+
+            $this->refreshOnNextUse();
+        }
+
+        public function invalidate(): void {
+            model("z_login")->invalidateSession($this);
+            $this->nullId();
+        }
+
+        /**
+         * When this session last passed a two factor check, or null while it
+         * never did
+         */
+        public function lastTwoFactor(): ?string {
+            if($this->shouldRefresh) $this->refresh();
+
+            return $this->getField("last_two_factor");
+        }
+
+        /**
+         * How many wrong two factor codes this session may still send. At zero it
+         * is signed out rather than asked again.
+         */
+        public function remainingTwoFactorTries(): int {
+            if($this->shouldRefresh) $this->refresh();
+
+            return (int) $this->getField("remaining_two_factor_tries");
+        }
+
+        /**
+         * Stamps a freshly passed two factor check on the session
+         */
+        public function recordTwoFactor(): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->recordTwoFactor($this);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
+         * Hands the session its full budget of two factor tries back
+         */
+        public function resetTwoFactorTries(): void {
+            if($this->shouldRefresh) $this->refresh();
+
+            model("z_login")->resetTwoFactorTries($this);
+
+            $this->refreshOnNextUse();
+        }
+
+        /**
+         * Spends one of the tries on a wrong code and answers how many are left
+         */
+        public function spendTwoFactorTry(): int {
+            if($this->shouldRefresh) $this->refresh();
+
+            $remaining = model("z_login")->spendTwoFactorTry($this);
+
+            $this->refreshOnNextUse();
+
+            return $remaining;
+        }
+
+        /**
+         * Whether this session has to pass two factor again before it is let near
+         * a guarded action.
+         *
+         * False for an account that carries no two factor - there is nothing to
+         * renew and the visitor could never satisfy it. Otherwise true while the
+         * session never passed a check, or once the last one aged past
+         * `two_factor_freshness_seconds`. An api key starts without a stamp, so it
+         * stays stale for an account with two factor until it passes a renewal.
+         */
+        public function requireRenew(?int $freshnessSeconds = null): bool {
+            $user = User::byId($this->userId());
+
+            // A session outliving its user is turned away, not waved through
+            if(is_null($user)) return true;
+
+            if(!$user->hasTwoFactor()) return false;
+
+            $lastTwoFactor = $this->lastTwoFactor();
+            if(is_null($lastTwoFactor)) return true;
+
+            $freshness = is_null($freshnessSeconds) ? configNumeric("two_factor_freshness_seconds", 900) : $freshnessSeconds;
+
+            return strtotime($lastTwoFactor) <= time() - $freshness;
+        }
+
+        /**
+         * The point in time the session becomes unusable, or null when it cannot expire
+         *
+         * A fixed expiry wins over the computed lifetime, so neither the configured
+         * timeout nor an extension has a say once one is set. A session that cannot
+         * expire outranks both - it never becomes unusable at all.
+         */
+        public function expiresAt(bool $refresh = true): ?string {
+            if($refresh && $this->shouldRefresh) $this->refresh();
+
+            if(!$this->canExpire()) return null;
+
+            $fixedExpiry = $this->getField("expires_at");
+            if(!is_null($fixedExpiry)) return $fixedExpiry;
+
+            $lifetime = (int) config("loginTimeoutSeconds", default: TIMESPAN_DAY_7);
+
+            if(!is_null($this->extendedSeconds())) $lifetime += $this->extendedSeconds();
+
+            return date("Y-m-d H:i:s", strtotime($this->created()) + $lifetime);
+        }
+
+        public function isExpired(): bool {
+            if($this->shouldRefresh) $this->refresh();
+
+            $expiresAt = $this->expiresAt(false);
+
+            if(is_null($expiresAt)) return false;
+
+            return !(strtotime($expiresAt) > time());
+        }
+
+        public function token(): ?string {
+            return $this->getField("token");
+        }
+
+        public function userId(): ?int {
+            return $this->getField("userId");
+        }
+
+        public function userIdExec(): ?int {
+            return $this->getField("userId_exec");
+        }
+
+        public function name(): ?string {
+            return $this->getField("name");
+        }
+
+        /**
+         * The user agent the session was started from, or null when none was sent
+         */
+        public function device(): ?string {
+            return $this->getField("device");
+        }
+
+        /**
+         * Why the session was created, e.g. an impersonation, or null
+         */
+        public function reason(): ?string {
+            return $this->getField("reason");
+        }
+
+        /**
+         * The address the session was created from, or null when it was not known
+         */
+        public function ipCreation(): ?string {
+            return $this->getField("ip_creation");
+        }
+
+        /**
+         * The address the session was last used from, or null while it is unused
+         */
+        public function ipLast(): ?string {
+            return $this->getField("ip_last");
+        }
+
+        /**
+         * Whether the session is subject to expiring at all
+         */
+        public function canExpire(): bool {
+            return !$this->getField("is_permanent");
+        }
+
+        public function extendedSeconds(): ?int {
+            return $this->getField("extended_seconds");
+        }
+
+        public function created(): ?string {
+            return $this->getField("created");
+        }
+
+        /**
+         * When the session was last used, or null while it is unused
+         */
+        public function lastUsed(): ?string {
+            return $this->getField("last_used");
+        }
+
+        protected function refreshOnNextUse(): void {
+            $this->shouldRefresh = true;
+        }
+    }

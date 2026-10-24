@@ -1,5 +1,6 @@
 <?php
 
+use ZubZet\Framework\Authentication\APIKey;
 use ZubZet\Framework\Authentication\Session;
 use ZubZet\Framework\Authentication\Permission\User;
 
@@ -134,6 +135,42 @@ class SessionController extends z_controller {
         echo(json_encode($this->getSession($session)));
     }
 
+    /**
+     * Every authenticated request looks its session up by token, so the
+     * lookup has to hit a unique index instead of scanning the table.
+     */
+    public function action_tokenIndex(Request $req, Response $res): void {
+        $index = db()->exec(
+            "SELECT INDEX_NAME, NON_UNIQUE FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'z_logintoken'
+               AND COLUMN_NAME = 'token' AND SEQ_IN_INDEX = 1"
+        )->resultToLine();
+
+        $token = Session::byId(404)->token();
+        $plan = db()->exec(
+            "EXPLAIN SELECT * FROM `z_logintoken` WHERE `token` = ? AND `active` = 1 LIMIT 1",
+            "s", $token,
+        )->resultToLine();
+
+        try {
+            $id = db()->exec(
+                "INSERT INTO `z_logintoken` (`token`, `userId`, `userId_exec`) VALUES (?, 404, 404)",
+                "s", $token,
+            )->getInsertId();
+            db()->exec("DELETE FROM `z_logintoken` WHERE `id` = ?", "i", $id);
+            $duplicate = "inserted";
+        } catch(\Throwable $e) {
+            $duplicate = $e->getMessage();
+        }
+
+        echo(json_encode([
+            'index'     => $index["INDEX_NAME"] ?? null,
+            'unique'    => isset($index["NON_UNIQUE"]) && 0 == $index["NON_UNIQUE"],
+            'lookupKey' => $plan["key"] ?? null,
+            'duplicate' => $duplicate,
+        ]));
+    }
+
 
     /**
      *
@@ -152,6 +189,256 @@ class SessionController extends z_controller {
         $exec = User::byId(423);
         $session = Session::add($user, $exec);
         echo(json_encode($this->getSession($session)));
+    }
+
+    public function action_addWithName(Request $req, Response $res): void {
+        $user = User::byId(434);
+        $session = Session::add($user, name: 'Named session');
+        echo(json_encode($this->getSession($session)));
+    }
+
+    /** Without loginTimeoutSeconds a new session lives for the documented 7 days. */
+    public function action_addWithoutTimeoutSetting(Request $req, Response $res): void {
+        $settings = zubzet()->getAllAttributes();
+        unset($settings["loginTimeoutSeconds"]);
+        zubzet()->setAttributes($settings);
+
+        $session = Session::add(User::byId(421));
+        echo(json_encode([
+            'lifetime' => strtotime($session->expiresAt()) - strtotime($session->created()),
+        ]));
+    }
+
+
+    /**
+     * Session 438 is an ordinary login created in the year 2000, so it is
+     * expired until it is exempted from expiring.
+     */
+    public function action_sessionPermanent(Request $req, Response $res): void {
+        $session = Session::byId(438);
+
+        $before = $this->getExpiry($session);
+
+        $session->setCanExpire(false);
+        $session->refresh();
+
+        echo(json_encode([
+            'before' => $before,
+            'after'  => $this->getExpiry($session),
+        ]));
+    }
+
+
+    /**
+     * Session 440 was created in the year 2000, so the computed lifetime has
+     * long run out - the expiry fixed on it is what keeps it usable.
+     */
+    public function action_expiresAtFixed(Request $req, Response $res): void {
+        echo(json_encode($this->getExpiry(Session::byId(440))));
+    }
+
+    /**
+     * Session 441 was created now and extended by decades, both of which the
+     * expiry fixed in the past overrules.
+     */
+    public function action_expiresAtOverrules(Request $req, Response $res): void {
+        $session = Session::byId(441);
+
+        echo(json_encode(array_merge($this->getExpiry($session), [
+            'extendedSeconds' => (int) $session->extendedSeconds(),
+        ])));
+    }
+
+    /**
+     * Session 442 is an ordinary login from the year 2000, so it expires by its
+     * age until an expiry is fixed on it, and again once that is dropped.
+     */
+    public function action_setExpiresAt(Request $req, Response $res): void {
+        $session = Session::byId(442);
+
+        $before = $this->getExpiry($session);
+
+        $session->setExpiresAt(new DateTime('2099-01-01 12:00:00'));
+        $fixed = $this->getExpiry($session);
+
+        $session->setExpiresAt(null);
+
+        echo(json_encode([
+            'before'  => $before,
+            'fixed'   => $fixed,
+            'dropped' => $this->getExpiry($session),
+        ]));
+    }
+
+    /**
+     * Session 443 carries an expiry long past but is exempt from expiring,
+     * which outranks the date.
+     */
+    public function action_expiresAtPermanent(Request $req, Response $res): void {
+        echo(json_encode($this->getExpiry(Session::byId(443))));
+    }
+
+
+    /**
+     * A session records why it was created and where from, both taken at
+     * creation time. User 439 has no seeded session, so this one is fresh.
+     */
+    public function action_sessionOrigin(Request $req, Response $res): void {
+        $session = Session::add(User::byId(439), name: 'Named', reason: 'Support request #42');
+
+        echo(json_encode([
+            'name'        => $session->name(),
+            'reason'      => $session->reason(),
+            'device'      => $session->device(),
+            'ipCreation'  => $session->ipCreation(),
+            'ipLast'      => $session->ipLast(),
+            'requestIp'   => $req->ip(),
+            'requestAgent'=> $req->userAgent(),
+        ]));
+    }
+
+    /**
+     * Session 439 is seeded with a stale ip_last, which the authenticated
+     * request that carries its cookie has to correct.
+     */
+    public function action_sessionIpLast(Request $req, Response $res): void {
+        echo(json_encode([
+            'ipLast'    => Session::byId(439)->ipLast(),
+            'requestIp' => $req->ip(),
+        ]));
+    }
+
+
+    /**
+     *
+     * @var API Keys
+     *
+     */
+
+    /**
+     * User 430 owns one login, two api keys and one revoked api key. Each
+     * class lists its own kind only.
+     */
+    public function action_apiKeyByUser(Request $req, Response $res): void {
+        $user = User::byId(430);
+
+        echo(json_encode([
+            'logins'  => $this->sessionIds(Session::byUser($user)),
+            'apiKeys' => $this->sessionIds(APIKey::byUser($user)),
+        ]));
+    }
+
+    /**
+     * Session 430 is a login, session 431 an api key. Looking one up through
+     * the other class finds nothing.
+     */
+    public function action_apiKeyById(Request $req, Response $res): void {
+        echo(json_encode([
+            'sessionOnLogin' => $this->className(Session::byId(430)),
+            'sessionOnKey'   => $this->className(Session::byId(431)),
+            'apiKeyOnKey'    => $this->className(APIKey::byId(431)),
+            'apiKeyOnLogin'  => $this->className(APIKey::byId(430)),
+        ]));
+    }
+
+    /**
+     * A token says nothing about its kind, so the row picks the class. This is
+     * shared through CanUseSession, so both classes resolve both kinds - which
+     * is what keeps an api key out of the login timeout when it authenticates.
+     */
+    public function action_apiKeyByToken(Request $req, Response $res): void {
+        $login  = '0430a00000000000000000000000000000000000';
+        $apiKey = '0430b00000000000000000000000000000000000';
+
+        echo(json_encode([
+            'sessionOnLogin' => $this->className(Session::byToken($login)),
+            'sessionOnKey'   => $this->className(Session::byToken($apiKey)),
+            'apiKeyOnLogin'  => $this->className(APIKey::byToken($login)),
+            'apiKeyOnKey'    => $this->className(APIKey::byToken($apiKey)),
+        ]));
+    }
+
+    public function action_apiKeyAdd(Request $req, Response $res): void {
+        $apiKey = APIKey::add(User::byId(437), name: 'Deployment pipeline', reason: 'CI needs read access');
+
+        echo(json_encode(array_merge([
+            'class'  => $this->className($apiKey),
+            'userId' => (int) $apiKey->userId(),
+            'token'  => $apiKey->token(),
+            'reason' => $apiKey->reason(),
+        ], $this->getNameAndExpiry($apiKey))));
+    }
+
+    /**
+     * Api key 434 starts out unnamed and expiring. Both are changed through the
+     * object and read back from the refreshed object and a second lookup.
+     */
+    public function action_apiKeyManage(Request $req, Response $res): void {
+        $apiKey = APIKey::byId(434);
+
+        $before = $this->getNameAndExpiry($apiKey);
+
+        $apiKey->setName('Renamed key');
+        $apiKey->setCanExpire(false);
+        $apiKey->refresh();
+
+        echo(json_encode([
+            'before' => $before,
+            'after'  => $this->getNameAndExpiry($apiKey),
+            'stored' => $this->getNameAndExpiry(APIKey::byId(434)),
+        ]));
+    }
+
+    /**
+     * Api key 435 was created in the year 2000 without an extension, so only
+     * the exemption from expiring keeps it alive. Dropping it expires it again.
+     */
+    public function action_apiKeyPermanentExpiry(Request $req, Response $res): void {
+        $apiKey = APIKey::byId(435);
+
+        $exempt = $this->getExpiry($apiKey);
+
+        $apiKey->setCanExpire(true);
+        $apiKey->refresh();
+
+        echo(json_encode([
+            'exempt'   => $exempt,
+            'expiring' => $this->getExpiry($apiKey),
+        ]));
+    }
+
+    /**
+     * Api key 437 is seeded with a name; passing null is the way back to an
+     * unnamed key.
+     */
+    public function action_apiKeyClearName(Request $req, Response $res): void {
+        $apiKey = APIKey::byId(437);
+        $before = $apiKey->name();
+
+        $apiKey->setName(null);
+
+        echo(json_encode([
+            'before' => $before,
+            'after'  => APIKey::byId(437)->name(),
+        ]));
+    }
+
+
+    /**
+     * The names of every session of user 436, who is logged in for real by the
+     * login-naming test, so cypress can see what loginAs() stored.
+     */
+    public function action_loginSessionNames(Request $req, Response $res): void {
+        echo(json_encode(array_map(
+            fn(Session|APIKey $session) => [
+                'name'       => $session->name(),
+                'device'     => $session->device(),
+                'reason'     => $session->reason(),
+                'ipCreation' => $session->ipCreation(),
+                'ipLast'     => $session->ipLast(),
+            ],
+            array_values(Session::byUser(User::byId(436))),
+        )));
     }
 
 
@@ -178,11 +465,36 @@ class SessionController extends z_controller {
     }
 
     /**
+     * The session behind the current cookie, so cypress can read back what a
+     * login path stored on it.
+     */
+    public function action_currentSession(Request $req, Response $res): void {
+        $user = $req->booter->user;
+        $session = $user->isLoggedIn ? Session::byToken($user->getSessionToken()) : null;
+
+        echo(json_encode([
+            'found'  => !is_null($session),
+            'reason' => $session?->reason(),
+            'name'   => $session?->name(),
+            'device' => $session?->device(),
+        ]));
+    }
+
+    /**
      * Invalidates session 412 (token 0410a...) so the subsequent whoami
      * request with that cookie is rejected.
      */
     public function action_invalidateForAuth(Request $req, Response $res): void {
         model("z_login")->invalidateSession(Session::byToken('0410a00000000000000000000000000000000000'));
+        echo(json_encode(['done' => true]));
+    }
+
+    /**
+     * Removes user 414 while its session 416 (token 0414a...) stays active,
+     * so the subsequent whoami request with that cookie must be rejected.
+     */
+    public function action_removeUserForAuth(Request $req, Response $res): void {
+        User::byId(414)->remove();
         echo(json_encode(['done' => true]));
     }
 
@@ -224,7 +536,7 @@ class SessionController extends z_controller {
         return $result;
     }
 
-    private function getSession(?Session $session): array {
+    private function getSession(Session|APIKey|null $session): array {
         if ($session === null) {
             return ['found' => false];
         }
@@ -234,9 +546,38 @@ class SessionController extends z_controller {
             'token'          => $session->token(),
             'userId'         => (int) $session->userId(),
             'userIdExec'     => (int) $session->userIdExec(),
+            'name'           => $session->name(),
+            'device'         => $session->device(),
+            'reason'         => $session->reason(),
+            'canExpire'      => $session->canExpire(),
             'extendedSeconds'=> is_null($session->extendedSeconds()) ? null : (int) $session->extendedSeconds(),
             'created'        => $session->created(),
         ];
+    }
+
+    private function getNameAndExpiry(Session|APIKey $session): array {
+        return [
+            'name'      => $session->name(),
+            'canExpire' => $session->canExpire(),
+        ];
+    }
+
+    private function getExpiry(Session|APIKey $session): array {
+        return [
+            'isExpired' => $session->isExpired(),
+            'expiresAt' => $session->expiresAt(),
+            'canExpire' => $session->canExpire(),
+        ];
+    }
+
+    private function sessionIds(array $sessions): array {
+        return array_map(fn(Session|APIKey $session) => $session->id(), $sessions);
+    }
+
+    private function className(Session|APIKey|null $session): ?string {
+        if (is_null($session)) return null;
+
+        return (new \ReflectionClass($session))->getShortName();
     }
 
 }

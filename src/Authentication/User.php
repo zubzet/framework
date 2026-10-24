@@ -30,6 +30,13 @@
          */
         public $orgId = null;
 
+
+
+        /**
+         * @var string|null $uuid The UUID of the user.
+         */
+        public $uuid = null;
+
         /**
          * @var int $execUserId ID of the user that is logged in as this user.
          * 
@@ -57,15 +64,17 @@
         }
 
         /**
-         * Checks if the user is registered. Checks by the z_login_token cookie. 
+         * Checks if the user is registered. Checks by the bearer token of the Authorization header, else by the z_login_token cookie.
          * The properties $isLoggedIn, $userId, and $execUserId will be set after calling this function.
          */
         public function identify() {
-            if(empty(request()->getCookie("z_login_token"))) {
+            // A bearer header wins over the cookie, even when its token turns out invalid
+            $token = request()->bearerToken() ?? request()->getCookie("z_login_token");
+            if(empty($token)) {
                 return $this->anonymousRequest();
             }
 
-            $session = Session::byToken(request()->getCookie("z_login_token"));
+            $session = Session::byToken($token);
             if(is_null($session) ||
                 !model("z_login")->validateSession($session) ||
                 is_null($session->userId()) ||
@@ -73,16 +82,20 @@
             {
                 return $this->anonymousRequest();
             }
+            // The session is valid, so this request is what `last_used` describes
+            model("z_login")->recordSessionUse($session);
+
             $this->userId = $session->userId();
             $this->execUserId = $session->userIdExec();
             $this->sessionToken = $session->token();
 
             if (!is_null($this->userId)) {
                 $user = model("z_user")->getUserById($this->userId);
-                if ($user !== false) {
+                if ($user !== false && 1 === $user["active"]) {
                     $this->orgId = $user["organizationId"];
                     $this->isLoggedIn = true;
                     $this->fields = $user;
+                    $this->uuid = $user["uuid"];
                 }
             }
         }

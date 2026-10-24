@@ -223,4 +223,62 @@ describe('Permission System - Organization', () => {
             });
         });
     });
+
+    // Seeded users: 560 is in org 505, 561 has no organization, 562 is in the removed org 501
+    describe('membership', () => {
+        it('hasMember is true for a member of the organization', () => {
+            requestJson('/organization/hasMember/505/560').then((output) => expect(output).to.equal(true));
+        });
+
+        it('hasMember is false for a member of another organization or none', () => {
+            requestJson('/organization/hasMember/506/560').then((output) => expect(output).to.equal(false));
+            requestJson('/organization/hasMember/505/561').then((output) => expect(output).to.equal(false));
+        });
+
+        it('isMemberOf is true for the organization of the user', () => {
+            requestJson('/organization/isMemberOf/560/505').then((output) => expect(output).to.equal(true));
+        });
+
+        it('isMemberOf is false for another organization or a user without one', () => {
+            requestJson('/organization/isMemberOf/560/506').then((output) => expect(output).to.equal(false));
+            requestJson('/organization/isMemberOf/561/505').then((output) => expect(output).to.equal(false));
+            requestJson('/organization/isMemberOf/562/505').then((output) => expect(output).to.equal(false));
+        });
+    });
+
+    // Request::requireOrganization, through the probe in OrganizationController
+    describe('requireOrganization', () => {
+        function expectDenied(page) {
+            cy.request('/organization/requireBool').its('body').should('eq', 'denied');
+            cy.request({ url: '/organization/require', failOnStatusCode: false }).its('body').then((body) => {
+                expect(body, 'the default call stops the request').to.not.include('passed');
+                expect(body).to.include(page);
+            });
+        }
+
+        const forbidden = 'Page not for you';
+        const login = 'data-test="btn-login"';
+
+        beforeEach(() => cy.clearCookies());
+
+        it('sends a logged out user to the login', () => {
+            expectDenied(login);
+        });
+
+        it('allows a member of an organization', () => {
+            cy.request('/organization/requireLogin/560');
+            cy.request('/organization/requireBool').its('body').should('eq', 'allowed');
+            cy.request('/organization/require').its('body').should('eq', 'passed');
+        });
+
+        it('forbids a user without an organization', () => {
+            cy.request('/organization/requireLogin/561');
+            expectDenied(forbidden);
+        });
+
+        it('forbids a member of a removed organization', () => {
+            cy.request('/organization/requireLogin/562');
+            expectDenied(forbidden);
+        });
+    });
 });

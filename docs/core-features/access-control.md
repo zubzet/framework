@@ -8,6 +8,37 @@ At its core, the access control system introduces two primary domain objects: **
 
 ---
 
+## UUIDs
+
+Every user, role, group, organization, session and API key carries a **UUID** next to its numeric ID,
+stored in the `uuid` column as a native MariaDB `UUID` and read back as an RFC 4122 string. It is the identifier meant to leave the
+application: URLs, REST payloads and anything handed to a third party. Unlike the sequential ID, it
+does not reveal how many records exist and cannot be guessed by counting up. The numeric ID stays the
+internal key used for foreign keys and joins.
+
+Every object that can be retrieved by ID can also be retrieved by UUID, and every object returns its own:
+
+```php
+User::byUuid(string $uuid): ?User
+Role::byUuids(string ...$uuids): array
+$organization->uuid(): string
+```
+
+The UUID of the authenticated user is available without a lookup:
+
+```php
+user()->uuid;
+```
+
+A [session](#session-object) or [API key](#api-keys) has a UUID as well, and it is the only one of
+its identifiers that is safe to hand out: the token authenticates whoever presents it, so it belongs
+in a cookie or an `Authorization` header and nowhere else. Use the UUID to name a session in a "your
+active sessions" list or to address one for renaming or invalidation. Like `byId()`, `byUuid()` is
+scoped to the class it is called on - `Session::byUuid()` does not find an API key and
+`APIKey::byUuid()` does not find a login.
+
+---
+
 ## User Object
 
 The [`User`](../api/classes/ZubZet-Framework-Authentication-Permission-User.html) object represents an application user and exposes a comprehensive API for retrieval, lifecycle management, and permission handling.
@@ -72,6 +103,18 @@ All retrieval methods are **public static** and return fully hydrated `User` obj
     User::byIds(int ...$ids): array
     ```
 
+* Returns a user by its [UUID](#uuids) or `null` if not found.
+
+    ```php
+    User::byUuid(string $uuid): ?User
+    ```
+
+* Returns all users matching the given UUIDs.
+
+    ```php
+    User::byUuids(string ...$uuids): array
+    ```
+
 ---
 
 ### Loading a User from Database Data
@@ -98,6 +141,8 @@ Users can be created through the static `add` method.
 
 If no verification date is provided, the user is created as **unverified**.
 
+Throws an `InvalidArgumentException` if the email is not a valid address or already belongs to another user. Passing `null` creates a user without an email.
+
 The `$password` parameter is optional. When `null` is passed, the user is created without a password - useful for invite or SSO flows where a credential is set later via `updatePassword()`.
 
 ---
@@ -106,7 +151,7 @@ The `$password` parameter is optional. When `null` is passed, the user is create
 
 User attributes can be updated directly on the instance.
 
-* Updates the user’s email address.
+* Updates the user’s email address. Throws an `InvalidArgumentException` if the address is not a valid email or already belongs to another user. Passing `null` clears it.
 
     ```php
     $user->updateEmail(?string $email);
@@ -125,7 +170,8 @@ User attributes can be updated directly on the instance.
     $user->updateOrganization(?Organization $organization);
     ```
 
-* Clears all active login sessions for the user.
+* Clears all active login sessions for the user. Api keys are credentials of their
+  own and are not touched.
 
     ```php
     $user->clearSessions();
@@ -161,6 +207,73 @@ Verification status is time-aware and can be set or queried at arbitrary points 
     ```php
     $user->isVerified(string $at = "NOW"): bool
     ```
+
+---
+
+### Two Factor
+
+The account side of [two factor authentication](two-factor-authentication.md). The secret lives in `z_user.two_factor_secret`, and only a confirmed enrollment (`two_factor_confirmed_at`) turns two factor on.
+
+* Starts an enrollment: stores a fresh secret that does not count yet and returns it as an `OTPHP\TOTP`. `getSecret()` and `getProvisioningUri()` are the two shapes an authenticator takes it in. The label is the user's email and the issuer the `pageName`. Starting again replaces the secret and turns an active two factor off until the new one is confirmed, which is why the profile page refuses to start while two factor is on.
+
+    ```php
+    $user->startTwoFactor(): TOTP
+    ```
+
+* Turns two factor on when the code matches the stored secret. Returns `false` for a wrong code and for an account that already has two factor.
+
+    ```php
+    $user->confirmTwoFactor(string $code): bool
+    ```
+
+* Checks a code against the stored secret, one 30 second step either side of the current one. Returns `false` while the account has no secret.
+
+    ```php
+    $user->verifyTwoFactorCode(string $code): bool
+    ```
+
+* Returns whether two factor is on, and since when.
+
+    ```php
+    $user->hasTwoFactor(): bool
+    $user->twoFactorConfirmedAt(): ?string
+    ```
+
+* Turns two factor off and drops the secret.
+
+    ```php
+    $user->disableTwoFactor(): void
+    ```
+
+---
+
+### Login Tries
+
+Failed logins are counted per account to rate-limit password guessing.
+
+* Returns `false` when the user has more failed tries than `maxLoginTriesPerTimespan` within the last `maxLoginTriesTimespan`. The event is logged as `ACCOUNT_LOGIN_RATE_LIMITED`.
+
+    ```php
+    $user->checkLoginTries(): bool
+    ```
+
+* Counts a failed login toward that limit.
+
+    ```php
+    $user->recordLoginTry(): void
+    ```
+
+```php
+if(!$user->checkLoginTries()) {
+    // blocked, notify the owner here if the application wants to
+}
+
+if(!$user->verifyPassword($password)) {
+    $user->recordLoginTry();
+}
+```
+
+The framework does not notify the owner of a blocked login, an application does that itself where it needs to.
 
 ---
 
@@ -272,6 +385,12 @@ Permission checks always resolve the **complete permission set**.
     $user->id(): int|string|null
     ```
 
+* Returns the user's [UUID](#uuids).
+
+    ```php
+    $user->uuid(): string
+    ```
+
 * Returns all roles assigned to the user.
 
     ```php
@@ -283,6 +402,12 @@ Permission checks always resolve the **complete permission set**.
 
     ```php
     $user->organization(): ?Organization
+    ```
+
+* Returns whether the user belongs to the given organization. A removed organization has no members.
+
+    ```php
+    $user->isMemberOf(Organization $organization): bool
     ```
 
 * Validates that the instance exists and is not null.
@@ -341,6 +466,18 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
     Role::byIds(int ...$ids): array
     ```
 
+* Returns a role by its [UUID](#uuids) or `null` if not found.
+
+    ```php
+    Role::byUuid(string $uuid): ?Role
+    ```
+
+* Returns all roles matching the given UUIDs.
+
+    ```php
+    Role::byUuids(string ...$uuids): array
+    ```
+
 ---
 
 ### Role Creation and Loading
@@ -376,6 +513,12 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 ---
 
 ### Role Data Access
+
+* Returns the role's [UUID](#uuids).
+
+    ```php
+    $role->uuid(): string
+    ```
 
 * Returns the role name.
 
@@ -494,6 +637,18 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     Organization::byIds(int ...$ids): array
     ```
 
+* Returns an organization by its [UUID](#uuids), or `null` if not found or inactive.
+
+    ```php
+    Organization::byUuid(string $uuid): ?Organization
+    ```
+
+* Returns all organizations matching the given UUIDs.
+
+    ```php
+    Organization::byUuids(string ...$uuids): array
+    ```
+
 ---
 
 ### Creating an Organization
@@ -515,7 +670,7 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     $organization->updateName(string $name);
     ```
 
-* Soft deletes the organization (`active = 0`). Users that referenced it will then return `null` from `$user->organization()`, even though their `organizationId` column is preserved.
+* Soft deletes the organization (`active = 0`). Its active members are detached first (`organizationId` is set to `NULL` and the membership in the linked group is removed) and the linked group is deactivated, so `$user->organization()` returns `null` for them.
 
     ```php
     $organization->remove();
@@ -524,6 +679,12 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 ---
 
 ### Organization Data Access
+
+* Returns the organization's [UUID](#uuids).
+
+    ```php
+    $organization->uuid(): string
+    ```
 
 * Returns the organization's name.
 
@@ -543,6 +704,12 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     $organization->refreshUsers();
     ```
 
+* Returns whether the given user belongs to this organization. The counterpart of `$user->isMemberOf()`.
+
+    ```php
+    $organization->hasMember(User $user): bool
+    ```
+
 * Returns the permission `Group` linked to this organization, or `null` if none is linked. The result is cached on the instance until `clearFields()` or a write operation invalidates it.
 
     ```php
@@ -559,35 +726,47 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 
 ## Session Object
 
-The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation.
+The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation. An api key is the same row with `is_apikey` set, represented by [`APIKey`](#api-keys). The two are siblings, not parent and child: they get their behavior from the `CanUseSession` trait, so everything documented here applies to both. Type as `Session|APIKey` where either kind may turn up.
 
 ### Session Retrieval
 
-* Returns a session by its token string, or `null` if not found.
+* Returns a session by its token string, or `null` if not found. The row decides the class, so a token belonging to an api key returns an [`APIKey`](#api-keys). This is the entry point of the authentication and therefore resolves both kinds, whichever class it is called on.
 
     ```php
-    Session::byToken(string $token): ?Session
+    Session::byToken(string $token): Session|APIKey|null
     ```
 
-* Returns all active sessions for a given user.
+* Returns all active logins of a user. Api keys are listed by `APIKey::byUser()` instead.
 
     ```php
     Session::byUser(User $user): array
     ```
 
-* Returns a session by its ID.
+* Returns a login by its ID, or `null` if the ID belongs to an api key.
 
     ```php
     Session::byId(int|string $id): ?Session
     ```
 
-* Returns all sessions matching the given IDs.
+* Returns all logins matching the given IDs.
 
     ```php
     Session::byIds(int ...$ids): array
     ```
 
-* Returns all sessions.
+* Returns a login by its [UUID](#uuids), or `null` if the UUID belongs to an api key. This is the identifier to use when a session has to be addressed from outside the application - the token must not leave the client.
+
+    ```php
+    Session::byUuid(string $uuid): ?Session
+    ```
+
+* Returns all logins matching the given UUIDs.
+
+    ```php
+    Session::byUuids(string ...$uuids): array
+    ```
+
+* Returns all logins.
 
     ```php
     Session::all(): array
@@ -597,11 +776,90 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
 
 ### Creating a Session
 
-* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`.
+* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`. The optional `$name` labels the session, which is what a "your active sessions" list shows, and `$reason` records why it was created.
 
     ```php
-    Session::add(User $user, ?User $userExec = null): Session
+    Session::add(User $user, ?User $userExec = null, ?string $name = null, ?string $reason = null): Session
     ```
+
+* Names the session, or removes its name when `null` is passed.
+
+    ```php
+    $session->setName(?string $name): void
+    ```
+
+* Every session records the request that created it, without the caller doing anything: `device` holds the user agent (cut to the 255 characters the column takes, `null` when none was sent) and `ip_creation` the address it was created from. A name is never derived from either - it stays `null` until someone chooses one.
+
+---
+
+### API Keys
+
+An api key is a session that is handed out deliberately instead of being
+created by logging in. It carries the same token, authenticates the same way and
+has the same lifetime controls -
+[`APIKey`](../api/classes/ZubZet-Framework-Authentication-APIKey.html) shares all
+of that with `Session` through the `CanUseSession` trait. What differs is that a
+key belongs to a single user and has **no executing user**, so its `add()` takes
+no `$userExec`. That is why the two are siblings rather than one extending the
+other: PHP would not allow the narrower signature on a subclass.
+
+```php
+$key = APIKey::add($user, name: "Deployment pipeline");
+$key->setCanExpire(false); // from CanUseSession, like setName() and extend()
+
+$key->token(); // the value the client sends as its z_login_token
+
+APIKey::byUser($user);  // the user's api keys
+Session::byUser($user); // the user's logins
+```
+
+Every retriever is scoped to the class it is called on: `Session::byId()` does
+not find an api key and `APIKey::byId()` does not find a login, the same way
+[`Role`](#role-object) and `Group` split the `z_role` table. The same holds for
+`APIKey::byUuid()` and `APIKey::byUuids()`, which are the safe way to address a
+key from outside the application - unlike the token, a [UUID](#uuids) grants
+nothing to whoever reads it.
+
+`byToken()` is the one exception. It resolves both kinds whichever class it is
+called on - returning an `APIKey` for a key and a plain `Session` for a login -
+so an authenticating request is judged by the right rules without the caller
+having to know which kind the token is.
+
+* Creates an api key for a user. The name is what keeps keys apart in a list, so it is worth passing.
+
+    ```php
+    APIKey::add(User $user, ?string $name = null, ?string $reason = null): APIKey
+    ```
+
+Everything else a key needs it already has as a session: it is named through
+[`setName()`](#creating-a-session) and exempted from the login timeout through
+[`setCanExpire(false)`](#lifetime-management), which is what most keys want.
+
+* The lifetimes the [profile page](../z-admin/profile.md) offers for a new key next to *Never expires*, in days mapped to their label.
+
+    ```php
+    APIKey::LIFETIMES // [1 => "1 day", 3 => "3 days", ..., 365 => "1 year"]
+    ```
+
+---
+
+### Bearer Authentication
+
+A client that cannot keep a cookie, like a script or another service, sends its token in the
+`Authorization` header instead. Both a login and an [api key](#api-keys) authenticate this way.
+
+```
+Authorization: Bearer <token>
+```
+
+The bearer token wins over the `z_login_token` cookie. If it is invalid or expired the request is
+anonymous, it does not fall back to the cookie.
+
+Only a header that carries exactly one token counts as a bearer token. A header of another scheme,
+like `Basic`, an empty `Bearer `, a value with more than one token like `Bearer a b`, and two
+`Authorization` headers (Apache merges them into one comma separated value) carry no token. The
+request then uses the cookie, if there is one. `$req->bearerToken()` returns the token of the
+header, or `null`.
 
 ---
 
@@ -619,6 +877,29 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
     $session->setExtensionTime(int $seconds): void
     ```
 
+* Fixes the point in time the session expires, or hands it back to the computed lifetime when `null` is passed. A fixed expiry replaces that lifetime entirely: neither `loginTimeoutSeconds` nor `extended_seconds` has a say while one is set, so `extend()` and `setExtensionTime()` write an extension that does not move the expiry. Takes a `DateTime`, like [`$user->verify()`](#verification-handling) does; the getters stay strings. The column is a `TIMESTAMP`, so the expiry has to fall inside its range - from 1970 up to `2106-02-07 06:28:15` UTC on the supported MariaDB versions. A date outside it is rejected by the database rather than silently truncated.
+
+    ```php
+    $session->setExpiresAt(?DateTime $expiresAt): void
+    ```
+
+    ```php
+    $session->setExpiresAt(new DateTime("+30 days"));
+    $session->setExpiresAt(null); // back to the computed lifetime
+    ```
+
+* Subjects the session to expiring, or exempts it from it. A session passed `false` never expires and is therefore never invalidated on use, so exempting one revives a session that has expired but not yet been used. This is what turns an [api key](#api-keys) into a credential that keeps working, but it applies to any session. The exemption outranks a fixed expiry - it takes the session out of expiring altogether, rather than moving the point at which it does. It is stored inverted, in the `is_permanent` column.
+
+    ```php
+    $session->setCanExpire(bool $canExpire): void
+    ```
+
+!!! note "The login cookie has its own lifetime"
+    `is_permanent` and `expires_at` are server-side. `loginAs()` sets the
+    `z_login_token` cookie to expire after `loginTimeoutSeconds` regardless, so a
+    browser drops the cookie at that point even though the session itself lives
+    on. Clients that send the token themselves are unaffected.
+
 ---
 
 ### Invalidation
@@ -629,21 +910,77 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
     $session->invalidate(): void
     ```
 
+* Ends every active login of a user in one statement, the session that issues it included. Api keys are credentials of their own and are left alone, so revoke those separately by calling `invalidate()` on each of [`APIKey::byUser()`](#api-keys). This is the static counterpart to [`$user->clearSessions()`](#updating-user-data), which is also what [`$user->updatePassword()`](#updating-user-data) runs - changing a password ends every login of the account, its keys keep working.
+
+    ```php
+    Session::clearForUser(User $user): void
+    ```
+
 ---
 
 ### Expiry Check
 
-* Returns `true` if the session has expired. The expiry is calculated from `created` plus the configured `loginTimeoutSeconds` (defaults to 7 days) plus any `extended_seconds`.
+* Returns `true` if the session has expired. A session exempt from expiring never is; otherwise the expiry is the one [fixed on the session](#lifetime-management), or, when it carries none, `created` plus the configured `loginTimeoutSeconds` (defaults to 7 days) plus any `extended_seconds`.
 
     ```php
     $session->isExpired(): bool
+    ```
+
+* Returns the point in time the session becomes unusable, or `null` when the session is exempt from expiring. This is the effective expiry, whether it was fixed through [`setExpiresAt()`](#lifetime-management) or computed from the lifetime.
+
+    ```php
+    $session->expiresAt(): ?string
+    ```
+
+---
+
+### Two Factor Checks
+
+A session remembers when it last passed a [two factor](two-factor-authentication.md) check, in `z_logintoken.last_two_factor`, and how many wrong codes it may still send, in `remaining_two_factor_tries`.
+
+* Returns whether the session has to pass two factor again. `false` for an account without two factor, `true` while the session never passed a check or once the last one is older than `$freshnessSeconds` (defaults to `two_factor_freshness_seconds`, 900). A session whose user is gone always has to. This is what [`$req->requireFreshTwoFactor()`](two-factor-authentication.md#guarding-an-action) asks.
+
+    ```php
+    $session->requireRenew(?int $freshnessSeconds = null): bool
+    ```
+
+* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (`two_factor_tries` to begin with, 5 by default).
+
+    ```php
+    $session->lastTwoFactor(): ?string
+    $session->remainingTwoFactorTries(): int
+    ```
+
+* Stamps a passed check on the session, and gives it its full budget of tries back.
+
+    ```php
+    $session->recordTwoFactor(): void
+    $session->resetTwoFactorTries(): void
+    ```
+
+* Spends one try on a wrong code and returns how many are left. At zero the caller is expected to sign the session out, the framework's own endpoints do.
+
+    ```php
+    $session->spendTwoFactorTry(): int
+    ```
+
+* A login that verified the code itself stamps the new session right away.
+
+    ```php
+    $res->loginAs(int $userId, ?int $user_exec = null, ?string $name = null, ?string $reason = null, bool $recordTwoFactor = false)
     ```
 
 ---
 
 ### Session Data
 
-* Returns the session token string.
+* Returns the session's [UUID](#uuids). It is the only identifier of a session that is safe to hand out.
+
+    ```php
+    $session->uuid(): string
+    ```
+
+* Returns the session token string. Issued tokens are a `zub-` prefix plus 32 random bytes in hex, 68 characters in total. Tokens issued before this format keep working, so do not validate one by its length.
 
     ```php
     $session->token(): string
@@ -661,6 +998,42 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
     $session->userIdExec(): int|string
     ```
 
+* Returns the name of the session, or `null` if it has none.
+
+    ```php
+    $session->name(): ?string
+    ```
+
+* Returns the user agent the session was started from, or `null` if none was sent.
+
+    ```php
+    $session->device(): ?string
+    ```
+
+* Returns why the session was created, or `null` if no reason was given.
+
+    ```php
+    $session->reason(): ?string
+    ```
+
+* Returns the address the session was created from, or `null` if none could be determined.
+
+    ```php
+    $session->ipCreation(): ?string
+    ```
+
+* Returns the address the session was last used from, or `null` while it has not been used. It is rewritten on the first authenticated request that arrives from a different address, so a session that never moves is never written to.
+
+    ```php
+    $session->ipLast(): ?string
+    ```
+
+* Returns whether the session is subject to expiring at all. `false` means it is exempt, which is what [`setCanExpire(false)`](#lifetime-management) does.
+
+    ```php
+    $session->canExpire(): bool
+    ```
+
 * Returns the number of seconds the session has been extended by, or `null` if not extended.
 
     ```php
@@ -671,6 +1044,12 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
 
     ```php
     $session->created(): string
+    ```
+
+* Returns when the session was last used, or `null` while it has not been used since it was created. Every authenticated request refreshes it, but at most once per `session_last_used_throttle_seconds` (defaults to 60), so the timestamp costs one write per throttle window rather than one per request - read it as "last seen around then", not to the second. Set the key to `0` to write on every request. A request from a new address is always written, because that is what updates `ipLast()`.
+
+    ```php
+    $session->lastUsed(): ?string
     ```
 
 ---

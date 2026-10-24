@@ -8,7 +8,7 @@ made deliberately. If you want to *use* or *write* a module, read the user-facin
 ## Motivation and history
 
 The framework grew around one recurring idea: look in the application first, fall back to the
-framework. Before version 1.4.0 that idea was implemented five times, with three different
+framework. Before version 1.3.0 that idea was implemented five times, with three different
 mechanisms and even two different orderings:
 
 1. **Controllers** (`src/Routing/Router.php`): a chain of two `file_exists` probes, userspace

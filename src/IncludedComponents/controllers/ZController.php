@@ -1,5 +1,7 @@
 <?php
 
+    use ZubZet\Framework\Authentication\Organization;
+    use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Maintenance\MaintenanceHandler;
@@ -24,12 +26,13 @@
             $req->checkPermission("admin.maintenance");
 
             if($req->isAction("bypass-maintenance")) {
-                $res->setCookie(
-                    MaintenanceHandler::$COOKIE_KEY,
-                    "true",
-                    time() + TIMESPAN_DAY_1,
-                    $req->getRootFolder(),
-                );
+                $res->setCookie(MaintenanceHandler::$COOKIE_KEY, "true", [
+                    "expires" => time() + TIMESPAN_DAY_1,
+                    // Without the trailing slash, so the bare root sends it too
+                    "path" => rtrim($req->getRootFolder(), "/") ?: "/",
+                    "secure" => $res->cookieSecure(),
+                    "samesite" => "Lax",
+                ]);
                 return $res->success();
             }
 
@@ -45,12 +48,17 @@
             $req->checkPermission("admin.user.add");
 
             if(!$req->hasFormData()) {
-                return $res->render("administration/add_user.php");
+                return $res->render("administration/add_user.php", [
+                    "organizations" => $this->makeFood($this->getOrganizations($req), "id", "name"),
+                ]);
             }
 
             $formResult = $req->validateForm([
                 (new FormField("email"))->unique("z_user", "email"),
+                (new FormField("organization"))->in(array_column($this->getOrganizations($req), "id")),
             ]);
+
+            if(is_array($req->getPost("organization"))) $formResult->addCustomError("organization", "in");
 
             $email = $req->getPost("email");
             if(!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -62,7 +70,7 @@
             }
 
             try {
-                $req->getModel("z_user", $res->getZRoot())->add(
+                $userId = $req->getModel("z_user", $res->getZRoot())->add(
                     empty($email) ? null : $email,
                     $req->getPost("password"),
                     date("Y-m-d H:i:s"),
@@ -71,6 +79,8 @@
                 $formResult->addCustomError("password", "filter");
                 return $res->formErrors($formResult->errors);
             }
+
+            $this->applyOrganization($userId, $req->getPost("organization"));
 
             return $res->success();
         }
@@ -87,16 +97,43 @@
             }
 
             $req->checkPermission("admin.user.edit");
+
+            // Turns two factor off, the way back in for an owner who lost their authenticator
+            if($req->isAction("disable_two_factor")) {
+                $account = User::byId($userId);
+                if(is_null($account)) return $res->error("Unknown user");
+
+                if(!$account->hasTwoFactor()) return $res->error("Two factor is not active");
+
+                $account->disableTwoFactor();
+
+                logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
+                    "userId" => $account->id(),
+                    "reason" => "two-factor-force-disabled",
+                ]);
+
+                return $res->success();
+            }
+
             $user = $req->getModel("z_user")->getUserById($userId);
             $email = $user["email"];
 
+            // Plain roles and the groups the user already holds, offered and accepted alike
+            $roles = $req->getModel("z_general")->getTableWhere("z_role", "*", "active = 1 AND (is_group = 0 OR id IN (SELECT role FROM z_user_role WHERE active = 1 AND user = ?))", "i", [$userId]);
+
             if($req->hasFormData()) {
+                $organizationField = (new FormField("organization"))->in(array_column($this->getOrganizations($req), "id"));
+                $organizationField->noSave = true;
+
                 $formResult = $req->validateForm([
                     (new FormField("email"))->unique("z_user", "email", "id", $userId),
+                    $organizationField,
                 ]);
 
+                if(is_array($req->getPost("organization"))) $formResult->addCustomError("organization", "in");
+
                 $subformResult = $req->validateCED("roles", [
-                    (new FormField("role"))->required()->exists("z_role", "id"),
+                    (new FormField("role"))->required()->in(array_column($roles, "id")),
                 ]);
 
                 $subPermissionForm = $req->validateCED("permissions", [
@@ -116,6 +153,12 @@
                 $res->doCED("z_user_permission", $subPermissionForm, ["user" => $userId]);
                 $res->updateDatabase("z_user", "id", "i", $userId, $formResult);
 
+                // After the roles CED, so the group membership it maintains is
+                // the last word on which group the organization contributes.
+                if(array_key_exists("organization", $req->getPost())) {
+                    $this->applyOrganization($userId, $req->getPost("organization"));
+                }
+
                 logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
                     "userId" => $userId,
                     "email" => $email,
@@ -124,14 +167,19 @@
                 return $res->success();
             }
 
+            $organizations = $this->getOrganizations($req);
+
             return $res->render("administration/edit_user.php", [
                 "users" => $this->makeFood($req->getModel("z_user")->getUserList(), "id", "email"),
-                "roles" => $this->makeFood($req->getModel("z_general")->getTableWhere("z_role", "*", "active = ?", "i", [1]), "id", "name"),
+                "roles" => $this->makeFood($roles, "id", "name"),
                 "user_permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_user_permission", "*", "active = 1 AND user = ?", "i", [$userId]), ["name"]),
                 "user_roles" => $this->makeCEDFood($req->getModel("z_user")->getRoles($userId), ["role"]),
+                "organizations" => $this->makeFood($organizations, "id", "name"),
+                "organizationId" => in_array($user["organizationId"], array_column($organizations, "id")) ? $user["organizationId"] : "",
                 "result" => "success",
                 "email" => $user["email"],
                 "userId" => $userId,
+                "hasTwoFactor" => User::byId($userId)?->hasTwoFactor() ?? false,
             ]);
         }
 
@@ -139,11 +187,21 @@
         public function action_login_as(Request $req, Response $res) {
             $req->checkPermission("admin.su");
 
-            $userId = $req->getParameters(0, 1);
-            if(empty($userId) && $userId !== '0') return;
+            // A GET link could be fired from another site, so only the CSRF checked post logs in
+            if($req->isAction("login_as")) {
+                $userId = $req->getParameters(0, 1);
+                if(empty($userId) && $userId !== '0') return;
 
-            $res->loginAs($userId, $req->getRequestingUser()->execUserId);
-            return $res->rerouteUrl();
+                // The admin may state a reason; the column takes 255 characters
+                $reason = trim((string) $req->getPost("reason", ""));
+                if(empty($reason)) $reason = "z-admin impersonation";
+
+                $res->loginAs($userId, $req->getRequestingUser()->execUserId, reason: mb_substr($reason, 0, 255));
+                return $res->success();
+            }
+
+            http_response_code(405);
+            return $res->generateRestError(405, "login_as needs a post");
         }
 
 
@@ -152,6 +210,71 @@
 
             return $res->render("administration/groups.php", [
                 "groups" => model("z_general")->getGroups(),
+            ]);
+        }
+
+        public function action_organization(Request $req, Response $res) {
+            if(!user()->isLoggedIn) return $res->reroute(["login", "index"]);
+
+            $action = $req->getParameters(0, 1);
+            $target = $req->getParameters(1, 1);
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+
+            if("invitation" === $action) {
+                $invite = empty($target) ? null : model("z_organization")->getInviteByToken($target);
+                $invitedOrganization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
+                $user = User::byId(user()->userId);
+
+                // Unknown, expired, meant for another address or its organization is gone
+                $error = null;
+                if(is_null($invitedOrganization) || 0 !== strcasecmp($invite["email"], $user->email())) {
+                    $error = "invalid_token";
+                } else if(!is_null($organization)) {
+                    $error = "already_in_organization";
+                }
+
+                // The page answers like an unknown address
+                if(!is_null($error)) return zubzet()->executePath(["error", "404"]);
+
+                return $res->render("administration/organization_invitation", [
+                    "invite" => $invite,
+                    // name() is typed string, an organization may have none
+                    "organizationName" => $invitedOrganization->getField("name"),
+                ], "layout/min_layout.php");
+            }
+
+            $invites = [];
+            if(!is_null($organization) && $req->checkPermission("z.organization.invite", true)) {
+                $invites = model("z_organization")->getInvitesByOrganization($organization);
+            }
+
+            $members = [];
+            $roleFood = [];
+            if(!is_null($organization) && $req->checkPermission("z.organization.roles", true)) {
+                foreach(model("z_organization")->getAssignableRoles() as $role) {
+                    $roleFood[] = ["value" => $role["id"], "text" => $role["name"]];
+                }
+
+                $heldRoleIds = [];
+                foreach(model("z_organization")->getAssignedRoles($organization) as $assignment) {
+                    $heldRoleIds[$assignment["user"]][] = $assignment["role"];
+                }
+
+                foreach($organization->getUsers() as $member) {
+                    $members[] = [
+                        "id" => $member->id(),
+                        // email() is typed string, an account may have none
+                        "email" => $member->getField("email"),
+                        "roles" => $heldRoleIds[$member->id()] ?? [],
+                    ];
+                }
+            }
+
+            return $res->render("administration/organization.php", [
+                "organizationName" => $organization?->getField("name"),
+                "invites" => $invites,
+                "members" => $members,
+                "roleFood" => $roleFood,
             ]);
         }
 
@@ -187,6 +310,7 @@
             if($req->hasFormData()) {
                 $formResult = $req->validateForm([
                     (new FormField("name"))->required()->length(3, 100),
+                    (new FormField("is_org_assignable"))->required()->in(["0", "1"]),
                 ]);
                 $subformResult = $req->validateCED("permissions", [
                     (new FormField("name"))->required()->length(3, 100),
@@ -203,7 +327,112 @@
 
             return $res->render("administration/roles.php", [
                 "name" => $role["name"],
+                "isOrgAssignable" => (bool) $role["is_org_assignable"],
                 "permissions" => $this->makeCEDFood($req->getModel("z_general")->getTableWhere("z_role_permission", "*", "active = 1 AND role = ?", "i", [$roleId]), ["name"]),
+            ]);
+        }
+
+        // The profile page of the requesting user, open to every login rather than to admins
+        public function action_profile(Request $req, Response $res) {
+            $account = user()->isLoggedIn ? User::byId(user()->userId) : null;
+            if(is_null($account)) return zubzet()->executePath(["login", "index"]);
+
+            return $res->render("administration/profile.php", [
+                "account" => $account,
+            ]);
+        }
+
+        // Action for creating an organization, optionally backed by a group
+        public function action_add_organization(Request $req, Response $res) {
+            $req->checkPermission("admin.organizations.create");
+
+            if(!$req->hasFormData()) {
+                return $res->render("administration/add_organization.php");
+            }
+
+            $name = $req->getPost("name");
+            if(is_string($name)) $name = trim($name);
+
+            $formResult = $req->validateForm([
+                (new FormField("name"))->required()->length(3, 249),
+            ], ["name" => $name]);
+
+            if(is_array($name)) $formResult->addCustomError("name", "filter");
+
+            if($formResult->hasErrors) {
+                return $res->formErrors($formResult->errors);
+            }
+
+            $createGroup = "1" == $req->getPost("create_group");
+            $groupName = $name . "_Group";
+
+            if($createGroup && !db()->checkIfUnique("z_role", "name", $groupName)) {
+                $formResult->addCustomError("create_group", "unique");
+                return $res->formErrors($formResult->errors);
+            }
+
+            Organization::add($name, $createGroup, $groupName);
+
+            return $res->success();
+        }
+
+        // Action for the organization configuration page
+        public function action_organizations(Request $req, Response $res) {
+            $req->checkPermission("admin.organizations.list");
+
+            $organizationId = $req->getParameters(0, 1);
+
+            if(empty($organizationId) && $organizationId !== "0") {
+                return $res->render("administration/organization_select.php", [
+                    "organizations" => $this->getOrganizations($req),
+                ]);
+            }
+
+            $req->checkPermission("admin.organizations.edit");
+            $organization = Organization::byId($organizationId);
+
+            if(is_null($organization)) return $res->error("Organization not found");
+
+            if($req->isAction("delete")) {
+                $req->checkPermission("admin.organizations.delete");
+                $organization->remove();
+                return $res->success();
+            }
+
+            if($req->hasFormData()) {
+                $name = $req->getPost("name");
+                if(is_string($name)) $name = trim($name);
+
+                $formResult = $req->validateForm([
+                    (new FormField("name"))->required()->length(3, 249),
+                ], ["name" => $name]);
+
+                if(is_array($name)) $formResult->addCustomError("name", "filter");
+
+                if($formResult->hasErrors) {
+                    return $res->formErrors($formResult->errors);
+                }
+
+                // Only a group created by create_group follows the rename
+                $group = $organization->getGroup();
+                $renameGroup = !is_null($group)
+                    && $group->name() === $organization->getField("name") . "_Group"
+                    && $name !== $organization->getField("name");
+
+                if($renameGroup && !db()->checkIfUnique("z_role", "name", $name . "_Group", "id", $group->id())) {
+                    $formResult->addCustomError("name", "unique");
+                    return $res->formErrors($formResult->errors);
+                }
+
+                if($renameGroup) $group->update($name . "_Group");
+                $organization->updateName($name);
+                return $res->success();
+            }
+
+            return $res->render("administration/organizations.php", [
+                "name" => $organization->getField("name"),
+                "group" => $organization->getGroup(),
+                "users" => $organization->getUsers(),
             ]);
         }
 
@@ -244,6 +473,21 @@
                 "paginationLast" => max(1, $page - 1),
                 "totalPages" => $table["totalPages"],
             ]);
+        }
+
+        private function getOrganizations(Request $req): array {
+            return $req->getModel("z_general")->getTableWhere("z_organization", "*", "active = ?", "i", [1]);
+        }
+
+        private function applyOrganization(int|string $userId, ?string $organizationId): void {
+            $user = User::byId($userId);
+            if(is_null($user)) return;
+
+            $organization = empty($organizationId) ? null : Organization::byId($organizationId);
+
+            if($user->getField("organizationId") == $organization?->id()) return;
+
+            $user->updateOrganization($organization);
         }
     }
 

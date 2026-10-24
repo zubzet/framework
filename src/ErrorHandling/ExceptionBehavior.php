@@ -52,12 +52,12 @@
         public function setExceptionBehavior(?int $state = null): void {
             WhoopsHandler::initialize();
 
-            if(!is_null($state)) {
+            if(is_null($state)) {
+                $this->showErrors = BehaviorOption::fromConfig($this->showErrors);
+            } else if(BehaviorOption::isValidOption($state)) {
                 $this->showErrors = $state;
-            }
-
-            if(!BehaviorOption::isValidOption($this->showErrors)) {
-                throw new \InvalidArgumentException("Invalid exception behavior option: " . $this->showErrors);
+            } else {
+                throw new \InvalidArgumentException("Invalid exception behavior option: " . $state);
             }
 
             // ALL: promote every error (including warnings) to an exception.

@@ -77,6 +77,10 @@
             return $this->getField("name");
         }
 
+        public function hasMember(User $user): bool {
+            return $user->isMemberOf($this);
+        }
+
         public function getUsers(): array {
             if(is_null($this->getField("users"))) $this->refreshUsers();
 
@@ -103,6 +107,11 @@
         }
 
         public function remove(): void {
+            // Detach the members first, their group only resolves while the organization is active
+            foreach($this->getUsers() as $user) $user->updateOrganization(null);
+
+            $this->getGroup()?->remove();
+
             model("z_organization")->remove($this);
         }
     }
