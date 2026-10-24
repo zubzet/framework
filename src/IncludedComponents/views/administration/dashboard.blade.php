@@ -2,11 +2,11 @@
 
 @section("content")
     <div class="content">
-        <h2 class="mb-3">Dashboard</h2>
+        <h2 class="mb-3"><?= e(__("admin.dashboard.title")) ?></h2>
 
         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-            Application
+            <?= e(__("admin.nav.application")) ?>
         </h2>
         <div class="row">
             <?php if($opt["user"]->checkPermission("admin.database")) { ?>
@@ -31,7 +31,7 @@
 
         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-            Users and Roles
+            <?= e(__("admin.nav.users_and_roles")) ?>
         </h2>
         <div class="row">
             <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
@@ -70,13 +70,47 @@
                     </a>
                 </div>
             <?php } ?>
+            <?php if($opt["user"]->checkPermission("admin.organizations.list")) { ?>
+                <div class="col-12 col-sm-6 col-md-3 mb-3">
+                    <a href="<?= "$opt[root]z/organizations" ?>" data-test="dash-organizations" class="card shadow-sm h-100 text-decoration-none text-muted">
+                        <div class="card-body d-flex align-items-center justify-content-center py-5">
+                            <i class="fa fa-building fa-4x"></i>
+                        </div>
+                    </a>
+                </div>
+            <?php } ?>
+            <?php if($opt["user"]->checkPermission("admin.organizations.create")) { ?>
+                <div class="col-12 col-sm-6 col-md-3 mb-3">
+                    <a href="<?= "$opt[root]z/add_organization" ?>" data-test="dash-add-organization" class="card shadow-sm h-100 text-decoration-none text-muted">
+                        <div class="card-body d-flex align-items-center justify-content-center py-5">
+                            <i class="fa fa-plus-circle fa-4x"></i>
+                        </div>
+                    </a>
+                </div>
+            <?php } ?>
         </div>
 
         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
-            Other
+            <?= e(__("admin.nav.other")) ?>
         </h2>
         <div class="row">
+            <?php if($opt["user"]->checkPermission("z.organization.manage")) { ?>
+                <div class="col-12 col-sm-6 col-md-3 mb-3">
+                    <a href="<?= "$opt[root]z/organization" ?>" data-test="dash-organization" class="card shadow-sm h-100 text-decoration-none text-muted">
+                        <div class="card-body d-flex align-items-center justify-content-center py-5">
+                            <i class="fa fa-building fa-4x"></i>
+                        </div>
+                    </a>
+                </div>
+            <?php } ?>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <a href="<?= "$opt[root]z/profile" ?>" data-test="dash-profile" class="card shadow-sm h-100 text-decoration-none text-muted">
+                    <div class="card-body d-flex align-items-center justify-content-center py-5">
+                        <i class="fa fa-user fa-4x"></i>
+                    </div>
+                </a>
+            </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <a href="<?= "$opt[root]" ?>" data-test="dash-back" class="card shadow-sm h-100 text-decoration-none text-muted">
                     <div class="card-body d-flex align-items-center justify-content-center py-5">

@@ -20,6 +20,10 @@
         use Interaction;
         use CanCheckpoint;
 
+        // Every table should share these, or queries across tables fail with "Illegal mix of collations"
+        public const CHARSET = "utf8mb4";
+        public const COLLATION = "utf8mb4_uca1400_ai_ci";
+
         /**
          * MySQL/MariaDB error codes that are safe to retry: the server has
          * already rolled the offending statement back, so re-running it does
@@ -90,21 +94,12 @@
                 'driver' => Mysql::class,
             ]);
 
-            // Check if timeout config is a valid number
-            $timeout = config("db_connection_timeout", default: 900);
-            if(!is_numeric($timeout)) {
-                throw new \InvalidArgumentException("Config key 'db_connection_timeout' must be numeric, got: '$timeout'");
-            }
-            $this->connectTimeout = (int) $timeout;
+            $this->connectTimeout = configNumeric("db_connection_timeout", 900);
 
             // Number of extra attempts made when a query fails with a transient,
             // cluster-related error (deadlock, lock-wait timeout, Galera
             // serialization conflict). 0 disables retries entirely.
-            $maxRetries = config("db_max_retries", default: 3);
-            if(!is_numeric($maxRetries)) {
-                throw new \InvalidArgumentException("Config key 'db_max_retries' must be numeric, got: '$maxRetries'");
-            }
-            $this->maxRetries = max(0, (int) $maxRetries);
+            $this->maxRetries = max(0, configNumeric("db_max_retries", 3));
 
             $this->user = config("dbusername");
             $this->password = config("dbpassword");
@@ -150,42 +145,40 @@
             $host = $endpoint->host;
             if($this->persistent) $host = "p:" . $host;
 
-            // PHP 8.1+ strict reporting throws a mysqli_sql_exception naming
-            // the real failure; PHP 8.0 returns false and raises warnings
-            // instead, leaving connect_error empty for TLS failures. Collect
-            // the warnings and normalize, so both versions throw the same
-            // exception with the same message and the caller's retry
-            // classification sees the real error code.
+            // A failing connect raises warnings next to the failure itself on
+            // every PHP version. "@" keeps them out of the response and away
+            // from the framework's error handler, which promotes warnings to
+            // an ErrorException under BehaviorOption::ALL - thrown from inside
+            // real_connect(), where the retry classification never sees it.
             // Positional arguments because mysqli renamed its parameters
             // between PHP versions.
-            $warnings = [];
-            set_error_handler(function(int $severity, string $message) use (&$warnings): bool {
-                $warnings[] = $message;
-                return true;
-            });
-            try {
-                $connected = $conn->real_connect(
-                    $host,
-                    $this->user,
-                    $this->password,
-                    $this->database,
-                    $endpoint->port,
-                    null,
-                    $flags,
-                );
-            } finally {
-                restore_error_handler();
-            }
+            $connected = @$conn->real_connect(
+                $host,
+                $this->user,
+                $this->password,
+                $this->database,
+                $endpoint->port,
+                null,
+                $flags,
+            );
+
+            // PHP 8.1+ throws the real failure before returning. PHP 8.0
+            // returns false instead and leaves connect_error empty for TLS
+            // failures, so that case is normalized to what 8.1+ would report.
             if(false === $connected || $conn->connect_errno) {
                 $message = (string) $conn->connect_error;
-                if("" === $message) $message = (string) ($warnings[0] ?? "");
+                if("" === $message) {
+                    $message = $endpoint->tls
+                        ? "Cannot connect to MySQL using SSL"
+                        : "Cannot connect to MySQL";
+                }
                 throw new \mysqli_sql_exception($message, (int) $conn->connect_errno);
             }
 
             $this->conn = $conn;
 
             // Set the connection charset
-            $this->conn->set_charset("utf8mb4");
+            $this->conn->set_charset(self::CHARSET);
 
             // Remember the connection time
             $this->lastConnect = time();
@@ -336,9 +329,14 @@
             while(true) {
                 $failure = $this->attemptStatement($query, $bindArgs, $reconnect);
                 if(is_null($failure)) return;
+                if($attempt >= $this->maxRetries) throw $failure->exception;
 
-                if($this->shouldRetry($attempt, $failure["errorCode"], $failure["sqlState"])) {
-                    $attempt++;
+                $attempt++;
+
+                $transient = in_array($failure->errorCode, self::RETRYABLE_ERROR_CODES, true)
+                    || (!is_null($failure->sqlState) && in_array($failure->sqlState, self::RETRYABLE_SQL_STATES, true));
+
+                if($transient) {
                     // A transient failure always leaves a live connection:
                     // connect() failures only carry connection-loss codes,
                     // never transient ones, so no reconnect is needed here.
@@ -347,99 +345,58 @@
                     continue;
                 }
 
-                if($this->shouldReconnect($attempt, $failure["errorCode"])) {
-                    $attempt++;
+                if(in_array($failure->errorCode, self::CONNECTION_LOSS_ERROR_CODES, true)) {
                     $reconnect = true;
-                    usleep($this->reconnectBackoffUs($attempt));
+                    usleep(min($attempt * self::RECONNECT_BACKOFF_STEP_US, self::RECONNECT_BACKOFF_CAP_US));
                     continue;
                 }
 
-                throw $failure["exception"];
+                throw $failure->exception;
             }
         }
 
         /**
          * Makes one attempt at the statement: reconnect when asked to,
-         * prepare, bind, execute. Returns null on success and a failure
-         * descriptor (see failure()) otherwise.
+         * prepare, bind, execute. Returns null on success and a
+         * StatementFailure otherwise.
          *
          * mysqli reports failures by throwing under PHP 8.1+ strict
          * reporting and by return value on PHP 8.0; both are captured here,
-         * reading the SQLSTATE from the handle that recorded it.
+         * reading the SQLSTATE from the handle that recorded it. The two
+         * phases are guarded separately so each one names its own error
+         * prefix, on the return-value path as well as the throwing one.
          */
-        private function attemptStatement(string $query, array $bindArgs, bool $reconnect): ?array {
+        private function attemptStatement(string $query, array $bindArgs, bool $reconnect): ?StatementFailure {
+            // Reaching the server and preparing the statement.
             try {
-                $errorPrefix = "SQL Error";
                 if($reconnect) $this->connect();
 
                 $statement = $this->conn->prepare($query);
                 if(is_bool($statement)) {
-                    return $this->failure($errorPrefix, $this->conn->errno, $this->conn->sqlstate, $this->conn->error, $query);
+                    return StatementFailure::preparing($this->conn->errno, $this->conn->sqlstate, $this->conn->error, $query);
                 }
                 $this->stmt = $statement;
 
                 // PHP 8's mysqli throws ArgumentCountError / ValueError when
                 // the type string or value count doesn't match the prepared
                 // statement; bind_param() no longer returns false in any
-                // reachable scenario.
+                // reachable scenario. Neither is a mysqli_sql_exception, so
+                // both leave the recovery loop and surface to the caller.
                 if(!empty($bindArgs)) $this->stmt->bind_param(...$bindArgs);
-
-                $errorPrefix = "SQL Execution Error";
-                if(!$this->stmt->execute()) {
-                    return $this->failure($errorPrefix, $this->stmt->errno, $this->stmt->sqlstate, $this->stmt->error, $query);
-                }
-                return null;
             } catch(\mysqli_sql_exception $error) {
-                return $this->failure($errorPrefix, (int) $error->getCode(), $this->sqlStateOf($error), $error->getMessage(), $query, $error);
+                return StatementFailure::preparing((int) $error->getCode(), $this->sqlStateOf($error), $error->getMessage(), $query, $error);
             }
-        }
 
-        /**
-         * Failure descriptor for one statement attempt, carrying what the
-         * recovery decision needs and the ready-to-throw exception with the
-         * historical prefix: "SQL Error" for connect and prepare failures,
-         * "SQL Execution Error" for execute failures.
-         */
-        private function failure(string $errorPrefix, int $errorCode, ?string $sqlState, string $message, string $query, ?\mysqli_sql_exception $error = null): array {
-            return [
-                "errorCode" => $errorCode,
-                "sqlState" => $sqlState,
-                "exception" => new \Exception($errorPrefix . ": " . $message . "\nQuery: " . $query, 0, $error),
-            ];
-        }
+            // Running it.
+            try {
+                if(!$this->stmt->execute()) {
+                    return StatementFailure::executing($this->stmt->errno, $this->stmt->sqlstate, $this->stmt->error, $query);
+                }
+            } catch(\mysqli_sql_exception $error) {
+                return StatementFailure::executing((int) $error->getCode(), $this->sqlStateOf($error), $error->getMessage(), $query, $error);
+            }
 
-        /**
-         * Whether a just-failed query should be retried: there must be retry
-         * budget left and the error must be a transient, cluster-related one.
-         */
-        private function shouldRetry(int $attempt, int $errorCode, ?string $sqlState): bool {
-            return $attempt < $this->maxRetries && $this->isRetryable($errorCode, $sqlState);
-        }
-
-        /**
-         * Whether a just-failed query should be recovered by reconnecting:
-         * there must be retry budget left and the error must mean the
-         * connection itself is gone.
-         */
-        private function shouldReconnect(int $attempt, int $errorCode): bool {
-            return $attempt < $this->maxRetries
-                && in_array($errorCode, self::CONNECTION_LOSS_ERROR_CODES, true);
-        }
-
-        /** Attempt-scaled backoff slept before a reconnect attempt. */
-        private function reconnectBackoffUs(int $attempt): int {
-            return min($attempt * self::RECONNECT_BACKOFF_STEP_US, self::RECONNECT_BACKOFF_CAP_US);
-        }
-
-        /**
-         * Classifies an error as retryable. Retries are limited to transient
-         * contention errors where the server already discarded the statement,
-         * making a re-run safe. Pure decision, no side effects.
-         */
-        private function isRetryable(int $errorCode, ?string $sqlState): bool {
-            if(in_array($errorCode, self::RETRYABLE_ERROR_CODES, true)) return true;
-            if(!is_null($sqlState) && in_array($sqlState, self::RETRYABLE_SQL_STATES, true)) return true;
-            return false;
+            return null;
         }
 
         /**
@@ -459,41 +416,45 @@
 
             // PHP 8.1+ defaults mysqli to STRICT reporting, which makes
             // multi_query() / next_result() throw mysqli_sql_exception instead
-            // of returning false / setting errno. Catch any of them and route
-            // back through the framework's throwOnFailure contract.
+            // of returning false / setting errno. Both reporting modes are
+            // routed through multiQueryFailed().
             try {
-                if($this->conn->multi_query($query) === false) {
-                    if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
-                    return false;
+                if(false === $this->conn->multi_query($query)) {
+                    return $this->multiQueryFailed($this->conn->error, $query, $throwOnFailure);
                 }
 
                 do {
-                    if($this->conn->errno) {
-                        if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
-
-                        while($this->conn->more_results()) $this->conn->next_result();
-                        return false;
-                    }
+                    if($this->conn->errno) return $this->multiQueryFailed($this->conn->error, $query, $throwOnFailure);
 
                     if($result = $this->conn->store_result()) $result->free();
                 } while($this->conn->more_results() && $this->conn->next_result());
 
-                if($this->conn->errno) {
-                    if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $this->conn->error . "\nQuery: " . $query);
-                    return false;
-                }
-            } catch(\mysqli_sql_exception $e) {
-                if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $e->getMessage() . "\nQuery: " . $query, 0, $e);
-                while($this->conn->more_results()) {
-                    try {
-                        $this->conn->next_result();
-                    } catch(\mysqli_sql_exception) {}
-                }
-                return false;
+                if($this->conn->errno) return $this->multiQueryFailed($this->conn->error, $query, $throwOnFailure);
+            } catch(\mysqli_sql_exception $error) {
+                return $this->multiQueryFailed($error->getMessage(), $query, $throwOnFailure, $error);
             }
 
             $this->lastHeartbeat = time();
             return true;
+        }
+
+        /**
+         * The single failure path of executeMultiQuery(), applying the
+         * framework's throwOnFailure contract. A swallowed failure drains the
+         * connection first, so the caller can keep using it.
+         */
+        private function multiQueryFailed(string $message, string $query, bool $throwOnFailure, ?\mysqli_sql_exception $error = null): bool {
+            if($throwOnFailure) throw new \Exception("SQL Multi-Query Error: " . $message . "\nQuery: " . $query, 0, $error);
+
+            // Discard the result sets still pending, which would otherwise
+            // fail the next statement with "commands out of sync". Draining
+            // stops at the first error: a connection that cannot be drained is
+            // replaced by assertConnection() on its next use.
+            try {
+                while($this->conn->more_results()) $this->conn->next_result();
+            } catch(\mysqli_sql_exception) {}
+
+            return false;
         }
 
         public function getDatabaseConnection(): \mysqli {

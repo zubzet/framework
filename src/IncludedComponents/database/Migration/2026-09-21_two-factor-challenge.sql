@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS `z_two_factor_challenge` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+  `token` VARCHAR(255) NOT NULL,
+  `userId` INT NOT NULL,
+  `device` VARCHAR(255) NULL DEFAULT NULL,
+  `ip_creation` VARCHAR(45) NULL DEFAULT NULL,
+  `expires_at` TIMESTAMP NULL DEFAULT NULL,
+  `active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  INDEX `token` (`token`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
+
+ALTER TABLE `z_logintoken`
+  ADD COLUMN IF NOT EXISTS `last_two_factor` TIMESTAMP NULL DEFAULT NULL AFTER `last_used`;
+
+ALTER TABLE `z_user`
+  ADD COLUMN IF NOT EXISTS `two_factor_secret` VARCHAR(255) NULL DEFAULT NULL AFTER `salt`,
+  ADD COLUMN IF NOT EXISTS `two_factor_confirmed_at` TIMESTAMP NULL DEFAULT NULL AFTER `two_factor_secret`;

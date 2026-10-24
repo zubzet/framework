@@ -5,10 +5,14 @@ namespace ZubZet\Framework\Authentication\Permission;
 use ZubZet\Framework\Authentication\AuthenticationObject;
 
 use DateTime;
+use OTPHP\TOTP;
+use ParagonIE\ConstantTime\Base32;
 use ZubZet\Framework\Authentication\HandleTrait;
 use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\PasswordHash\Password;
 use ZubZet\Framework\Authentication\RetrievalTrait;
+use ZubZet\Framework\Logger\LogEventType;
+use ZubZet\Framework\Logger\Logger;
 
 class User extends AuthenticationObject {
 
@@ -116,12 +120,15 @@ class User extends AuthenticationObject {
      * Create a new user
      * This will insert the user into the database and return the created user object
      *
-     * @param string $email The email of the new user
+     * @param ?string $email The email of the new user, null creates a user without an email
      * @param ?string $password Optional the password of the new user (plain text, will be hashed)
      * @param ?DateTime $verified Optional datetime object indicating when the user was verified
      * @return User|null The created user object or null on failure
+     * @throws \InvalidArgumentException If the email is invalid or already used by another user
      */
     public static function add(?string $email, ?string $password, ?DateTime $verified = null): ?User {
+        self::assertValidEmail($email);
+
         // If a datetime object is provided, format it to a string
         if(!is_null($verified)) $verified = $verified->format("Y-m-d H:i:s");
 
@@ -131,13 +138,40 @@ class User extends AuthenticationObject {
     }
 
     /**
+     * Make sure an email is a valid address that no other user has
+     *
+     * @param ?string $email The email to check, null is always accepted
+     * @param ?int $ignoreUserId A user whose own email does not count as taken
+     * @return void
+     * @throws \InvalidArgumentException If the email is invalid or already used by another user
+     */
+    private static function assertValidEmail(?string $email, ?int $ignoreUserId = null): void {
+        if(is_null($email)) return;
+
+        if(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException("Invalid email address.");
+        }
+
+        $unique = is_null($ignoreUserId)
+            ? db()->checkIfUnique("z_user", "email", $email)
+            : db()->checkIfUnique("z_user", "email", $email, "id", $ignoreUserId);
+
+        if(!$unique) {
+            throw new \InvalidArgumentException("Email address is already in use.");
+        }
+    }
+
+    /**
      * Update the email address of the user
      * This will update the email in the database
      *
      * @param string $email The new email address
      * @return void
+     * @throws \InvalidArgumentException If the email is invalid or already used by another user
      */
     public function updateEmail(?string $email): void {
+        self::assertValidEmail($email, $this->id());
+
         model('z_permission')->updateUserEmail($this, $email);
         $this->clearFields();
     }
@@ -184,6 +218,24 @@ class User extends AuthenticationObject {
         return true;
     }
 
+    // Records a failed login so it counts toward the rate limit
+    public function recordLoginTry(): void {
+        model("z_login")->newLoginTry($this->id());
+    }
+
+    // False when the account saw too many recent login tries
+    public function checkLoginTries(): bool {
+        $timespanStart = (new DateTime())->setTimestamp((int) strtotime('-' . config("maxLoginTriesTimespan")));
+        $recentTries = (int) model("z_login")->countLoginTriesByTimeSpan($this->id(), $timespanStart->format("Y-m-d H:i:s"));
+        if($recentTries <= config("maxLoginTriesPerTimespan")) return true;
+
+        logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
+            "userId" => $this->id(),
+        ]);
+
+        return false;
+    }
+
     public function updateOrganization(?Organization $organization): void {
         $previousGroup = $this->organization()?->getGroup();
         if(!is_null($previousGroup)) {
@@ -193,7 +245,7 @@ class User extends AuthenticationObject {
         model('z_user')->updateUserOrganization($this, $organization);
 
         $newGroup = $organization?->getGroup();
-        if(!is_null($newGroup)) {
+        if(!is_null($newGroup) && !in_array($newGroup->id(), array_map(fn($group) => $group->id(), Group::byUser($this)))) {
             $this->groupsAdd($newGroup);
         }
 
@@ -311,9 +363,9 @@ class User extends AuthenticationObject {
     /**
      * Get the user's email from the cache
      *
-     * @return string The email of the user
+     * @return string|null The email of the user, null if none is set
      */
-    public function email(): string {
+    public function email(): ?string {
         return $this->getField('email');
     }
 
@@ -328,6 +380,11 @@ class User extends AuthenticationObject {
         }
 
         return $this->getField("organization");
+    }
+
+    // A removed organization has no members
+    public function isMemberOf(Organization $organization): bool {
+        return $this->organization()?->id() === $organization->id();
     }
 
     /**
@@ -421,5 +478,101 @@ class User extends AuthenticationObject {
      */
     public function refreshAllPermissions(): void {
         $this->setField("permissions", model("z_permission")->getPermissionsByUserAll($this));
+    }
+
+
+    /**
+     * Whether two factor is active, which only a confirmed enrollment makes it.
+     * A stored secret on its own is an enrollment nobody finished.
+     *
+     * @return bool
+     */
+    public function hasTwoFactor(): bool {
+        return !is_null($this->getField("two_factor_confirmed_at"));
+    }
+
+    /**
+     * When the user confirmed their authenticator
+     *
+     * @return ?string The timestamp, or null while two factor is off
+     */
+    public function twoFactorConfirmedAt(): ?string {
+        return $this->getField("two_factor_confirmed_at");
+    }
+
+    /**
+     * Begin an enrollment by storing a fresh secret that does not count yet.
+     * The returned object carries the secret and the provisioning uri, the two
+     * shapes an authenticator takes it in.
+     *
+     * @return TOTP The enrollment, to be shown once and never again
+     */
+    public function startTwoFactor(): TOTP {
+        $secret = Base32::encodeUpperUnpadded(random_bytes(20));
+
+        $totp = TOTP::create($secret);
+
+        // An account without an email is named generically in the authenticator
+        $email = $this->email();
+        $label = empty($email) ? "User" : $email;
+
+        // otphp rejects a colon in the label and the issuer, in each encoding it looks for
+        $totp->setLabel(str_replace([":", "%3A", "%3a"], "", $label));
+        $issuer = str_replace([":", "%3A", "%3a"], "", config("pageName", default: "ZubZet"));
+        $totp->setIssuer($issuer);
+
+        model("z_user")->setTwoFactorSecret($this, $secret);
+        $this->clearFields();
+
+        return $totp;
+    }
+
+    /**
+     * Check a code against the stored secret. Answers false while the account
+     * carries no secret, so a caller cannot tell enrollment states apart by it.
+     *
+     * @param string $code The code from the authenticator
+     * @return bool Whether the code matched
+     */
+    public function verifyTwoFactorCode(string $code): bool {
+        $secret = $this->getField("two_factor_secret");
+        if(is_null($secret)) return false;
+
+        // One 30 second step each way, so a clock that drifts a little and a code
+        // read just before its window turns still land. Checked per timestamp, because
+        // otphp 10 counts verify()'s window in periods and otphp 11 in seconds
+        $totp = TOTP::create($secret);
+        $now = time();
+        $period = $totp->getPeriod();
+        return $totp->verify($code, $now - $period)
+            || $totp->verify($code, $now)
+            || $totp->verify($code, $now + $period);
+    }
+
+    /**
+     * Finish an enrollment. Turning two factor on takes a code, which is what
+     * proves the secret reached the authenticator and was not lost in the page.
+     *
+     * @param string $code The code from the authenticator
+     * @return bool Whether the enrollment is now active
+     */
+    public function confirmTwoFactor(string $code): bool {
+        if($this->hasTwoFactor()) return false;
+        if(!$this->verifyTwoFactorCode($code)) return false;
+
+        model("z_user")->confirmTwoFactor($this);
+        $this->clearFields();
+
+        return true;
+    }
+
+    /**
+     * Drop two factor and the secret behind it
+     *
+     * @return void
+     */
+    public function disableTwoFactor(): void {
+        model("z_user")->setTwoFactorSecret($this, null);
+        $this->clearFields();
     }
 }

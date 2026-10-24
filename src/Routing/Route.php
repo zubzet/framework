@@ -6,10 +6,20 @@
     use Request;
     use Response;
     use ZubZet\Framework\ZubZet;
+    use ZubZet\Framework\Security\CSRF;
 
     class Route {
 
         use HttpMethod;
+
+        // How url segments become controller and action names, see Router::executeControllerAction()
+        public const NAME_REPLACEMENTS = [
+            "-" => "_",
+            "." => "§2E",
+            "ä" => "ae",
+            "ö" => "oe",
+            "ü" => "ue",
+        ];
 
         /**
          * The active FastRoute collector.
@@ -24,7 +34,7 @@
 
         /**
          * Stack to manage middleware inheritance of nested groups.
-         * @var array<int, array{middleware: array, afterMiddleware: array}>
+         * @var array<int, array{middleware: array, afterMiddleware: array, withoutCsrf: bool}>
          */
         private static array $groupStateStack = [];
 
@@ -60,18 +70,22 @@
          * Performs middleware matching for stored groups based on the current URL parts.
          */
         public static function performStoredGroupsMatchingPrefix(array $urlParts, \Closure|callable $callback): void {
-            // Construct the current path from URL parts
-            $currentPath = '/' . implode('/', $urlParts);
+            // Normalized like the controller name it resolves to, the url parts themselves stay as sent
+            $currentPath = strtolower(strtr(urldecode('/' . implode('/', $urlParts)), self::NAME_REPLACEMENTS));
 
             // Collect middlewares to execute
             $toExecuteMiddlewares = [];
             $toExecuteAfterMiddlewares = [];
+            $withoutCsrf = false;
 
             foreach(self::$storedPrefixedGroups as $groupPath => $prefixGroup) {
                 // Check if the current path matches the group prefix
+                $groupPath = strtolower(strtr(urldecode($groupPath), self::NAME_REPLACEMENTS));
                 $isExactMatch = $currentPath === $groupPath;
                 $isMatch = $isExactMatch || str_starts_with($currentPath, $groupPath . '/');
                 if(!$isMatch) continue;
+
+                $withoutCsrf = $withoutCsrf || $prefixGroup["withoutCsrf"];
 
                 // Collect middlewares and afterwares to execute
                 foreach($prefixGroup["middleware"] as $middleware) {
@@ -81,6 +95,11 @@
                 foreach($prefixGroup["afterMiddleware"] as $afterMiddleware) {
                     $toExecuteAfterMiddlewares[] = $afterMiddleware;
                 }
+            }
+
+            // Before any middleware, which may act on the request just like the action
+            if(!$withoutCsrf) {
+                CSRF::verify();
             }
 
             // Execute collected middlewares and exit if any returns any other than true
@@ -103,7 +122,7 @@
         /**
          * Creates a route group.
          */
-        public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware): void {
+        public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware, bool $withoutCsrf): void {
             // Push the prefix onto the stack.
             self::$prefixStack[] = $prefix;
 
@@ -111,12 +130,14 @@
             self::$storedPrefixedGroups[(implode("", self::$prefixStack))] = [
                 'middleware' => $middlewares,
                 'afterMiddleware' => $afterMiddleware,
+                'withoutCsrf' => $withoutCsrf,
             ];
 
             // Push inherited group middleware state.
             self::$groupStateStack[] = [
                 'middleware' => $middlewares,
                 'afterMiddleware' => $afterMiddleware,
+                'withoutCsrf' => $withoutCsrf,
             ];
 
             $callback();
@@ -125,8 +146,11 @@
             array_pop(self::$prefixStack);
         }
 
-        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware): void {
+        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware, bool $withoutCsrf): void {
             $router = self::getCurrentRouter();
+
+            // Like a group middleware, the opt-out of a group covers every route declared inside it
+            $withoutCsrf = $withoutCsrf || in_array(true, array_column(self::$groupStateStack, "withoutCsrf"), true);
 
             $effectiveMiddlewares = [
                 ...self::getInheritedMiddlewares(),
@@ -138,7 +162,12 @@
                 ...self::getInheritedAfterMiddlewares(),
             ];
 
-            $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares) {
+            $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares, $withoutCsrf) {
+                // Before any middleware, which may act on the request just like the action
+                if(!$withoutCsrf) {
+                    CSRF::verify();
+                }
+
                 foreach($effectiveMiddlewares as $middleware) {
                     [$middlewareClass, $middlewareMethod] = $middleware->getAction();
 

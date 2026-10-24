@@ -8,7 +8,7 @@ Be sure to use `chdir(realpath(__DIR__))` in your index.php if you are running c
 
 ## Dedicated console commands
 
-Since version 1.4.0, real Symfony console commands can live in `app/Commands/` (in the
+Since version 1.3.0, real Symfony console commands can live in `app/Commands/` (in the
 application and in [modules](modules.md)). Each file declares one global class named like the
 file, extending the Symfony `Command` class:
 

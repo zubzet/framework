@@ -18,8 +18,7 @@ For the everyday feature-branch flow and the `develop` / `main` model, see
 
 !!! note "RCs are pre-releases"
     Publish every RC as a GitHub **pre-release**. That keeps the last stable release
-    (e.g. `v1.1.0`) labelled *Latest* and lets consumers opt in with
-    `composer create-project zubzet/zubzet your-folder --stability=RC`.
+    (e.g. `v1.1.0`) labelled *Latest*.
 
 ## Prerequisites
 
@@ -110,7 +109,7 @@ gh release edit v1.2.0-RC1 \
 
 Know what each push sets off (see `.github/workflows/`):
 
-- **`tests_e2e.yml`** runs the PHP 8.0 to 8.5 matrix on a push to **any branch** and on
+- **`tests_e2e.yml`** runs the PHP 8.0 to 8.6 matrix on a push to **any branch** and on
   `v*.*.*` **tags** (path-filtered to `src/`, `web/`, `tests/e2e/`, `composer*`, and the
   workflow file).
 - **`docs.yml`**:

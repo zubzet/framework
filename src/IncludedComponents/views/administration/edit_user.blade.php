@@ -6,32 +6,56 @@
         $(function() {
             var form = Z.Forms.create({dom: "form"});
 
-            var inputEmail = form.createField({name: "email", type: "email", text: "Email", value: "<?php echo $opt["email"]; ?>"});
+            var inputEmail = form.createField({name: "email", type: "email", text: <?= json_encode(__("admin.edit_user.email")) ?>, value: "<?php echo $opt["email"]; ?>"});
+
+            form.createField({
+                name: "organization",
+                type: "select",
+                text: "Organization",
+                food: <?= $opt["organizations"]; ?>,
+                value: <?=  json_encode($opt["organizationId"] ?? "", JSON_HEX_TAG | JSON_HEX_AMP); ?>,
+            });
 
             form.addSeperator();
 
             var ced = form.createCED({
                 name: "roles",
-                text: "Roles",
+                text: <?= json_encode(__("admin.edit_user.roles")) ?>,
                 compact: true,
                 fields: [
-                    { name: "role", type: "select", text: "Role", food: <?php echo $opt["roles"]; ?>, compact: true, width: 11 }
+                    { name: "role", type: "select", text: <?= json_encode(__("admin.edit_user.role")) ?>, food: <?php echo $opt["roles"]; ?>, compact: true, width: 11 }
                 ],
                 value: <?php echo $opt["user_roles"]; ?>
             });
 
-            form.createActionButton("Login as", "btn-secondary", function() {
-                window.location.href = "<?php echo $opt["root"] . "z/login_as/" . $opt["userId"] ?>";
+            form.createActionButton(<?= json_encode(__("admin.edit_user.login_as")) ?>, "btn-secondary", function() {
+                // A reason is optional; cancelling the prompt still logs in
+                var reason = window.prompt("Why are you logging in as this user? (optional)");
+
+                Z.Request.root("z/login_as/<?php echo $opt["userId"] ?>", "login_as", {reason: reason === null ? "" : reason.trim()}, function() {
+                    window.location.href = "<?php echo $opt["root"] ?>";
+                });
             });
+
+<?php if($opt["hasTwoFactor"]) { ?>
+            form.createActionButton(<?= json_encode(__("admin.edit_user.disable_two_factor")) ?>, "btn-outline-danger", function() {
+                if(!window.confirm(<?= json_encode(__("admin.edit_user.disable_two_factor_confirm")) ?>)) return;
+
+                Z.Request.action("disable_two_factor", {}, (res) => {
+                    if(res.result != "success") return window.alert(res.message);
+                    window.location.reload();
+                });
+            });
+<?php } ?>
 
             form.addSeperator();
 
             var pced = form.createCED({
                 name: "permissions",
-                text: "User-Level Permissions",
+                text: <?= json_encode(__("admin.edit_user.permissions")) ?>,
                 compact: true,
                 fields: [
-                    { name: "name", type: "text", text: "Permission", compact: true, width: 11 }
+                    { name: "name", type: "text", text: <?= json_encode(__("admin.edit_user.permission")) ?>, compact: true, width: 11 }
                 ],
                 value: <?php echo $opt["user_permissions"]; ?>
             });
@@ -40,7 +64,7 @@
 
     </script>
 
-    <h2>Edit user</h2>
+    <h2><?= e(__("admin.edit_user.title")) ?></h2>
 
     <div id="form"></div>
 @endsection

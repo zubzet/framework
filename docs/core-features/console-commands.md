@@ -49,6 +49,44 @@ php index.php info:startup
 Pass `--pwd "$(pwd)"` so clickable file links in the [error page](error-handling.md) resolve to your
 host paths (the dev stack's `npm run info` does this for you).
 
+### install
+
+Builds a new ZubZet project in an existing, writable folder.
+
+```bash
+php index.php install /path/to/new-project
+```
+
+The command copies the project template into the folder and prints a `created:` or `exists:` line
+per entry. Existing files are never overwritten, so it is safe to run on a folder that already
+contains files. It then makes `zubzet` and `project` executable and runs `composer require` for
+the framework inside the new project.
+
+It fails with a clear message if the folder does not exist, is not writable, or Composer is not
+in your `PATH`.
+
+### project
+
+Every generated project ships a `project` script in its root for the everyday tasks:
+
+| Command | Description |
+| ------- | ----------- |
+| `./project start` | Build and start the Docker stack, then run `composer install`, `db:seed` and `info:startup`. |
+| `./project stop` | Stop the stack and remove it, including its volumes. |
+| `./project shell` | Open a shell inside the application container. |
+| `./project tests` | Run the Cypress suite headless; extra arguments (e.g. `--spec`) are passed through. |
+| `./project cypress` | Open the interactive Cypress UI. |
+
+Any other arguments are forwarded to `php index.php`: inside the application container when it
+is running, otherwise directly with the host's PHP.
+
+```bash
+./project db:status
+```
+
+`tests` and `cypress` need Node.js and Cypress on the host. They are never installed
+automatically; if they are missing, the script prints the `npm install` command to run.
+
 ### Database commands
 
 | Command | Description |
@@ -74,6 +112,43 @@ php index.php db:seed --skip-migrations
 
 See [Migrations](migrations/index.md) for the full migration workflow.
 
+### Repair commands
+
+Repair commands fix an installation that drifted into a broken state. They are never run
+automatically; run one when you hit the problem it names.
+
+#### repair:database-collation
+
+Tables with different collations make queries across them fail, for example with
+`Illegal mix of collations for operation 'UNION'` on every authenticated request. This happens
+when tables were created under different server or database defaults, e.g. older tables from
+before a server upgrade next to newer ones.
+
+The framework creates its tables as `utf8mb4` with the collation `utf8mb4_uca1400_ai_ci`
+(`ZubZet\Framework\Database\Connection::COLLATION`). The command converts the framework tables
+(`z_` prefix) to it with
+`ALTER TABLE ... CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci`:
+
+```bash
+php index.php repair:database-collation
+```
+
+Application tables and the database default are left alone. Add `--include-app-tables` to convert
+every table of the database and to set the database default to the same collation, so tables
+created later without an explicit collation match:
+
+```bash
+php index.php repair:database-collation --include-app-tables
+```
+
+Only tables whose own collation or any text column's collation differs are converted; a rerun
+with nothing left to convert changes nothing. Columns that deliberately use another collation
+(e.g. a case-sensitive `utf8mb4_bin` column) are converted as well.
+
+!!! warning
+    Converting rewrites the whole table and blocks writes to it meanwhile, which can take a
+    long time on large tables. Take a backup and run it in a maintenance window.
+
 ### module:setup
 
 Merges missing default settings from installed [modules](../advanced-features/modules.md) into
@@ -91,6 +166,16 @@ Beyond `run`, the application (and every module) can ship dedicated Symfony comm
 [Commands](../advanced-features/commands.md) for the file convention and precedence rules.
 
 ### Coverage
+
+Coverage is a development feature: the underlying `phpunit/php-code-coverage` library is a
+development dependency of ZubZet and is not installed with your application by default.
+Install it before using the coverage commands:
+
+```bash
+composer require --dev "phpunit/php-code-coverage:9.*"
+```
+
+Without it, the coverage commands fail with an error explaining this requirement.
 
 Collect a runtime code-coverage report:
 

@@ -6,11 +6,20 @@
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Translation\Translation;
+    use ZubZet\Framework\Security\CSRF;
 
     /**
      * The Login controller handles all login/logout stuff
      */
     class LoginController extends z_controller {
+
+        // True once the account used up its login tries in the current window.
+        // Both the password and the two factor step run through this, so wrong
+        // codes count the same as wrong passwords.
+        private function blockedByLoginLimit(User $user): bool {
+            return !$user->checkLoginTries();
+        }
 
         /**
          * The index action
@@ -21,15 +30,16 @@
          * @param Response $res The response object
          */
         public function action_index($req, $res) {
-            $loginModel = $req->getModel("z_login", $req->getZRoot());
-
-            // No credentials submitted yet: render the login form.
-            if($req->getPost("name", false) === false) {
+            // Only the Z.Request call, which carries the csrf token, submits credentials: render the login form.
+            if(!$req->isAction("login")) {
                 return $res->render("login.php", [
                     "title" => "Login ",
                     "noLayout" => $req->getGet("noLayout", false),
                 ], "layout/min_layout.php");
             }
+
+            // checkPermission() reaches this action internally, past the dispatch check of an opted-out route
+            CSRF::verify();
 
             // Look the account up by the submitted login (its email).
             $user = User::byEmail($req->getPost("name"));
@@ -46,48 +56,67 @@
                 return $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
             }
 
-            // Too many recent attempts: warn the owner and block this try.
-            $timespanStart = date('Y-m-d H:i:s', strtotime('-' . $req->getBooterSettings("maxLoginTriesTimespan")));
-            $recentTries = $loginModel->countLoginTriesByTimeSpan($user->id(), $timespanStart);
-            $maxTries = $req->getBooterSettings("maxLoginTriesPerTimespan");
-            if($recentTries > $maxTries) {
-
-                // Warn the owner once per window, and only for a valid client IP.
-                $clientIp = filter_var($req->ip(), FILTER_VALIDATE_IP);
-                if($clientIp && $loginModel->sendTooManyLoginsEmailByUserId($user->id())) {
-                    $res->sendEmailToUser(
-                        $user->id(),
-                        [
-                            "DE_Formal" => "Sicherheitsmeldung",
-                            "en" => "Security alert",
-                        ],
-                        "email_too_many_logins.php",
-                        [
-                            "user" => $user->getAll(),
-                            "date" => date("Y-m-d H:i:s"),
-                            "ip" => $clientIp,
-                        ],
-                    );
-                }
-
-                $loginModel->addTooManyLoginsEmailByUserId($user->id());
-
-                logger(Logger::ZUBZET)->warning(LogEventType::ACCOUNT_LOGIN_RATE_LIMITED, [
-                    "userId" => $user->id(),
-                ]);
-
+            if($this->blockedByLoginLimit($user)) {
                 return $res->error("Too many login tries. Try again later.");
             }
 
             // Wrong password: record the attempt so it counts toward the rate limit.
             if(!$user->verifyPassword($req->getPost("password"))) {
-                $loginModel->newLoginTry($user->id());
+                $user->recordLoginTry();
                 return $res->error("Username or password is wrong");
+            }
+
+            if($user->hasTwoFactor()) {
+                $challenge = model("z_login")->createTwoFactorChallenge($user->id());
+
+                return $res->success([
+                    "twoFactor" => true,
+                    "challenge" => $challenge,
+                ]);
             }
 
             // Correct. verifyPassword() has already self-healed the stored hash if
             // it was stale, so all that is left is to start the session.
             $res->loginAs($user->id());
+            return $res->success();
+        }
+
+
+        /**
+         * Redeems a two factor challenge and starts the session behind it.
+         * Reached over its own route, so the modal can post from any page.
+         * @param Request $req The request object
+         * @param Response $res The response object
+         */
+        public function twoFactorLogin(Request $req, Response $res) {
+            // Only the Z.Request call, which carries the csrf token
+            if(!$req->isAction("two-factor-login")) return $res->error("Invalid request");
+
+            $challenge = $req->getPost("challenge");
+            if(empty($challenge) || !is_string($challenge)) return $res->error("Missing challenge");
+
+            $challengeObj = model("z_login")->getTwoFactorChallenge($challenge);
+            if(is_null($challengeObj)) return $res->error("Invalid challenge");
+
+            $code = $req->getPost("code");
+            if(empty($code) || !is_string($code)) return $res->error("Missing code");
+
+            $user = User::byId($challengeObj["userId"]);
+            if(is_null($user)) return $res->error("Invalid challenge");
+
+            if($this->blockedByLoginLimit($user)) {
+                return $res->error("Too many login tries. Try again later.");
+            }
+
+            if(!$user->verifyTwoFactorCode($code)) {
+                model("z_login")->newLoginTry($user->id());
+                return $res->error("Invalid code");
+            }
+
+            model("z_login")->invalidateTwoFactorChallenge($challengeObj["id"]);
+
+            $res->loginAs($user->id(), recordTwoFactor: true);
+
             return $res->success();
         }
 
@@ -171,21 +200,22 @@
 
                     $code = $req->getModel("z_login", $req->getZRoot())->addResetCode(
                         $user["id"],
-                        $req->getModel("z_general")->getUniqueRef(),
+                        null,
                         "forgot"
                     );
 
                     $url = $req->getBooterSettings("host") . $req->getRootFolder() . "login/reset/$code/";
- 
+
+                    // The recipient's language, not the one of whoever asked
+                    $locale = Translation::locale(User::byId($user["id"]));
+
                     $res->sendEmailToUser(
                         $user["id"],
-                        [
-                            "en" => "Password Reset",
-                            "DE_Formal" => "Passwort Zurücksetzten"
-                        ],
+                        __("email.password_reset.subject", locale: $locale),
                         "email_password_reset.php", 
                         [
-                            "reset_link" => $url
+                            "reset_link" => $url,
+                            "locale" => $locale,
                         ]
                     );
 

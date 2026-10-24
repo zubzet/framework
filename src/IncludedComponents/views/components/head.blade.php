@@ -23,6 +23,28 @@
     Z.Request.rootPath = "<?= $opt["root"]; ?>";
     Z.Request.rootHost = "<?= $opt["request"]->getRoot(); ?>";
     Z.Request.absRoot = "<?= $opt["absRoot"]; ?>";
+
+    <?php
+        // Encoded, not interpolated into a quoted literal: catalogues are
+        // application-owned, and a translation carrying a quote, a newline or
+        // "</script>" would otherwise break this whole script block. Object.assign
+        // keeps the Z.Lang defaults that have no catalogue entry.
+        $lang = [
+            "unsaved" => "<i class='fas fa-pen text-dark'></i> " . __("form.unsaved"),
+            "submit" => "<i class='fas fa-check'></i> " . __("form.submit"),
+            "saved" => "<i class='fas fa-check text-dark'></i> " . __("form.saved"),
+            "choose_file" => __("form.choose_file"),
+            "error_filter" => __("form.error_filter"),
+            "error_length" => __("form.error_length"),
+            "error_required" => __("form.error_required"),
+            "error_unique" => __("form.error_unique"),
+            "error_exist" => __("form.error_exist"),
+            "error_range" => __("form.error_range"),
+            "error_file_to_big" => __("form.error_file_to_big"),
+        ];
+    ?>
+    Object.assign(Z.Lang, <?= json_encode($lang, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>);
+
 </script>
 
 <meta charset="utf-8"/>

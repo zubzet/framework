@@ -62,7 +62,10 @@ classes before surfacing them, sharing the `db_max_retries` budget (default
   The recovery loop lives in `execWithRecovery()` with a single
   classification point; `attemptStatement()` makes one self-contained
   attempt and folds PHP 8.0 false-returns and PHP 8.1+ exceptions into one
-  failure descriptor, reading the SQLSTATE off the handle that recorded it.
+  `StatementFailure` (`src/Database/StatementFailure.php`), reading the
+  SQLSTATE off the handle that recorded it. Its two named constructors,
+  `preparing()` and `executing()`, pick the error prefix from the phase the
+  attempt died in.
 
 Transport settings live in `src/Database/Endpoint.php`, a request-wide
 singleton (`Endpoint::get()`) shared by the runtime connection and the

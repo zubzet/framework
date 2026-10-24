@@ -60,7 +60,9 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
 -- auth_extended: session is long expired but has a large extension → still valid
 (412, 'session_auth_extended@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
 -- auth_extend_after_expire: expired session, will be accessed (auto-invalidated), then extension is attempted
-(413, 'session_auth_extend_after_expire@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+(413, 'session_auth_extend_after_expire@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- auth_removed: the user is removed while its session stays active
+(414, 'session_auth_removed@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
 
 INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `extended_seconds`, `created`, `active`) VALUES
 -- auth_valid: active, recently created session
@@ -72,7 +74,9 @@ INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `extended_se
 -- auth_extended: created year 2000, large extension (~63 years) → still valid
 (414, '0412a00000000000000000000000000000000000', 412, 412, 2000000000, '2000-01-01 12:00:00', 1),
 -- auth_extend_after_expire: expired, will be auto-invalidated on first use, then extension attempted
-(415, '0413a00000000000000000000000000000000000', 413, 413, NULL, '2000-01-01 12:00:00', 1);
+(415, '0413a00000000000000000000000000000000000', 413, 413, NULL, '2000-01-01 12:00:00', 1),
+-- auth_removed: active, recently created; its user is removed via /session/removeUserForAuth
+(416, '0414a00000000000000000000000000000000000', 414, 414, NULL, NOW(), 1);
 
 
 /*
@@ -99,3 +103,127 @@ INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `ve
 -- add with exec: user and separate exec user for Session::add($user, $exec)
 (422, 'session_add_user@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
 (423, 'session_add_exec@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+/*
+    API key tests
+*/
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+-- byUser / byId / byToken: one login, two api keys and one revoked api key
+(430, 'session_apikey_kinds@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- manage: name and permanence are set through the APIKey object
+(431, 'session_apikey_manage@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- permanent: expired by age, kept alive by the flag
+(432, 'session_apikey_permanent@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- auth flow: a permanent api key used as a login cookie
+(433, 'session_apikey_auth@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- add with name: Session::add($user, name: ...), an ordinary login
+(434, 'session_add_name@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- clear name: named api key that loses its name again
+(435, 'session_apikey_clearname@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- login naming: logs in for real, password is "password" like the canonical seed
+(436, 'session_login_name@cypress.test',
+    '772e7e18b509ee9dbf4a53d415187fa49c68c991873e3282c0025e9e53d4c946125f184c34e04a7fcd5136fcdc04bedc17afd981380ee05ccb7683e7d83ec615',
+    '4401287036553e310907533.22322450',
+    1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- add: APIKey::add($user, name: ...) creates the key at runtime
+(437, 'session_apikey_add@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
+-- kinds: user 430 owns one interactive login …
+(430, '0430a00000000000000000000000000000000000', 430, 430, NULL, 0, 0, NULL, '2025-01-01 12:00:00', 1),
+-- … two api keys …
+(431, '0430b00000000000000000000000000000000000', 430, 430, 'CI pipeline', 1, 1, NULL, '2025-01-01 12:00:00', 1),
+(432, '0430c00000000000000000000000000000000000', 430, 430, 'Backup job', 1, 1, NULL, '2025-01-01 12:00:00', 1),
+-- … and a revoked api key, which neither class may return
+(433, '0430d00000000000000000000000000000000000', 430, 430, 'Revoked key', 1, 1, NULL, '2025-01-01 12:00:00', 0),
+
+-- manage: unnamed, expiring api key that is named and made permanent at runtime
+(434, '0431a00000000000000000000000000000000000', 431, 431, NULL, 0, 1, NULL, '2025-01-01 12:00:00', 1),
+
+-- permanent: created in the year 2000 without extension, expired unless permanent
+(435, '0432a00000000000000000000000000000000000', 432, 432, 'Never expires', 1, 1, NULL, '2000-01-01 12:00:00', 1),
+
+-- auth flow: same age, sent as a cookie by cypress
+(436, '0433a00000000000000000000000000000000000', 433, 433, 'Cookie key', 1, 1, NULL, '2000-01-01 12:00:00', 1),
+
+-- clear name: starts out named
+(437, '0435a00000000000000000000000000000000000', 435, 435, 'Temporary name', 0, 1, NULL, '2025-01-01 12:00:00', 1);
+
+
+/*
+    Session permanence (an ordinary login, not an api key)
+*/
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+(438, 'session_permanent_login@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
+-- created in the year 2000 without extension, so it is expired until the flag revives it
+(438, '0438a00000000000000000000000000000000000', 438, 438, NULL, 0, 0, NULL, '2000-01-01 12:00:00', 1);
+
+
+/*
+    Device, reason and the addresses a session is used from
+*/
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+-- origin: Session::add() records reason, device and ip_creation at runtime
+(439, 'session_origin@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `name`, `device`, `reason`, `ip_creation`, `ip_last`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
+-- ip_last starts stale, the authenticated request carrying this cookie corrects it
+(439, '0439a00000000000000000000000000000000000', 439, 439, NULL, NULL, NULL, '203.0.113.7', '203.0.113.7', 0, 0, NULL, NOW(), 1);
+
+
+/*
+    A fixed expiry, which outranks the computed lifetime
+*/
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+-- fixed: kept alive by its expiry although the age says otherwise
+(440, 'session_expires_at_fixed@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- override: expired by its expiry although it is young and heavily extended
+(441, 'session_expires_at_override@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- set: the expiry is fixed and dropped again at runtime
+(442, 'session_expires_at_set@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- permanent: the flag exempts the session, so the expiry never applies
+(443, 'session_expires_at_permanent@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- auth: the cookie is rejected once the fixed expiry has passed
+(444, 'session_expires_at_auth@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `is_permanent`, `extended_seconds`, `expires_at`, `created`, `active`) VALUES
+-- created in the year 2000, so only the fixed expiry keeps it usable
+(440, '0440a00000000000000000000000000000000000', 440, 440, 0, NULL, '2099-01-01 12:00:00', '2000-01-01 12:00:00', 1),
+-- created now and extended by ~63 years, both overruled by the expiry in the past
+(441, '0441a00000000000000000000000000000000000', 441, 441, 0, 2000000000, '2000-01-01 12:00:00', NOW(), 1),
+-- expires by its age until an expiry is fixed on it at runtime
+(442, '0442a00000000000000000000000000000000000', 442, 442, 0, NULL, NULL, '2000-01-01 12:00:00', 1),
+-- permanent despite an expiry long past
+(443, '0443a00000000000000000000000000000000000', 443, 443, 1, NULL, '2000-01-01 12:00:00', '2000-01-01 12:00:00', 1),
+-- auth flow: young enough to pass the lifetime check, rejected by the expiry
+(444, '0444a00000000000000000000000000000000000', 444, 444, 0, NULL, '2000-01-01 12:00:00', NOW(), 1);
+
+
+-- Authentication by an `Authorization: Bearer` header (bearer.cy.js)
+
+INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`) VALUES
+-- valid: the user behind the bearer token
+(450, 'session_bearer_valid@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- cookie: the user behind the cookie sent along with the header
+(451, 'session_bearer_cookie@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- expired: a login too old to authenticate
+(452, 'session_bearer_expired@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- api key: an exempt api key sent as bearer token
+(453, 'session_bearer_apikey@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00'),
+-- logout: the session is ended through the header
+(454, 'session_bearer_logout@cypress.test', NULL, NULL, 1, '2000-01-01 12:00:00', '2000-01-01 12:00:00');
+
+INSERT INTO `z_logintoken` (`id`, `token`, `userId`, `userId_exec`, `is_permanent`, `is_apikey`, `extended_seconds`, `created`, `active`) VALUES
+(450, '0450a00000000000000000000000000000000000', 450, 450, 0, 0, NULL, NOW(), 1),
+(451, '0451a00000000000000000000000000000000000', 451, 451, 0, 0, NULL, NOW(), 1),
+-- created in the year 2000 without extension, so it is expired
+(452, '0452a00000000000000000000000000000000000', 452, 452, 0, 0, NULL, '2000-01-01 12:00:00', 1),
+-- same age, kept alive by the exemption
+(453, '0453a00000000000000000000000000000000000', 453, 453, 1, 1, NULL, '2000-01-01 12:00:00', 1),
+(454, '0454a00000000000000000000000000000000000', 454, 454, 0, 0, NULL, NOW(), 1);

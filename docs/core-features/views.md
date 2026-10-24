@@ -42,7 +42,7 @@ public function action_index(Request $req, Response $res) {
     <h1>Hello {{ $name }}</h1>   {{-- or $opt["name"] --}}
 @endsection
 ```
-The framework also injects a set of helpers into `$opt` for every render: `$opt["root"]` (the application's root path), `$opt["host"]`, `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` and `$opt["generateResourceLink"]`. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests.md)).
+The framework also injects a set of helpers into `$opt` for every render: `$opt["root"]` (the application's root path, always ending with a slash, so paths are appended without one), `$opt["host"]`, `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` and `$opt["generateResourceLink"]`. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests.md)).
 
 !!! note "View names and the file extension"
     The view above is addressed as `"employee/index"` while the file on disk is `z_views/employee/index.blade.php`. The extension is optional and dot notation works too, so `"employee/index"`, `"employee/index.blade.php"` and `"employee.index"` all resolve to the same file. A view in your project overrides a framework view of the same name.
@@ -185,9 +185,22 @@ Attributes on the tag (`type="warning"`) become variables inside the component (
 The framework ships its own components under the `zubzet` namespace. The two you see in every layout are the page essentials:
 ```blade
 <x-zubzet::head :opt="$opt"/>   {{-- jQuery, Bootstrap, Font Awesome, Z.js, the debug bar head --}}
-<x-zubzet::body :opt="$opt"/>   {{-- the session watcher and the debug bar body --}}
+<x-zubzet::body :opt="$opt"/>   {{-- the session watcher, the two factor modal and the debug bar body --}}
 ```
 The `zubzet::` namespace keeps these separate from your own components, so an app component named `head` never collides with `<x-zubzet::head/>`. You normally only place them in layouts, see [Layouts](layouts.md).
+
+### Account components
+The account components render the pieces of the profile page the admin panel ships under `z/profile`, so you can place them on a page of your own:
+```blade
+<x-zubzet::account.change-password/>                        {{-- current, new and repeated password plus the submit button --}}
+<x-zubzet::account.sessions class="list-group-flush"/>      {{-- every login of the current user, each with a rename and a revoke button --}}
+<x-zubzet::account.clear-sessions class="btn btn-danger"/>  {{-- ends every login of the current user --}}
+<x-zubzet::account.api-keys/>                               {{-- the create form, the key list with the same two buttons, and the modal showing a fresh token --}}
+<x-zubzet::account.two-factor/>                             {{-- two factor state, the setup with its QR code, and turning it off --}}
+```
+They read the current user themselves and post to the framework's own `_zubzet/profile/*` routes (`change-password`, `clear-sessions`, `revoke-token`, `rename-token`, `create-api-key`, `start-two-factor`, `confirm-two-factor`, `disable-two-factor`, all post only, with `revoke-token` and `rename-token` taking the kind as `type`), so they need neither data nor a route from you, work on any page, and render nothing for a guest. Framing is yours: none of them brings a card or a heading, `<x-zubzet::account.clear-sessions/>` brings no classes at all and takes its label from the slot. Every attribute you pass lands on the element the component renders.
+
+The login and the [two factor](two-factor-authentication.md) gate ask for the code in a modal. Its markup is `<x-zubzet::authentication.two-factor/>`, which `<x-zubzet::body/>` already renders, so it only has to be placed by hand in a layout that leaves out the body essentials.
 
 ## Pushing to the layout with stacks
 A view can push markup into a named stack that the layout renders elsewhere, which is handy for adding a page specific script without a dedicated section:

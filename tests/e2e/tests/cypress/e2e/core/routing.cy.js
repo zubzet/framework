@@ -26,6 +26,44 @@ describe('Routing', () => {
             route: "/abc/U13/P12",
             expected: "TestRoute ExecutedArray ( [userId] => U13 [postId] => P12 ) "
         },
+        // Routes match regardless of case, route parameters keep their spelling
+        {
+            route: "/ABC/UserX/PostY",
+            expected: "TestRoute ExecutedArray ( [userId] => UserX [postId] => PostY ) "
+        },
+        {
+            route: "/routedeny/CHECK",
+            expected: "Route Middleware Accept ExecutedArray ( ) Route Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/ROUTEACCEPT/Check",
+            expected: "Route Middleware Accept ExecutedArray ( ) Middleware Accept Executed Route Afterware ExecutedArray ( )"
+        },
+        // Group middleware in front of a convention route, in every spelling of its path
+        {
+            route: "/Routing/group-guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/routing/group-guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/%52outing/group-guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/Routing/Group-Guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/Routing/group_guarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
+        {
+            route: "/Routing/group%2Dguarded",
+            expected: "Group Middleware Blocked ExecutedArray ( )"
+        },
         {   // First Middleware accepts the request and the second one blocks it
             route: "/rm-accept/rm-block",
             expected: "Route Middleware Accept ExecutedArray ( ) Route Middleware Blocked ExecutedArray ( ) "
@@ -253,7 +291,7 @@ describe('Routing', () => {
 
 
     it("should check if POST method is working", () => {
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/post-test'
         }).then((response) => {
@@ -276,7 +314,7 @@ describe('Routing', () => {
         const expected = "TestRoute ExecutedArray ( )".replace(/\s+/g, ' ').trim();
 
         verbs.forEach(({ method, url }) => {
-            cy.request({ method, url }).then((response) => {
+            cy.zRequest({ method, url }).then((response) => {
                 expect(response.status, `${method} ${url}`).to.eq(200);
                 const actual = response.body.replace(/\s+/g, ' ').trim();
                 expect(actual, `${method} ${url}`).to.equal(expected);
@@ -288,7 +326,7 @@ describe('Routing', () => {
         const cases = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
 
         cases.forEach((method) => {
-            cy.request({
+            cy.zRequest({
                 method: method,
                 url: '/any-test'
             }).then((response) => {
@@ -315,7 +353,7 @@ describe('Routing', () => {
             expect(actual).to.equals(expected);
         });
 
-        cy.request({
+        cy.zRequest({
             method: 'POST',
             url: '/define-get',
             failOnStatusCode: false

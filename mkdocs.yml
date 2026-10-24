@@ -105,8 +105,11 @@ nav:
         - Models: core-features/models
         - Views: core-features/views
         - Layouts: core-features/layouts
+        - Translations: core-features/translations
         - Permission System: core-features/permission-system
         - Password Handling: core-features/password-handling
+        - Secrets: core-features/secrets
+        - CSRF Protection: core-features/csrf-protection
         - Configuration: core-features/configuration
         - Database Connection: core-features/database-connection
         - REST API: core-features/rest-api
@@ -121,6 +124,7 @@ nav:
         - Global Helper Functions: core-features/global-helper-functions
         - Console Commands: core-features/console-commands
         - Access Control: core-features/access-control
+        - Two Factor Authentication: core-features/two-factor-authentication
         - Logging: core-features/logging
         - Debug Bar: core-features/debug-bar
         - Error Handling: core-features/error-handling
@@ -130,6 +134,8 @@ nav:
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user
+        - Organization Management: z-admin/organization-management
+        - Profile: z-admin/profile
     - Forms:
         - Auto Validation: forms/auto-form-validation
         - CED Validation: forms/ced-validation

@@ -32,6 +32,10 @@
         ->middleware([RoutingController::class, 'Route_Middleware_Accept'])
         ->afterMiddleware([RoutingController::class, 'Route_Afterware']);
 
+    // it should block RoutingController::action_group_guarded in every spelling of its path
+    Route::group('/Routing/group-guarded')
+        ->middleware([RoutingController::class, 'Group_Middleware_Block']);
+
 
     Route::get('/test', [RoutingController::class, 'TestRoute']);
 

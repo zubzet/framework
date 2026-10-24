@@ -13,24 +13,25 @@ Credentials live on the `z_user` table:
 | Column | Purpose |
 | ------ | ------- |
 | `password` | The stored credential (an Argon2id hash for current accounts). |
-| `password_scheme` | Which format `password` is in: `native`, `legacy`, or `onion`. `NULL` for accounts without a password. |
-| `salt` | Per row salt for `legacy` and `onion` rows. `NULL` for `native`, because Argon2id embeds its own salt. |
+| `password_scheme` | Which format `password` is in: `native`, `legacy`, `onion`, or `wordpress`. `NULL` for accounts without a password. |
+| `salt` | Per row salt for `legacy` and `onion` rows. `NULL` for `native` and `wordpress`, because those hashes embed their own salt. |
 | `last_password_rehash_at` | When the stored hash was last produced. Useful for credential age policies. |
 
 There is no separate salt for native hashes. A native `password` value already
 contains the algorithm, the cost parameters, and a random salt in one
 self describing string, which is what makes transparent upgrades possible.
 
-## The three schemes
+## The schemes
 
 The `password_scheme` column tells the verifier how to read a stored value, so
-the three formats can coexist while older accounts upgrade on their own.
+the formats can coexist while older accounts upgrade on their own.
 
 | Scheme | `password` holds | `salt` | Notes |
 | ------ | ---------------- | ------ | ----- |
 | `native` | An Argon2id hash from [`password_hash()`](https://www.php.net/manual/en/function.password-hash.php). | `NULL` | The target format for every account. |
 | `legacy` | The hash produced by the framework's previous scheme. | set | Verify only. Upgraded to `native` on the next login. |
 | `onion` | A native Argon2id hash wrapping the legacy value. | set | A dormant account moved onto Argon2id ahead of its next login. Upgraded to `native` when the owner logs in. |
+| `wordpress` | A hash imported from WordPress, `$wp$2y$…` (6.8 and later) or `$P$…` (phpass, earlier). | `NULL` | Verify only. Upgraded to `native` on the next login. See [Importing WordPress users](#importing-wordpress-users). |
 
 ## Adding users and setting passwords
 
@@ -124,6 +125,39 @@ how to read them:
 ```php
 $result = Password::verify($plaintext, $stored, Password::LEGACY, $salt);
 ```
+
+## Importing WordPress users
+
+To take over the accounts of a WordPress site, copy each `user_pass` value into
+`password` unchanged and set `password_scheme` to `wordpress`. The stored string
+says which WordPress format it is, so one scheme covers both:
+
+| Prefix | Produced by | Verified as |
+| ------ | ----------- | ----------- |
+| `$wp$2y$` | WordPress 6.8 and later | bcrypt over an HMAC-SHA-384 pre-hash of the trimmed password, as `wp_hash_password()` does. |
+| `$P$` (or `$H$`) | WordPress before 6.8, and any account that has not logged in since the upgrade to 6.8 | The phpass portable hash: salted MD5 iterated 2^count times. |
+
+Both verify through the ordinary login path and are replaced by a `native`
+Argon2id hash on the first successful login. Nothing else WordPress may store
+(plain MD5 from before WordPress 2.5, or unprefixed hashes written by a plugin
+that overrides the algorithm) is recognised; those users need a password reset.
+The phpass format is weak at rest, and the onion command only covers `legacy`
+rows, so consider a reset for `$P$` accounts that stay dormant after the import.
+
+Two framework rules apply to imported accounts as they do to every other:
+passwords shorter than `MIN_LENGTH_BYTES` are rejected, and WordPress trims the
+password before hashing, so the verifier trims it as well.
+
+### WordPress hashes upgrade themselves
+
+No separate migration step is needed for imported accounts. A `wordpress` row
+goes through the same self healing path as a `legacy` or `onion` row: on the
+first correct login, `User::verifyPassword()` verifies the WordPress hash,
+writes a fresh `native` Argon2id hash in its place, sets the scheme to `native` and
+stamps `last_password_rehash_at`. From then on the account is indistinguishable
+from one created in ZubZet. The WordPress verifiers are only ever consulted for
+rows still marked `wordpress`, so they can be removed once that count reaches
+zero.
 
 ## Self healing upgrades
 

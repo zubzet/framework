@@ -59,7 +59,7 @@
             }
             $this->line("<muted>─────────────────────────────────────────────</muted>");
             $this->line();
-            $this->line("<muted>run</muted> <label>'npm run stop'</label> <muted>to stop the server</muted>");
+            $this->line("<muted>run</muted> <label>'{$this->getStopCommand()}'</label> <muted>to stop the server</muted>");
             $this->line();
 
             return Command::SUCCESS;
@@ -75,6 +75,11 @@
 
         private function getInstalledVersion(): string {
             return InstalledVersions::getPrettyVersion('zubzet/framework') ?? 'unknown';
+        }
+
+        // Projects built by the install command carry a project script, the framework's own dev stack uses npm
+        private function getStopCommand(): string {
+            return is_file("project") ? "./project stop" : "npm run stop";
         }
 
         private function getConfiguredHost(): string {

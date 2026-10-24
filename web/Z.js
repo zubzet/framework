@@ -41,6 +41,38 @@ Z = {
    * Holds everything related to communicating with the backend
    */
   Request: {
+    /** Read a cookie value by name, or null if absent. */
+    _cookie(name) {
+      const prefix = name + '=';
+      for(const part of document.cookie.split(';')) {
+        const cookie = part.trim();
+        if(!cookie.startsWith(prefix)) continue;
+        return decodeURIComponent(cookie.slice(prefix.length));
+      }
+      return null;
+    },
+    /**
+     * Reads the CSRF token the server issued for this host.
+     *
+     * Z.Request and Z.Forms attach it themselves, so this is only needed for
+     * requests built by hand. Send it back as an `X-CSRF-Token` header,
+     * otherwise a non-GET request carrying a Z marker is answered with 403.
+     * @returns {?string} The token, or null if no cookie has been issued yet
+     */
+    csrfToken() {
+      return Z.Request._cookie('z_csrf');
+    },
+    /** Headers attached to every Z request — currently just CSRF. */
+    _csrfHeaders() {
+      const token = Z.Request.csrfToken();
+
+      if(token) {
+        return {'X-CSRF-Token': token};
+      }
+
+      return {};
+    },
+
     /**
      * Triggers a subaction on the current action from which this view was launched
      * @param {string} action Name of the subaction. Can be checked in the backend with $req->isAction("blub")
@@ -50,11 +82,14 @@ Z = {
     action(action, data, handler) {
       $.ajax({
         method: "POST",
-        data: Object.assign(data, {action: action})
+        data: Object.assign(data, {action: action}),
+        headers: this._csrfHeaders(),
       }).done((data) => {
         var dat = null;
         try {
           dat = JSON.parse(data);
+
+          if(dat.twoFactorRenew == true) return Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
         } catch (e) {
           console.error("Please show this to a developer: ", data);
         }
@@ -75,12 +110,17 @@ Z = {
         data: Object.assign(data, {action: subaction}),
         url: Z.Request.rootPath + action,
         async: async,
-        ...additionalParameters
+        ...additionalParameters,
+        // Merged last, so caller headers extend the token instead of replacing it
+        headers: {...additionalParameters.headers, ...this._csrfHeaders()},
       }).done((data) => {
         if(parse) {
           var dat = null;
           try {
-            if(typeof data !== 'object') dat = JSON.parse(data);
+            if(typeof data !== 'object') {
+              dat = JSON.parse(data);
+              if(dat.twoFactorRenew == true) return Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
+            }
           } catch (e) {
             console.error("Please show this to a developer: ", data);
           }
@@ -118,9 +158,16 @@ Z = {
     error_contact_admin: "This input field does not like you. Contact an admin that convinces it that you are a good person!",
     error_password_reset: "An error occurred. Did you use the correct email address?",
     error_password_mismatch: "The password are not the same!",
+    error_password_wrong: "Your current password is wrong!",
     error_invalid_email: "This email is not allowed!",
+    error_user_unavailable: "This user cannot be invited right now.",
+    error_already_invited: "This address already has an open invitation.",
+    error_invalid_token: "This invitation is invalid or has expired.",
+    error_already_in_organization: "You are already a member of an organization.",
     error_too_many_login_tries: "Too many login tries. Try again later.",
     error_login: "Username or password is wrong",
+    error_two_factor_incomplete: "Enter all six digits.",
+    two_factor_renewed: "Two factor check was successful. Please try again.",
     choose_file: "Choose file",
     CEDRemove: "✕"
   },
@@ -128,6 +175,158 @@ Z = {
    * Holds some presets to create fix effects
    */
   Presets: {
+    /**
+     * Opens the two factor modal and hands the six digits to `submit` once they
+     * are in. The markup comes from x-zubzet::authentication.two-factor, which
+     * x-zubzet::body renders on every page.
+     * @param {function} submit Called with the code as its only argument
+     */
+    OpenTwoFactorModal(submit) {
+      if(!$("#z-two-factor-modal").length) {
+        var template = document.getElementById("z-two-factor-template");
+        // The markup ships with x-zubzet::body, which this page does not render
+        if(!template) return console.error("Two factor modal missing, add x-zubzet::body to the layout");
+
+        document.body.appendChild(template.content.cloneNode(true));
+      }
+
+      var modal = $("#z-two-factor-modal");
+      var boxes = $("#z-two-factor-digits .z-two-factor-digit");
+
+      Z.Presets.sendingTwoFactor = false;
+      boxes.val("").removeClass("border-danger");
+      $("#z-two-factor-modal-send").prop("disabled", false);
+      $("#z-two-factor-modal-error").addClass("d-none").text("");
+
+      // Namespaced, so reopening the modal replaces these handlers rather than
+      // stacking a second set on top of the first
+      boxes.off(".zTwoFactor");
+      $("#z-two-factor-modal-send, #z-two-factor-modal-cancel").off(".zTwoFactor");
+
+      var send = () => {
+        // The button and the last digit both reach this
+        if(Z.Presets.sendingTwoFactor) return;
+
+        var code = boxes.map((_, box) => box.value).get().join("");
+        if(code.length < boxes.length) return Z.Presets.FailTwoFactor(Z.Lang.error_two_factor_incomplete);
+
+        Z.Presets.sendingTwoFactor = true;
+        $("#z-two-factor-modal-send").prop("disabled", true);
+        $("#z-two-factor-modal-error").addClass("d-none");
+
+        submit(code);
+      };
+
+      // Writes digits into the boxes from `index` on, moves the cursor behind
+      // them and sends once the last one is filled. Typing, a code the keyboard
+      // autofills and a paste all end up here.
+      var fill = (index, text) => {
+        var digits = text.replace(/\D/g, "").slice(0, boxes.length - index);
+        if(digits == "") return;
+
+        digits.split("").forEach((digit, offset) => boxes.eq(index + offset).val(digit));
+        boxes.removeClass("border-danger");
+        boxes.eq(Math.min(index + digits.length, boxes.length - 1)).focus().select();
+
+        if(index + digits.length == boxes.length) send();
+      };
+
+      boxes.on("input.zTwoFactor", function() {
+        // Emptied first, so anything that is not a digit is simply dropped
+        var typed = this.value;
+        this.value = "";
+        fill(boxes.index(this), typed);
+      });
+
+      boxes.on("keydown.zTwoFactor", function(e) {
+        if(e.key != "Backspace" || this.value != "") return;
+
+        // eq(-1) would wrap around to the last box
+        var previous = boxes.index(this) - 1;
+        if(previous < 0) return;
+
+        e.preventDefault();
+        boxes.eq(previous).val("").focus();
+      });
+
+      // maxlength cuts a paste down to one character before `input` sees it,
+      // so the whole code is taken off the clipboard instead
+      boxes.on("paste.zTwoFactor", function(e) {
+        e.preventDefault();
+        fill(boxes.index(this), (e.originalEvent.clipboardData || window.clipboardData).getData("text"));
+      });
+
+      $("#z-two-factor-modal-send").on("click.zTwoFactor", send);
+      $("#z-two-factor-modal-cancel").on("click.zTwoFactor", () => modal.modal("hide"));
+
+      // Registered before showing: the modal carries no `fade`, so bootstrap
+      // fires this synchronously from inside modal("show")
+      modal.one("shown.bs.modal", () => boxes.eq(0).focus());
+      modal.modal("show");
+    },
+
+    /**
+     * Puts the modal back into a state where another code can be typed
+     * @param {string} message What went wrong, shown above the boxes
+     */
+    FailTwoFactor(message) {
+      var boxes = $("#z-two-factor-digits .z-two-factor-digit");
+
+      Z.Presets.sendingTwoFactor = false;
+      $("#z-two-factor-modal-send").prop("disabled", false);
+      $("#z-two-factor-modal-error").text(message).removeClass("d-none");
+      boxes.val("").addClass("border-danger").eq(0).focus();
+    },
+
+    /**
+     * The two factor step of a login, for a challenge the login endpoint handed
+     * out. Redeeming it is what creates the session.
+     * @param {string} challenge The challenge token the login answered with
+     * @param {string} redirect Where to go once the code was accepted. Empty reloads
+     */
+    ShowTwoFactor(challenge, redirect = "") {
+      Z.Presets.OpenTwoFactorModal((code) => {
+        // The challenge goes in the body rather than the url, so it stays out of
+        // access logs and browser history
+        Z.Request.root("_zubzet/two-factor/login", "two-factor-login", {
+          challenge: challenge,
+          code: code,
+        }, (res) => {
+          if(res.result != "success") return Z.Presets.FailTwoFactor(res.message);
+
+          $("#z-two-factor-modal").modal("hide");
+
+          if(redirect == "") {
+            location.reload();
+          } else {
+            location.href = redirect;
+          }
+        });
+      });
+    },
+
+    /**
+     * Asks a visitor who is already logged in for a fresh code and stamps the
+     * moment on the session they are using. There is no challenge here - the
+     * password step happened when this session was created. Use it to gate an
+     * action behind a recent two factor check.
+     * @param {function} onDone Called once the code was accepted. Omitted reloads
+     */
+    RefreshTwoFactor(onDone = null) {
+      Z.Presets.OpenTwoFactorModal((code) => {
+        Z.Request.root("_zubzet/two-factor/refresh", "two-factor-refresh", {code: code}, (res) => {
+          if(res.result != "success") return Z.Presets.FailTwoFactor(res.message);
+
+          $("#z-two-factor-modal").modal("hide");
+
+          if(onDone) {
+            onDone();
+          } else {
+            location.reload();
+          }
+        });
+      });
+    },
     /**
      * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
      * @param {string} nameElementId ID of the dom element for the name/email input
@@ -151,6 +350,11 @@ Z = {
         }
 
         if (res.result == "success") {
+          if(res.twoFactor) {
+            this.ShowTwoFactor(res.challenge, redirect);
+            return;
+          }
+
           if (redirect == "") {
             window.location.reload();
           } else {
@@ -898,7 +1102,8 @@ class ZForm {
       cache: false,
       contentType: false,
       data: data,
-      processData: false
+      processData: false,
+      headers: Z.Request._csrfHeaders(),
     };
 
     if(customUrl != null) ajax_options.url = customUrl;
@@ -930,6 +1135,8 @@ class ZForm {
         if (this.formErrorHook) {
           this.formErrorHook(json);
         }
+      } else if (json.twoFactorRenew == true) {
+        Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
       } else if (json.result == "error") {
         this.hint("alert-danger", Z.Lang.saveError);
       }
@@ -1586,7 +1793,7 @@ class ZFormField {
     badge.classList.add("badge", "badge-primary", "mr-1", "mb-1", "p-2");
     badge.style.cursor = "pointer";
     badge.setAttribute("data-value", value);
-    badge.innerHTML = "&times; " + text;
+    badge.textContent = "\u00d7 " + text;
     badge.addEventListener("click", () => {
       // A disabled multi-select must not let badges be removed either.
       if (this.isDisabled()) return;
@@ -1716,7 +1923,7 @@ class ZFormField {
         this.foodMap[value] = text;
 
         var option = document.createElement("option");
-        option.innerHTML = text;
+        option.textContent = text;
         option.setAttribute("value", value);
         (currentOptgroup || this.input).appendChild(option);
         this.optionMap[value] = option;
@@ -1739,7 +1946,7 @@ class ZFormField {
     for (var data of food) {
       if(data.type == undefined || data.type == "option") {
         var option = document.createElement("option");
-        option.innerHTML = data.text;
+        option.textContent = data.text;
         option.setAttribute("value", data.value ?? data.text);
         if(this.optgroup != null) {
           this.optgroup.appendChild(option);

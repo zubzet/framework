@@ -17,7 +17,8 @@ class PendingRoute extends PendingRoutingState {
             $this->endpoint,
             $this->action,
             $this->middleware,
-            $this->afterMiddleware
+            $this->afterMiddleware,
+            $this->withoutCsrf,
         );
     }
 }

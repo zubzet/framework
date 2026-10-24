@@ -82,6 +82,26 @@ config("db_username");
 
 ---
 
+### `configNumeric()`
+
+Retrieves a [configuration value](configuration.md) that has to be a number.
+
+**Syntax:** `configNumeric(string $key, int $default)`
+
+* **$key**: The configuration identifier.
+* **$default**: The value to return if the key is missing.
+
+**Note:** Non-numeric values are rejected with an `InvalidArgumentException` instead of being cast. A typo or a value like `off` would otherwise silently become `0` and disable whatever the setting controls.
+
+**Example:**
+
+```php
+configNumeric("db_max_retries", 3);
+
+```
+
+---
+
 ### `user()`
 
 Returns the instance of the [currently authenticated user](../api/classes/ZubZet-Framework-Authentication-User.html).
@@ -155,6 +175,53 @@ Renders a [view template](views.md) directly.
 ```php
 view("adminpanel/dashboard");
 
+```
+
+### `encryptSecret()`
+
+Encrypts a secret with the `encryption_key` setting, for example before storing it in the database. See [Secrets](secrets.md).
+
+**Syntax:** `encryptSecret(string $plaintext): string`
+
+* **$plaintext**: The value to encrypt.
+
+**Example:**
+
+```php
+$stored = encryptSecret($secretKey);
+```
+
+### `decryptSecret()`
+
+Decrypts a value created by `encryptSecret()`. Throws a `ZubZet\Framework\Security\Secrets\DecryptionException` when the key is wrong or the value is malformed or was modified. See [Secrets](secrets.md).
+
+**Syntax:** `decryptSecret(string $encrypted): string`
+
+* **$encrypted**: A value returned by `encryptSecret()`.
+
+**Example:**
+
+```php
+$secretKey = decryptSecret($stored);
+```
+
+### `__()`
+
+Translates a message id into the active locale. See [Translations](translations.md) for the catalogues and how the locale is picked.
+
+**Syntax:** `__(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string`
+
+* **$id**: The message id. An id no catalogue defines is returned unchanged.
+* **$parameters**: Placeholder values, keyed the way the catalogue spells the placeholder.
+* **$domain**: The catalogue domain, `messages` when omitted.
+* **$locale**: A locale override, the active locale when omitted.
+
+The framework only declares it when no global `__()` exists yet, so an application or library that brings its own keeps it.
+
+**Example:**
+
+```php
+echo __("dashboard.welcome", ["{name}" => $name]);
 ```
 
 ### `e()`

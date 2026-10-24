@@ -8,11 +8,14 @@
 
         use ZubZet\Framework\ZubZet;
         use ZubZet\Framework\Logger\Logger;
+        use ZubZet\Framework\Security\Secrets\Encryption;
+        use ZubZet\Framework\Security\Secrets\DecryptionException;
         use ZubZet\Framework\Message\Request;
         use ZubZet\Framework\Message\Response;
         use ZubZet\Framework\Authentication\User;
         use ZubZet\Framework\Database\Connection;
         use ZubZet\Framework\Logger\LoggerFactory;
+        use ZubZet\Framework\Translation\Translation;
         use ZubZet\Framework\Core\FunctionConflictResolution;
         use ZubZet\Framework\ErrorHandling\GenericException\NotInstantiatedException;
 
@@ -78,6 +81,28 @@
             }
         });
 
+        FunctionConflictResolution::requireAndThen("configNumeric", function() {
+            /**
+             * Fetches a configuration value that has to be a number.
+             *
+             * Non-numeric values are rejected instead of cast, where a typo or
+             * a value like "off" would silently become 0 and disable whatever
+             * the setting controls.
+             *
+             * @param string $key Setting key
+             * @param int $default Value used when the key is missing
+             * @throws \InvalidArgumentException When the configured value is not numeric
+             * @return int Configured value as an integer
+             */
+            function configNumeric(string $key, int $default): int {
+                $value = config($key, default: $default);
+                if(!is_numeric($value)) {
+                    throw new \InvalidArgumentException("Config key '$key' must be numeric, got: '$value'");
+                }
+                return (int) $value;
+            }
+        });
+
         FunctionConflictResolution::requireAndThen("user", function() {
             /**
              * Proxy to the currently logged-in user's object
@@ -127,6 +152,46 @@
         FunctionConflictResolution::requireAndThen("logger", function() {
             function logger(?string $name = null): Logger {
                 return LoggerFactory::getOrCreateLogger($name ?? Logger::APP);
+            }
+        });
+
+        FunctionConflictResolution::optionalAndThen("__", function() {
+            /**
+             * Translates a message id. An id no catalogue defines is returned unchanged.
+             *
+             * @param string $id Message id, e.g. "dashboard.welcome"
+             * @param array $parameters Placeholder values, spelled the way the catalogue spells them
+             * @param string|null $domain Catalogue domain, "messages" when omitted
+             * @param string|null $locale Locale override, the active locale when omitted
+             * @return string The translated message
+             */
+            function __(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
+                return Translation::translate($id, $parameters, $domain, $locale);
+            }
+        });
+
+        FunctionConflictResolution::requireAndThen("encryptSecret", function() {
+            /**
+             * Encrypts a secret with the `encryption_key` setting, e.g. before storing it.
+             *
+             * @param string $plaintext Value to encrypt
+             * @return string Encrypted value, safe to store as text
+             */
+            function encryptSecret(#[\SensitiveParameter] string $plaintext): string {
+                return Encryption::encryptSecret($plaintext);
+            }
+        });
+
+        FunctionConflictResolution::requireAndThen("decryptSecret", function() {
+            /**
+             * Decrypts a secret created by encryptSecret().
+             *
+             * @param string $encrypted Value returned by encryptSecret()
+             * @throws DecryptionException When the key is wrong or the value is malformed or modified
+             * @return string The original plaintext
+             */
+            function decryptSecret(string $encrypted): string {
+                return Encryption::decryptSecret($encrypted);
             }
         });
 
