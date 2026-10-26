@@ -1592,45 +1592,27 @@ class ZFormField {
         this.autocompleteBindingUrl = this.autocompleteData;
       }
 
-      this.lockAutocompleteAge = 0;
+      var requestAge = 0;
 
-      var onKeyup = (e, answered) => {
-        if (e.key == "Shift") return;
-        if (e.target.value.length < this.autocompleteMinCharacters) return;
-
-        var currentAge = ++this.lockAutocompleteAge;
-
-        if(this.autocompleteBindingUrl && e.target.value != "" && !answered) {
-          Z.Request.root(this.autocompleteBindingUrl, "autocomplete", {
-            "value": e.target.value
-          }, (res) => {
-            if(currentAge == this.lockAutocompleteAge) {
-              this.autocompleteData = res.data;
-              onKeyup(e, true);
-            }
-          });
-        }
-
+      var render = (term) => {
         completeDiv.innerHTML = "";
-        delete completeDiv.dataset.searchTerm;
-        if (e.target.value == "") return;
-        if (e.key == "Escape") return;
-        
+        completeDiv.dataset.searchTerm = term;
+
         for (let value of this.autocompleteData) {
-          if (value.toLowerCase().includes(e.target.value.toLowerCase())) {
+          if (value.toLowerCase().includes(term.toLowerCase())) {
             var item = document.createElement("button");
             item.type = "button";
             item.classList.add("list-group-item");
             item.classList.add("list-group-item-action");
             item.classList.add("py-1");
-            if(value.toLowerCase() == e.target.value.toLowerCase()) {
+            if(value.toLowerCase() == term.toLowerCase()) {
               item.classList.add("text-primary");
             }
 
-            var start = value.toLowerCase().indexOf(e.target.value.toLowerCase());
+            var start = value.toLowerCase().indexOf(term.toLowerCase());
             var tmp = value.substr(0, start);
-            tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
-            tmp += value.substring(start + e.target.value.length, value.length);
+            tmp += "<strong>" + value.substr(start, term.length) + "</strong>";
+            tmp += value.substring(start + term.length, value.length);
             if(this.autocompleteTextCB) {
               tmp = this.autocompleteTextCB(tmp, value);
             }
@@ -1640,22 +1622,32 @@ class ZFormField {
             item.addEventListener("click", e => {
               this.input.value = value;
               completeDiv.innerHTML = "";
-              delete completeDiv.dataset.searchTerm;
               if(this.autocompleteCB) this.autocompleteCB(value);
             });
           }
         }
-
-        // An endpoint's suggestions belong to the term only once its answer is in
-        if (answered || !this.autocompleteBindingUrl) {
-          completeDiv.dataset.searchTerm = e.target.value;
-        }
       };
-      this.input.addEventListener("keyup", onKeyup);
+
+      this.input.addEventListener("keyup", (e) => {
+        if (e.key == "Shift") return;
+        var term = this.input.value;
+        if (term.length < this.autocompleteMinCharacters) return;
+        if (e.key == "Escape") return completeDiv.innerHTML = "";
+        if (!this.autocompleteBindingUrl) return render(term);
+
+        var age = ++requestAge;
+        Z.Request.root(this.autocompleteBindingUrl, "autocomplete", {
+          "value": term
+        }, (res) => {
+          // A newer keystroke has its own request in flight
+          if (age != requestAge) return;
+          this.autocompleteData = res.data;
+          render(term);
+        });
+      });
 
       document.addEventListener("click", function() {
         completeDiv.innerHTML = "";
-        delete completeDiv.dataset.searchTerm;
       })
 
     } else {                                      // --- Default ---
