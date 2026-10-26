@@ -2,18 +2,18 @@
 The Z-Admin panel is a management panel you can open to edit/create users or roles/permissions.
 
 # Using the Z-Admin panel
-The Z-Admin panel is a control panel all projects using the framework have. It is accessible with the z controller. For example, an URL like this: `localhost/project/z` or `abcde.de/z` or `{yourdomain.tld}/{yourwebsite}/z`. Only logged in accounts with the correct [permissions](../core-features/permission-system.md) are able to see this section.
+The Z-Admin panel is a control panel all projects using the framework have. It is accessible with the z controller. For example, an URL like this: `localhost/project/z` or `abcde.de/z` or `{yourdomain.tld}/{yourwebsite}/z`. Only logged in accounts with the correct [permissions](../core-features/permission-system.md) are able to see this section; an anonymous visitor gets the login page instead.
 
 ## Categories
 It has following categories:
 
 | Category | Function |
 | -------- | -------- |
-| Instance | Simple place to change instance settings|
-| Log / Statistics | View [logs](../core-features/logging.md) and statistics
-| Framework Update | Start [updates for the framework](../setup/how-to-update.md) |
-| Edit User | Form to edit users
-| Add User | Form to add users
+| Database | Read-only [table browser](#database-browser) |
+| Maintenance | Shows the state of the [maintenance mode](../core-features/maintenance.md) and sets the bypass cookie |
+| Groups | List of permission groups |
+| Edit User | Form to edit a user's email, roles, user permissions and organization; there is no password change
+| Add User | Form to add users; the email must be unique and valid (empty is stored as NULL), the password is required client-side only. The user is verified at once, gets no role and no mail; a password outside 3 to 1024 bytes is rejected only after the user was inserted, so that email stays taken
 | Roles | User permission managment |
 | Organization | [Organization management](organization-management.md) by its own members |
 | Profile | [Own password, two factor, sessions and api keys](profile.md) |
@@ -21,23 +21,29 @@ It has following categories:
 | Add Organization | Form to create an organization, optionally with a permission group |
 
 
+The dashboard cards are fixed and there is no widget API; to change the panel, override its views (`administration/*`, `database/*`, `layout/z_admin_layout`) with a [view](../core-features/views.md) of the same name in your project. `layout/z_admin_layout` is the z controller's default layout and links `{root}assets/img/favicon.png`, which your app has to supply.
+
 ## Permissions
 To be able to use all functions, the following permissions are needed:
 
-- admin.panel
-- admin.user.list
-- admin.user.add
-- admin.user.edit
-- admin.roles.list
-- admin.roles.create
-- admin.roles.edit
-- admin.roles.delete
+- admin.panel (the dashboard at `/z` only)
+- admin.user.list (the user list at `/z/edit_user`)
+- admin.user.add (the Add User form and creating the user)
+- admin.user.edit (opening and saving a single user)
+- admin.groups.list (the groups list)
+- admin.roles.list (the roles list; checked first on every `/z/roles` request, including create and delete)
+- admin.roles.create (the `create` action of `/z/roles`; the new role has an empty name and role names are unique, so rename it before creating the next)
+- admin.roles.edit (opening and saving a role; also required for delete)
+- admin.roles.delete (the `delete` action on a role)
 - admin.organizations.list
 - admin.organizations.create
 - admin.organizations.edit
 - admin.organizations.delete
-- admin.log
-- [admin.su](login-as-another-user.md)
+- admin.maintenance
+- [admin.database](#database-browser)
+- [admin.su](login-as-another-user.md) (`/z/login_as/{userId}`, also used by the *Login as* button of the edit form)
+
+`admin.panel` guards the dashboard at `/z` and nothing else. Every other action checks its own permission from the list above, so a user without `admin.panel` still reaches `/z/roles`, `/z/edit_user` and the rest by their direct URL, as long as they hold the permission of that action. The checks run against the effective user, so while [logged in as another user](login-as-another-user.md) that user needs the permission itself. The sidebar and the dashboard cards (icon only, in the sections Application, Users and Roles, and Other) only show the entries the user may open, except that Edit User is shown for `admin.user.edit` although its list needs `admin.user.list`.
 
 Members manage their own organization with:
 
@@ -47,6 +53,8 @@ Members manage their own organization with:
 - [z.organization.rename](organization-management.md)
 
 Profile is the exception: it only ever shows the requesting account, so every login reaches it without a permission.
+
+The framework's own migrations create no admin role, user or permission. A project created with the install script ships a seed (`app/Database/seed/accounts/0_permissions.sql`) that adds the roles `Admin` (permission `*.*`) and `User` (permission `dashboard`), but no user account. Create a user, assign it the `Admin` role under Edit Users or in `z_user_role`, and for projects without that seed insert the grants into `z_role_permission` or `z_user_permission` yourself.
 
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.
@@ -64,3 +72,8 @@ Organizations lists every active organization; opening one shows a form to renam
 
 ## Assigning organizations
 Both Add User and Edit User carry an Organization select. Picking an entry assigns the user to that organization, the empty entry (`---`) unassigns them. The assignment goes through `User::updateOrganization()`, so the group of the previous organization is removed from the user and the group of the new one is added. An Edit User request without the `organization` field leaves the organization unchanged.
+
+## Database browser
+`/z/database` lists every table of the database with approximate row counts, `/z/database/{table}` shows its rows 20 per page (`/page/{n}`), newest first by the last primary key column (the first column without one), and `/z/database/{table}/csv` exports up to 10000 rows. The CSV export does not neutralise spreadsheet formulas. It is a read-only viewer and exporter (no insert, edit, delete, filter or search) and needs the permission `admin.database`.
+
+Only the columns named exactly `password`, `pw`, `salt` or `hash` are shown as `********`, in the table view and in the CSV export. Every other column is shown in clear text, including `z_logintoken.token`, `z_email_verify.token` and `z_password_reset.refId`. Anyone holding `admin.database` can read these, and with them take over sessions or password resets, so grant it only to accounts you would trust with the database itself.

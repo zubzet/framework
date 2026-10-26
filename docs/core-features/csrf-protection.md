@@ -62,8 +62,15 @@ A raw HTML form cannot set a header, so it carries the token in a hidden `_csrf`
 </form>
 ```
 
+## Bundled login controller
+The bundled `login` controller needs no setup: its actions are covered by the same check as any other route. Every post to `login`, `login/logout`, `login/signup`, `login/forgot_password`, `login/reset/<code>` and `login/verify/<code>` is answered with `403` unless it carries the token. The bundled Z.js presets send the header, and the bundled forms (`login_verify`, `login_reset`) render `CSRF::field()`. `login` runs only for a post with `action=login` and the fields `name` (the email) and `password`, and additionally calls `CSRF::verify()` itself before it checks credentials, so the check also holds when the action is reached internally through `checkPermission()`.
+
+`login/logout` is the exception: it does not look at the request method, so a `GET` to it ends the session without a token. A third-party page can therefore log a user out, which is the "safe methods are never checked" rule above applied to the bundled action.
+
 ## Interaction with `login_scope_allow_subdomains`
 With `login_scope_allow_subdomains = true` the **session** cookie is issued with a `Domain=.example.com` attribute so it is shared across sibling subdomains for single sign-on.
+
+The framework only switches this on when the setting equals the string `true`. In `z_settings.ini` a bare `login_scope_allow_subdomains = true` is normalised to `1` by the INI parser and does **not** match, so the cookie stays host-only without any warning. Double-quote the value in the INI (`login_scope_allow_subdomains = "true"`) or supply it through [`CONFIG_LOGIN_SCOPE_ALLOW_SUBDOMAINS=true`](configuration.md#environment-variable-overrides), which is taken as a raw string and matches. The key has no built-in default, so the environment variable only applies if a placeholder for it exists in the INI.
 
 The `z_csrf` cookie deliberately does **not** follow that setting. It is always issued host-only, without any `Domain` attribute, so `other.example.com` cannot read the token belonging to `app.example.com`. This is intentional: subdomain sharing neutralises the browser's default `SameSite=Lax` protection for sibling hosts, which is exactly the case the CSRF token has to cover.
 

@@ -6,7 +6,7 @@ A view contains the HTML the user should see, along with the CSS, images and Jav
 Database access and heavy logic should not be used in the view, as that belongs into other parts of the application.
 
 ## The render engine
-Since v1.3.0 ZubZet renders views with [Katana](https://github.com/katanaphp/blade), a standalone implementation of the [Blade](https://laravel.com/docs/13.x/blade) templating language. A view is a `.blade.php` file placed in your project's `z_views` directory, otherwise it will not be found when called from the [render method](../api/classes/ZubZet-Framework-Rendering-CanRenderView.html#method_render).
+Since v1.3.0 ZubZet renders views with [Katana](https://github.com/katanaphp/blade), a standalone implementation of the [Blade](https://laravel.com/docs/13.x/blade) templating language. A view is a `.blade.php` file placed in your project's `z_views` directory (default `app/Views`), otherwise it will not be found when called from the [render method](../api/classes/ZubZet-Framework-Rendering-CanRenderView.html#method_render).
 
 Blade gives you a concise syntax for the things you do in every template: escaping output, loops, conditionals, reusable components and page inheritance. This page covers the parts you reach for day to day, which is most of what you need. For the complete directive reference, the [Laravel Blade documentation](https://laravel.com/docs/13.x/blade) is the final backstop (Katana implements the common Blade set, see [Not available in Katana](#not-available-in-katana)).
 
@@ -35,17 +35,17 @@ public function action_index(Request $req, Response $res) {
 }
 ```
 ```blade
-{{-- View: z_views/employee/index.blade.php --}}
+{{-- View: app/Views/employee/index.blade.php --}}
 @extends($layout)
 
 @section("content")
     <h1>Hello {{ $name }}</h1>   {{-- or $opt["name"] --}}
 @endsection
 ```
-The framework also injects a set of helpers into `$opt` for every render: `$opt["root"]` (the application's root path, always ending with a slash, so paths are appended without one), `$opt["host"]`, `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` and `$opt["generateResourceLink"]`. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests.md)).
+The framework also injects a set of helpers into `$opt` for every render, overwriting caller-supplied keys of the same name (except `title`): `$opt["root"]` (the application's root path, always ending with a slash, so paths are appended without one), `$opt["host"]`, `$opt["absRoot"]` (host plus root path), `$opt["user"]`, `$opt["request"]`, `$opt["response"]`, `$opt["title"]` (the `pageName` setting unless the caller passes one), `$opt["generateResourceLink"]($url, $root = true)` (prints the root, `$url` and `?v=<assetVersion>`, `dev` uses `time()` and an unset setting leaves `?v=` empty; `$root = false` omits the root), `$opt["echo"]($val)` (prints `nl2br(htmlspecialchars($val))`). A missing view or layout throws nothing: the bundled `500` view is rendered in `layout/min_layout` instead. `render()` echoes the page once and returns nothing; it sets no status or header and does not exit, so that 500 view is sent with the current status. For a view to communicate back to a controller, asynchronous methods must be used (see [Backend Requests](../frontend-integration/backend-requests.md)).
 
 !!! note "View names and the file extension"
-    The view above is addressed as `"employee/index"` while the file on disk is `z_views/employee/index.blade.php`. The extension is optional and dot notation works too, so `"employee/index"`, `"employee/index.blade.php"` and `"employee.index"` all resolve to the same file. A view in your project overrides a framework view of the same name.
+    The view above is addressed as `"employee/index"` while the file on disk is `app/Views/employee/index.blade.php`. The extension is optional and dot notation works too, so `"employee/index"`, `"employee/index.blade.php"` and `"employee.index"` all resolve to the same file. A view in your project overrides a framework view of the same name.
 
 ## Echoing data
 ```blade
@@ -55,6 +55,9 @@ The framework also injects a set of helpers into `$opt` for every render: `$opt[
 {{ $title ?? "Untitled" }}   {{-- any PHP expression works inside the braces --}}
 ```
 `{{ }}` escapes its output the same way the framework's [`e()` helper](global-helper-functions.md#e) does, so it is safe for user input by default. Use `{!! !!}` only for HTML you trust.
+
+!!! warning "Plain PHP echoes are not escaped"
+    Only `{{ }}` escapes. `<?= $x ?>` and `<?php echo $x; ?>` print the value as it is, so wrap values you do not control in `e()` (`<?= e($x) ?>`) or use `{{ }}` instead. This also applies to `$opt` values such as `$opt["title"]`. Mail views follow the same rule.
 
 ## Conditionals
 ```blade
@@ -165,9 +168,9 @@ Blade has small helpers for the attributes you toggle most often, so you do not 
 ```
 
 ## Components
-Components are reusable pieces of UI you drop in with an `<x-...>` tag. Create one as a `.blade.php` file under `z_views/components`, then use it by file name:
+Components are reusable pieces of UI you drop in with an `<x-...>` tag. Create one as a `.blade.php` file under `app/Views/components`, then use it by file name:
 ```blade
-{{-- z_views/components/alert.blade.php --}}
+{{-- app/Views/components/alert.blade.php --}}
 @props(["type" => "info"])
 <div class="alert alert-{{ $type }}">
     {{ $slot }}

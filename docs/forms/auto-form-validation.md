@@ -23,19 +23,35 @@ var inputLastName = form.createField({
 
 The form is created with `Z.Forms.create`. The `dom` attribute takes the id of an html element in which the form in embedded. For this to work the element needs to be loaded so this script should not execute directly at the start of the page. If the element will spawns later the form can be added to it with the dom attribute `element.appendChild(form.dom);`.
 
+Further options of `Z.Forms.create`:
+
+- `doReload`: reloads the page after a successful submit, default `false` (`true` when `Z.Forms.create()` gets no options object at all), forced to `true` once a [CED](ced-validation.md) is added.
+- `saveHook(response)`: called with the parsed response after a `success` only. `formErrorHook(response)` is called after the fields of a `formErrors` response were marked.
+- `hidehints`: suppresses the sticky banner above the form that shows the unsaved, saved and error hints. `form.hint(alertClass, content)` shows it manually with a Bootstrap alert class and HTML content, `form.unhint()` hides it.
+- `sendOnSubmitClick`: default `true`; with `false` the submit button no longer calls `form.send()`, so you must call it yourself.
+- `customEndpoint`: URL the submit button posts to instead of the current action. `form.send(customUrl)` takes the URL directly.
+
+`form.send()` clears the field errors and posts the form data as `multipart/form-data` (a call is ignored while a request runs or within 300 ms of the previous one; `form.debug = true` logs the FormData and the response to the console) and handles the JSON `result` of the response: `success` runs `saveHook`, reloads if `doReload` is set and shows the saved hint, `formErrors` marks the fields (names without a field are ignored, a field with several errors shows the last one) and runs `formErrorHook`, `error` (or a response that is not valid JSON) shows the generic `Z.Lang.saveError` hint, never the `message` sent by `$res->error()`.
+
+`form.createActionButton(text, style, action)` adds a button after the submit button and returns it. `style` has to be a single class such as `btn-secondary`.
+
 ### **Creating fields**
 
 | Attribute   | Description                                                                                                                                                                                                                                                                                                    |
 |-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`      | Corresponds to the name in the post request.                                                                                                                                                                                                                                                                   |
-| `type`      | The input type. Any valid [HTML standard type](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input) is accepted, as well as `textarea`, `select`, `multi-select`, and `autocomplete`. This attribute does not affect server-side value parsing.                                                                                                                       |
-| `text`      | Label text for the input field.                                                                                                                                                                                                                                                                               |
-| `value`     | Default value for the input field. For `multi-select`, pass an array (e.g. `["1","4"]`) or `<?= json_encode([...]) ?>`.                                                                                                                                                                                       |
-| `food`      | Required for `select` and `multi-select` types. It defines the options available and is formatted as an array: `[{value: 1, text: "one"}, {value: 2, text: "two"}, ...]`. This array can be generated via [`$controller->makeFood`](../api/classes/ZubZet-Framework-Core-Controller.html#method_makeFood).                                                                              |
-| `required`  | Specifies whether the field is required. When set to `true`, the input must be filled before form submission.                                                                                                                                                                                                  |
-| `width`     | Defines the width of the form element in 1/12 units of the total width. Effective on medium or larger devices. On small devices, the width is always 100%.                                                                                                                                                      |
-| `attributes`| Allows adding additional attributes for the generated input element (e.g., `min`, `max` for number inputs). Example usage: `attributes: {'min': 1, 'max': 10}`.                                                                                                                                                  |
-| `prepend`| Adds a visual element before the input field. This can be used for prefixes, labels, or other indicators. Example usage: prepend: 'Prefix' creates an input field with a preceding text or symbol. |
+| `type`      | The input type. Any valid [HTML standard type](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input) is accepted, as well as `textarea`, `select`, `multi-select`, `autocomplete`, `button` and `hidden`. Without a type the input gets an invalid type attribute. This attribute does not affect server-side value parsing.                                                                                                                       |
+| `text`      | Label HTML, default a non-breaking space.                                                                                                                                                                                                                                                                               |
+| `value`     | Initial value, used over `default` when truthy (`0` or an empty string falls back to it), and the label of a `button` (full width, class from `style`, default `btn-primary`). For `multi-select`, pass an array (e.g. `["1","4"]`) or `<?= json_encode([...]) ?>`.                                                                                                                                                                                       |
+| `food`      | Required for `select` and `multi-select` types. It defines the options available and is formatted as an array: `[{value: 1, text: "one"}, {value: 2, text: "two"}, ...]`, where `value` falls back to `text` and an entry with `type: "optgroup"` starts a group. This array can be generated via [`$controller->makeFood`](../api/classes/ZubZet-Framework-Core-Controller.html#method_makeFood).                                                                              |
+| `required`  | Marks the field as required in the UI only: a red asterisk and the class `input-required` are added to the label, and a `select` drops its empty `---` option. No client-side validation is performed and the browser's `required` attribute is not set. Enforce it on the server with `->required()`. |
+| `width`     | Defines the width of the form element in 1/12 units of the total width (`col-md-N`, default 12, `0` for `hidden`); a field that no longer fits into 12 units starts a new row. Effective on medium or larger devices. On small devices, the width is always 100%.                                                                                                                                                      |
+| `attributes`| Allows adding additional attributes for the generated input element (e.g., `min`, `max` for number inputs), set after the defaults so they can override them. Example usage: `attributes: {'min': 1, 'max': 10}`.                                                                                                                                                  |
+| `prepend`| Adds HTML in an `input-group-prepend` before the input field. This can be used for prefixes, labels, or other indicators. Example usage: prepend: 'Prefix' creates an input field with a preceding text or symbol. |
+| `hint`| Muted help text as HTML under the input. |
+| `placeholder`| Input placeholder; for `multi-select` the text of the first option, for `file` the text before a file is chosen is `customFileInputText` (default `Z.Lang.choose_file`). |
+| `default`| Value restored by `field.reset()`, also the initial value when `value` is empty. |
+| `autofill`| When false (default) every input gets `autocomplete="new-password"` to suppress browser autofill. |
 | `disabled`| Starts the field disabled. The input is greyed out and cannot be edited until `field.enable()` is called. |
 | `hidden`| Starts the field hidden. It is left out of the layout until `field.show()` is called. The field still exists and submits its value. |
 
@@ -54,11 +70,26 @@ var inputAmount = $form.createElement({
 ```
 ### **Manipulating fields**
 
-The return value if `form.createField` is the created field. It has an attribute called `input` which can be used to access the dom input element directly. It also has `on` which is an alias for addEventListener on the input dom element. The value can be read and set with `value`.
+The return value if `form.createField` is the created field. It has the attributes `input` (the dom input element), `label` and `dom` (the wrapper around label, input and error text). It also has `on` which is an alias for addEventListener on the input dom element. The value can be read and set with `value`: a `multi-select` returns a copy of its array, a `checkbox` a boolean, and the setter of a `file` field only changes the label text. `field.markInvalid(error)` and `field.markValid()` show or clear the `Z.Lang.error_<type>` message and the `is-invalid` class, and `markInvalid` scrolls the field into view.
 
-`form.addCustomHTML()`. With this you can add Html inside of the form.
+`form.addCustomHTML()`. With this you can add Html inside of the form, in its own `div`; the next field starts a new row.
 
-`form.addSeperator()`. This inserts a simple `<hr>` element at the end of the current builded form.
+#### Escaping untrusted strings
+
+Several strings are inserted into the page as HTML (`innerHTML`), not as plain text. Escape anything that is not hard-coded, such as user input or database content, before you pass it in, otherwise it is an XSS hole. In PHP use `htmlspecialchars()` or `e()` before dumping the value into the script.
+
+Inserted as HTML, escape these:
+
+- `text` (the label) and `hint` of a field
+- `prepend`
+- the `value` of a `button` field and the `text` of `createActionButton()`
+- `form.hint(alertClass, content)`
+- `form.addCustomHTML(html)`
+- the suggestions of an `autocomplete` field (`autocompleteData` entries and the return value of `autocompleteTextCB`)
+
+Inserted as plain text, no escaping needed: the `text` of `select` and `multi-select` options and the text of `multi-select` badges.
+
+`form.addSeperator()`. This inserts a simple `<hr>` element at the end of the current builded form and starts a new row. `form.createEmpty(size = 12)` adds an empty spacer of that width the same way.
 
 ### **Disabling fields**
 
@@ -67,13 +98,13 @@ A field can be disabled and re-enabled at runtime. A disabled field is greyed ou
 ```js
 field.disable();        // disable a single field
 field.enable();         // re-enable it
-field.isDisabled();     // true while disabled
+field.isDisabled();     // true while disabled, also while its form is
 
 form.disable();         // disable the whole form (all fields + submit button)
 form.enable();          // re-enable it
 ```
 
-`form.disable()` and a field's own `field.disable()` are independent: re-enabling the form does not re-enable a field that was disabled on its own. While a form is submitting it disables itself automatically and restores the previous state when the request finishes.
+`form.disable()` and a field's own `field.disable()` are independent: re-enabling the form does not re-enable a field that was disabled on its own. While a form is submitting it disables itself automatically (`form.isDisabled()` is true meanwhile) and restores the previous state when the request finishes.
 
 ### **Showing and hiding fields**
 
@@ -99,10 +130,12 @@ form.showSubmit();
 ```js
 form.getValues();                       // { fieldName: value, ... }
 form.setValues({ first_name: "Ada" });  // set the named fields
-form.setValues(data, { resetUnknown: true }); // reset fields not present in data first
+form.setValues(data, { resetUnknown: true }); // reset the whole form first
 ```
 
 [CED](ced-validation.md) fields are skipped by `getValues` / `setValues`; their data round-trips through the normal submit instead.
+
+`form.reset()` calls `field.reset()` on every field: back to `default` or empty (`false` for a checkbox, `[]` for a `multi-select`), select options stay, CEDs are not reset.
 
 Keys passed to `setValues` that don't match any field are kept on `form.meta` and returned by `getValues`, but are never submitted to the backend. This lets a value like an id ride along with the form data:
 
@@ -148,22 +181,31 @@ if ($req->hasFormData()) {
 
 ### **Validation structure**
 
-`$req->hasFormData()` checks if there is any data in the request.
+`$req->hasFormData()` checks if the POST data contains the `isFormData` marker, which Z.js forms always send.
 
 [`$req->validateForm()`](../api/classes/ZubZet-Framework-Form-Validation-CanValidateForm.html#method_validateForm) validates the values.
-As the first parameter it takes an array of fields to validate. To these field, rules can be attached.
+As the first parameter it takes an array of fields to validate. To these field, rules can be attached. `FormField` and `FormResult` are global aliases of `Form\Validation\Field` and `Form\Validation\Result`, `z_upload` of `Form\Upload`.
+
+Without the optional second parameter `$data` (an empty array counts as without) the input is `array_merge(getPost(), getFiles())`, so uploaded files override same-named POST keys. Every rule except `required` only runs for a set, non-empty value or the string `0`; otherwise the field value becomes `null` (a field without any rule keeps its raw value, so an empty string stays one). Rules run in the order they are chained and every failing rule adds its own error, so one field can report several.
+
+- `->required()` fails with `required` when the input is unset or an empty string and no uploaded file exists under that name.
+- `->length($min, $max)` has inclusive bounds and counts bytes (`strlen`); the error carries `info` `[min, max]`, like `->range()`.
+- `->filter($filter)` fails when `filter_var($value, $filter)` is falsy, so only the filter id works (no options or flags) and a valid value that filters to a falsy result, such as `0` with `FILTER_VALIDATE_INT`, fails too.
+- `->integer()` fails unless `filter_var($value, FILTER_VALIDATE_INT)` is not `false` (`0` passes) and sets the bind type to `i`. It also replaces the field value by `intval($value)`, even when validation failed, and only when it is the last rule. It does not accept arrays.
+- `->range($min, $max)` fails when `$value < $min || $value > $max`; it does not check that the value is numeric.
+- `->unique($table, $field, $ignoreField, $ignoreValue)` fails with `unique` when the value is already in `$table.$field`; the names are only backtick-wrapped and the value is bound as a string, so never take `$table` or `$field` from user input. On edit forms pass the primary key column and the current id as the ignore pair, so the edited row does not collide with itself.
 
 `$formResult->hasErrors` returns true or false depended on the validation result of `$req->validateForm()`.
-If the validation fails, [`$res->formErrors($formResult->errors)`](../api/classes/ZubZet-Framework-Message-Response.html#method_formErrors) will return the errors to the frontend, where they will be displayed.
+If the validation fails, [`$res->formErrors($formResult->errors)`](../api/classes/ZubZet-Framework-Message-Response.html#method_formErrors) will return the errors to the frontend, where they will be displayed; it merges every array argument and exits. Each error is `["name" => ..., "type" => ...]`, plus `info` for `length` and `range`. `$formResult->addCustomError($name, $type)` appends your own (any `$type`; the client shows `Z.Lang.error_<type>`) and `$formResult->getValue($name)` returns a validated value, or `null` for an unknown field.
 
 ### **Rules on array values (multi-select)**
 
 A `multi-select` field's value arrives at the server as a real PHP array. Three existing rules are *list-aware* — they adapt automatically when the field value is an array — and one new rule (`->in()`) covers the in-memory allow-list case:
 
 - `->length($min, $max)` — `strlen()` for scalars; **`count()`** for arrays. So `->length(1, 3)` on a multi-select means "between 1 and 3 selections."
-- `->regex($pattern, $exceptions)` — runs the regex against each item; the field fails as soon as any item fails.
-- `->exists("table", "field")` — applied per item: every picked entry must exist as a row's `field` in `table`.
-- `->in($allowedValues)` — the value (or each item, for arrays) must appear in the given in-memory allow-list. No DB query. Use this to guard `select` / `multi-select` fields against tampered POST payloads where the client sent an option that wasn't in the rendered dropdown. Works on plain `select` (single-value) and `multi-select` (per-item).
+- `->regex($pattern, $exceptions)` — the `$exceptions` strings and then every match of `$pattern` are removed from the value, and the field fails when text remains. So the pattern describes the allowed characters (`/[A-Za-z ]/`), and a full-match pattern like `/^[a-z]+$/` works too. Runs against each item; the field fails as soon as any item fails. A value of `0`, or one that is empty after the exceptions are removed, always fails.
+- `->exists("table", "field")` — applied per item: every picked entry must exist as a row's `field` in `table`. A miss reports the error type `exist` (not `exists`).
+- `->in($allowedValues)` — the value (or each item, for arrays) must appear in the given in-memory allow-list (non-strict `in_array`). No DB query. Use this to guard `select` / `multi-select` fields against tampered POST payloads where the client sent an option that wasn't in the rendered dropdown. Works on plain `select` (single-value) and `multi-select` (per-item).
 
 ```php
 $formResult = $req->validateForm([
@@ -174,16 +216,22 @@ $formResult = $req->validateForm([
 ]);
 ```
 
+`filter`, `unique`, `integer`, `range` and `date` are scalar-only and do not support array values; use `in()` instead.
+
+### **The date rule**
+
+`->date($format = "Y-m-d")` fails with the error type `date` only when `strtotime($value)` is falsy. The `$format` argument is stored with the rule but never applied, so it does not restrict the input. Any string `strtotime()` can parse passes, for example `31.12.2024`, `2024-02-31` or `tomorrow`, while `banana` or `2024-13-45` fail. Because the check is a loose comparison, a value that parses to the Unix timestamp `0` (`1970-01-01 00:00:00 UTC`) fails as well. The rule does not accept array values.
+
 ### **Saving functions**
 
 Success will exit the current action. So before calling it the data should be processed by a model or [`$res->updateDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_updateDatabase).
-Update database will take the result object from the form validation to get the names in the database. If the name in the database column and the post differ, the database name can be set by the second parameter of the [`constructor of FormField`](../api/classes/ZubZet-Framework-Form-Validation-Field.html#method___construct).
+Update database will take the result object from the form validation to get the names in the database; it updates the row where `$pkField` equals `$pkValue` (bound with the type `$pkType`, a field or `$fixed` entry that is the primary key with that same value is not written) and returns nothing. If the name in the database column and the post differ, the database name can be set by the second parameter of the [`constructor of FormField`](../api/classes/ZubZet-Framework-Form-Validation-Field.html#method___construct), which is stored in the public property `dbField` (default: the post name).
 
-[`$res->insertDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_insertDatabase) can also be used to process the data. This method will create a dataset in a table given as argument. It works similar to `$res->updateDatabase()`.
+[`$res->insertDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_insertDatabase) can also be used to process the data. This method will create a dataset in a table given as argument. It works similar to `$res->updateDatabase()`; both write the other fields to their `dbField` columns using the field `dataType`, skip fields flagged `noSave`, take extra columns from the optional `$fixed` array (bound as strings), and `insertDatabase()` returns the insert id. Table and column names are only backtick-wrapped, so never take them from user input.
 
 
 ### **insertOrUpdateDatabase Example**
-[`$req->insertOrUpdateDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_insertOrUpdateDatabase) Adds a logic to check if the dataset already exists.
+[`$res->insertOrUpdateDatabase()`](../api/classes/ZubZet-Framework-Message-Response.html#method_insertOrUpdateDatabase) selects the row by its primary key: it updates it and returns `$pkValue` if found, otherwise it inserts and returns the insert id.
 ```php
 public function action_manage(Request $req, Response $res) {
     $req->checkPermission("employee.edit");
@@ -347,10 +395,12 @@ $formResult = $req->validateForm([
 ]);
 ```
 
-`->checked()` is sugar over `->in(["1", "true", "on"])` — the box's value must be a ticked representation.
+`->checked()` is sugar over `->in(["1", "true", "on"])` — the box's value must be a ticked representation, otherwise it fails with the error type `in`.
+
+`->checked()` does **not** imply `->required()`. Like every rule except `required`, it only runs when the field is present and not empty, so a request that omits the field entirely (or sends an empty string) passes without an error. The bundled checkbox always submits `0` or `1`, but a hand-made request can leave the field out. To reject that too, chain both: `->required()->checked()`.
 
 ### Autocomplete
-The `autocomplete` type creates a text input with an additional feature: it displays suggestions based on predefined data as the user types.
+The `autocomplete` type creates a text input that, from `autocompleteMinCharacters` (default 2) typed characters on, displays the entries of `autocompleteData` as suggestions: an array of strings filtered by case-insensitive substring match, or a backend path.
 
 #### Example
 ```js
@@ -405,11 +455,15 @@ public function action_favourite(Request $req, Response $res) {
 </script>
 ```
 
+Every key press posts `value` with `action=autocomplete` to the path and renders the returned `data` array as soon as it arrives. `autocompleteTextCB(html, entry)` returns the HTML of a list item from the highlighted text and the raw entry, `autocompleteCB(entry)` runs when a suggestion is picked (which also fills the input), and Escape or a click anywhere closes the list.
+
 The suggestion list carries the term it shows suggestions for in `data-search-term`, set once the endpoint's answer for that term has been rendered and removed when the list is cleared. Tests and scripts can wait on it, e.g. `[data-search-term="Apple"] button`.
 
 ### Select
 The `select` type generates a dropdown menu and automatically populates it with options.  
-This feature leverages a function called makeFood, which is used in the controllers.
+This feature leverages a function called makeFood, which is used in the controllers. It turns database rows into `{value, text}` entries and appends `$optionalTextField` to the text after a space. Until the options arrive the select holds a disabled `---` option; `field.feedData(food, clear = true)` replaces (or with `clear = false` appends) the options later and only works on `select` and `multi-select`. A clearing feed leaves a non-required select with an enabled empty `---` option (a required one with none), also drops the selection and option maps of a `multi-select`, and re-applies the initial `value` option (not `default`) afterwards.
+
+`makeFood` does not HTML-escape the text. It does not need to: it returns JSON encoded with `JSON_HEX_TAG | JSON_HEX_AMP`, so the value is safe to print inside a `<script>` block, and Z.js inserts the option text with `textContent`, so markup in it is shown literally and never executed.
 
 #### Example
 
@@ -469,11 +523,11 @@ return $res->render("employee/employee_edit", [
 ```
 
 ### Multi Select
-The `multi-select` type behaves like `select` but lets the user pick more than one value. Picked entries appear as removable badges under the dropdown and the picked option is hidden from the dropdown until the badge is removed. Uses the same `food` shape (and same `makeFood` helper) as `select`.
+The `multi-select` type behaves like `select` but lets the user pick more than one value. Picked entries appear as badges under the dropdown; a click removes one (unless the field is disabled) and fires a bubbling `input` event on the select. The picked option is hidden from the dropdown until then, and picking a value twice is ignored. Uses the same `food` shape (and same `makeFood` helper) as `select`.
 
 #### Value semantics
 - `field.value` returns the picked entries as a **JavaScript array** of values.
-- Assigning `field.value = ["a", "b"]` replaces the selection. Non-array input is treated as an empty selection.
+- Assigning `field.value = ["a", "b"]` replaces the selection (items become strings). Non-array input is treated as an empty selection. `field.addSelectedValue(value)` and `field.clearSelectedValues()` change it step by step.
 - On submit, each pick is sent as a native PHP array entry (`name[]=a&name[]=b`), so `$_POST[name]` arrives as a real **PHP array** — no `json_decode` needed in user code. An **empty** multi-select is omitted from the POST entirely — just like an unchecked checkbox — so the existing `->required()` rule (`isset($_POST[$name])`) catches it without any special-casing.
 - `insertDatabase` / `updateDatabase` automatically `json_encode` array field values before binding, so a `JSON` (or `TEXT`/`VARCHAR`) column receives a real JSON string. User code never has to encode manually.
 - Pre-fill from PHP with either an inline JS literal or `json_encode` dumped directly (no surrounding quotes):
@@ -489,7 +543,7 @@ form.createField({
 
 #### Food shapes
 - `{value, text}` — value is what gets posted, text is what's shown in the dropdown and the badge.
-- `{value}` alone — value is also used as the label.
+- `{value}` alone — value is also used as the label (`multi-select` only; a plain `select` shows `undefined`).
 - `{text}` alone — text doubles as the value.
 - `{type: "optgroup", text}` — groups the options that follow (until the next optgroup) under an `<optgroup>` label. Optgroups are collapsed automatically when every option below them has been picked, and come back when one is removed.
 

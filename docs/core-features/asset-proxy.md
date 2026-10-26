@@ -34,6 +34,8 @@ root-relative URL for you:
 @endsection
 ```
 
+The link ends in `?v=<assetVersion>`, the only cache busting there is: the proxy ignores the query string and sends only a `Content-Type` header, no cache headers.
+
 ## Bundled assets
 
 The framework registers these sources automatically at bootstrap, so they work out of the box:
@@ -59,7 +61,7 @@ zubzet()->assetProxy->registerWebRootSource("/var/www/vendor/acme/ui-kit/dist", 
 
 The file `dist/app.css` is then available at `/_zubzet/asset-proxy/ui-kit/app.css`. Registration is
 lazy — the directory is only touched when a matching request arrives. Sources are checked in
-registration order, and the first match wins.
+registration order, and the first match wins. For an installed Composer package, `(new BundledPackage("acme/ui-kit", "dist", "ui-kit"))->mount(zubzet()->assetProxy)` resolves the path for you.
 
 ## Module assets and resolution order
 
@@ -83,6 +85,7 @@ The proxy is designed to serve only files that live inside a registered source:
   result stays within the registered source directory, so `../` sequences and symlink escapes cannot
   reach files outside the mount.
 - **Only readable, existing files are served**; anything else returns `404`.
+- **There is no allow-list and no access check.** Everything else readable below a mounted source is served to anyone via `GET`, including dotfiles and the `composer.json` of mounted packages.
 - **Source and config extensions are never served.** Requests for `.php`, `.phtml`, or `.ini`
   files return `404` from every source, including ones you register yourself.
 - **[Content types are detected](https://github.com/thephpleague/mime-type-detection)** with `league/mime-type-detection`, falling back to

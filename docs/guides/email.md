@@ -74,7 +74,7 @@ To start working with emails, we first need the basic structure of our applicati
     To verify if your emails are being sent correctly, you can navigate to `localhost:3300`. This is a default interface for email testing, which are commonly used in development environments to capture and inspect outgoing emails without actually sending them.
 
 
-Before sending emails, configure your SMTP server. The [configuration](../core-features/configuration.md) is located in the `z_config/z_settings.ini` file, where parameters like `mail_smtp` need to be set up.
+Before sending emails, configure your SMTP server. The [configuration](../core-features/configuration.md) is located in the `z_config/z_settings.ini` file, where `mail_smtp` (host), `mail_user` and `mail_password` need to be set up. The framework always sends through SMTP with authentication. `mail_from` is the sender address (shown with `pageName` as name) and falls back to `mail_user` only if the key is absent; a sender that is not a valid address throws an `Exception`. `mail_security` defaults to `tls`, an empty value (INI `false`) sets no explicit encryption, and `mail_port` has no default (PHPMailer uses port 25 if it is empty).
 
 ## Sending Emails
 Emails are sent from [controllers](../core-features/controllers-and-actions.md), and the ZubZet framework provides [two methods](../template-rendering-usages/sending-an-email.md) for this purpose:
@@ -87,7 +87,7 @@ Emails are sent from [controllers](../core-features/controllers-and-actions.md),
     4. `lang`: The language of the email.
     5. `options`: An array of values to pass to the view file.
     6. `layout`: The layout file to use for the email.
-    7. `attachments`: Any files to attach to the email.
+    7. `attachments`: File contents (not paths) to attach, keyed by file name.
 
 2. `sendEmailToUser`: This method is used to send an email directly to a registered user by specifying their user ID. It accepts the following parameters:
 

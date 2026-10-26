@@ -204,10 +204,7 @@ Now that we understand how to use permissions, it’s essential to know how to c
 Open your browser and navigate to the admin panel at `http://localhost:8080/z`.
 
 2) **Login In as Admin**  
-Use the default administrator credentials:
-
-- Email: `admin@zubzet.com`
-- Password: `password`
+Use an account that holds the `Admin` role of the project seed (permission `*.*`). The framework creates no default administrator, so create the user first and assign the role in `z_user_role`.
 
 3) **Create a New Role**  
 

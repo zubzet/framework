@@ -6,7 +6,9 @@ It is opened lazily on the first query, kept alive across the request, and
 re-opened by itself when the server drops it. This page covers the settings
 that shape it. All of them live in `z_config/z_settings.ini` (see
 [Booter Settings](configuration.md)) and all of them are optional apart from
-the credentials.
+the endpoint and credentials below. For raw access, `db()->getDatabaseConnection()`
+returns the `mysqli` handle (e.g. for `affected_rows`), and `executeMultiQuery()`
+runs several statements without binding, bypassing the debug bar and slow-query log.
 
 ## Endpoint and credentials
 ```ini
@@ -17,6 +19,17 @@ dbusername = app
 dbpassword = secret
 ```
 
+`dbhost`, `dbusername`, `dbpassword` and `dbname` are required. If any of
+them is missing or empty, the first query throws a `RuntimeException`
+(`Database connection requires valid configuration. Missing or empty config
+key(s): ...`) naming the offending keys. None of them has a default, and
+`dbpassword` in particular must be non-empty: an account without a password
+is rejected, not connected to.
+
+`dbport` is optional and has no framework default: when it is unset the
+driver's own default (`3306`) applies. It is honoured by the runtime
+connection and by migrations alike.
+
 `dbhost` may also carry the port (`host:3306`), except with `db_ssl`
 turned on: the server certificate is matched against `dbhost` as a whole,
 and no certificate names a port, so with TLS the port belongs in `dbport`
@@ -25,6 +38,9 @@ and a combined value is rejected with an error saying exactly that.
 Migrations connect separately (through Doctrine DBAL) but read the same
 settings, so there is nothing to configure twice.
 
+Migrations, and the seed, status, sync, unlock, repair-collation and hashing-migration commands, log in with `dbusername_elevated` and `dbpassword_elevated` when
+both are set. If either is empty, they use `dbusername` and `dbpassword`. The console builds every command, so the elevated login applies to each CLI invocation, `run` included. The switch happens at CLI startup for every command (including `run`) and lasts for the whole process, so models use the elevated user too.
+
 ## Timeouts and retries
 ```ini
 db_connection_timeout = 900
@@ -32,7 +48,8 @@ db_max_retries = 3
 ```
 
 `db_connection_timeout` is the number of seconds after which an idle
-connection is checked before being reused.
+connection is checked before being reused (`0` checks before every query; a non-numeric value throws an
+`InvalidArgumentException` at boot). Manual `heartbeat()` calls (also on models) are deprecated since 1.2.0 and can be removed.
 
 `db_max_retries` is how many extra attempts a statement gets when it fails
 for a reason that is worth retrying: a deadlock, a lock-wait timeout, a
