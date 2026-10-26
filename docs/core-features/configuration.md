@@ -17,7 +17,7 @@ Later layers win:
 3. The `$params` array passed to the `ZubZet` constructor (only for keys that already exist)
 4. `CONFIG_*` environment variables (only with `allow_env_config`, see below)
 5. The derived `rootFolder` and `root`, computed from `rootDirectory` and `host`
-6. The automated settings file (`z_config/z_automated_setting.ini`, key `config_automated_file`)
+6. The automated settings file (`z_config/z_automated_setting.ini`, key `config_automated_file`), read with a plain `parse_ini_string()` without the `;`/`#` protection of the main file
 
 `rootFolder` is the link prefix `$opt["root"]` in views, the default prefix of `rerouteUrl()` (used by `logout()`) and the path of the maintenance bypass cookie.
 

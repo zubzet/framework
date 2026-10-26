@@ -51,7 +51,7 @@ Every log record produced through `logger()` shows up as a row on the monolog ta
 
 The summary line is the trace id, channel, level, and message. Click the row to expand a key and value table with `context.*` and `extra.*` entries.
 
-The tab uses the standard messages widget and includes a search input. Searching matches against the channel, level, message, and every context and extra value, so you can quickly filter to a specific trace id, view path, or user id.
+The tab uses the standard messages widget and includes a search input. Searching matches against the trace id, channel, level, message, and every `context.*` and `extra.*` entry as `key=value`, so you can quickly filter to a specific trace id, view path, or user id.
 
 ### Resolutions
 
@@ -101,7 +101,7 @@ class CacheModel extends z_model {
 }
 ```
 
-Queries issued through this model are filtered out of the queries tab whenever `debugbar_hide_internal_queries = true`. Direct `db()->exec(...)` calls that bypass the model layer are always shown, regardless of the setting.
+Queries issued through this model are filtered out of the queries tab whenever `debugbar_hide_internal_queries = true`. Direct `db()->exec(...)` calls that bypass the model layer keep the tag of the last model query (also `z_logger` after a log write), so they are hidden whenever that model was internal.
 
 ## Adding your own log context
 

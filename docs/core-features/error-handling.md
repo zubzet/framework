@@ -30,7 +30,7 @@ message while developing.
 
 ### Clickable file links
 
-Whoops can turn each stack frame into a link that opens the file in your editor. Two settings drive
+Whoops can turn each stack frame inside the working directory into a link that opens the file in your editor. Two settings drive
 this:
 
 - **`development_editor`** — the editor URL scheme (default `vscode`), producing `<editor>://file/<host path><relative file>:<line>`.

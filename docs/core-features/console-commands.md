@@ -200,4 +200,4 @@ php index.php testing:coverage:start
 php index.php testing:coverage:stop
 ```
 
-`start` writes a session id to `.coverage.session` in the working directory; while that file exists, every web request and CLI call collects coverage (an Xdebug or PCOV driver is required). `testing:coverage:stop` writes the HTML report to `.coverage/report/`; add `--cli` (`-c`) to print a text report to stdout instead. Merging many collected files is memory-hungry; CI runs it as `php -d memory_limit=4G index.php testing:coverage:stop`.
+`start` writes a session id to `.coverage.session` in the working directory; while that file exists, every web request and CLI call collects coverage (an Xdebug or PCOV driver is required). `testing:coverage:stop` writes the HTML report to `.coverage/report/`; add `--cli` (`-c`) to print a text report (PHPUnit summary plus a per-file tree, green from 90 %, yellow from 50 %, red below) to stdout instead. Merging many collected files is memory-hungry; CI runs it as `php -d memory_limit=4G index.php testing:coverage:stop`.

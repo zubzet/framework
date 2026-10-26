@@ -27,7 +27,7 @@ All logger settings are configured in `z_config/z_settings.ini`.
 | `logger_level`      | string  | `notice`       | Minimum log level to record: a name (case-insensitive) or number, see below; an unknown name throws an `InvalidArgumentException` |
 | `logger_stream_url` | string  | `php://stderr` | Stream target — only used when `logger_type = stream`          |
 | `logger_slow_request_ms` | number | `1000`    | Requests at least this slow (`>=`) are logged as `SLOW_REQUEST` at shutdown (not after an uncaught exception; console commands count too); a negative or non-numeric value disables it |
-| `logger_slow_query_ms`   | number | `300`     | `exec()` queries (so `execQuery()`, not `executeMultiQuery()`) taking at least this many milliseconds (`>=`, so `0` logs every query; measured from prepare to execute, retries included, result fetch excluded) are logged as `SLOW_QUERY`; an INI file cannot disable it, so use a high threshold |
+| `logger_slow_query_ms`   | number | `300`     | `exec()` queries (so `execQuery()`, not `executeMultiQuery()`) taking at least this many milliseconds (`>=`, so `0` logs every query; measured from prepare to execute, retries included, result fetch excluded) are logged as `SLOW_QUERY` (without disturbing `getInsertId()` or the current result); an INI file cannot disable it, so use a high threshold |
 
 ### Log Levels
 
@@ -52,7 +52,7 @@ The framework logs its own events on the `zubzet` channel (`Logger::ZUBZET`) at 
 | `warning` | `SLOW_REQUEST` (`duration_ms`, `uri`), `SLOW_QUERY` (`duration_ms`, `query` without bound values), `REST_ERROR` (`code`, `message`), `ACCOUNT_LOGIN_RATE_LIMITED` (`userId`)                                                                                              |
 | `error`   | `EXCEPTION` (`class`, `message`, `file`, `line`, `trace`)                                                                                                                                                           |
 
-PHP errors are logged as `ERROR` (`error`), `PARSE` (`critical`), `WARNING` (`warning`), `DEPRECATION`/`NOTICE` (`notice`) or `STRICT` (`debug`), depending on their severity, with the context `message`, `file` and `line`. Failed password attempts, verification success, logouts of anonymous requests and admin actions (roles, permissions, database browsing) write no event, and `sendEmail()` failures are echoed instead of logged. `@`-suppressed errors and fatal errors are not logged.
+PHP errors are logged as `ERROR` (`error`), `PARSE` (`critical`), `WARNING` (`warning`), `DEPRECATION`/`NOTICE` (`notice`) or `STRICT` (`debug`), depending on their severity (any other severity is logged as `ERROR` with level `warning`), with the context `message`, `file` and `line`. Failed password attempts, verification success, logouts of anonymous requests and admin actions (roles, permissions, database browsing) write no event, and `sendEmail()` failures are echoed instead of logged. `@`-suppressed errors and fatal errors are not logged.
 
 ## Writing Log Entries
 

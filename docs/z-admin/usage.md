@@ -21,7 +21,7 @@ It has following categories:
 | Add Organization | Form to create an organization, optionally with a permission group |
 
 
-The dashboard cards are fixed and there is no widget API; to change the panel, override its views (`administration/*`, `database/*`, `layout/z_admin_layout`) with a [view](../core-features/views.md) of the same name in your project. `layout/z_admin_layout` is the z controller's default layout and links `{root}assets/img/favicon.png`, which your app has to supply.
+The dashboard cards are fixed and there is no widget API; to change the panel, override its views (`administration/*`, `database/*`, `layout/z_admin_layout`) with a [view](../core-features/views.md) of the same name in your project (`administration/groups` gets the option `groups`, `database/tables` gets `status` with `tables` and `approxRows`). `layout/z_admin_layout` is the z controller's default layout and links `{root}assets/img/favicon.png`, which your app has to supply.
 
 ## Permissions
 To be able to use all functions, the following permissions are needed:
@@ -74,6 +74,6 @@ Organizations lists every active organization; opening one shows a form to renam
 Both Add User and Edit User carry an Organization select. Picking an entry assigns the user to that organization, the empty entry (`---`) unassigns them. The assignment goes through `User::updateOrganization()`, so the group of the previous organization is removed from the user and the group of the new one is added. An Edit User request without the `organization` field leaves the organization unchanged.
 
 ## Database browser
-`/z/database` lists every table of the database with approximate row counts, `/z/database/{table}` shows its rows 20 per page (`/page/{n}`), newest first by the last primary key column (the first column without one), and `/z/database/{table}/csv` exports up to 10000 rows. The CSV export does not neutralise spreadsheet formulas. It is a read-only viewer and exporter (no insert, edit, delete, filter or search) and needs the permission `admin.database`.
+`/z/database` lists every table of the database with approximate row counts, `/z/database/{table}` shows its rows 20 per page (`/page/{n}`, five page numbers around the current one, a page beyond the last shows no rows), newest first by the last primary key column (the first column without one), and `/z/database/{table}/csv` (the Export button) exports up to 10000 rows. The CSV export does not neutralise spreadsheet formulas. It is a read-only viewer and exporter (no insert, edit, delete, filter or search) and needs the permission `admin.database`.
 
 Only the columns named exactly `password`, `pw`, `salt` or `hash` are shown as `********`, in the table view and in the CSV export. Every other column is shown in clear text, including `z_logintoken.token`, `z_email_verify.token` and `z_password_reset.refId`. Anyone holding `admin.database` can read these, and with them take over sessions or password resets, so grant it only to accounts you would trust with the database itself.
