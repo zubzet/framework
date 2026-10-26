@@ -37,8 +37,8 @@ To be able to use all functions, the following permissions are needed:
 - admin.roles.delete (the `delete` action on a role)
 - admin.organizations.list
 - admin.organizations.create
-- admin.organizations.edit
-- admin.organizations.delete
+- admin.organizations.edit (opening and renaming an organization; also required for delete)
+- admin.organizations.delete (the `delete` action on an organization)
 - admin.maintenance
 - [admin.database](#database-browser)
 - [admin.su](login-as-another-user.md) (`/z/login_as/{userId}`, also used by the *Login as* button of the edit form)
@@ -58,7 +58,7 @@ The framework's own migrations create no admin role, user or permission. A proje
 
 ## Assigning roles
 In order to assign any roles, you must go to Edit Users and select the user you want to give a role to. Hit the ‘+’ under the title ‘Roles’ and select the role the user should get.
-The list offers every role, but a group only while the user already holds it. Groups follow the user's [organization](../core-features/access-control.md#organization-object), so they are not handed out here.
+The list offers every active role, but a group only while the user already holds it. Groups follow the user's [organization](../core-features/access-control.md#organization-object), so they are not handed out here.
 Be advised, each role gives special permissions, some give the user special powers, therefore please see the list above of what roles have which permissions.
 
 After you set a role, you can either add more roles or save the user by clicking ‘submit’ at the bottom of the page. The user should now be able to use their role.

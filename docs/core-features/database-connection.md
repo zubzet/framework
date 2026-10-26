@@ -8,7 +8,7 @@ that shape it. All of them live in `z_config/z_settings.ini` (see
 [Booter Settings](configuration.md)) and all of them are optional apart from
 the endpoint and credentials below. For raw access, `db()->getDatabaseConnection()`
 returns the `mysqli` handle (e.g. for `affected_rows`), and `executeMultiQuery()`
-runs several statements without binding, bypassing the debug bar and slow-query log.
+runs several statements without binding, bypassing the debug bar and slow-query log. It throws on failure; with `$throwOnFailure = false` it returns `false` instead.
 
 ## Endpoint and credentials
 ```ini
@@ -54,8 +54,8 @@ connection is checked before being reused (`0` checks before every query; a non-
 `db_max_retries` is how many extra attempts a statement gets when it fails
 for a reason that is worth retrying: a deadlock, a lock-wait timeout, a
 Galera certification conflict, or a dropped connection (which is recovered
-by reconnecting through the endpoint and re-running the statement). Set it
-to `0` to disable retries entirely.
+by reconnecting through the endpoint and re-running the statement; each connect attempt times out after 5 seconds). Set it
+to `0` to disable retries entirely. `executeMultiQuery()` is never retried.
 
 !!! warning "One statement may be applied twice"
     If a write reached the server but the acknowledgment was lost with the

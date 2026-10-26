@@ -63,7 +63,7 @@ php index.php install /path/to/new-project
 
 The command copies the project template into the folder and prints a `created:` or `exists:` line
 per entry. Existing files are never overwritten, so it is safe to run on a folder that already
-contains files. It then makes `zubzet` and `project` executable and runs `composer require` for
+contains files. It then generates an `encryption_key` in `z_config/z_settings.ini` if none is set, makes `zubzet` and `project` executable and runs `composer require` for
 the framework inside the new project.
 
 It fails with a clear message if the folder does not exist, is not writable, or Composer is not

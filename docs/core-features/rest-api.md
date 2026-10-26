@@ -9,7 +9,7 @@ The [REST response pipeline](../api/classes/ZubZet-Framework-Support-Rest.html) 
 | ------------------------- | --------------------------------------------------------------------------- |
 | `$res->generateRest`      | Sends a REST payload wrapped in a `meta` envelope and exits by default      |
 | `$res->generateRestError` | Logs a `REST_ERROR` warning, sends only the `error` object and exits (HTTP status stays 200) |
-| `$res->error`             | Convenience for `generateRest` with `result=error`, exits                   |
+| `$res->error`             | Convenience for `generateRest` with `result=error` and the `message`, an optional payload array is merged like `success` does, exits |
 | `$res->success`           | Convenience for `generateRest` with `result=success`, exits; payload keys are merged after `result` and can override it |
 | `$res->formErrors`        | Merges all array arguments (others are ignored) into `{"result":"formErrors","formErrors":[...]}` inside the `meta` envelope, exits; each entry holds `name`, `type` and optional `info` |
 | `$res->json`              | Sends a raw JSON payload (no `meta` wrapper); does not exit                 |
