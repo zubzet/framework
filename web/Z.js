@@ -1612,6 +1612,7 @@ class ZFormField {
         }
 
         completeDiv.innerHTML = "";
+        delete completeDiv.dataset.searchTerm;
         if (e.target.value == "") return;
         if (e.key == "Escape") return;
         
@@ -1639,15 +1640,22 @@ class ZFormField {
             item.addEventListener("click", e => {
               this.input.value = value;
               completeDiv.innerHTML = "";
+              delete completeDiv.dataset.searchTerm;
               if(this.autocompleteCB) this.autocompleteCB(value);
             });
           }
+        }
+
+        // An endpoint's suggestions belong to the term only once its answer is in
+        if (answered || !this.autocompleteBindingUrl) {
+          completeDiv.dataset.searchTerm = e.target.value;
         }
       };
       this.input.addEventListener("keyup", onKeyup);
 
       document.addEventListener("click", function() {
         completeDiv.innerHTML = "";
+        delete completeDiv.dataset.searchTerm;
       })
 
     } else {                                      // --- Default ---

@@ -12,7 +12,7 @@ describe("Form Autocomplete", () => {
 
         cy.form("city").type("Aachen");
 
-        cy.query("form").find(".list-group button")
+        cy.query("form").find('[data-search-term="Aachen"] button')
             .should("have.length", 1)
             .and("contain.text", "Aachen");
     });
