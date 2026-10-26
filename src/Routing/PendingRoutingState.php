@@ -7,6 +7,7 @@ class PendingRoutingState {
     public array $middleware = [];
     public array $afterMiddleware = [];
     public bool $withoutCsrf = false;
+    public bool $withoutCsrfCookie = false;
 
     public function middleware(array $middleware, array $arguments = []): self {
         $this->middleware[] = new PendingAction($middleware, $arguments);
@@ -22,6 +23,12 @@ class PendingRoutingState {
     public function withoutCsrf(): self {
         $this->withoutCsrf = true;
         return $this;
+    }
+
+    // For cacheable pages that must stay cookie free: no check and no z_csrf cookie either
+    public function withoutCsrfCookie(): self {
+        $this->withoutCsrfCookie = true;
+        return $this->withoutCsrf();
     }
 }
 ?>
