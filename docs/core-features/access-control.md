@@ -163,7 +163,7 @@ User attributes can be updated directly on the instance.
     $user->updatePassword(string $password);
     ```
 
-* Assigns the user to an organization, or unsets it when `null` is passed.
+* Assigns the user to an organization (`z_user.organizationId`), or unsets it when `null` is passed.
   If the previous and/or the new organization has a linked permission group (see `Organization::getGroup()`), the user's group memberships are kept in sync: the previous organization's group is removed (even when it was assigned manually, and skipped when that organization is already removed) and the new organization's group is added. The user's fields are cleared.
 
     ```php
@@ -618,7 +618,7 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
 ## Organization Object
 
-The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization.html) object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique) and is soft-deletable like the other authentication objects.
+The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization.html) object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique, may be `null`) and is soft-deletable (`active`) like the other authentication objects.
 
 ### Organization Retrieval
 
@@ -670,7 +670,7 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 ### Creating an Organization
 
 * Creates a new organization with the given name (which may be `null`).
-  When `$createGroup` is `true`, a permission `Group` named `$groupName`, by default `"{$name}_Group"`, is created and linked to the organization. The linked group is then available via `$organization->getGroup()` and is used by `User::updateOrganization()` to sync group membership.
+  When `$createGroup` is `true`, a permission `Group` named `$groupName`, by default `"{$name}_Group"`, is created and linked to the organization (`z_organization.groupId`, `NULL` without a group). The linked group is then available via `$organization->getGroup()` and is used by `User::updateOrganization()` to sync group membership.
 
     ```php
     Organization::add(?string $name, bool $createGroup = false, ?string $groupName = null): Organization

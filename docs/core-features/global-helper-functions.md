@@ -238,7 +238,7 @@ Escapes a string for safe HTML output. It strips tags (everything between `<` an
 
 Use it whenever a value ends up in HTML outside of a template echo, for example in attributes built in PHP.
 
-`shortenStr($str, $maxlength = 10)` cuts at word boundaries and appends `...`, but returns a string that fits with a trailing space; `getCaller($depth = 1)` only works for `0` and `1`; `var_swap(&$x, &$y)` swaps two variables. `makeSlug()` drops every character outside `A-Za-z0-9-_` and space without transliterating, so `Größe` becomes `gre`; `emptyToNull(&$value)` also nulls `0`, `'0'`, `false`, `[]` and the string `null`.
+`shortenStr($str, $maxlength = 10)` cuts at word boundaries and appends `...`, but returns a string that fits with a trailing space; `getCaller($depth = 1)` only works for `0` and `1`; `var_swap(&$x, &$y)` swaps two variables. `makeSlug()` drops every character outside `A-Za-z0-9-_` and space without transliterating, so `Größe` becomes `gre`; `emptyToNull(&$value)` also nulls `0`, `'0'`, `false`, `[]` and the string `null`. The global constants `TIMESPAN_DAY_n` hold n days in seconds (`TIMESPAN_DAY_1` is 86400) for n = 1, 2, 3, 7, 10, 14, 20, 21, 30, 60, 90, 180, 182 and 365; the `FILE_SIZE_*` constants are listed in [File Uploads](../forms/file-uploads.md).
 
 **Example:**
 

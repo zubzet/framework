@@ -29,7 +29,7 @@ The HTTP body comes from the first usable file:
 1. `app/Views/maintenance.html` Project override
 2. (framework) `src/Maintenance/maintenance.html` Framework default
 
-The bundled page reloads itself every 5 minutes. A template is skipped if empty or if it contains `<?php` (the gate uses `file_get_contents`, never `include`).
+The bundled page (title `Maintenance`, heading `We'll be back soon`) says the website is undergoing maintenance, asks to check back later, hints to contact the web administrator and reloads itself every 5 minutes. A template is skipped if empty or if it contains `<?php` (the gate uses `file_get_contents`, never `include`).
 
 The template is only used for HTTP responses. CLI hits always receive the bare `Service Unavailable` string regardless of mode.
 

@@ -523,8 +523,8 @@ This table is used to track whether the database is currently **locked** for mig
 
 It stores:
 
-* Whether a migration lock is active
-* The timestamp of when the lock was created
+* Whether a migration lock is active (`is_locked`)
+* The timestamp of when the lock was created (`locked_at`, informational)
 
 This lock ensures that **only one migration process can run at a time**, preventing parallel execution and inconsistent states. The check and the insert are separate statements and a lock never expires, so only `db:unlock-migration` clears a stale one.
 
@@ -535,7 +535,7 @@ This table is used to track **executed migrations**.
 
 It stores:
 
-* The basename, date, index and sha1 file hash of each executed migration (the hash is never compared, so edits to an executed migration go unnoticed)
+* The basename (`migration_name`), date (`migration_date`), index (`migration_version`, `0` when the filename has none), sha1 file hash (`file_hash`) and `created` time of each executed migration (the hash is never compared, so edits to an executed migration go unnoticed; the `active` column is never read)
 
 By keeping a record of executed migrations, ZubZet ensures that **migrations are never executed more than once**.
 

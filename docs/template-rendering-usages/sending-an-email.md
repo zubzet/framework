@@ -64,7 +64,7 @@ public function action_register(Request $req, Response $res) {
 
 
 ## Send to registered users
-`sendEmailToUser()` sends a mail to an user identified by its user id. The mail address and language are fetched from the database, so less information is needed; if the user's language row has no value, the `anonymous_language` setting (no default) is used, and `en` if that is unset too. It returns the result of `sendEmail()`, and its default layout is the bundled `layout/mail_layout`, which only prints the view's content. It throws an `Exception` if the user does not exist or has no email address.
+`sendEmailToUser()` sends a mail to an user identified by its user id. The mail address and language are fetched from the database, so less information is needed; if the `z_language` row of `z_user.languageId` has no value, the `anonymous_language` setting (no default) is used, and `en` if that is unset too. It returns the result of `sendEmail()`, and its default layout is the bundled `layout/mail_layout`, which only prints the view's content. It throws an `Exception` if the user does not exist or has no email address.
 
 Exmaple: 
 ```php
