@@ -61,7 +61,7 @@
                 "Enforce skipped-check validation for external migrations"
             );
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
