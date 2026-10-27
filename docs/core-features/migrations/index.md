@@ -123,7 +123,7 @@ The Migration system supports **two different file formats**, which can be mixed
 
     You can use `.sql` files to define **raw SQL statements**. All statements found in these files are executed directly against the database in the order they appear.
 
-    Statements are split at every semicolon, the SQL of a PHP migration's `run()` as well. Lines starting with `--` or `#` are comments and dropped before, so they may contain semicolons. A semicolon in a string literal, in a `/* ... */` comment or after code on the same line still ends the statement there.
+    Statements are split at semicolons, the SQL of a PHP migration's `run()` as well. Semicolons inside string literals (`'...'`, `"..."`), quoted identifiers (`` `...` ``) and comments (`-- `, `#`, `/* ... */`) do not end a statement. `/*! ... */` and `/*+ ... */` are executable and kept. A `DELIMITER $$` line changes the terminator as in the mysql client, so triggers and procedures with a `BEGIN ... END` body work.
 
 - **PHP Migration Files (`.php`)**
 
