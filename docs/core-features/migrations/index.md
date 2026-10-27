@@ -123,6 +123,8 @@ The Migration system supports **two different file formats**, which can be mixed
 
     You can use `.sql` files to define **raw SQL statements**. All statements found in these files are executed directly against the database in the order they appear.
 
+    Statements are split at every semicolon, the SQL of a PHP migration's `run()` as well. Lines starting with `--` or `#` are comments and dropped before, so they may contain semicolons. A semicolon in a string literal, in a `/* ... */` comment or after code on the same line still ends the statement there.
+
 - **PHP Migration Files (`.php`)**
 
     For advanced logic, ZubZet supports **PHP-based migrations**. These files allow you to use the Schema QueryBuilder and conditional logic.
