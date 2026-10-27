@@ -15,9 +15,9 @@
         use ViewPath;
 
         /**
-         * Shows a document to the user
+         * Shows a document to the user by echoing it (nothing is returned); a view that fails to render with a BladeException, e.g. a missing one, renders the 500 view instead
          * @param string $document Path to the view
-         * @param array $opt Associative array with values to replace in the view
+         * @param array $opt Associative array with values to replace in the view; response, request, user, root, host, absRoot and title are added to it as $opt in the view
          * @param string|array $options Rendering options, e.g., or a string for layout
          */
         public function render($document, $opt = [], $options = []) {

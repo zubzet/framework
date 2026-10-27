@@ -1,7 +1,7 @@
 <?php
     namespace ZubZet\Framework\Database\Migration\Parser;
 
-    // Loads a PHP migration file
+    // Loads a SQL seed file
     class SeedSQL {
 
         public function loadSqlFile(string $filePath): string {

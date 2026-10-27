@@ -35,9 +35,9 @@
         }
 
         /**
-         * Reroutes to another action
+         * Reroutes to another action by re-dispatching internally, without an HTTP redirect
          * @param string[] $path Path to where to reroute to
-         * @param bool $alias True if this reroute acts as an alias
+         * @param bool $alias True if $path is overlaid onto the current URL parts (index by index) before dispatching
          * @param bool $final Executes and exits if set to true
          */
         public function reroute($path = [], $alias = false, $final = false) {
@@ -54,9 +54,9 @@
         }
 
         /**
-         * Reroutes at the user's client
-         * @param string $url The URL to reroute to
-         * @param string $root The root URL
+         * Reroutes at the user's client by sending a Location header and exiting
+         * @param string $url The URL to reroute to, appended directly to $root
+         * @param string $root The root URL, defaults to the app's rootFolder
          */
         public function rerouteUrl($url = "", $root = null) {
             if ($root === null) $root = $this->booter->rootFolder;
@@ -66,8 +66,8 @@
 
         /**
          * Sets a cookie just like the standard PHP function. (Pass-through)
+         * The arguments are read via func_get_args() and forwarded unchanged; the result of setcookie() is discarded.
          * See: https://www.php.net/manual/en/function.setcookie.php
-         * @param mixed ...$args See setcookie
          */
         public function setCookie() {
             setcookie(...func_get_args());
@@ -96,10 +96,10 @@
         }
 
         /**
-         * Removes a cookie at the client
+         * Removes a cookie at the client and from the current request's input
          * @param string $name Name of the cookie
-         * @param string $path Path on the server
-         * @param string $domainScope The domain scope of the cookie
+         * @param string $path Path on the server, must match the one used when setting the cookie
+         * @param string $domainScope The domain scope of the cookie, must match the one used when setting the cookie
          */
         public function unsetCookie(string $name, string $path = "/", string $domainScope = "") {
             unset(request()->input->COOKIE[$name]);
@@ -132,9 +132,9 @@
         }
 
         /**
-         * Generates a Rest object
+         * Echoes the payload as pretty-printed JSON with an added `meta` block (no Content-Type header is sent)
          * @param array $payload Data payload
-         * @param bool $die Whether to exit after generating the Rest object
+         * @param bool $die Whether to exit after echoing, true by default
          */
         public function generateRest(array $payload, bool $die = true): void {
             $this->getNewRest($payload)->execute($die);
@@ -143,7 +143,7 @@
         /**
          * Sends a JSON response.
          *
-         * Sets `Content-Type: application/json` and emits `$data` JSON-encoded.
+         * Sets `Content-Type: application/json` and emits `$data` JSON-encoded without exiting (unlike generateRest()), so any later output is appended to the JSON.
          *
          * @param mixed $data The value to encode as JSON.
          * @param int $encodingOptions Bitmask of json_encode() options (e.g. JSON_PRETTY_PRINT).
@@ -155,7 +155,7 @@
         }
 
         /**
-         * Generates a Rest error object
+         * Generates a Rest error object: logs a REST_ERROR warning, echoes `{"error":{"code","message"}}` as pretty-printed JSON (no HTTP status or Content-Type header is sent) and exits
          * @param string $code Code
          * @param string $message Error message
          */
@@ -175,7 +175,7 @@
          * @param string $document View
          * @param string $lang Language identifier ("EN", "DE_Formal"...)
          * @param array $options Options to use in the view
-         * @param string $layout Layout
+         * @param string $layout Layout name: ".php" is stripped, "_layout" is appended, and "layout/" is prefixed unless that path exists in the app views ("mail" -> layout/mail_layout). The default "email" needs an app layout/email_layout; the framework only ships mail_layout
          * @param string[] $attachments Contents of each attachment, not their path. Array keys can be used to set the filename i.e. $filename => $content
          */
         public function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email", array $attachments = []) {
@@ -263,10 +263,12 @@
         /**
          * Sends an email to a user
          * @param int $userId ID of the target user
-         * @param string $subject Subject of the mail
+         * @param string|array $subject Subject of the mail, or an array keyed by language code
          * @param string $document View of the mail
          * @param array $options Options for use in the view
          * @param string $layout Layout to use
+         * @return bool True if the mail was sent, false if sending failed
+         * @throws \Exception If the user is not found or has no email address
          */
         public function sendEmailToUser($userId, $subject, $document, $options = [], $layout = "mail") {
             $target = model("z_user")->getUserById($userId);
@@ -285,9 +287,9 @@
         }
 
         /**
-         * Logs the current user in as someone else
+         * Logs the current user in as someone else, sets the z_login_token cookie and logs the event, without any permission check
          * @param int $userId ID of the user to sudo into
-         * @param ?int $user_exec ID of the executing user
+         * @param ?int $user_exec ID of the executing user, null makes it a normal login as $userId
          * @param ?string $name An optional name for the session
          * @param ?string $reason Why the session was created, e.g. why an admin impersonates
          */
@@ -323,7 +325,7 @@
         }
 
         /**
-         * Generates a generic error
+         * Generates a generic error: sends `{"result":"error","message":...}` plus the payload as JSON via generateRest() and exits the script
          * @param string $message An error message
          * @param mixed[] $payload An optional payload that will be added to the result
          */
@@ -335,7 +337,7 @@
 
         /**
          * Sends an error array generated by validateForm() from Request. Exit
-         * @param object[] $errors The error array.
+         * @param array[] $errors The error array, a list of ["name" => ..., "type" => ...] entries. Further error arrays can be passed as extra arguments and are merged; non-array arguments are ignored.
          */
         public function formErrors($errors) {
             $errors = array_filter(func_get_args(), function($var) { return is_array($var); });
@@ -353,7 +355,7 @@
         }
 
         /**
-         * Logs the user out
+         * Logs the user out: invalidates the DB session and deletes the login cookie (when sudoed, logs in as the exec user instead), then redirects to the root and exits
          */
         public function logout() {
             $user = $this->booter->user;
@@ -406,9 +408,10 @@
          * @param string $table Table name in the database
          * @param string $pkField Name of the primary key field in the database
          * @param string $pkType Type of the primary key field ("s"/"i"...)
-         * @param string $pkValue Value of the primary key in the row to change
+         * @param string|int $pkValue Value of the primary key in the row to change
          * @param Result $validationResult Result of the validation
          * @param array $fixed Fixed values to add, which are not coming from the form
+         * @return string|int The given $pkValue after an update, the new insert id after an insert
          */
         public function insertOrUpdateDatabase(string $table, string $pkField, string $pkType, $pkValue, Result $validationResult, array $fixed = []) {
             $db = $this->booter->z_db;
@@ -428,6 +431,7 @@
          * @param string $pkType Type of the primary key field ("s"/"i"...)
          * @param string $pkValue Value of the primary key in the row to change
          * @param Result $validationResult Result of the validation
+         * @param array $fixed Extra column => value pairs to write, bound as strings. File fields are uploaded first and array values are stored as JSON.
          */
         public function updateDatabase(string $table, string $pkField, string $pkType, $pkValue, Result $validationResult, array $fixed = []) {
             //First check for file uploads
@@ -470,10 +474,11 @@
         }
 
         /**
-         * Inserts a set into the database with data from a form
+         * Inserts a set into the database with data from a form. File fields are uploaded first and array values are stored as JSON.
          * @param string $table Table name in the database
          * @param Result $validationResult Result of the validation
          * @param array $fixed Some values to add to the database that were not in the FormResult
+         * @return int|string|null Id of the inserted set
          */
         public function insertDatabase(string $table, Result $validationResult, array $fixed = []) {
             $this->uploadFromForm($validationResult);
@@ -538,7 +543,7 @@
         }
 
         /**
-         * Executes a "Create Edit Delete"
+         * Executes a "Create Edit Delete". Per posted row (Z): create inserts, edit updates WHERE id = dbId, delete only sets active = 0; the table needs id and active columns and table/column names are not escaped.
          * @param string $table The name of the affected table in the database
          * @param Result $validationResult The result of a validated CED
          * @param array $fix Fixed values. For example, fix user ID not set by the client

@@ -7,8 +7,8 @@
     namespace {
          /**
          * Helper function to get the caller of a function
-         * @param int $depth Index of the callstack from back to front
-         * @return mixed The caller
+         * @param int $depth Only 1 is supported, the backtrace is limited to 3 frames
+         * @return string Name of the function that called the function calling getCaller()
          */
         function getCaller($depth = 1) {
             return debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3)[$depth + 1]['function'];

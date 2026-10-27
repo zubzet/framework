@@ -24,7 +24,7 @@
         /**
          * Returns a user row of the database, selected by the users id
          * @param int $userid ID of the user we want the data about
-         * @return bool|array|null The dataset
+         * @return array|false The user row, or false if no user matches
          */
         function getUserById($userid) {
             $query = "SELECT * FROM `z_user` WHERE `id`=?";
@@ -39,7 +39,7 @@
         /**
          * Returns a user row of the database, selected by the users email address
          * @param string $email Email of the user from who we want the data about
-         * @return bool|array|null The dataset
+         * @return array|false The user row, or false if no user matches
          */
         function getUserByEmail($email) {
             $query = "SELECT * FROM `z_user` WHERE `email`=? AND `email` IS NOT NULL";
@@ -52,8 +52,8 @@
         }
 
         /**
-         * Returns all user data from the database
-         * @return array[] The table as a two dimensional array
+         * Returns the data of all active users (`active` = 1), including the password hash and salt columns
+         * @return array[] The matching `z_user` rows as a two dimensional array
          */
         function getUserList() {
             $query = "SELECT *
@@ -64,8 +64,9 @@
 
         /**
          * Creates an user account
-         * @param string $email Email of the user
-         * @param string $passwordString The raw users password. Not hashed! It will be hashed in this function
+         * @param string|null $email Email of the user (the column is nullable)
+         * @param string|null $passwordString The raw users password. Not hashed! It will be hashed in this function. Null creates the user without a password
+         * @param string|null $verified Verification time as SQL datetime; null = unverified
          * @return int The id of the new created user
          */
         function add($email, $passwordString = null, $verified = null) {
@@ -168,6 +169,7 @@
          * Change the state of a role granted to a user, Can be used to add or remove roles
          * @param int $userId The id of the user
          * @param int $roleId The id of the role
+         * @param bool $shouldHaveRole Whether the user should have the role (default true); false deactivates all active grants of the role instead of adding it
          */
         function changeRoleStateByUserIdAndRoleId($userId, $roleId, $shouldHaveRole = true) {
             // If the user should not have the role, invalidate all grants of it
@@ -295,7 +297,7 @@
         /**
          * Gets the id of a role by it's name
          * @param string $name The name of the role
-         * @return int The id of the role
+         * @return int|null The id of the role, null if no role has this name
          */
         public function getRoleIdByRoleName(string $name): ?int {
             $sql = "SELECT `id`

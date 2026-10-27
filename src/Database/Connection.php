@@ -253,9 +253,12 @@
 
 
         /**
-         * Executes a query as prepared statement
+         * Executes a query as prepared statement, retrying transient errors up to db_max_retries and logging slow queries
          * @param string $query Query written as prepared statement (that thing with the question marks as placeholders)
-         * @return Connection Returning this for chaining 
+         * @param string $types Optional, read via func_get_args: mysqli bind type string (e.g. "is"), one character per placeholder
+         * @param mixed ...$values Optional, read via func_get_args: values bound to the placeholders, in order
+         * @return Connection Returning this for chaining
+         * @throws \Exception If preparing or executing the statement fails and recovery is exhausted
          */
         public function exec($query) {
             // Make sure a connection was made

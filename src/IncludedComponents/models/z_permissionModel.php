@@ -22,6 +22,7 @@
          * @param string $table The database table to query
          * @param string $column The identifying column, e.g. "id" or "uuid"
          * @param int|string $identifier The value of the identifying column
+         * @param array|null $expression Optional additional where expression
          * @return array|null The data array of the object if found, null otherwise
          * @internal
          */
@@ -42,6 +43,7 @@
          * @param string $table The database table to query
          * @param string $column The identifying column, e.g. "id" or "uuid"
          * @param array $identifiers The values of the identifying column
+         * @param array|null $expression Optional additional where expression
          * @return array[] An array of permission objects
          * @internal
          */
@@ -59,6 +61,7 @@
          * Retrieve all permission objects (users or roles)
          *
          * @param string $table The database table to query
+         * @param array|null $expression Optional additional where expression
          * @return array An array of permission objects
          * @internal
          */

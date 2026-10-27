@@ -5,9 +5,9 @@ namespace ZubZet\Framework\Authentication;
 trait RetrievalTrait {
 
     /**
-     * Get a list of permission objects (user or role)
+     * Get a list of all active objects of the calling class (user, role, session, organization, API key)
      *
-     * @return object[]
+     * @return static[] The list of active objects
      */
     public static function all(): array {
         $result = model("z_permission")->getAll(self::$dbTable, static::$dbExpression);
@@ -56,20 +56,21 @@ trait RetrievalTrait {
     }
 
     /**
-     * Get a permission object (user or role) by its id
+     * Get an object (user, role, session, organization or API key) by its id
      *
      * @param int|string $id the id of the object
-     * @return object|null the permission object if found, null otherwise
+     * @return static|null the object if found, null if the id is unknown or inactive
      */
     public static function byId(int|string $id): ?static {
         return static::byIdentifier("id", $id);
     }
 
     /**
-     * Get a list of permission objects (user or role) by their ids
+     * Get a list of objects (user, role, session, organization or API key) by their ids
+     * Unknown or inactive ids are skipped, and calling it without ids throws a database exception
      *
      * @param int ...$ids The ids of the objects to retrieve
-     * @return object[] The list of permission objects
+     * @return static[] the objects that were found
      */
     public static function byIds(int ...$ids): array {
         return static::byIdentifiers("id", $ids);

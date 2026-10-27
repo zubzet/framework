@@ -123,6 +123,7 @@ class Role extends AuthenticationObject {
 
     /**
      * Rename the Role
+     * Clears the cached fields, so name() and other getters throw until refresh() is called
      *
      * @param string $newName The new name for the role
      * @return void
@@ -135,6 +136,7 @@ class Role extends AuthenticationObject {
     /**
      * Remove the Role
      * This will deactivate the Role in the Database
+     * The instance is detached afterwards, so every later call on it throws InvalidArgumentException
      *
      * @return void
      */
