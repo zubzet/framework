@@ -413,22 +413,20 @@
          */
         public function getJson(int $maxBytes = 1_048_576, int $maxDepth = 32): array {
             $method = strtoupper($this->input->SERVER['REQUEST_METHOD'] ?? "");
-            if(!in_array($method, ["POST", "PUT", "PATCH", "DELETE"], true)) {
+            if(!in_array($method, ["POST", "PUT", "PATCH", "DELETE", "QUERY"], true)) {
                 throw new \UnexpectedValueException("Method does not accept a JSON body", 405);
             }
 
             // Strict on purpose: a cross site form can send text/plain and form types, never application/json
             $header = $this->input->SERVER['CONTENT_TYPE'] ?? $this->input->SERVER['HTTP_CONTENT_TYPE'] ?? "";
-            $parameters = array_map("trim", explode(";", $header));
-            if("application/json" !== strtolower(array_shift($parameters))) {
+            $header = str_replace([" ", '"'], "", strtolower($header));
+            if("application/json" !== strtok($header, ";")) {
                 throw new \UnexpectedValueException("Content-Type must be application/json", 415);
             }
 
-            foreach($parameters as $parameter) {
-                [$name, $value] = array_map("trim", explode("=", $parameter, 2) + [1 => ""]);
-                if("charset" === strtolower($name) && "utf-8" !== strtolower(trim($value, '"'))) {
-                    throw new \UnexpectedValueException("JSON must be UTF-8", 415);
-                }
+            // A charset, if given, has to be utf-8: `; charset=utf-8` or `; charset="UTF-8"`
+            if(str_contains($header, "charset=") && !str_contains("$header;", "charset=utf-8;")) {
+                throw new \UnexpectedValueException("JSON must be UTF-8", 415);
             }
 
             // post_max_size does not cover a non form body, so the limit is enforced here
