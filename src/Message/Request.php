@@ -399,18 +399,51 @@
         }
 
         /**
-         * Decode request body as JSON.
+         * Decode the request body as JSON.
          *
-         * This method decodes the raw request body as JSON and returns the resulting value.
-         * Objects and arrays are returned as associative arrays.
+         * Accepts only a POST, PUT, PATCH or DELETE request whose Content-Type is exactly
+         * `application/json` (a `charset` parameter must be utf-8), whose body is at most
+         * $maxBytes long and holds well formed JSON. Large integers come back as strings
+         * instead of lossy floats.
          *
-         * @return mixed The decoded JSON value, or null if the body is empty.
-         * @throws \JsonException If the body contains invalid JSON.
+         * @param int $maxBytes Longest accepted body in bytes
+         * @param int $maxDepth Deepest accepted nesting
+         * @return array The decoded value, objects as associative arrays
+         * @throws \UnexpectedValueException Carrying the HTTP status to answer with as its code
          */
-        public function getJson(): mixed {
-            $data = $this->getBody();
-            if(is_null($data)) return null;
-            return json_decode($data, true, flags: JSON_THROW_ON_ERROR);
+        public function getJson(int $maxBytes = 1_048_576, int $maxDepth = 32): array {
+            $method = strtoupper($this->input->SERVER['REQUEST_METHOD'] ?? "");
+            if(!in_array($method, ["POST", "PUT", "PATCH", "DELETE"], true)) {
+                throw new \UnexpectedValueException("Method does not accept a JSON body", 405);
+            }
+
+            // Strict on purpose: a cross site form can send text/plain and form types, never application/json
+            $header = $this->input->SERVER['CONTENT_TYPE'] ?? $this->input->SERVER['HTTP_CONTENT_TYPE'] ?? "";
+            $parameters = array_map("trim", explode(";", $header));
+            if("application/json" !== strtolower(array_shift($parameters))) {
+                throw new \UnexpectedValueException("Content-Type must be application/json", 415);
+            }
+
+            foreach($parameters as $parameter) {
+                [$name, $value] = array_map("trim", explode("=", $parameter, 2) + [1 => ""]);
+                if("charset" === strtolower($name) && "utf-8" !== strtolower(trim($value, '"'))) {
+                    throw new \UnexpectedValueException("JSON must be UTF-8", 415);
+                }
+            }
+
+            // post_max_size does not cover a non form body, so the limit is enforced here
+            $body = (string) $this->getBody();
+            if(strlen($body) > $maxBytes) throw new \UnexpectedValueException("Body too large", 413);
+
+            // RFC 8259 forbids a BOM, json_decode would only report a syntax error
+            if(str_starts_with($body, "\xEF\xBB\xBF")) throw new \UnexpectedValueException("JSON must not start with a BOM", 400);
+
+            try {
+                return json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+            } catch(\JsonException $e) {
+                // Syntax errors, invalid UTF-8, control characters and too deep nesting
+                throw new \UnexpectedValueException("Malformed JSON: " . $e->getMessage(), 400, $e);
+            }
         }
     }
 ?>

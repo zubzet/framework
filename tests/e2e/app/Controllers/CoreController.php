@@ -434,22 +434,27 @@
             echo "core.permissions passed";
         }
 
-        // Round-trips getBody() + getJson(). The JSON parse uses
-        // JSON_THROW_ON_ERROR; we catch it here so the test can assert both
-        // the happy path and the malformed-body path within one request.
+        // Round-trips getBody() + getJson(). A rejected body surfaces as
+        // UnexpectedValueException with the HTTP status as its code; we catch
+        // it here so the test can assert status and message next to the raw
+        // body within one request. ?maxBytes lowers the size limit so the 413
+        // path needs no huge body.
         public function action_requestBody(Request $req, Response $res): void {
             $body = $req->getBody();
             $json = null;
             $jsonError = null;
+            $jsonStatus = null;
             try {
-                $json = $req->getJson();
-            } catch (\JsonException $e) {
+                $json = $req->getJson((int) $req->getGet("maxBytes", 1_048_576));
+            } catch (\UnexpectedValueException $e) {
                 $jsonError = $e->getMessage();
+                $jsonStatus = $e->getCode();
             }
             echo json_encode([
-                'body'      => $body,
-                'json'      => $json,
-                'jsonError' => $jsonError,
+                'body'       => $body,
+                'json'       => $json,
+                'jsonError'  => $jsonError,
+                'jsonStatus' => $jsonStatus,
             ]);
         }
     }

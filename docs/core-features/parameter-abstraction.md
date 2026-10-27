@@ -73,6 +73,27 @@ $req->acceptLanguage(); // "de-CH,de;q=0.9,en;q=0.8" -> ["de-CH", "de", "en"]
 ### Bearer token
 `$req->bearerToken()` returns the token of an `Authorization: Bearer <token>` header, or `null` when the header is missing, uses another scheme or does not carry exactly one token (`Bearer `, `Bearer a b`). The framework [authenticates by it](access-control.md#bearer-authentication) before the login cookie.
 
+### JSON body
+`$req->getBody()` returns the raw request body. `$req->getJson()` decodes it as JSON, objects into associative arrays, and throws an `UnexpectedValueException` otherwise. Its code is the HTTP status to answer with:
+
+| Status | Reason |
+|--------|--------|
+| 405 | The method is not POST, PUT, PATCH or DELETE |
+| 415 | The Content-Type is not exactly `application/json`, or names a charset other than utf-8 |
+| 413 | The body is longer than `$maxBytes` (default 1 MiB) |
+| 400 | A BOM, malformed JSON (an empty body included) or nesting deeper than `$maxDepth` (default 32) |
+
+The strict Content-Type is what keeps a cross site form out: a form can send `text/plain` and form types, but never `application/json`. Integers beyond `PHP_INT_MAX` come back as strings instead of lossy floats.
+
+```php
+try {
+    $data = $req->getJson();
+} catch(\UnexpectedValueException $e) {
+    http_response_code($e->getCode());
+    return $res->json(["error" => $e->getMessage()]);
+}
+```
+
 ## See also
 
 - [Aliases and virtual links](../advanced-features/aliases-and-virtual-links.md): shorter or alternative versions of your virtual links
