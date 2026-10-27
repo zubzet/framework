@@ -98,7 +98,7 @@ describe('Migration System - Import', () => {
         });
     });
 
-    it('should not split a statement at a semicolon in a comment line', () => {
+    it('should not split a statement at a semicolon in a comment or string', () => {
         cy.dbSeed();
 
         const file = "2025-10-01_MigrationSemicolons.sql";
@@ -106,7 +106,7 @@ describe('Migration System - Import', () => {
         cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${baseDir}/${file}`);
         cy.exec('docker exec application php index.php db:migrate -f');
 
-        cy.request('/migration/checkSemicolons').its('body').should('deep.equal', ["first", "second"]);
+        cy.request('/migration/checkSemicolons').its('body').should('deep.equal', ["first", "second", "third; in a string", "fourth; \"quoted\"; and 'it''s'", "fifth; it's; escaped'; still one"]);
 
         cy.exec(`rm -f ${baseDir}/${file} || true`);
     });
