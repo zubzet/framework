@@ -244,9 +244,15 @@
             foreach($statements as $sql) {
                 if(empty(trim($sql))) continue;
 
+                // Drop comment lines, so a semicolon in a comment does not split a statement
+                $lines = array_filter(
+                    explode("\n", $sql),
+                    fn($line) => !str_starts_with(ltrim($line), "--") && !str_starts_with(ltrim($line), "#"),
+                );
+
                 // Split into individual statements by semicolon
                 $parts = array_filter(
-                    array_map('trim', explode(";", $sql)), 
+                    array_map('trim', explode(";", implode("\n", $lines))),
                     fn($s) => !empty($s)
                 );
 
