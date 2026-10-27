@@ -7,6 +7,7 @@
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Registry\Registry;
+    use ZubZet\Framework\Database\Migration\SqlSplitter;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Migrate extends Command {
@@ -244,17 +245,8 @@
             foreach($statements as $sql) {
                 if(empty(trim($sql))) continue;
 
-                // Drop comment lines, so a semicolon in a comment does not split a statement
-                $lines = array_filter(
-                    explode("\n", $sql),
-                    fn($line) => !str_starts_with(ltrim($line), "--") && !str_starts_with(ltrim($line), "#"),
-                );
-
-                // Split into individual statements by semicolon
-                $parts = array_filter(
-                    array_map('trim', explode(";", implode("\n", $lines))),
-                    fn($s) => !empty($s)
-                );
+                // Split into individual statements, ignoring semicolons in strings and comments
+                $parts = SqlSplitter::split($sql);
 
                 // Execute each individual statement
                 foreach($parts as $query) {
