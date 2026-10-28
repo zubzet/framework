@@ -169,7 +169,7 @@ describe('Two factor gate', () => {
             url: `/_zubzet/profile/${action}`,
             form: true,
             failOnStatusCode: false,
-            body: { action, ...body },
+            body,
         }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
 
         const guarded = {
