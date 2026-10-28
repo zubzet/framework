@@ -4,6 +4,9 @@ This is a simple changelog to keep track of things that have changed. It is not 
 ## ToDos
 These todos should be as temporary as possible:
 
+## v1.2.1
+1. Added - The agent skill `skills/zubzet/` ships in the package: the architecture, design and style rules for projects on this framework line, written for AI coding agents (Claude Code, Cursor, Codex, ...). A project links it with `ln -s ../../vendor/zubzet/framework/skills/zubzet .claude/skills/zubzet`. See [Installation](docs/setup/installation.md#install-with-an-agent)
+
 ## v1.2.0
 1. Added DEV Changelog
 1. Add logging folder to .gitignore

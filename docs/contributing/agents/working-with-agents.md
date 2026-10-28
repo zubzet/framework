@@ -154,7 +154,7 @@ curl -s -o /tmp/page -w 'HTTP %{http_code}\n' http://localhost:8080/
 cp /tmp/zsettings.bak tests/e2e/z_config/z_settings.ini
 ```
 
-Occasional flake: a single failing run sometimes recovers on re-run. Re-run once before debugging.
+Several docker stacks side by side (the framework's and a customer project's) are fine. Cypress is the memory hog: one Cypress run at a time on a machine, never several in parallel, which ends in an OOM kill.
 
 ## Debug bar
 
@@ -216,6 +216,9 @@ See [Console Commands](../../core-features/console-commands.md) for full flags.
 - **"Make a useful decision."** Decide. State trade-offs in 1–2 lines, implement.
 - **Inline aggressively.** When a private function has only one caller, inlining is the project default. Drop dead code and unused parameters confidently.
 - **Run the full e2e suite after any framework-internals change.** Three minutes catches the kind of subtle ordering bugs that bootstrap-adjacent changes cause.
+- **Compatibility is the first rule.** Consumer projects run on this code. Before changing a public API, check how the real projects use it; the e2e app under `tests/e2e/app` is user code and must never need a change for a framework feature to work. A change that would break an existing app ships only together with a version migrator step.
+- **A new setting travels as a set, in one PR.** The key lands in `tests/e2e/z_config/z_settings.ini`, in the `zubzet/zubzet` skeleton, in the version migrator (`CONFIG_<KEY>` overrides apply only to keys the ini already has), in the docs and in `Changelog.md`.
+- **Global helper names are specific.** `makeSlug()`, never `slug()`: the helpers live in the global namespace of every project, so a generic name collides sooner or later.
 
 ## Migrations
 
@@ -228,12 +231,13 @@ Framework migrations live in `src/IncludedComponents/database/Migration/` and sh
 - `ALTER TABLE … ADD INDEX IF NOT EXISTS …` (and the `DROP` variants)
 - `INSERT … ON DUPLICATE KEY UPDATE` or guarded with `WHERE NOT EXISTS`
 
-The `z_version` table prevents re-execution under normal flow, but the rule still applies — a migration that fails on second run is a bug.
+The `z_version` table (with `z_migration_lock`) prevents re-execution under normal flow, but the rule still applies — a migration that fails on second run is a bug.
 
 ## Common pitfalls
 
 - **Port confusion.** App is at `:8080`, not `:4000`. The `host` setting in INI is informational, not the listening port.
 - **No PHPUnit / unit tests.** All testing is Cypress e2e in `tests/e2e/`.
-- **Multiple PHP versions in CI.** Don't rely on a feature available only in PHP 8.4+ without checking the matrix.
+- **Multiple PHP versions in CI.** The floor is PHP 8.0, the ceiling the newest line. Known breakers: `#[\Override]` does not exist before 8.3; implicit nullable parameters (`string $x = null`) are deprecated since 8.4, write `?string $x = null`; `finfo_close()` is deprecated on the newest line; by-ref model constructors were removed in 1.2.
 - **`config()` is unavailable before bootstrap.** Anything called from `MaintenanceHandler::gate()` must already have configuration loaded; anything earlier must read INI directly.
 - **Cypress flake.** Re-run a failing suite once before opening an issue, try to fix the flakiness if possible.
+- **A red CI run is classified first**: a flake, a rebase side effect, or a real regression. Reproduce on the base branch before blaming your change. Local green is not CI green: CI runs the whole PHP matrix on fresh volumes. Flakiness is never acceptable: a test that fails sometimes is fixed (deterministic app state, retrying assertions, proper waits), never re-run until green.

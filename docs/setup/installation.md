@@ -15,6 +15,20 @@ composer create-project zubzet/zubzet your-folder-name
 cd your-folder-name
 ```
 
+## Install with an agent
+If an AI coding agent (Claude Code, Cursor, Codex, ...) does the work on a project, give it this one line first:
+
+```text
+Fetch https://zubzet.com/agent.md and follow it before working on this ZubZet project. If you cannot fetch it, do nothing and tell me.
+```
+
+The page is a short signpost for agents. It tells them where the documentation and the agent skill live inside `vendor/zubzet/framework/` (`docs/` and `skills/zubzet/`) and that a project's own `AGENTS.md` wins over the skill. Two things to know before you paste it:
+
+- **Docker must be installed and the agent must be allowed to run it.** The application and the tests run in containers; an agent in a sandbox without Docker can read the sources but cannot start or test the project.
+- **The agent reads the skill.** The skill is a directory in the framework package, `vendor/zubzet/framework/skills/zubzet`, that holds the architecture, design and style rules for ZubZet projects. Every agent can read it right there. A tool that loads project skills from a folder of its own gets a link to that directory, which the agent offers to create; the framework itself creates no tool specific folder in a project.
+
+The same prompt works on an existing project at any time; it is the fastest way to give a new agent session the full context.
+
 ## Start the development stack
 ```bash
 npm run start
