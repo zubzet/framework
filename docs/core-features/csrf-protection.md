@@ -69,12 +69,12 @@ The application runs on `https://app.example.com`.
 | # | Scenario | Configuration | Notes |
 | - | -------- | ------------- | ----- |
 | 1 | The same application runs on several subdomains | Nothing | Each subdomain passes its own requests (`same-origin`); a request from one to another is `same-site` and rejected unless listed |
-| 2 | A bucket on `bucket.example.com` hosts foreign content, every other subdomain may | `csrf_allow = same-site`<br>`csrf_blocked_origins = https://bucket.example.com` | The blocklist matches the `Origin` header only: a request without one, or with `Origin: null`, is not matched, see [Limitations](#limitations) |
+| 2 | A bucket on `bucket.example.com` hosts foreign content, every other subdomain may | `csrf_allow = same-site`<br>`csrf_blocked_origins = https://bucket.example.com` | |
 | 3 | Subdomain `x` may, subdomain `y` may not | `csrf_trusted_origins = https://x.example.com` | Or `csrf_allow = same-site` with `csrf_blocked_origins = https://y.example.com`, which lets every other subdomain in as well and stops `y` in browsers without `Sec-Fetch-Site` too |
 | 4 | Only site `x.com` may | `csrf_trusted_origins = https://x.com` | `www.x.com` is another origin and has to be listed on its own |
 | 5 | Only site `x.com` and subdomain `y` may | `csrf_trusted_origins = https://x.com, https://y.example.com` | |
 | 6 | Every subdomain may, plus site `x.com` | `csrf_allow = same-site`<br>`csrf_trusted_origins = https://x.com` | |
-| 7 | Every subdomain may, except `x` | `csrf_allow = same-site`<br>`csrf_blocked_origins = https://x.example.com` | As in 2, a request without an `Origin` is not matched by the blocklist |
+| 7 | Every subdomain may, except `x` | `csrf_allow = same-site`<br>`csrf_blocked_origins = https://x.example.com` | |
 | 8 | The application runs on a subdomain, the parent host may | `csrf_trusted_origins = https://example.com` | `www.example.com` is another origin |
 | 9 | The application runs on a subdomain, another subdomain may | `csrf_trusted_origins = https://b.example.com` | |
 | 10 | The nested subdomain `x.y` may, all others not | `csrf_trusted_origins = https://x.y.example.com` | Neither `y.example.com` nor `a.x.y.example.com` is covered |
@@ -83,7 +83,6 @@ The application runs on `https://app.example.com`.
 ## Limitations
 - **No `Sec-Fetch-Site`.** Old browsers (Safari before 16.4) and every browser over plain `http://` to a host other than `localhost` send none, so only `csrf_blocked_origins` applies to them, and only when they send an `Origin`; everything else passes. Such browsers are protected only by the `SameSite=Lax` session cookie. Serve the application over `https://`.
 - **Ports are not part of a site.** A browser sends `same-site` from `https://app.example.com:4000` to `https://app.example.com`, so under `csrf_allow = same-site` every port of every subdomain passes unless blocked.
-- **The blocklist needs an `Origin`.** A request without one or with `Origin: null` (a sandboxed iframe, for example on a blocked bucket) is not matched by `csrf_blocked_origins` and passes when `csrf_allow` lets its `Sec-Fetch-Site` through. Do not rely on the blocklist alone for a subdomain with foreign content; stay on `csrf_allow = same-origin` and list the trusted origins instead.
 - **`csrf_allow = any`** switches the protection off for every site; only `csrf_blocked_origins` still applies. Use it for an API that has no cookie session.
 - **No whole sites or wildcards.** An entry is one exact origin. `https://*.example.com` or a bare site cannot be listed; list each origin, or use `csrf_allow = same-site` for the own site.
 - **Links and embeds from other sites.** Every link, redirect, `<img>` or `<script>` from another site to a PHP route gets a `403` unless its source is trusted: search results, webmails, chats, OAuth and SAML callbacks, payment returns. The links in the application's own mails are rejected when opened in a webmail; a desktop mail client sends `none` and passes. Most browsers send no `Origin` on such a link, so it has no known source and is rejected.
