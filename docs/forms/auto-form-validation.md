@@ -405,6 +405,8 @@ public function action_favourite(Request $req, Response $res) {
 </script>
 ```
 
+The suggestion list carries the term it shows suggestions for in `data-search-term`, set once the endpoint's answer for that term has been rendered and removed when the list is cleared. Tests and scripts can wait on it, e.g. `[data-search-term="Apple"] button`.
+
 ### Select
 The `select` type generates a dropdown menu and automatically populates it with options.  
 This feature leverages a function called makeFood, which is used in the controllers.
