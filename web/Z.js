@@ -1594,25 +1594,25 @@ class ZFormField {
 
       this.lockAutocompleteAge = 0;
 
-      this.input.addEventListener("keyup", (e) => {
+      var onKeyup = (e, answered) => {
         if (e.key == "Shift") return;
         if (e.target.value.length < this.autocompleteMinCharacters) return;
 
-        var currentAge = this.lockAutocompleteAge;
+        var currentAge = ++this.lockAutocompleteAge;
 
-        if(this.autocompleteBindingUrl && e.target.value != "") {
+        if(this.autocompleteBindingUrl && e.target.value != "" && !answered) {
           Z.Request.root(this.autocompleteBindingUrl, "autocomplete", {
             "value": e.target.value
           }, (res) => {
-            if(currentAge >= this.lockAutocompleteAge) {
-              this.lockAutocompleteAge++;
+            if(currentAge == this.lockAutocompleteAge) {
               this.autocompleteData = res.data;
-              console.log(this.autocompleteData);
+              onKeyup(e, true);
             }
           });
         }
 
         completeDiv.innerHTML = "";
+        delete completeDiv.dataset.searchTerm;
         if (e.target.value == "") return;
         if (e.key == "Escape") return;
         
@@ -1640,14 +1640,22 @@ class ZFormField {
             item.addEventListener("click", e => {
               this.input.value = value;
               completeDiv.innerHTML = "";
+              delete completeDiv.dataset.searchTerm;
               if(this.autocompleteCB) this.autocompleteCB(value);
             });
           }
         }
-      });
+
+        // An endpoint's suggestions belong to the term only once its answer is in
+        if (answered || !this.autocompleteBindingUrl) {
+          completeDiv.dataset.searchTerm = e.target.value;
+        }
+      };
+      this.input.addEventListener("keyup", onKeyup);
 
       document.addEventListener("click", function() {
         completeDiv.innerHTML = "";
+        delete completeDiv.dataset.searchTerm;
       })
 
     } else {                                      // --- Default ---
