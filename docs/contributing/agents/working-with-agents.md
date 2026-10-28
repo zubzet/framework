@@ -289,7 +289,7 @@ The `z_migration` table (with `z_migration_lock`) prevents re-execution under no
 
 `migrator/` holds the upgrade tool, one class per framework version (`migrator/src/Version/V1_3_0.php`); the steps of a postponed release merge into the earlier version class.
 
-- **Only mechanical file changes through its own primitives** (`FileContent`, `shouldChangeIfIncludes`, `demandChange`, the modifiers such as `Symlink`). No raw `scandir`, `is_dir` or `rmdir` in a version class, as little logic as possible. It never runs database migrations and prints no hints; those belong in the upgrade guide.
+- **Only mechanical file changes through its own primitives** (`FileContent`, `shouldChangeIfIncludes`, `demandChange`, the modifiers in `migrator/src/Modifiers/`). No raw `scandir`, `is_dir` or `rmdir` in a version class, as little logic as possible. It never runs database migrations and prints no hints; those belong in the upgrade guide.
 - **`--dry` is absolute.** A dry run changes nothing on disk, ever, and prints exactly what the real run would do.
 - **Every step is idempotent.** Running the same upgrade twice, or on a project that already has part of it by hand, changes nothing the second time and never fails.
 - **A missed upgrade case is fixed in the migrator**, not by making framework code tolerate the old shape.
