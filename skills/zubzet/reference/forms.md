@@ -2,15 +2,6 @@
 
 Framework docs: `vendor/zubzet/framework/docs/forms/auto-form-validation.md`, `forms/ced-validation.md`, `forms/file-uploads.md`, `frontend-integration/backend-requests.md`.
 
-## Contents
-
-- The priority order
-- Z.Forms, front end
-- Z.Forms, back end
-- Z.Request.action for buttons
-- Not allowed for the stack's own UI
-- Errors
-
 ## The priority order
 
 1. **Z.Forms** (`Z.Forms.create` + `form.createField`) for anything that collects input. Multi field records, single field dialogs, file uploads, settings, filters that persist. This is the default and the first thing to reach for.
@@ -75,7 +66,6 @@ Field types, options, select `food`, pre-filling, grouping, CED and the live for
 - The form renders into an empty `<div id="...">` that carries the `data-test`. Select options come from the controller (`makeFood`), never hardcoded in the view when they exist in a table.
 - Read only mode disables the form or hides its submit; do not re-implement the form as static markup.
 - `doReload: true` when the same page shows the saved data; `saveHook` when the user should move on.
-- Several forms on one page: give each a `name` and check `$req->hasFormData("name")` server side.
 - CED for n child rows of one record (permissions of a role, line items), not a hand built row editor.
 - Client only inputs that never post (a search box over rendered cards, a sort toggle) may be plain Bootstrap inputs; `collectOnly` is for a filter set large enough to be a form.
 - Toggle fields through the field API (`show`, `hide`, `enable`, `disable`), never through jQuery on the field wrapper: the two fight over the layout.
@@ -120,6 +110,12 @@ if($req->hasFormData()) {
 - Conditional rules (a premium plan needs extra fields) are built by composing arrays of `FormField` objects before `validateForm`.
 - Persist with `insertOrUpdateDatabase` / `updateDatabase` / `insertDatabase` plus a `$fixed` array for columns the user did not send (`positionId`, `userId`). When the write needs more than that, call a model method with `$formResult->fields[...]->value` or `$req->getPost()`.
 - `return $res->success([...])` ends the branch. `success` exits the request.
+
+Details that cost debugging time:
+
+- **`hasFormData("name")` matches the form's `name`** (sent as `formAction`), not its DOM id. Several forms may share a name; every `dom` id on a page is unique.
+- **Several Z.Forms on one page**: each gets its own `dom` id (`form-<uuid>`), and each `<script>` wraps its code in a block `{ ... }`, otherwise the second `const form` throws a redeclaration error.
+- **A form inside a Blade component that renders on several URLs** gets its own receiving action and posts there with `customEndpoint`. The validation is then written once, instead of in every page action that happens to show the component.
 
 ## Z.Request.action for buttons
 

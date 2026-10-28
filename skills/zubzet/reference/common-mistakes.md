@@ -11,6 +11,7 @@ Collected from an agent built prototype that violated most rules of this skill. 
 - A controller that computes business values and builds export rows, then writes CSV with `fputcsv` to `php://output` and calls `exit`.
 - The application root reimplemented in two controllers instead of using `$opt["root"]` or `$req->getRoot()`.
 - `http_response_code(404)` and `exit` sprinkled in actions.
+- `$_POST`, `$_GET` or `$_SERVER` read directly, `$_SESSION` used as a cache or a flash message store, a file written to `/tmp` or `storage/` to pick up in the next request: all gone with the next replica or deploy.
 - Business texts and validation messages as German sentences in controllers.
 - `password_hash()` / `password_verify()` in a project model, or a hand made impersonation flow, instead of `User::add()`, `updatePassword()`, `verifyPassword()` and `$res->loginAs()`.
 - A `bin/cron.php` or `scripts/import.php` with its own bootstrap instead of an action run through `php zubzet run <Controller> <action>`.
@@ -20,6 +21,7 @@ Collected from an agent built prototype that violated most rules of this skill. 
 
 - Several tags per line, whole `<tr>` rows on one line, `<?php foreach ... : ?>` with `endforeach`, `<?php if ... : ?><dt>..</dt><?php endif; ?>` inline.
 - Variables named `$b`, `$p`, `$o`, `$w`, `$v`, `$k`.
+- `<?php if(...) { ?>` blocks wrapped around parts of a `<script>`, and `<?= ?>` inside JavaScript expressions, instead of one JSON handover at the top of the script.
 - A custom CSS framework with its own button, badge and table classes instead of Bootstrap; `style="margin-bottom:10px"`, `style="white-space:nowrap"`, absolute positioning with pixel values in `style`.
 - `<p>` tags, `<dl>` metadata lists, plain `<table>` for an admin list: a table is not mobile friendly compared to a list built with cards and the grid. DataTables is the exception for real data grids.
 - Libraries from `unpkg.com` and `cdn.jsdelivr.net`.
@@ -35,11 +37,14 @@ Collected from an agent built prototype that violated most rules of this skill. 
 
 ## Data
 
-- Table prefixes, `ENUM` columns, `DATETIME`, named indexes like `idx_pose_image`, no `uuid`, no `active`, `image_id` instead of `imageId`.
+- Table prefixes, `ENUM` columns, `DATETIME`, no `uuid`, no `active`, `image_id` instead of `imageId`, indexes on columns no query uses.
 - Demo rows inside the migration file instead of `seed/`.
 - Status strings validated with `in_array($status, ["draft", "published", "hidden"], true)` in three places instead of one enum with behavior, or one model method.
 
 ## Process
 
 - German, multi-sentence commit subjects without gitmoji.
+- Commented-out code left in a file "for later" instead of deleted; git keeps the history.
+- An open `TODO` that parks unfinished work. A `TODO` is only a note to the future self for a deferred improvement, naming what and why.
+- Debug output (`echo`, `var_dump`, `print_r`) in a view or action instead of `logger()`.
 - `AGENTS.md` documenting workarounds ("no `Route::get("/")`", "no semicolons in data") instead of removing the cause.

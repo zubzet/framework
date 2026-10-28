@@ -1,43 +1,21 @@
 # Database: tables, migrations, seeds, deletion
 
-Framework docs: `vendor/zubzet/framework/docs/core-features/migrations/index.md`, `migrations/examples.md`. How to write and format the SQL itself is in [models.md](models.md), "SQL formatting".
-
-## Contents
-
-- Table structure
-- Naming tables and columns
-- Migration template
-- Migration or seed?
-- Seeds
-- Deletion
+Framework docs: `vendor/zubzet/framework/docs/core-features/migrations/index.md`, `migrations/examples.md`. How to write and format the SQL itself, and how tables and columns are named, is in [code-style/sql.md](../code-style/sql.md).
 
 ## Table structure
 
-Every table, without exception and including pure mapping tables, has three columns:
-
-- `id`, auto increment primary key: every row needs one, mapping rows too, and adding it later is a migration nobody wants.
-- `active`, `TINYINT(1)` with default `1`: the soft delete flag. Nothing is ever hard deleted, so whatever someone breaks can be restored (see Deletion).
-- `created`, `TIMESTAMP` with default `CURRENT_TIMESTAMP()`: the creation time is the one fact you can never find out afterwards, and storing it costs nothing.
-
-The template below adds `uuid` and `updated` to these.
-
-Because of `active`, every SELECT filters `active = 1`, and so does every JOIN, in its ON condition: ``LEFT JOIN `company_user` AS cu ON c.`id` = cu.`companyId` AND cu.`active` = 1``. Strictly the JOIN filter is not always needed, but write it every time so it is a habit and not a decision.
+**Every table, without exception and including pure mapping tables, has the five base columns of the template below**: `id`, `uuid`, `active`, `updated`, `created`. Adding `id` or `uuid` later is a migration nobody wants; `active` is the soft delete flag that lets whatever someone breaks be restored (see Deletion); `created` is the one fact nobody can find out afterwards. `created` and `updated` are legacy names and the one exception to the `*_at` naming (`code-style/sql.md`): `NOT NULL` with database defaults, the same in every table of every project. Every project column that records a moment is a nullable `*_at`.
 
 Further rules:
 
 - **Keys go to the front**: `id`, `uuid`, then the foreign keys. Ownership keys (who owns the row, who it is about: `userId`, `companyId`) always come first. A foreign key that is really data, split out only for normalization (`colorId`), may sit with the data columns.
-- **Index every foreign key column right away.** With 50 rows it makes no difference; it is a habit that pays off once the table grows.
+- **Index what the queries use.** A foreign key column that a `JOIN` or `WHERE` filters on gets its index in the same migration, which is nearly every foreign key. Columns no query touches get none: every index costs RAM and write time, so indexes follow the actual queries and performance considerations, not a reflex. Naming an index is allowed, not required.
 - **`VARCHAR(255)` is the default for single line text**: long enough for any name, so nobody has to guess a length. Take less when the value is clearly shorter. Whatever the length, the `FormField` rule must match it (`->length(1, 255)`): in strict mode a longer value makes the INSERT fail and the row is not saved, and switching the database to silent truncation is worse. Check the length before the value reaches the database.
 - **`TIMESTAMP` for points in time, and preferred for dates.** A start or end date is normally a `TIMESTAMP` too, so adding the time later needs no migration. `DATE` is allowed where a date is simply the better fit (a birth date, a public holiday). One hard limit: `TIMESTAMP` holds nothing before 1970, and before 2106 only on MariaDB 11.5 or newer (2038 elsewhere); in strict mode such a value fails the INSERT, in non strict mode it silently becomes the zero date.
 
 ## Naming tables and columns
 
-- **Table names are singular**, snake_case: a table holds entities, and a row is one record. A table of jobs is `job`; likewise `company`, `company_user`, `segmentation`. Never `jobs` or `companies`: you fetch "a segmentation with its companyId", not a collection.
-- **Columns are lowercase snake_case** (`name`, `company_size_color`). **Foreign keys are camelCase** `<table>Id` (`userId`, `projectId`, `companyId`). Looking at a table, the casing alone shows which columns point elsewhere and which are plain data.
-- **Do not repeat the table name.** In `project` the columns are `name`, `date_start`, `date_end`, not `project_name` or `project_start`.
-- **General word first, specific after**, so related columns sort next to each other and read as a group: `date_start` and `date_end`; `description`, `description_short`, `description_public`, `description_seo`. Not `short_description`. The type word is optional (`start` and `end` alone are fine, just as nobody writes `string_name`); the grouping is the point.
-- Booleans are `TINYINT(1)` named `is_*` or a plain adjective (`active`, `uploaded`). Single events are nullable `TIMESTAMP` named `*_at` (`accepted_at`).
-- Names like `order`, `limit`, `name` or `from` are SQL keywords. They still work as column names because every identifier is written in backticks ([models.md](models.md)).
+Singular snake_case tables, snake_case columns, camelCase foreign keys, general word first: the full list with its reasons is in [code-style/sql.md](../code-style/sql.md), "Naming tables and columns".
 
 ## Migration template
 
@@ -67,10 +45,12 @@ CREATE TABLE `position` (
 );
 ```
 
-Mandatory on every table, in this order: `id`, `uuid`, foreign keys, business columns grouped by blank lines, `active`, `updated`, `created`, then indexes on `uuid` (together with `active`, since every lookup filters it) and every FK column.
+Column order: `id`, `uuid`, foreign keys, business columns grouped by blank lines, `active`, `updated`, `created`, then the indexes: `uuid` together with `active`, since every lookup filters it, and every FK column.
 
 - Design the table, then put the plain `CREATE TABLE` in the file. No `ENGINE`, `CHARSET` or `COLLATE` clauses: take the database defaults.
-- No `FOREIGN KEY` constraints, no `ENUM` columns, no table prefixes, no `DATETIME` where `TIMESTAMP` does the job, no JSON columns for things that should be rows, no named indexes.
+- **No logic in the database.** No triggers, no stored procedures, no events, no generated columns that encode a business rule. The application is the only place that changes data, because that is the code that is versioned, tested and reviewed; a trigger changes rows behind the application's back and shows up in no diff.
+- Project tables never carry the `z_` prefix; it marks the framework's own tables (`code-style/sql.md`).
+- No `FOREIGN KEY` constraints, no `ENUM` columns, no table prefixes, no `DATETIME` where `TIMESTAMP` does the job, no JSON columns for things that should be rows.
 - `TEXT` for free text, `VARCHAR(255)` for single line, the native `UUID` type for uuids (as the framework's own tables do), `VARCHAR(50)` for short states.
 - The migrations folder is flat: one file per change, sorted by date, run top to bottom. Later changes are new files after the CREATE: `2026-05-21_contact_workspace_out.sql` with `ALTER TABLE ... ADD COLUMN ... AFTER ...`. Never edit a migration that has run anywhere.
 - Migrations are how the schema travels: they run on production, and a colleague who pulls your change runs `db:migrate` and has the same database. Nobody exchanges database exports.
@@ -100,7 +80,7 @@ Ask one question: does production need this row?
 
 ## Seeds
 
-`app/Database/seed/<area>/<table>.sql`: a folder per area (`accounts/`, `customer/`), one file per table inside, explicit ids, fixed uuids that encode the id (`'00000000-0000-7000-8000-000000000001'`, valid for the native `UUID` type and readable in a test), timestamps as `CURRENT_TIMESTAMP`, and one row per state the UI distinguishes (new, briefed, accepted, uploaded, hidden...). Comments in the seed say what a row is for. Accounts, roles, permissions and login tokens live in `seed/accounts/` (`0_permissions.sql`, `1_users.sql`, as in the `zubzet/zubzet` skeleton).
+`app/Database/seed/<area>/<name>.sql`: a folder per area (`accounts/`, `customer/`), one file per table or per feature inside, explicit ids, fixed uuids that encode the id (`'00000000-0000-7000-8000-000000000001'`, valid for the native `UUID` type and readable in a test), timestamps as `CURRENT_TIMESTAMP`, or relative (`NOW() - INTERVAL 3 DAY`) when a row must look a certain age so that a dashboard shows something and a test can still predict it, and one row per state the UI distinguishes (new, briefed, accepted, uploaded, hidden...). Comments in the seed say what a row is for. Accounts, roles, permissions and login tokens live in `seed/accounts/` (`0_permissions.sql`, `1_users.sql`, as in the `zubzet/zubzet` skeleton).
 
 Seed files run in path order (collected recursively and sorted, `src/IncludedComponents/models/z_migrationModel.php`). When one file must run before another, force it with a `0_`, `1_` prefix, as `accounts/` does.
 
@@ -112,12 +92,12 @@ A seed builds the exact state the tests need: several inserts, or an insert foll
 
 ```sql
 -- Positions for the customer flow (position.cy.js)
-INSERT INTO `position` (`id`, `uuid`, `userId`, `product`, `name`) VALUES
+INSERT INTO `position`(`id`, `uuid`, `userId`, `product`, `name`) VALUES
 (1, '00000000-0000-7000-8000-000000000001', 3, 'Gold', 'Position Gold Neu'),
 (2, '00000000-0000-7000-8000-000000000002', 3, 'Gold', 'Position Gold Briefing');
 
 -- Positions for the support filter (position_admin.cy.js)
-INSERT INTO `position` (`id`, `uuid`, `userId`, `product`, `name`) VALUES
+INSERT INTO `position`(`id`, `uuid`, `userId`, `product`, `name`) VALUES
 (100, '00000000-0000-7000-8000-000000000100', 4, 'Platinum', 'Position Hidden'),
 (101, '00000000-0000-7000-8000-000000000101', 4, 'Pro', 'Position Pro Uploaded');
 ```
@@ -126,4 +106,4 @@ Never renumber existing seed rows when adding a feature; specs reference the ids
 
 ## Deletion
 
-Soft delete everywhere, project mapping tables included. A delete is an UPDATE that sets `active = 0`; every read and every JOIN filters `active = 1`. A stack contains no `DELETE` statement, so any mistake can be rolled back by setting `active` back to `1`. The only exceptions: an explicit erasure request, and framework tables such as `z_user_role` that the framework's objects manage (`docs/core-features/access-control.md`). CED uses `active` to mark removed children; the table must have the column.
+Soft delete everywhere, project mapping tables included. A delete is an UPDATE that sets `active = 0`. Every SELECT filters `active = 1`, and so does every JOIN, in its ON condition: ``LEFT JOIN `company_user` AS cu ON c.`id` = cu.`companyId` AND cu.`active` = 1``; strictly the JOIN filter is not always needed, but write it every time so it is a habit and not a decision. A stack contains no `DELETE` statement, so any mistake can be rolled back by setting `active` back to `1`. The only exceptions: an explicit erasure request, and framework tables such as `z_user_role` that the framework's objects manage (`docs/core-features/access-control.md`). CED uses `active` to mark removed children; the table must have the column.

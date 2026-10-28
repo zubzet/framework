@@ -1,16 +1,6 @@
 # Views
 
-Framework docs: `vendor/zubzet/framework/docs/core-features/views.md`, `layouts.md`. House style in Blade: `vendor/zubzet/framework/src/IncludedComponents/views`.
-
-## Contents
-
-- Skeleton
-- Markup rules
-- PHP and Blade inside the view
-- Escaping user content
-- Components and includes
-- Pages, not modals
-- JavaScript in views
+Framework docs: `vendor/zubzet/framework/docs/core-features/views.md`, `layouts.md`. House style in Blade: `vendor/zubzet/framework/src/IncludedComponents/views`. Formatting (one tag per line, indentation, attribute splitting, quotes, directive syntax) is in [code-style/blade.md](../code-style/blade.md); this file is about what the markup is made of.
 
 Views are `.blade.php` files under `app/Views`. ZubZet renders them with Katana Blade. Blade is a superset of PHP: directives are preferred, raw PHP is acceptable where it reads simpler. `{{ }}` is preferred for output.
 
@@ -68,66 +58,69 @@ Views are `.blade.php` files under `app/Views`. ZubZet renders them with Katana 
 
 ## Markup rules
 
-- **One tag per line. Always spread tags open.** Even `<i class="fa fa-plus mr-1"></i>` may stay on one line only because it is empty; anything with content gets its own open and close lines:
+Layout of the markup itself (one tag per line, four spaces, long attribute lists, no empty tag without classes) is in [code-style/blade.md](../code-style/blade.md).
 
-```blade
-<a href="{{ $opt["root"] }}position/new" class="btn btn-sm btn-primary" data-test="btn-create-position">
-    <i class="fa fa-plus mr-1"></i>
-    Neue Position
-</a>
-```
-
-- **Four spaces** indentation, including inside `@if` / `@foreach` blocks and inside PHP brackets. No tabs. No trailing spaces.
 - **Bootstrap 4 utility classes only.** Layout with `d-flex`, `row`/`col-*`, spacing with `m*-*`/`p*-*`. Bootstrap is the base and a project only customizes it, so custom CSS is very rarely needed: the handful of classes in `main.css` (`shadow-hover`, `cursor-pointer`, `rounded-xl`, brand badges) is the normal amount. If a design needs more, ask. No `style=""` attributes, except a width or a margin-top the grid cannot express. No per-view `<style>` blocks; a Blade component may carry a small `<style>` so it stays portable, which must not become a habit.
 - **Cards with `shadow-sm`** are the building block. Margins between cards (`mb-4`). Avoid nesting cards inside cards as much as possible; it is rarely ever good design. Use `card-header` or headings inside one card instead.
 - **Headings in order**, `h1` through `h6`, sized with the classes `h1` to `h6`. The page has exactly one `h1`.
-- **No `<p>`.** It carries its own bottom margin and typographic defaults, so spacing becomes inconsistent with the utility class system. `<div class="mb-2">` (or `mb-3`, `mb-0`) reads the same and keeps spacing explicit; long form text loses nothing by it. Key value metadata is divs with margin or padding, not a `<dl>`.
-- **Never an empty tag without classes.** At least `mb-0`, so the reader sees the spacing was decided, not forgotten.
+- **No `<p>`.** It carries its own bottom margin and typographic defaults, so spacing becomes inconsistent with the utility class system. `<div class="mb-2">` (or `mb-3`, `mb-0`) reads the same and keeps spacing explicit; long form text loses nothing by it.
+- **Key value dumps are a last resort.** Label and value each in their own div (not a `<dl>`, not `<b>Label:</b><br>`). Better, design the data into the page: a status badge, a sentence, a card header. A list of labels and values is what you write when you only want to make sure the data is there at all.
+- **Tables are not mobile friendly.** A table that scrolls sideways on a phone is unreadable, so every list of records has a card like appearance on small screens, with the label next to each value, and may become a row layout on large screens. The technique is free: one way is a header row with `d-none d-lg-flex` and a card per record repeating the labels with `d-block d-lg-none`. DataTables is the exception for real data grids.
 - **Icons**: Font Awesome 4 class names (`fa fa-briefcase`, `fa fa-fw`), always with `mr-1` or `mr-2` before text. Icons are colored by `main.css`.
 - **Mobile first**: every `col-*` starts at `col-12`, flex rows that would overflow get `flex-wrap` or `d-md-flex`. Buttons in a row carry `mb-2 mb-md-0`.
-- **Empty states** are a card with a large icon, a heading, a sentence and the primary call to action.
-- **Print**: navigation, back buttons and action buttons get `d-print-none`.
-- **Fonts, images, libraries** are self hosted and referenced through `$opt["generateResourceLink"]("assets/...")`, which appends the asset version. Never a CDN URL.
-- Long attribute lists may be split one attribute per line:
+- **Empty states** always say that the section is empty and what could be there. Two sizes: a page dedicated to a list that has no entries yet gets a large card with icon, heading, sentence and the primary call to action (an illustration is fine); a small section of a page that happens to be empty gets the info card below.
+- **Two fixed snippets**, identical in every project so the same element looks the same everywhere. The info card for an empty list or section, and the usage hint that tells the user how a feature works:
 
 ```blade
-<input
-    type="text"
-    id="filterName"
-    class="form-control"
-    placeholder="Name der Position"
-    value="{{ $filterSelections["name"] }}"
-    data-test="filter-name"
-/>
+<div class="card shadow-sm mb-3" data-test="card-empty">
+    <div class="card-body d-md-flex align-items-center py-3">
+        <i class="fa fa-info-circle mr-2"></i>
+        Noch keine Kontakte vorhanden.
+    </div>
+</div>
+
+<div class="alert alert-info shadow-sm py-2">
+    <i class="fa fa-info-circle text-dark mr-2"></i>
+    Laden Sie eine CSV-Datei hoch, um Duplikate bei zukünftigen Anfragen zu vermeiden.
+</div>
 ```
+- **Print**: navigation, back buttons and action buttons get `d-print-none`.
+- **Fonts, images, libraries** are self hosted and referenced through `$opt["generateResourceLink"]("assets/...")`, which appends the asset version. Never a CDN URL.
+
+## Visual design, as recommendations
+
+These are the defaults a stack starts from, not rules: a project's design brief changes them, and then the brief wins. They exist so an agent without a brief does not invent a design.
+
+- Consistency in colors, fonts, sizes and spacing across all pages; the spacing between sections and between elements is the same everywhere, and button spacing is never changed.
+- Only the primary and the secondary color are set (by theming Bootstrap, `code-style/css.md`). Text is black or white, rarely in the accent color. Calls to action stand out and are not placed next to stronger colors that take the attention away.
+- One body font size; only the headings `h1` to `h6` differ, and not extremely. Emphasis is bold, not color or size.
+- Avoid visual overload; prefer less. No "floating" boxes: every box and image is visibly left aligned, right aligned or centered.
+- Layout changes only at Bootstrap's breakpoints, designed on the grid, so a section that maps onto `row` / `col-*` is responsive for free. Check dense content (pricing tables, wide forms) at every breakpoint.
+- Contrast is checked with the WebAIM contrast checker (https://webaim.org/resources/contrastchecker/) when a color is chosen.
 
 ## PHP and Blade inside the view
 
 - Output: `{{ $contact["name"] }}` (escaped) is the default for every value (see "Escaping user content"). Raw `<?= ?>` is tolerated for a value that obviously cannot carry input, such as `$opt["root"]`, a loop index or a constant, and "obviously" is a high bar: user input creeps into unexpected places (an error branch returning the original string, a column that later becomes editable), so when in doubt it is `{{ }}`. `{!! !!}` only for HTML the backend built on purpose, never for anything a user typed.
-- Control flow: `@if` / `@else` / `@endif`, `@foreach` / `@endforeach`, `@forelse` / `@empty` / `@endforelse`, `@auth("permission")` / `@endauth`. Raw `<?php if(...) { ?> ... <?php } ?>` is acceptable where a directive would read worse. Never `endif;` / `endforeach;` style PHP.
-- Avoid `@else`. Prefer `@forelse` with `@empty`, or two `@if` blocks, or `??` / `?:` with a space on both sides.
+- Control flow: `@if` / `@endif`, `@foreach` / `@endforeach`, `@forelse` / `@empty` / `@endforelse`, `@auth("permission")` / `@endauth`. Raw `<?php if(...) { ?> ... <?php } ?>` is acceptable where a directive would read worse. Directive versus raw PHP, `@else` avoidance and the one-liner rule for other PHP: `code-style/blade.md`.
 - Attribute toggles: `@checked($x)`, `@selected($x === $y)`, `@disabled($x)`, `@class([...])`.
-- Any PHP that is not output or control flow is a one-liner: `<?php $plan = App\Objects\Plan::fromName($position["product"]); ?>`. Only introduce a variable when the expression is used several times. Otherwise use the array item directly.
 - No type casts in views unless the value really needs it. No `?? ""` chains for every field. Assume the controller delivered what it promised.
 - German date format: `date("d.m.Y", strtotime($row["created"]))`, with time `d.m.Y H:i`. Always through `strtotime`.
-- Interpolate inside strings when possible: `"{{ $opt["root"] }}position/details/{{ $position["uuid"] }}"`.
+- German number format: `number_format($amount, 2, ",", ".")` for money, `number_format($count, 0, ",", ".")` for counts. When a project is clearly not German, or it is unclear, ask which format the project uses instead of assuming.
 - Permission dependent markup: `@auth("support") ... @endauth` or `<?php if($opt["user"]->checkPermission("support")) { ?>`.
-- JavaScript needs JSON, not escaped HTML. Inside `<script>` use `<?= json_encode($value) ?>`, never `{{ json_encode(...) }}` (the quotes would be HTML escaped). Details in "Escaping user content".
 - Never concatenate markup in PHP (`'<span class="badge">' . $x . '</span>'`). Write it as markup in the view or a component.
 - Katana implements a subset of Laravel Blade. Before using a Laravel habit (`@csrf`, `@can`, `@error`, `@lang`, ...), check the "Not available in Katana" section of `docs/core-features/views.md`; the ZubZet way is `@auth("permission")` and plain PHP.
 - A project view with the same name as a framework view replaces it, which is how custom error and login pages are done (`docs/core-features/views.md`).
 
 ## Escaping user content
 
-Anything a user typed is printed escaped, always. Without it, a name field that accepts `<b>Zielgruppe</b>` prints bold text, which is merely annoying, and one that accepts `<script>alert(1)</script>` runs code. That script runs inside the application with its rights: it can read the session cookie and send it to an attacker's server, so the session is stolen without the user noticing. When other users or an admin see the value, it runs for them too. A self spreading tweet once retweeted itself for everyone who saw it and reached a huge audience in a very short time. Data gets exfiltrated, users get lured into opening things they should not.
+**Anything a user typed is printed escaped, always**: `{{ }}` in Blade, `e($value)` in PHP. This is the stack's XSS defence, and it is applied everywhere without deciding case by case, so it is never forgotten where it matters.
 
-- **Escape, do not strip.** `strip_tags` only throws tags away, which is not escaping. `htmlspecialchars` turns the characters into entities, so the text shows exactly as typed. In ZubZet that is `{{ }}` in Blade and `e($value)` in PHP (short so it gets used everywhere). `e()` currently strips tags before escaping; do not rely on that part (`docs/core-features/global-helper-functions.md`, `docs/core-features/views.md`).
-- **Escape everything, without deciding case by case.** An admin page where only the admin types and reads would at worst let the admin attack themselves, and it is escaped anyway: as muscle memory, so it is never forgotten where it matters.
-- **Values that merely look safe are escaped too.** A formatted date can only be a date, but nobody knows every function by heart, and an error case may hand back the original input. Escaping more costs nothing: `{{ date("d.m.Y", strtotime($row["created"])) }}`. The raw exception above is for values that cannot be input by construction, not for values that happen to be clean today.
+- **Escape, do not strip.** `strip_tags` is not escaping. `e()` currently strips tags before escaping; do not rely on that part (`docs/core-features/global-helper-functions.md`).
+- **Values that merely look safe are escaped too.** A formatted date can only be a date, until an error branch hands back the original input: `{{ date("d.m.Y", strtotime($row["created"])) }}`. Raw output is for values that cannot be input by construction, not for values that happen to be clean today.
 - **Escaping depends on the context.** HTML escaping protects HTML text and quoted attributes, nothing else:
-    - In a `<script>`, a value like `3; alert(1)` contains nothing HTML escaping touches and runs as code. Use `json_encode`: JSON is valid JavaScript, and the encoder escapes quotes and everything else the parser needs. An optional value gets a default, so a field receives an empty string instead of `null`: `const name = <?= json_encode($segmentation["name"] ?? "") ?>;`. Never wrap it in quotes (`"<?= json_encode(...) ?>"`): the JSON brings its own, so the outer string ends right away and the script breaks.
-    - In an attribute, escaping does not stop a value from adding more than intended. `class="user-{{ $color }}"` with `green other-class` adds a class, and where the value can leave the attribute (an unquoted attribute, markup assembled in PHP) it adds a new one, such as `onload="alert(1)"`, without a single angle bracket, and is in script context again.
-- **Prefer a whitelist.** Escaping is a blacklist: it forbids some characters, and someone always finds a way around. For a choice like the color, allow only fixed values (`->in([...])` in the `FormField`, an enum, a `match` to known class names) and print the known string. Free text rarely allows a whitelist, but where it does, it wins.
+    - In a `<script>` use `<?= json_encode($value) ?>`, never `{{ }}` (it HTML escapes the quotes). An optional value gets a default so a field receives `""` instead of `null`: `const name = <?= json_encode($segmentation["name"] ?? "") ?>;`. Never wrap it in quotes: the JSON brings its own and the outer string would end right away.
+    - In an attribute, escaping does not stop a value from adding more than intended (`class="user-{{ $color }}"` with `green other-class`), and in markup assembled in PHP it can add an attribute such as `onload=` without a single angle bracket.
+- **Prefer a whitelist** where the values are a closed set: `->in([...])` in the `FormField`, an enum, a `match` to known class names, then print the known string. Escaping is a blacklist and someone always finds a way around it.
 - **Before printing user input somewhere new** (a class, a `<script>`, a data attribute), think about which characters can break out of that context.
 
 ## Components and includes
@@ -154,10 +147,9 @@ This is server side rendered software. The default unit of UI is a page with its
 
 ## JavaScript in views
 
-- JS lives inline, in a `<script>` block at the end of `@section("content")`. jQuery is available (`$`), Z.js is available (`Z.Forms`, `Z.Request`, `Z.Lang`, `Z.Presets`).
+- JS lives inline, in a `<script>` block at the end of `@section("content")`, or right after the one element it drives (`code-style/blade.md`). jQuery is available (`$`), Z.js is available (`Z.Forms`, `Z.Request`, `Z.Lang`, `Z.Presets`).
 - A separate file in `webroot/assets/js` is the rare exception for a large, self contained component that several pages share and that is not a Blade component. Default to inline.
-- Style: `const`/`let`, arrow functions for callbacks, jQuery selectors by id or by a purpose class (`.btn-accept`, `.contact-card`), `data-*` attributes to carry uuids (`data-position-uuid`), never numeric ids. No frameworks, no bundlers, no modules.
+- Uuids travel in `data-*` attributes (`data-position-uuid`), never numeric ids. No frameworks, no bundlers, no modules. Syntax style (`const`/`let`, arrow functions, quotes, selectors): `code-style/javascript.md`.
 - After a write that changes what the page shows: `location.reload()` or `location.href = "{{ $opt["root"] }}..."`. Only update the DOM in place for small toggles (badge, checkbox state).
 - Confirmations with `confirm()`, quick inputs with `prompt()`, result messages with `alert()` are acceptable in back office pages. Customer facing pages use a Bootstrap modal or inline feedback, because a browser dialog does not look good on a public site.
-- Hand over configuration to JS once at the top of the script (`const root = "{{ $opt["root"] }}";`), do not sprinkle PHP through the JS.
 - No `window.*` globals per page and no JS translation layer. Texts are in the markup.

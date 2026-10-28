@@ -2,15 +2,6 @@
 
 Framework docs: `vendor/zubzet/framework/docs/forms/file-uploads.md`.
 
-## Contents
-
-- Principles
-- Configuration keys
-- S3Model
-- Storage model: the `asset` table
-- Upload flows
-- Delivering files
-
 ## Principles
 
 - User files never live in `webroot/`, never in `uploads/` on the web server, never as `public-read` by default. They are objects in S3 under a per purpose prefix, referenced from the database, and reached through signed URLs.
@@ -88,7 +79,7 @@ $assetId = model("Asset")->addAsset($file, "exclusion-list", user()->userId);
 
 `addAsset` reads the temp file, uploads it `private`, inserts the row, returns the id.
 
-Do not persist a file field with `insertDatabase` / `updateDatabase`: those move the upload into the local `uploads/` folder and store a `z_file` id, which is the framework's disk based path (`docs/forms/file-uploads.md`). Validate with `->file(...)`, then hand `$formResult->fields[...]->value` (the `$_FILES` entry) to `AssetModel`, and persist the other fields with the `$fixed` array or a model method. Validate extension and size with the rule, not by hand.
+Do not persist a file field with `insertDatabase` / `updateDatabase`: those move the upload into the local `uploads/` folder and store a `z_file` id, which is the framework's disk based path (`docs/forms/file-uploads.md`). Validate with `->file(...)`, then hand `$formResult->fields[...]->value` (the `$_FILES` entry) to `AssetModel`, and persist the other fields with the `$fixed` array or a model method. Validate extension and size with the rule, not by hand. The local `uploads/` folder is a framework feature, not a stack feature: every stack is stateless and runs as several replicas in replaceable containers without volumes, so a file on the container's disk is gone with the next deploy and was never visible to the other replicas. Every project uses S3, without exception; a single deviation is already a finding. The same holds for every other local file (a cache, an export, a lock, a generated PDF): it exists at most for the request that creates it, and whatever must outlive the request goes to S3 or the database. If a task seems to need one, ask.
 
 **Large or many files (images, videos, bulk uploads) through a signed PUT.** Three steps, each its own `isAction`:
 
