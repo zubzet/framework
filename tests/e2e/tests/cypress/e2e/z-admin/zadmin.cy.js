@@ -150,7 +150,7 @@ describe('Z-Admin Panel', () => {
 
         function postAdd(body) {
             // hasFormData() requires the isFormData flag (set by Z.Forms).
-            return cy.zRequest({
+            return cy.request({
                 method: 'POST',
                 url: '/z/add_user',
                 form: true,
@@ -204,7 +204,7 @@ describe('Z-Admin Panel', () => {
 
         function postEdit(userId, body) {
             // hasFormData() requires the isFormData flag (set by Z.Forms).
-            return cy.zRequest({
+            return cy.request({
                 method: 'POST',
                 url: `/z/edit_user/${userId}`,
                 form: true,
@@ -322,7 +322,7 @@ describe('Z-Admin Panel', () => {
             cy.visit('/z/roles');
             cy.query(`role-${roleId}`).should('exist');
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: `/z/roles/${roleId}`,
                 form: true,
@@ -338,7 +338,7 @@ describe('Z-Admin Panel', () => {
 
         it('denies delete to users without admin.roles.delete', () => {
             cy.loginAs("customer");
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/roles/100',
                 form: true,
@@ -367,7 +367,7 @@ describe('Z-Admin Panel', () => {
         });
 
         it('only stores 0 or 1', () => {
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/roles/248',
                 form: true,
@@ -376,7 +376,7 @@ describe('Z-Admin Panel', () => {
                 expect(JSON.parse(res.body).formErrors).to.deep.include({ name: 'is_org_assignable', type: 'in' });
             });
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/roles/248',
                 form: true,
@@ -390,7 +390,7 @@ describe('Z-Admin Panel', () => {
     // ZController::action_login_as - the reason an admin may state for the sudo
     describe('action_login_as (reason)', () => {
         function sudo(reason) {
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/login_as/3',
                 form: true,
@@ -488,7 +488,7 @@ describe('Z-Admin Panel', () => {
                 expect(JSON.parse(res.body).userId, 'a get does not switch the user').to.eq(adminUserId);
             });
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/login_as/3', // user 3 = customer
                 form: true,
@@ -544,7 +544,7 @@ describe('Z-Admin Panel', () => {
         it('non-admin without admin.su gets denied', () => {
             cy.loginAs("customer");
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/login_as/1',
                 form: true,
@@ -622,7 +622,7 @@ describe('Z-Admin Panel', () => {
 
         // hasFormData() requires the isFormData flag (set by Z.Forms).
         function postForm(url, body) {
-            return cy.zRequest({
+            return cy.request({
                 method: 'POST',
                 url: url,
                 form: true,
@@ -709,7 +709,7 @@ describe('Z-Admin Panel', () => {
             cy.visit('/z/organizations');
             cy.query('organization-561').should('exist');
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/organizations/561',
                 form: true,

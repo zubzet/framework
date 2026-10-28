@@ -17,8 +17,7 @@ class PendingGroup extends PendingRoutingState {
             $this->prefix, 
             $this->callback, 
             $this->middleware,
-            $this->afterMiddleware,
-            $this->withoutCsrf,
+            $this->afterMiddleware
         );
     }
 }

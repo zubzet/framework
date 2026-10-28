@@ -34,7 +34,7 @@ describe('Two factor gate', () => {
     });
 
     function guard(path) {
-        return cy.zRequest({
+        return cy.request({
             method: 'POST',
             url: `/TwoFactorProbe/${path}`,
             form: true,
@@ -164,7 +164,7 @@ describe('Two factor gate', () => {
 
     // ---------------------------------------------------------------------
     describe('the profile actions', () => {
-        const profile = (action, body = {}) => cy.zRequest({
+        const profile = (action, body = {}) => cy.request({
             method: 'POST',
             url: `/_zubzet/profile/${action}`,
             form: true,
@@ -239,13 +239,12 @@ describe('Two factor gate', () => {
 
     // ---------------------------------------------------------------------
     describe('renewing the check', () => {
-        const refresh = (body) => cy.zRequest({
+        const refresh = (body) => cy.request({
             method: 'POST',
             url: '/_zubzet/two-factor/refresh',
             form: true,
             failOnStatusCode: false,
-            // The action Z.js sends along
-            body: { action: 'two-factor-refresh', ...body },
+            body,
         }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
 
         it('stamps the session and opens the gate again', () => {
@@ -325,7 +324,7 @@ describe('Two factor gate', () => {
             age('0854a', 10);
 
             cy.setCookie('z_login_token', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa01');
-            cy.zRequest({ method: 'POST', url: '/z/login_as/854', form: true, body: { action: 'login_as' } });
+            cy.request({ method: 'POST', url: '/z/login_as/854', form: true, body: { action: 'login_as' } });
 
             // A fresh session of the same account does not lend its check
             guard('guardDefault').then(expectRenew);

@@ -109,7 +109,6 @@ nav:
         - Permission System: core-features/permission-system
         - Password Handling: core-features/password-handling
         - Secrets: core-features/secrets
-        - CSRF Protection: core-features/csrf-protection
         - Configuration: core-features/configuration
         - Database Connection: core-features/database-connection
         - REST API: core-features/rest-api

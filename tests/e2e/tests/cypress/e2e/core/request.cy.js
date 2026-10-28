@@ -47,7 +47,7 @@ describe('Request', () => {
     });
 
     it('POST', () => {
-        cy.zRequest({
+        cy.request({
             method: 'POST',
             url: '/Core/Post',
             form: true,
@@ -69,17 +69,15 @@ describe('Request', () => {
 
             cy.intercept('POST', '/Core/File').as('fileUpload');
 
-            cy.request('/_zubzet/health');
-            cy.getCookie('z_csrf').then((csrf) => cy.window().then((win) => {
+            cy.window().then((win) => {
                 const xhr = new win.XMLHttpRequest();
                 xhr.open('POST', '/Core/File');
-                xhr.setRequestHeader('X-CSRF-Token', csrf.value);
                 xhr.onload = function () {
                     expect(xhr.status).to.eq(200);
                     expect(xhr.responseText).to.include('TestFile_Small.txt');
                 };
                 xhr.send(formData);
-            }));
+            });
 
             cy.wait('@fileUpload');
         });
@@ -281,7 +279,7 @@ describe('Request', () => {
         // accept either shape so the test is robust to that behavior.
         const parseBody = (body) => (typeof body === 'string' ? JSON.parse(body) : body);
 
-        const sendJson = (body, { method = 'POST', contentType = 'application/json', query = '' } = {}) => cy.zRequest({
+        const sendJson = (body, { method = 'POST', contentType = 'application/json', query = '' } = {}) => cy.request({
             method,
             url: `/Core/requestBody${query}`,
             body,
