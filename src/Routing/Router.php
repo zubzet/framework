@@ -11,6 +11,7 @@
     use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Registry\Registry;
     use Symfony\Component\Console\Input\ArgvInput;
+    use ZubZet\Framework\Security\CSRF;
 
     trait Router {
 
@@ -23,6 +24,13 @@
         public function execute(?array $customUrlParts = null) {
             if(!is_null($customUrlParts)) {
                 request()->urlParts = $customUrlParts;
+            }
+
+            // Before the route files load, so no app code runs for a forged request
+            if(!CSRF::verify()) {
+                http_response_code(403);
+                header("Content-Type: application/json");
+                response()->generateRestError(403, "csrf check failed");
             }
 
             $dispatcher = $this->getRouteDispatcher();

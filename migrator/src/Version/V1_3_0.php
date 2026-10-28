@@ -56,6 +56,9 @@
             $newSettings->addProperty("dbport", "");
             $newSettings->addProperty("fallback_locales", "en");
             $newSettings->addProperty("modules", "");
+            $newSettings->addProperty("csrf_allow", "same-origin");
+            $newSettings->addProperty("csrf_trusted_origins", "");
+            $newSettings->addProperty("csrf_blocked_origins", "");
             $newSettings->save();
 
             // App-local copies of Z.js are outdated, the framework serves the current one itself

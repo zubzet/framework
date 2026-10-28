@@ -32,7 +32,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 - `Registry/` — Central resolver for convention lookups + module discovery (see below)
 - `Resources/` — Asset proxy: ordered `Mount` chain, bundled Composer packages
 - `Routing/` — `Router` trait, FastRoute integration, `Route` builder
-- `Security/` — `Secrets/`: `Encryption` (versioned `zenc:<cipher>:` values, key from the `encryption_key` setting), `Cipher/` (`Cipher` interface, `AesGcmCipher`), `DecryptionException`
+- `Security/` — `CSRF` (the header-based check `Router::execute()` runs first, returning whether the request is verified; the router answers a rejected one with the 403); `Secrets/`: `Encryption` (versioned `zenc:<cipher>:` values, key from the `encryption_key` setting), `Cipher/` (`Cipher` interface, `AesGcmCipher`), `DecryptionException`
 - `Support/` — Global helpers, dynamic attributes, function-conflict resolution
 - `Testing/` — Coverage commands
 
