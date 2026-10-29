@@ -8,12 +8,11 @@ compose() {
 
 case "$1" in
     start)
-        # The application container runs as the project owner, so it can write to the project files
-        compose build --build-arg USER_UID="$(ls -nd "$root" | awk '{print $3}')" &&
+        compose build &&
         compose up --remove-orphans -d &&
         docker exec application composer install &&
-        docker exec application php index.php db:seed &&
-        docker exec application php index.php info:startup --pwd "$root"
+        docker exec application php zubzet db:seed &&
+        docker exec application php zubzet info:startup --pwd "$root"
         exit
         ;;
     stop)
@@ -50,14 +49,14 @@ esac
 if [ -n "$(compose ps --status running -q application 2>/dev/null)" ]; then
     # Interactive terminal -> with TTY, non-interactive (pipe, CI, cron) -> without
     if [ -t 0 ]; then
-        exec docker exec -it application php index.php "$@"
+        exec docker exec -it application php zubzet "$@"
     fi
-    exec docker exec -i application php index.php "$@"
+    exec docker exec -i application php zubzet "$@"
 fi
 
 # Container is not running -> execute the PHP script directly, if PHP is available
-if command -v php >/dev/null && [ -f "$root/index.php" ]; then
-    exec php "$root/index.php" "$@"
+if command -v php >/dev/null && [ -f "$root/zubzet" ]; then
+    exec php "$root/zubzet" "$@"
 fi
 
 echo "Error: The project is not running and PHP was not found in your PATH. Start it with: ./project start" >&2
