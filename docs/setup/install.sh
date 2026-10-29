@@ -237,6 +237,10 @@ if [ ! -f "$directory/composer.json" ]; then
 }
 JSON
 fi
+# Written by root -> the container (uid 1000) must be able to update it
+if [ "$(id -u)" = 0 ]; then
+    chown "$owner" "$directory/composer.json"
+fi
 if ! docker run --rm -u "$owner" -e HOME=/tmp -e "ZUBZET_CONSTRAINT=$constraint" -v "$directory":/app -w /app --entrypoint sh ghcr.io/zubzet/php:8.5-apache -c '
     composer require --no-ansi "zubzet/framework${ZUBZET_CONSTRAINT:+:$ZUBZET_CONSTRAINT}" &&
     php vendor/zubzet/framework/bin/install /app
