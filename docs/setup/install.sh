@@ -2,6 +2,18 @@
 
 
 # ----------------
+# Check Bash
+# ----------------
+
+# Before anything else and in plain POSIX syntax, since `sh install.sh` would choke on the Bash-only parts below
+if [ -z "${BASH_VERSION:-}" ]; then
+    echo "Error: This installer needs Bash, but it was started with another shell." >&2
+    echo "Run it with: bash install.sh" >&2
+    exit 1
+fi
+
+
+# ----------------
 # Output
 # ----------------
 
