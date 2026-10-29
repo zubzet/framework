@@ -28,9 +28,8 @@
 
             // Before the route files load, so no app code runs for a forged request
             if(!CSRF::verify()) {
-                http_response_code(403);
-                header("Content-Type: application/json");
-                response()->generateRestError(403, "csrf check failed");
+                $this->executePath(["error", "403"]);
+                exit;
             }
 
             $dispatcher = $this->getRouteDispatcher();
