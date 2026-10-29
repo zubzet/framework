@@ -5,13 +5,16 @@ describe('CSRF protection', () => {
 
     const SAME_SITE = { csrf_allow: 'same-site' };
     const SITES = ['same-origin', 'none', 'same-site', 'cross-site'];
-    const METHODS = ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'];
+    const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+    const CHECKED_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    const METHODS = [...SAFE_METHODS, ...CHECKED_METHODS];
 
-    // Runs the decision on simulated headers and settings. The probe request itself carries
-    // none of the browser headers, so it passes the real check under the e2e settings.
-    function decide(expected, headers, settings = {}) {
-        cy.request({ method: 'POST', url: '/CsrfProbe/decide', body: { headers, settings }, failOnStatusCode: false }).then((res) => {
-            expect(res.body.verified, JSON.stringify({ headers, settings })).to.eq(expected === PASS);
+    // Runs the decision on simulated headers and settings, as a POST unless method says otherwise.
+    // The probe request itself carries none of the browser headers, so it passes the real check.
+    function decide(expected, headers, settings = {}, method = undefined, additionalMethods = undefined) {
+        const body = { headers, settings, method, additionalMethods };
+        cy.request({ method: 'POST', url: '/CsrfProbe/decide', body, failOnStatusCode: false }).then((res) => {
+            expect(res.body.verified, JSON.stringify(body)).to.eq(expected === PASS);
         });
     }
 
@@ -20,19 +23,21 @@ describe('CSRF protection', () => {
         return cy.request({ method, url, headers, failOnStatusCode: false });
     }
 
+    // A rejected request gets the 403 page of the error controller, a HEAD without its body
     function expectRejected(res, reason) {
-        expect(res.status).to.eq(403);
-        const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
-        expect(body.error).to.deep.eq({ code: 403, message: 'csrf check failed' });
+        expect(res.status, reason).to.eq(403);
+        if(res.body) expect(res.body).to.include('Page not for you');
     }
 
     describe('the decision', () => {
         // Old browsers, plain http, curl, servers and webhooks
-        it('passes without Sec-Fetch-Site unless the source is blocked', () => {
+        it('passes without Sec-Fetch-Site unless the source is blocked or unknown', () => {
             decide(PASS, {});
             decide(PASS, { Origin: 'https://evil.test' });
-            decide(PASS, { Origin: 'null' }, { csrf_blocked_origins: 'https://bucket.example.com' });
             decide(BLOCKED, { Origin: 'https://bucket.example.com' }, { csrf_blocked_origins: 'https://bucket.example.com' });
+            // A hidden source could be the blocked one
+            decide(CROSS, { Origin: 'null' }, { csrf_blocked_origins: 'https://bucket.example.com' });
+            decide(CROSS, { Origin: 'null' });
         });
 
         it('takes the source from Origin', () => {
@@ -58,10 +63,12 @@ describe('CSRF protection', () => {
                 SITES.forEach((site, i) => decide(expected[i], { 'Sec-Fetch-Site': site, Origin: 'https://www.example.com' }, { csrf_allow: allow }));
             });
 
-            // An invalid csrf_allow is a misconfiguration and throws
+            // An invalid csrf_allow is a misconfiguration and throws, whatever source the request has
             ['same_site', 'cross-site', ''].forEach((allow) => {
-                cy.request({ method: 'POST', url: '/CsrfProbe/decide', body: { headers: { 'Sec-Fetch-Site': 'same-origin' }, settings: { csrf_allow: allow } }, failOnStatusCode: false })
-                    .its('status').should('eq', 500);
+                [{ 'Sec-Fetch-Site': 'same-origin' }, { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }, { Origin: 'https://www.example.com' }].forEach((headers) => {
+                    cy.request({ method: 'POST', url: '/CsrfProbe/decide', body: { headers, settings: { csrf_allow: allow } }, failOnStatusCode: false })
+                        .its('status').should('eq', 500);
+                });
             });
 
             // The value is case insensitive, any other one is not let through
@@ -80,21 +87,23 @@ describe('CSRF protection', () => {
             decide(CROSS, { 'Sec-Fetch-Site': 'same-site', Origin: 'https://www2.example.com' }, trusted);
         });
 
-        // The blocklist only knows the origins it lists, an unknown source is not matched
-        it('passes a same-site request without a known source, the blocklist cannot match it', () => {
+        // The lists only know the origins they list, a page that hides its Origin (no-referrer,
+        // a sandboxed iframe) would slip past the blocklist, so it gets the strictest rules
+        it('passes a request without a known source only from the same origin or no page', () => {
             const settings = { ...SAME_SITE, csrf_blocked_origins: 'https://bucket.example.com' };
 
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site' }, settings);
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }, settings);
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: '' }, settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site' }, settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }, settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site', Origin: '' }, settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site', Origin: ' NULL ' }, settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'cross-site', Origin: 'null' }, settings);
             decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: 'https://www.example.com' }, settings);
-            // Only same-site needs it
             decide(PASS, { 'Sec-Fetch-Site': 'same-origin', Origin: 'null' }, settings);
             decide(PASS, { 'Sec-Fetch-Site': 'none' }, settings);
             decide(PASS, {}, settings);
-            // Nothing blocked, nothing to tell apart
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site' }, SAME_SITE);
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }, SAME_SITE);
+            // Even with nothing blocked
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site' }, SAME_SITE);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }, SAME_SITE);
         });
 
         it('rejects a blocked source on every Sec-Fetch-Site that passes', () => {
@@ -110,6 +119,43 @@ describe('CSRF protection', () => {
             decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: 'http://bucket.example.com' }, settings);
             decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: 'https://bucket.example.com:8443' }, settings);
             decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: 'https://x.bucket.example.com' }, settings);
+        });
+    });
+
+    describe('the methods', () => {
+        const crossSite = { 'Sec-Fetch-Site': 'cross-site', Origin: 'https://evil.test' };
+
+        it('skips GET, HEAD and OPTIONS and checks every other method', () => {
+            SAFE_METHODS.forEach((method) => decide(PASS, crossSite, {}, method));
+            CHECKED_METHODS.forEach((method) => decide(CROSS, crossSite, {}, method));
+            // The request method is case insensitive
+            decide(PASS, crossSite, {}, 'get');
+            decide(CROSS, crossSite, {}, 'post');
+        });
+
+        it('checks the safe methods passed to it, case insensitive', () => {
+            decide(CROSS, crossSite, {}, 'GET', ['GET']);
+            decide(PASS, crossSite, {}, 'HEAD', ['GET']);
+            decide(CROSS, crossSite, {}, 'GET', ['get', 'head']);
+            decide(CROSS, crossSite, {}, 'HEAD', ['get', 'head']);
+            decide(PASS, crossSite, {}, 'OPTIONS', ['get', 'head']);
+            decide(CROSS, crossSite, {}, 'POST', ['GET']);
+        });
+
+        // A browser sends no Origin on a link, so an opted-in GET only passes from the same origin or no page
+        it('judges an opted-in GET like any checked request', () => {
+            decide(PASS, { 'Sec-Fetch-Site': 'same-origin' }, SAME_SITE, 'GET', ['GET']);
+            decide(PASS, { 'Sec-Fetch-Site': 'none' }, SAME_SITE, 'GET', ['GET']);
+            decide(PASS, {}, SAME_SITE, 'GET', ['GET']);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site' }, SAME_SITE, 'GET', ['GET']);
+            decide(CROSS, { 'Sec-Fetch-Site': 'cross-site' }, { csrf_trusted_origins: 'https://partner.test' }, 'GET', ['GET']);
+        });
+
+        it('only validates csrf_allow for a checked request', () => {
+            const body = (method, additionalMethods) => ({ headers: { 'Sec-Fetch-Site': 'same-site' }, settings: { csrf_allow: 'same_site' }, method, additionalMethods });
+
+            cy.request({ method: 'POST', url: '/CsrfProbe/decide', body: body('GET') }).its('body.verified').should('eq', true);
+            cy.request({ method: 'POST', url: '/CsrfProbe/decide', body: body('GET', ['GET']), failOnStatusCode: false }).its('status').should('eq', 500);
         });
     });
 
@@ -137,9 +183,12 @@ describe('CSRF protection', () => {
             const settings = { csrf_allow: 'any', csrf_blocked_origins: 'https://evil.test' };
 
             decide(PASS, cross('https://partner.test'), settings);
-            decide(PASS, { 'Sec-Fetch-Site': 'cross-site' }, settings);
             decide(BLOCKED, cross('https://evil.test'), settings);
             decide(PASS, cross('https://EVIL.test.other'), settings);
+            // Every site may, so an unknown source has nothing to be told apart from
+            decide(PASS, { 'Sec-Fetch-Site': 'cross-site' }, settings);
+            decide(PASS, cross('null'), settings);
+            decide(PASS, { Origin: 'null' }, settings);
         });
 
         it('ignore case and spaces around an entry', () => {
@@ -163,10 +212,10 @@ describe('CSRF protection', () => {
             });
             // A wildcard matches nothing
             decide(CROSS, cross('https://a.partner.test'), { csrf_trusted_origins: 'https://*.partner.test' });
-            // An entry null is taken literally and trusts every Origin: null
-            decide(PASS, cross('null'), { csrf_trusted_origins: 'null' });
+            // An entry null never trusts an Origin: null, an unknown source is decided before the lists
+            decide(CROSS, cross('null'), { csrf_trusted_origins: 'null' });
             // A blocklist of nothing but empty entries counts as empty
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site' }, { ...SAME_SITE, csrf_blocked_origins: ' , ' });
+            decide(PASS, { 'Sec-Fetch-Site': 'same-site', Origin: 'https://www.example.com' }, { ...SAME_SITE, csrf_blocked_origins: ' , ' });
         });
     });
 
@@ -186,9 +235,9 @@ describe('CSRF protection', () => {
             decide(BLOCKED, site('same-site', 'https://bucket.example.com'), settings);
             decide(BLOCKED, { 'Sec-Fetch-Site': 'same-site', Origin: 'https://bucket.example.com' }, settings);
             decide(BLOCKED, { Origin: 'https://bucket.example.com' }, settings);
-            // Origin: null or a missing Origin is not on the list
-            decide(PASS, site('same-site', 'null'), settings);
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site' }, settings);
+            // The bucket hiding its Origin cannot be told apart, so a hidden Origin is rejected
+            decide(CROSS, site('same-site', 'null'), settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site' }, settings);
             decide(PASS, site('same-site', 'https://www.example.com'), settings);
         });
 
@@ -227,8 +276,9 @@ describe('CSRF protection', () => {
             const settings = { ...SAME_SITE, csrf_trusted_origins: 'https://x.com' };
 
             decide(PASS, site('same-site', 'https://www.example.com'), settings);
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site' }, settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site' }, settings);
             decide(PASS, site('cross-site', 'https://x.com'), settings);
+            decide(CROSS, site('cross-site', 'null'), settings);
             decide(CROSS, site('cross-site', 'https://evil.test'), settings);
         });
 
@@ -237,7 +287,9 @@ describe('CSRF protection', () => {
 
             decide(PASS, site('same-site', 'https://www.example.com'), settings);
             decide(BLOCKED, site('same-site', 'https://x.example.com'), settings);
-            decide(PASS, { 'Sec-Fetch-Site': 'same-site' }, settings);
+            // x hiding its Origin with no-referrer does not get past the blocklist
+            decide(CROSS, site('same-site', 'null'), settings);
+            decide(CROSS, { 'Sec-Fetch-Site': 'same-site' }, settings);
         });
 
         it('8. the application on a subdomain, the parent host may', () => {
@@ -281,12 +333,15 @@ describe('CSRF protection', () => {
     describe('the check on real requests', () => {
         const crossSite = { 'Sec-Fetch-Site': 'cross-site', Origin: 'https://evil.test' };
 
-        it('rejects a request from another site, for every method', () => {
-            METHODS.forEach((method) => {
-                send(method, '/CsrfProbe/plain', crossSite).then((res) => {
-                    expect(res.status, method).to.eq(403);
-                    if('HEAD' !== method) expectRejected(res, CROSS);
-                });
+        it('rejects a request from another site, for every checked method', () => {
+            CHECKED_METHODS.forEach((method) => {
+                send(method, '/CsrfProbe/plain', crossSite).then((res) => expectRejected(res, method));
+            });
+        });
+
+        it('passes GET, HEAD and OPTIONS from another site', () => {
+            SAFE_METHODS.forEach((method) => {
+                send(method, '/CsrfProbe/plain', crossSite).its('status').should('eq', 200);
             });
         });
 
@@ -302,18 +357,24 @@ describe('CSRF protection', () => {
             });
         });
 
-        it('rejects a link from another site', () => {
-            send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site', Origin: 'https://evil.test' }).then((res) => expectRejected(res, CROSS));
-            send('GET', '/', { 'Sec-Fetch-Site': 'cross-site' }).its('status').should('eq', 403);
+        it('passes a link from another site', () => {
+            send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site' }).its('status').should('eq', 200);
+            send('GET', '/', { 'Sec-Fetch-Site': 'cross-site' }).its('status').should('eq', 200);
         });
 
         it('passes a request from the same origin', () => {
             send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-origin', Origin: 'http://localhost:8080' }).its('status').should('eq', 200);
         });
 
-        it('passes a browser without Sec-Fetch-Site', () => {
+        it('passes a browser without Sec-Fetch-Site unless it hides its Origin', () => {
             send('POST', '/CsrfProbe/plain', { Origin: 'https://evil.test' }).its('status').should('eq', 200);
-            send('POST', '/CsrfProbe/plain', { Origin: 'null' }).its('status').should('eq', 200);
+            send('POST', '/CsrfProbe/plain', { Origin: 'null' }).then((res) => expectRejected(res, CROSS));
+        });
+
+        it('rejects a form that hides its Origin, unless it comes from the same origin', () => {
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site', Origin: 'null' }).then((res) => expectRejected(res, CROSS));
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }).then((res) => expectRejected(res, CROSS));
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-origin', Origin: 'null' }).its('status').should('eq', 200);
         });
 
         it('checks an explicit route', () => {
@@ -322,19 +383,22 @@ describe('CSRF protection', () => {
         });
 
         it('checks the framework routes', () => {
-            send('GET', '/_zubzet/health', crossSite).then((res) => expectRejected(res, CROSS));
-            send('GET', '/_zubzet/health').its('status').should('eq', 200);
+            send('POST', '/_zubzet/health', crossSite).then((res) => expectRejected(res, CROSS));
+            send('GET', '/_zubzet/health', crossSite).its('status').should('eq', 200);
             send('POST', '/_zubzet/profile/clear-sessions', crossSite).then((res) => expectRejected(res, CROSS));
         });
 
         it('rejects before a missing page answers 404', () => {
-            send('GET', '/CsrfProbe/missing-action-and-page', crossSite).then((res) => expectRejected(res, CROSS));
-            send('GET', '/NoSuchControllerAnywhere', crossSite).then((res) => expectRejected(res, CROSS));
-            send('GET', '/NoSuchControllerAnywhere', { 'Sec-Fetch-Site': 'none' }).its('status').should('eq', 404);
+            send('POST', '/CsrfProbe/missing-action-and-page', crossSite).then((res) => expectRejected(res, CROSS));
+            send('POST', '/NoSuchControllerAnywhere', crossSite).then((res) => expectRejected(res, CROSS));
+            send('POST', '/NoSuchControllerAnywhere', { 'Sec-Fetch-Site': 'none' }).its('status').should('eq', 404);
         });
 
         it('rejects before checkPermission() shows the login', () => {
-            send('GET', '/CsrfProbe/guarded', crossSite).then((res) => expectRejected(res, CROSS));
+            send('POST', '/CsrfProbe/guarded', crossSite).then((res) => {
+                expectRejected(res, CROSS);
+                expect(res.body).not.to.include('data-test="btn-login"');
+            });
             send('GET', '/CsrfProbe/guarded', { 'Sec-Fetch-Site': 'same-origin' }).then((res) => {
                 expect(res.status).to.eq(200);
                 expect(res.body).to.include('data-test="btn-login"');
@@ -346,12 +410,69 @@ describe('CSRF protection', () => {
                 expect(res.status).to.eq(200);
                 expect(res.body).to.include('"success"');
             });
-            send('GET', '/CsrfProbe/reroute', crossSite).then((res) => expectRejected(res, CROSS));
+            send('POST', '/CsrfProbe/reroute', crossSite).then((res) => expectRejected(res, CROSS));
+        });
+
+        it('checks an action that opts GET back in, by default only GET', () => {
+            send('GET', '/CsrfProbe/optIn', crossSite).then((res) => expectRejected(res, CROSS));
+            send('GET', '/CsrfProbe/optIn', { 'Sec-Fetch-Site': 'same-site' }).then((res) => expectRejected(res, CROSS));
+            send('HEAD', '/CsrfProbe/optIn', crossSite).its('status').should('eq', 200);
+            send('OPTIONS', '/CsrfProbe/optIn', crossSite).its('status').should('eq', 200);
+            send('POST', '/CsrfProbe/optIn', crossSite).then((res) => expectRejected(res, CROSS));
+            send('GET', '/CsrfProbe/optIn', { 'Sec-Fetch-Site': 'same-origin' }).its('status').should('eq', 200);
+            send('GET', '/CsrfProbe/optIn', { 'Sec-Fetch-Site': 'none' }).its('status').should('eq', 200);
+            send('GET', '/CsrfProbe/optIn').its('status').should('eq', 200);
+        });
+
+        it('checks the methods an action opts back in, written in any case', () => {
+            send('GET', '/CsrfProbe/optInHead', crossSite).then((res) => expectRejected(res, CROSS));
+            send('HEAD', '/CsrfProbe/optInHead', crossSite).then((res) => expectRejected(res, CROSS));
+            send('OPTIONS', '/CsrfProbe/optInHead', crossSite).its('status').should('eq', 200);
+            send('HEAD', '/CsrfProbe/optInHead', { 'Sec-Fetch-Site': 'same-origin' }).its('status').should('eq', 200);
         });
 
         it('passes pages a browser loads itself', () => {
             cy.visit('/CsrfProbe/plain');
             cy.contains('success');
+        });
+    });
+
+    // The framework's logout is a GET that changes state, so it opts GET and HEAD back in
+    describe('the logout', () => {
+        // A fresh session per case, so the fixture tokens of the other specs stay valid
+        function login() {
+            cy.fixture('logins.json').then(({ customer }) => {
+                cy.request({ method: 'POST', url: '/login', form: true, body: { name: customer.name, password: customer.password } });
+            });
+        }
+
+        // The customer lacks admin.panel: logged in sees the 403 page, a guest the login
+        function expectLoggedIn(loggedIn) {
+            send('GET', '/CsrfProbe/guarded').its('body').should('include', loggedIn ? 'Page not for you' : 'data-test="btn-login"');
+        }
+
+        it('logs out from the own pages, a typed URL and without a browser', () => {
+            [{ 'Sec-Fetch-Site': 'same-origin' }, { 'Sec-Fetch-Site': 'none' }, {}].forEach((headers) => {
+                login();
+                expectLoggedIn(true);
+                send('GET', '/login/logout', headers);
+                expectLoggedIn(false);
+            });
+        });
+
+        it('rejects a logout from another site or subdomain, by GET and by HEAD', () => {
+            login();
+            [
+                { 'Sec-Fetch-Site': 'cross-site' },
+                { 'Sec-Fetch-Site': 'same-site' },
+                // A subdomain with no-referrer
+                { 'Sec-Fetch-Site': 'same-site', Origin: 'null' },
+            ].forEach((headers) => {
+                ['GET', 'HEAD'].forEach((method) => {
+                    send(method, '/login/logout', headers).then((res) => expectRejected(res, `${method} ${JSON.stringify(headers)}`));
+                });
+            });
+            expectLoggedIn(true);
         });
     });
 
@@ -373,24 +494,40 @@ describe('CSRF protection', () => {
             preflight('https://partner.test').its('status').should('eq', 200);
             send('PUT', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site', Origin: 'https://partner.test' }).its('status').should('eq', 200);
             send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site', Origin: 'https://partner.test' }).its('status').should('eq', 200);
-            preflight('https://other.test').then((res) => expectRejected(res, CROSS));
+            // The preflight is an OPTIONS and passes, the request it announces is checked
+            preflight('https://other.test').its('status').should('eq', 200);
+            send('PUT', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site', Origin: 'https://other.test' }).then((res) => expectRejected(res, CROSS));
         });
 
-        it('passes a sibling subdomain under same-site until something is blocked', () => {
+        it('passes a sibling subdomain under same-site until it is blocked', () => {
             cy.setConfigSetting('csrf_allow', 'same-site');
-            send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site' }).its('status').should('eq', 200);
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site', Origin: 'http://bucket.localhost:8080' }).its('status').should('eq', 200);
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }).then((res) => expectRejected(res, CROSS));
 
             cy.setConfigSetting('csrf_blocked_origins', 'http://bucket.localhost:8080');
-            send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site' }).its('status').should('eq', 200);
             send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site', Origin: 'http://bucket.localhost:8080' }).then((res) => expectRejected(res, BLOCKED));
+            // The bucket hiding its Origin does not get past the blocklist
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }).then((res) => expectRejected(res, BLOCKED));
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site' }).then((res) => expectRejected(res, BLOCKED));
+            // Its links still pass
+            send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site' }).its('status').should('eq', 200);
             send('POST', '/CsrfProbe/plain', { Origin: 'http://bucket.localhost:8080' }).then((res) => expectRejected(res, BLOCKED));
             send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site', Origin: 'http://www.localhost:8080' }).its('status').should('eq', 200);
         });
 
-        it('throws for an unknown csrf_allow, but only for a request that carries a browser header', () => {
+        it('throws for an unknown csrf_allow, but only for a checked request that carries a browser header', () => {
             cy.setConfigSetting('csrf_allow', 'same_site');
-            send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site' }).its('status').should('eq', 500);
-            send('GET', '/CsrfProbe/plain').its('status').should('eq', 200);
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site' }).its('status').should('eq', 500);
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site', Origin: 'null' }).its('status').should('eq', 500);
+            send('POST', '/CsrfProbe/plain').its('status').should('eq', 200);
+            send('GET', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'same-site' }).its('status').should('eq', 200);
+        });
+
+        it('passes every site under any, a hidden Origin included', () => {
+            cy.setConfigSetting('csrf_allow', 'any');
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site', Origin: 'https://evil.test' }).its('status').should('eq', 200);
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site', Origin: 'null' }).its('status').should('eq', 200);
+            send('POST', '/CsrfProbe/plain', { 'Sec-Fetch-Site': 'cross-site' }).its('status').should('eq', 200);
         });
     });
 });
