@@ -168,12 +168,12 @@ directory="${directory:-.}"
 # any Composer constraint or branch (dev-develop), or "latest" for the newest stable release.
 # The docs deploy replaces the default with the version these docs belong to, so the script of a
 # release installs that release.
-default_version="dev-develop"
+default_version="latest"
 if [ $# -ge 2 ]; then
     version="$2"
 else
     question="${bold}Which version would you like to install?${reset}"
-    echo "${green}?${reset} $question ${dim}(leave empty for $default_version, or enter latest)${reset}"
+    echo "${green}?${reset} $question ${dim}(leave empty for $default_version, or enter a constraint like ^1.3 or dev-develop)${reset}"
     read -r -p "> " version
 
     if [ -t 0 ] && [ -t 1 ]; then
