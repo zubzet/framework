@@ -7,7 +7,7 @@
 // view (Views/response_probe/ced.php) builds the matching Z.Forms.createCED
 // widget; the back-end action is ResponseController::action_cedForm.
 
-const postCedForm = (items) => cy.zRequest({
+const postCedForm = (items) => cy.request({
     method: 'POST',
     url: '/Response/cedForm',
     form: true,
@@ -183,7 +183,7 @@ describe('Form CED (validateCED + doCED)', () => {
         // No "items" key at all -> validateCED sets doNothing=true, doCED
         // returns immediately without iterating $_POST.
         it('omitting the CED key entirely is a no-op (doNothing branch)', () => {
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/Response/cedForm',
                 form: true,

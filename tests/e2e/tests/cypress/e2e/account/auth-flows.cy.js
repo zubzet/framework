@@ -69,7 +69,7 @@ describe('Auth flows', () => {
         it('writes a reset code, sends an email, and returns success JSON', () => {
             clearMailhog();
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -103,7 +103,7 @@ describe('Auth flows', () => {
         it('translates the password reset email into the active locale', () => {
             clearMailhog();
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -123,7 +123,7 @@ describe('Auth flows', () => {
             clearMailhog();
 
             // A guest browser asking in English must not override the recipient's locale
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -142,7 +142,7 @@ describe('Auth flows', () => {
         });
 
         it('returns "error" JSON for an unknown email but still 200', () => {
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -163,7 +163,7 @@ describe('Auth flows', () => {
     describe('action_reset', () => {
         it('consumes a reset code, updates the password, and disables the code', () => {
             // Step 1: kick off forgot-password to create a reset code for user 602.
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/login/forgot-password/check',
                 form: true,
@@ -182,7 +182,7 @@ describe('Auth flows', () => {
                 });
 
                 // Step 4: POST the new password.
-                cy.zRequest({
+                cy.request({
                     method: 'POST',
                     url: `/login/reset/${code}/`,
                     form: true,
@@ -240,7 +240,7 @@ describe('Auth flows', () => {
         it('resend path: POSTing email re-issues a verify token and renders the wait page', () => {
             clearMailhog();
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/login/verify',
                 form: true,
@@ -274,13 +274,12 @@ describe('Auth flows', () => {
             cy.setConfigSetting('maxLoginTriesPerTimespan', '2');
             clearMailhog();
 
-            const submit = (password) => cy.zRequest({
+            const submit = (password) => cy.request({
                 method: 'POST',
                 url: '/login',
                 form: true,
                 failOnStatusCode: false,
                 body: {
-                    action: 'login',
                     name: 'auth_ratelimit@cypress.test',
                     password,
                 },

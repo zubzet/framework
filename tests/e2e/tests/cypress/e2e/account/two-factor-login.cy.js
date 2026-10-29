@@ -12,7 +12,7 @@ describe('Two factor login', () => {
         probe(`/TwoFactorProbe/code/${userId}?offset=${offset}`).then((out) => out.code);
 
     function login(name, password = PASSWORD) {
-        return cy.zRequest({
+        return cy.request({
             method: 'POST',
             url: '/login',
             form: true,
@@ -22,13 +22,12 @@ describe('Two factor login', () => {
     }
 
     function redeem(body) {
-        return cy.zRequest({
+        return cy.request({
             method: 'POST',
             url: '/_zubzet/two-factor/login',
             form: true,
             failOnStatusCode: false,
-            // The action Z.js sends along
-            body: { action: 'two-factor-login', ...body },
+            body,
         }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
     }
 
