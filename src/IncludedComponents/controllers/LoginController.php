@@ -119,6 +119,11 @@
          * @param Response $res The response object
          */
         public function action_logout($req, Response $res) {
+            // Logout is a GET action, but still state-changing, so it needs
+            // CSRF protection too despite GET normally being exempt as safe.
+            // HEAD runs the same action and a page can send it with cookies
+            $req->csrfBlockAdditionalMethod("GET", "HEAD");
+
             return $res->logout();
         }
 
