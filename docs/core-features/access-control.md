@@ -807,7 +807,7 @@ other: PHP would not allow the narrower signature on a subclass.
 $key = APIKey::add($user, name: "Deployment pipeline");
 $key->setCanExpire(false); // from CanUseSession, like setName() and extend()
 
-$key->token(); // the value the client sends as its z_login_token
+$key->token(); // the plain value the client sends as its z_login_token, only after add()
 
 APIKey::byUser($user);  // the user's api keys
 Session::byUser($user); // the user's logins
@@ -980,10 +980,16 @@ A session remembers when it last passed a [two factor](two-factor-authentication
     $session->uuid(): string
     ```
 
-* Returns the session token string. Issued tokens are a `zub-` prefix plus 32 random bytes in hex, 68 characters in total. Tokens issued before this format keep working, so do not validate one by its length.
+* Returns the plain session token, the value the client sends. Issued tokens are `zub-sha256-` plus 64 hex characters, 75 in total, and `z_logintoken.token` stores only `zub-sha256-` plus the SHA-256 of the plain value. The plain value exists only on an object created by `add()` or `byToken()`; on one loaded by `byId()`, `byUuid()`, `byUser()` or `all()` it is `null`. Tokens issued before this format stay in plain text and keep working, so do not validate one by its length.
 
     ```php
-    $session->token(): string
+    $session->token(): ?string
+    ```
+
+* Returns the value stored in `z_logintoken.token`: the hash for a session issued in the new format, the plain token for an older one. Use it, or `"zub-sha256-" . hash("sha256", $token)`, when comparing in your own SQL.
+
+    ```php
+    $session->storedToken(): string
     ```
 
 * Returns the ID of the user who owns the session.
