@@ -168,7 +168,8 @@
 
         /**
          * Tries to reroute the request using FastRoute first, if the route does not exist,
-         * it falls back to the ZubZet framework.
+         * it falls back to the ZubZet framework. It replaces the current request state (path and args)
+         * via replaceRequest, executes the new route and then returns to the caller, which keeps running.
          *
          * @param array $parts The parts of the new route. Example: ["auth", "login"]
          */
@@ -189,6 +190,8 @@
 
         /**
         * Executes an action for a specified path
+        * Maps [<name>, <action>] to <Name>Controller::action_<action> (defaultIndex controller / action_index when missing),
+        * overwrites request()->urlParts and dies once more than $maxReroutes calls were made. Returns nothing.
         * @param array $parts Example: ["auth", "login"]
         */
         public function executePath($parts) {

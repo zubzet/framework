@@ -31,7 +31,7 @@
         /**
          * Get a file by it's fileId
          * @param int $fileId The file id
-         * @return string[] The id of the created dataset
+         * @return array|null The z_file row as associative array, or null when not found
          */
         function getById($fileId) {
             $sql = "SELECT * FROM `z_file` WHERE `id`=? LIMIT 1";

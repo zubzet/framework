@@ -14,8 +14,10 @@
         /**
          * Makes food edible for input selects
          * @param array $table Database table result
-         * @param string $valueField Row that is used as value
-         * @param string $textField Row that is shown to the client as text
+         * @param string $valueField Column key that is used as value
+         * @param string $textField Column key that is shown to the client as text
+         * @param string|null $optionalTextField Column key appended to the text with a space
+         * @return string JSON-encoded list of value/text pairs
          */
         public function makeFood($table, $valueField, $textField, $optionalTextField = null) {
             $food = [];
@@ -35,6 +37,8 @@
          * Makes food edible for CED fields
          * @param array $table Table
          * @param array $fields Fields of the array to get to the client
+         * @param callable|null $escape Optional callable($value, $field) returning the escaped value; without it values are output unescaped
+         * @return string JS array literal (not valid JSON, trailing commas) with one object per row; every row needs an 'id' (output as 'dbId')
          */
         public function makeCEDFood($table, $fields, $escape = null) {
             $str = "[";

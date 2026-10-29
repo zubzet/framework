@@ -250,7 +250,7 @@ Fields can now be added to the form. For example, to include a text input field 
     - `name`: Identifies the field for backend processing.
     - `type`: Determines the input type (e.g., text, number, password, or date).
     - `text`: Displays a label for the field above the input.
-    - `required`: Specifies whether the field must be filled before submission.
+    - `required`: Marks the field with a red asterisk in its label. It performs no client-side validation, so enforce it on the server with `->required()`.
 
     There are additional attributes available to customize your fields. You can find the full list [here](../forms/auto-form-validation.md)
 

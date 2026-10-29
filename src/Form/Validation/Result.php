@@ -20,7 +20,7 @@
         public $hasErrors;
 
         /**
-         * @var object[] $errors Holds the errors of the validation
+         * @var array[] $errors Holds the errors of the validation, each as an array with name, type and optionally info
          */
         public $errors;
 
@@ -30,7 +30,7 @@
         public $fields;
 
          /**
-         * @var string $name Holds the name of a form result. Used for CED forms
+         * @var string|null $name Holds the name of a form result. Used for CED forms; uninitialized unless set by validateCED()
          */
         public ?string $name;
 
@@ -47,6 +47,7 @@
         /**
          * Gets a validated input value
          * @param string $name Name of the field to get the value from
+         * @return mixed The validated value (rule-cast, array for multi-select), or null when the field is unknown or its input was empty
          */
         function getValue($name) {
             foreach ($this->fields as $field) {
@@ -56,9 +57,9 @@
         }
 
         /**
-         * Adds a custom error to the form result
+         * Adds a custom error to the form result and sets hasErrors to true
          * @param string $name Name of the form field to assign the error to
-         * @param string $type Type of the error. Influences the error message
+         * @param string $type Type of the error, e.g. filter, unique, required or in. Z.js maps it to the message Z.Lang["error_" . $type]
          */
          function addCustomError($name, $type) {
             $this->errors[] = ["name" => $name, "type" => $type];

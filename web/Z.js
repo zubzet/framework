@@ -12,13 +12,14 @@
  */
 
 /**
- * @type {object} Z
  * Namespace object for Z.js
+ *
+ * @namespace Z
  */
 Z = {
 
   /**
-   * Debug mode
+   * Currently unused, ZForm has its own debug flag
    */
   debug: false,
 
@@ -28,11 +29,18 @@ Z = {
   Forms: {
     /**
      * Creates a form object and returns it.
-     * @param {*} options Options object
-     * @param {boolean} options.doReload Should the form reload after submit? This is automatically set to true when using a CED in the form
-     * @param {string} options.dom Id of a dom element to append this form automatically to
-     * @param {saveHook} options.saveHook Function that is called after saving. It is only called after a success and not when validation errors occur
-     * @param {formErrorHook} options.formErrorHook Function that gets called only on formErrors
+     * @param {object} [options] Options object
+     * @param {boolean} [options.doReload] Should the form reload after submit? This is automatically set to true when using a CED in the form
+     * @param {string} [options.dom] Id of a dom element to append this form automatically to
+     * @param {string} [options.name] Action name sent to the backend. Falls back to `dom` when omitted.
+     * @param {saveHook} [options.saveHook] Function that is called after saving. It is only called after a success and not when validation errors occur
+     * @param {formErrorHook} [options.formErrorHook] Function that gets called only on formErrors
+     * @param {boolean} [options.hidehints=false] Suppress the inline hint banner (saved / unsaved / error).
+     * @param {boolean} [options.sendOnSubmitClick=true] If `false`, the submit button no longer calls `send()`; the caller triggers submission.
+     * @param {string} [options.customEndpoint] Override the URL `send()` posts to. Defaults to the current action.
+     * @param {boolean} [options.collectOnly=false] Client-only mode: the submit button hands `getValues()` to `saveHook` instead of posting.
+     * @param {function} [options.inputHook] Called with `getValues()` on every field change.
+     * @returns {ZForm} The new form instance
      */
     create(options) { return new ZForm(options); },
   },
@@ -76,8 +84,8 @@ Z = {
     /**
      * Triggers a subaction on the current action from which this view was launched
      * @param {string} action Name of the subaction. Can be checked in the backend with $req->isAction("blub")
-     * @param {object} data Data to send to the client. It will be passed as post data
-     * @param {function} handler Handler that gets called when the request was successful
+     * @param {object} data Data POSTed to the server. The object is mutated (action is added)
+     * @param {function} handler Called with the parsed JSON, only if the response parses as JSON
      */
     action(action, data, handler) {
       $.ajax({
@@ -100,9 +108,13 @@ Z = {
     },
     /**
      * Triggers a subaction on any action of any controller. Simply put the path in as action. For example: "login/logout". URL parameters can be attached here too.
-     * @param {string} action Name of the subaction. Can be checked in the backend with $req->isAction("blub")
+     * @param {string} action URL path relative to the page root, e.g. "login/logout"
+     * @param {string} subaction Name of the subaction. Can be checked in the backend with $req->isAction("blub")
      * @param {object} data Data to send to the client. It will be passed as post data
-     * @param {function} handler Handler that gets called when the request was successful
+     * @param {function} [handler=null] Called with the parsed response on success, or the raw response when `parse` is false or parsing fails. Effectively required: without it the call throws a TypeError after the response arrives.
+     * @param {boolean} [async=true] Whether the request is asynchronous (false blocks until it finishes)
+     * @param {boolean} [parse=true] Whether a string response is JSON-parsed (and the two-factor renewal handled) before it reaches the handler
+     * @param {object} [additionalParameters={}] Extra jQuery.ajax options merged into the request; `headers` are extended with the CSRF token, not replaced
      */
     root(action, subaction, data, handler = null, async = true, parse = true, additionalParameters = {}) {
       $.ajax({
@@ -172,7 +184,7 @@ Z = {
     CEDRemove: "✕"
   },
   /**
-   * Holds some presets to create fix effects
+   * Ready-made login, signup, forgot-password and two factor flows that talk to the login controller and the _zubzet/two-factor routes
    */
   Presets: {
     /**
@@ -328,11 +340,11 @@ Z = {
       });
     },
     /**
-     * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
+     * Login preset. Posts the entered name and password to login/login, shows errors in the error label and continues with the two-factor step if required.
      * @param {string} nameElementId ID of the dom element for the name/email input
      * @param {string} passwordElementId ID of the dom element for password input
      * @param {string} errorLabelId ID of the dom element to show errors in
-     * @param {string} redirect URL to redirect after a successful login
+     * @param {string} [redirect=""] URL to redirect to after a successful login, reloads the page if empty
      */
     Login(nameElementId, passwordElementId, errorLabelId, redirect = "") {
       var eName = document.getElementById(nameElementId);
@@ -380,10 +392,10 @@ Z = {
       });
     },
     /**
-     * Login preset. Can be used to create a user login. Call it on every try for example on tge submit button press
+     * Forgot-password preset. Posts a password-reset request for the entered username or email to login/forgot_password.
      * @param {string} unameemailElementId ID of the dom element for the name/email input
      * @param {string} errorLabel ID of the dom element to show errors in
-     * @param {string} redirect URL to redirect after a successful login
+     * @param {string} [redirect=""] URL to redirect to after a successful request, reloads the page if empty
      */
     ForgotPassword(unameemailElementId, errorLabel, redirect = "") {
       var eUnameemail = document.getElementById(unameemailElementId);
@@ -417,9 +429,9 @@ Z = {
      * @param {string} passwordElementId ID of the DOM input for the password
      * @param {string} passwordConfirmElementId ID of the DOM input for repeating the password
      * @param {string} errorLabelId ID if the DOM element to show errors in
-     * @param {string} redirect URL to redirect to after a successful signup
-     * @param {boolean} alertErrors If true, errors will be shown in an alert instead of the error label.
-     * @param {object} additionalData Additional data to send to the server. Used to change the signup role
+     * @param {string} [redirect=""] URL to redirect to after a successful signup
+     * @param {boolean} [alertErrors=false] If true, errors are also shown in an alert; server errors always go to the error label, a password mismatch only to the alert.
+     * @param {object} [additionalData={}] Additional data to send to the server. Used to change the signup role
      */
     Signup(nameElementId, passwordElementId, passwordConfirmElementId, errorLabelId, redirect = "", alertErrors = false, additionalData = {}) {
       var eName = document.getElementById(nameElementId);
@@ -487,7 +499,10 @@ var zInputIndex = 0;
  * InvalidError is an error that holds data about field failed to validate and mark them. This object usally comes as literal from the backend.
  * @typedef {object} InvalidError
  * @property {string} type The type of the error. This specifies what message to show
- * @property {string[]} info Array of strings that will be inserted in the placeholders ([0], [1]...)
+ * @property {string} [name] Name of the form field the error belongs to (read by ZForm.send)
+ * @property {number} [index] Index of the CED item (read by ZCED)
+ * @property {string} [subname] Name of the field inside the CED item (read by ZCED and ZCEDItem)
+ * @property {string[]} [info] Array of strings that will be inserted in the placeholders ([0], [1]...)
  */
 
 /**
@@ -495,25 +510,28 @@ var zInputIndex = 0;
  * @typedef {object} CEDBlueprint
  * @property {string} name Name of the field for post data
  * @property {string} text Text for the label
- * @property {array} value Default value. Can be generated in php with createCEDFood
- * @property {Array} fields Array of options for creating fields. These fields will be inserted in all CED items
- * @property {boolean} compact Uses the compact mode if set to true
+ * @property {Object[]} [value] Default value. Can be generated in php with Controller::makeCEDFood
+ * @property {FormFieldOptions[]} fields Array of options for creating fields. These fields will be inserted in all CED items
+ * @property {boolean} [compact] Uses the compact mode if set to true
+ * @property {boolean} [smallButton] Makes the remove button small
+ * @property {function(ZCEDItem): void} [deleteHook] Called with the item when its remove button is clicked
  */
 
 /**
- * Class that handles CED items
+ * Create/edit/delete list: renders a repeatable group of sub-fields (one ZCEDItem per row) inside a ZForm.
  */
 class ZCED { //Create, edit, delete
 
   /**
    * Creates a ZCED instance
-   * @param {CEDBlueprint} blueprint Options object for the CED
+   * @param {CEDBlueprint} [blueprint={}] Options object for the CED
    * @param {string} blueprint.name Name of the field for post data
    * @param {string} blueprint.text Text for the label
-   * @param {array} blueprint.value Default value. Can be generated in php with createCEDFood
+   * @param {array} blueprint.value Default value. Can be generated in php with Controller::makeCEDFood
    * @param {Array} blueprint.fields Array of options for creating fields. These fields will be inserted in all CED items
    * @param {boolean} blueprint.compact Uses the compact mode if set to true
    * @param {boolean} blueprint.smallButton Makes the remove button small
+   * @param {function(ZCEDItem): void} [blueprint.deleteHook] Called with the item when its remove button is clicked
    */
   constructor(blueprint = {}) {
     this.blueprint = blueprint;
@@ -591,8 +609,8 @@ class ZCED { //Create, edit, delete
   }
 
   /**
-   * Creates and adds an item with default values to this CED.
-   * @returns {void}
+   * Creates and adds an item with default values to this CED and emits "change".
+   * @returns {ZCEDItem} The newly created item
    */
   createItem() {
     var item = new ZCEDItem(this.blueprint);
@@ -602,8 +620,8 @@ class ZCED { //Create, edit, delete
   }
 
   /**
-   * Adds an already existing item to this CED
-   * @param {CEDItem} item 
+   * Adds an already existing item to this CED, sets item.ced to this CED and appends item.dom to its item container.
+   * @param {ZCEDItem} item The item to add
    * @returns {void}
    */
   addItem(item) {
@@ -615,8 +633,8 @@ class ZCED { //Create, edit, delete
 
   /**
    * Adds an event listener to this object.
-   * @param {String} type Type of the event
-   * @param {Function} handler Function that is called when the event occours
+   * @param {String} type Type of the event. Only "change" is ever emitted (on createItem, item removal and item field input).
+   * @param {Function} handler Function that is called when the event occours. It is called without arguments.
    * @returns {void}
    */
   on(type, handler) {
@@ -627,7 +645,7 @@ class ZCED { //Create, edit, delete
   /**
    * Emits an event. The implementation is very simple and does not support any event args.
    * 
-   * This should only be called privatly.
+   * Internal: only called by ZCED and ZCEDItem to fire "change".
    * @param {String} type Type of the event
    * @returns {void}
    */
@@ -684,7 +702,7 @@ class ZCED { //Create, edit, delete
 }
 
 /**
- * Class for an item in the CED
+ * One repeatable row/card of sub-fields in a CED, with a remove button and a dbId (-1 until saved) that marks it as created, edited or deleted on submit
  */
 class ZCEDItem {
 
@@ -790,7 +808,7 @@ class ZCEDItem {
    * @param {FormData} data Already existing FormData object
    * @param {string} name The name of the CED
    * @param {number} index Index of this item
-   * @returns {string} The data containing string
+   * @returns {boolean} True when the item was appended, false when skipped (deleted, never saved)
    */
   getFormData(data, name, index) {
     var key = name + "[" + index + "]";
@@ -839,8 +857,8 @@ class ZCEDItem {
   }
 
   /**
-   * Value
-   * @type {object}
+   * Write-only setter: takes {fieldName: value} plus an optional dbId; throws a TypeError for unknown field names
+   * @type {Object<string, *>}
    */
   set value(value) {
     for (var k in value) {
@@ -885,13 +903,15 @@ class ZCEDItem {
 }
 
 /**
+ * Called after a successful save, or on submit with `collectOnly`.
  * @callback saveHook
- * @param {object} data Data that comes back from the server after submiting.
+ * @param {object} data Parsed server response after a successful save, or the form's `getValues()` result when `collectOnly` is set.
  */
 
  /**
+ * Called when a save fails with `formErrors`, after the affected fields are already marked invalid.
  * @callback formErrorHook
- * @param {object} data Data that comes back from the server after submiting.
+ * @param {object} data Parsed server response with `result: "formErrors"` and the `formErrors` array.
  */
 
 /**
@@ -901,15 +921,15 @@ class ZForm {
 
   /**
    * Creates a ZForm instance
-   * @param {object} options Options
-   * @param {boolean} [options.doReload] Should the form reload after submit? This is automatically set to true when using a CED in the form
+   * @param {object} [options] Options
+   * @param {boolean} [options.doReload] Should the form reload after submit? This is automatically set to true when using a CED in the form. Omitting `options` entirely gives `true`, but any passed object without `doReload` gives `false`.
    * @param {string} [options.dom] Id of a dom element to append this form automatically to
    * @param {string} [options.name] Action name sent to the backend. Falls back to `dom` when omitted.
    * @param {saveHook} [options.saveHook] Function that is called after saving. It is only called after a success and not when validation errors occour
    * @param {formErrorHook} [options.formErrorHook] Function that is only called on form errors
    * @param {boolean} [options.hidehints] Suppress the inline hint banner (saved / unsaved / error). Defaults to `false` (hints are shown).
    * @param {boolean} [options.sendOnSubmitClick] If `false`, the built-in submit button no longer calls `send()` automatically — the caller is responsible for triggering submission. Defaults to `true`.
-   * @param {string} [options.customEndpoint] Override the URL `send()` posts to. By default the form posts back to the current action.
+   * @param {string} [options.customEndpoint] URL the built-in submit button passes to `send()`. Calling `send()` directly ignores it (pass the URL to `send()` instead). By default the form posts back to the current action.
    * @param {boolean} [options.collectOnly] Client-only mode: the submit button never posts to the backend. Instead it hands the collected values (`getValues()`) to `saveHook`. Defaults to `false`.
    * @param {function} [options.inputHook] Called with `getValues()` on every field change (typing, selecting, etc). Lets the form be consumed live without a submit.
    */
@@ -989,6 +1009,7 @@ class ZForm {
 
   /**
    * Returns a application/x-www-form-urlencoded string to use in requests.
+   * Also clears the error state of every field (markValid()) and adds the isFormData marker the backend checks.
    * @returns {string} The string with the data
    */
   getPostString() {
@@ -1003,6 +1024,7 @@ class ZForm {
 
   /**
    * Returns a FormData object containg data for Post requests.
+   * Also clears the error state of every field (markValid()) and adds the isFormData marker the backend checks.
    * @returns {FormData} object holding the data
    */
   getFormData() {
@@ -1040,9 +1062,10 @@ class ZForm {
    * value; keys matching no field are kept in `this.meta` (client-only,
    * never submitted) so values like an id can ride along. CED keys are
    * skipped.
-   * @param {{[fieldName: string]: any}} data
-   * @param {Object} options
-   * @param {boolean} [options.resetUnknown] Reset fields which values are not in data?
+   * @param {{[fieldName: string]: any}} data Values keyed by field name; unmatched keys go to `this.meta`.
+   * @param {Object} [options={}]
+   * @param {boolean} [options.resetUnknown=false] Reset all fields (not `meta`) before applying data, so fields absent from data end up cleared.
+   * @returns {void}
    */
   setValues(data, options = {}) {
     if (options.resetUnknown) {
@@ -1063,6 +1086,7 @@ class ZForm {
   /**
    * Adds custom html to the current part of the Form. Breaks the current
    * row so any field added afterwards starts on a fresh row below.
+   * @param {string} html Markup placed unescaped as innerHTML of its own div.
    * @returns {void}
    */
   addCustomHTML(html) {
@@ -1075,7 +1099,8 @@ class ZForm {
   }
 
   /**
-   * Gathers the information automatically from the form and submits them. This function will reload the page if doReload is true and the submit was a success.
+   * Gathers the information automatically from the form and submits them. This function will reload the page if doReload is true and the submit was a success. Calls are ignored while a send is in progress or within 300 ms of the last one, and the form is disabled until the request finishes.
+   * @param {string|null} [customUrl=null] URL to post to instead of the current action.
    * @returns {void}
    */
   send(customUrl = null) {
@@ -1148,7 +1173,7 @@ class ZForm {
   }
 
   /**
-   * Adds an already existing field to the form
+   * Adds an already existing field to the form. A CED sets doReload; input/change listeners show the unsaved hint and call inputHook; needs the global bsCustomFileInput.
    * @param {(ZFormField|ZCED)} field Field to add
    * @returns {void}
    */
@@ -1237,27 +1262,7 @@ class ZForm {
 
   /**
    * Creates and adds a ZFormField to the form
-   * @param {object} options Options for the new field
-   * @param {string} [options.name] Name to use in the request
-   * @param {InputType} [options.type] Type of the field
-   * @param {string} [options.text] Text to show in the label
-   * @param {boolean} [options.required] Sets if this field is required to be filled in
-   * @param {string} [options.hint] Small text to show under the input. For example: "We do not share you email" or something.
-   * @param {string} [options.placeholder] Placeholder to show in the input when nothing is entered
-   * @param {any} [options.default] Default value
-   * @param {any} [options.value] Initial value of the input. For `type: "button"` this is the button label.
-   * @param {boolean} [options.autofill] Enable browser-level autofill for this field.
-   * @param {FieldWidth} [options.width] Width of the field in units (1-12, bootstrap grid)
-   * @param {object} [options.attributes] List of attributes to apply to the input element. Keys are attribute names, values are attribute values.
-   * @param {Food} [options.food] Food for selects or autocompletes
-   * @param {boolean} [options.compact] Sets the compact mode. In compact mode, the label is hidden.
-   * @param {string} [options.prepend] Content to put in front of the input. Units are usually put there.
-   * @param {string} [options.style] Bootstrap button class (e.g. `"btn-primary"`, `"btn-danger"`). Only applies when `type` is `"button"`. Defaults to `"btn-primary"`.
-   * @param {string} [options.customFileInputText] Placeholder text shown on a `type: "file"` input before a file is chosen. Defaults to `Z.Lang.choose_file`.
-   * @param {Food[]|string} [options.autocompleteData] Static list of options for `type: "autocomplete"`, or a backend path string the field queries via `Z.Request.root` for dynamic suggestions.
-   * @param {number} [options.autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
-   * @param {function} [options.autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
-   * @param {function} [options.autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
+   * @param {FormFieldOptions} options Options for the new field
    * @returns {ZFormField} The newly created field
    */
   createField(options) {
@@ -1267,8 +1272,9 @@ class ZForm {
   }
 
   /**
-   * Adds an empty space to the form just as spacer.
-   * @param {FieldWidth} size Size of the field
+   * Adds an empty space to the form just as spacer. Breaks the current row
+   * so any field added afterwards starts on a fresh row.
+   * @param {FieldWidth} [size=12] Size of the field
    * @returns {void}
    */
   createEmpty(size = 12) {
@@ -1319,7 +1325,8 @@ class ZForm {
    * Adds an button to the bottom of the form next to the submit button
    * @param {string} text Content of the button
    * @param {string} style Class for the button. Bootstrap classes like btn-primary or btn-secondary can be used here
-   * @param {Function} action Function that is called when the button is clicked
+   * @param {Function} action Click handler, called with the click event; the button is appended to the end of the form, so after the submit button
+   * @returns {HTMLButtonElement} The created button
    */
   createActionButton(text, style, action) {
     var button = document.createElement("button");
@@ -1348,8 +1355,9 @@ class ZForm {
   }
 
   /**
-   * Clears all field values.
-   * Does not remove all fields!
+   * Resets every field to its default (or clears it if none is set).
+   * Does not remove fields, and leaves CED fields and meta untouched.
+   * @returns {void}
    */
   reset() {
     for (const field of Object.values(this.fields)) {
@@ -1358,7 +1366,7 @@ class ZForm {
   }
 
   /**
-   * Enables the form
+   * Enables the submit button and all fields, except fields that were disabled individually, which stay disabled.
    */
   enable() {
     this._isDisabled = false;
@@ -1366,7 +1374,7 @@ class ZForm {
   }
 
   /**
-   * Disables the form
+   * Disables the submit button and all fields; enable() restores them, except fields that were disabled individually.
    */
   disable() {
     this._isDisabled = true;
@@ -1374,7 +1382,7 @@ class ZForm {
   }
 
   /**
-   * @returns {boolean} True when form is disabled
+   * @returns {boolean} True when form is disabled or a submit request is in flight
    */
   isDisabled() {
     if (this.isSending) return true
@@ -1401,10 +1409,11 @@ class ZForm {
  */
 
 /**
- * A dataset for an item in a select of autocomplete box.
+ * A dataset for an item in a select box.
  * @typedef {object} Food
- * @property {any} value Value of the option
- * @property {string} text Text to show to the user 
+ * @property {"option"|"optgroup"} [type] Entry kind, `option` if omitted. An `optgroup` entry starts a group using `text` as its label
+ * @property {any} [value] Value of the option, falls back to `text`
+ * @property {string} text Text to show to the user
  */
 
 /**
@@ -1413,10 +1422,10 @@ class ZForm {
  */
 
 /**
- * All parameters are optional
+ * Options for a form field. Every property is optional, but set `name` (a field without one posts as "undefined" and collides in `form.fields`) and `type` (without it a plain text input renders).
  * @typedef {object} FormFieldOptions
  * @property {string} [name] Name to use in the request
- * @property {boolean} [required] Sets if this field is required to be filled in
+ * @property {boolean} [required] Display only: adds a red asterisk and the `input-required` class to the label and, for select fields, drops the empty "---" option when options are fed. It sets no HTML `required` attribute and blocks nothing client-side; the value is validated server-side.
  * @property {InputType} [type] Type of the field
  * @property {string} [text] Text to show in the label
  * @property {string} [hint] Small text to show under the input. For example: "We do not share you email" or something.
@@ -1425,16 +1434,16 @@ class ZForm {
  * @property {string} [placeholder] Placeholder to show in the input when nothing is entered
  * @property {FieldWidth} [width] Width of the field in units
  * @property {object} [attributes] List of attributes to apply to the input element. The keys are attribute names and their values will be used as the value
- * @property {Food} [food] Food for selects or autocomepletes
+ * @property {Food[]} [food] Food for `select` and `multi-select` inputs
  * @property {boolean} [compact] Sets the compact mode. In compact mode, the label is hidden
  * @property {string} [prepend] Content to put in front of the input. Units are usally put there
  * @property {any} [value] Initial value of the input. For `type: "button"` this is the button label.
  * @property {string} [style] Bootstrap button class (e.g. `"btn-primary"`, `"btn-danger"`). Only applies when `type` is `"button"`. Defaults to `"btn-primary"`.
  * @property {string} [customFileInputText] Placeholder text shown on a `type: "file"` input before a file is chosen. Defaults to `Z.Lang.choose_file`.
- * @property {Food[]|string} [autocompleteData] Static list of options for `type: "autocomplete"`, or a backend path string that the field queries via `Z.Request.root` for dynamic suggestions.
+ * @property {string[]|string} [autocompleteData] Static list of suggestion strings for `type: "autocomplete"`, or a backend path string: on each keyup the field calls `Z.Request.root(path, "autocomplete", {value})`, expects `{data: string[]}` back, replaces the list with it and re-renders the case-insensitive substring matches once the response arrives (stale responses are dropped).
  * @property {number} [autocompleteMinCharacters] Minimum number of characters typed before autocomplete fetches/filters suggestions. Defaults to `2`.
- * @property {function} [autocompleteTextCB] Callback `(item) => string` mapping an autocomplete entry to its rendered list label. Defaults to the entry's `text` property.
- * @property {function} [autocompleteCB] Callback `(item) => void` fired when the user picks an entry from the autocomplete list.
+ * @property {function} [autocompleteTextCB] Callback `(highlightedHtml, value) => string` returning the HTML of an autocomplete list entry. Without it, the entry shows the match highlighted in `<strong>`.
+ * @property {function} [autocompleteCB] Callback `(value) => void` fired with the picked string when the user picks an entry from the autocomplete list.
  * @property {boolean} [disabled] Does this field start disabled?
  * @property {boolean} [hidden] Does this field start hidden?
  */
@@ -1744,7 +1753,8 @@ class ZFormField {
   }
 
   /**
-   * @type {any}
+   * Current value: boolean for checkbox, a copied string[] for multi-select, string otherwise. The setter coerces checkbox input (true, 1, "1", "true", "on" check it), maps non-array multi-select input to an empty selection and stringifies each entry.
+   * @type {boolean|string[]|string}
    */
   get value() {
     if (this.type == "multi-select") {
@@ -1867,7 +1877,7 @@ class ZFormField {
   }
 
   /**
-   * Marks this field as erroneous.
+   * Marks this field as erroneous: shows the message from Z.Lang["error_" + type], sets custom validity, adds is-invalid and smooth-scrolls the field into view.
    * @param {InvalidError} error Error containing information about whats wrong
    * @returns {void}
    */
@@ -1898,9 +1908,9 @@ class ZFormField {
   }
 
   /**
-   * Feeds the input with data. Used for selects of autocomplete inputs.
+   * Feeds `select` and `multi-select` inputs with data; other input types only log a warning.
    * @param {Food[]} food Data generated with makeFood in PHP
-   * @param {=boolean} clear If set, all old data will be cleared before adding the new one
+   * @param {boolean} [clear=true] If set, all old data will be cleared before adding the new one
    * @returns {void}
    */
   feedData(food, clear = true) {
@@ -1977,7 +1987,7 @@ class ZFormField {
   }
 
   /**
-   * Returns a string that can be used to append to a request when using application/x-www-form-urlencoded
+   * Returns a string that can be used to append to a request when using application/x-www-form-urlencoded. Values carry a <#decURI#> prefix that the PHP backend strips and decodes; checkboxes send "1"/"0" and multi-selects send name[]=v pairs (nothing when empty).
    * @returns {string} The data containing string
    */
   getPostString() {

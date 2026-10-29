@@ -16,7 +16,7 @@ execution_type = test
 
 If `execution_type` is anything other than `test` (including unset), the bar is not bootstrapped, no assets are emitted, and no collectors run. There is no way to enable it for production.
 
-The bar relies on the [layout](layouts.md) calling the body essentials. The default layout already does this. If you ship a custom layout and want the bar visible there too, include the body essentials inside your `<body>`:
+The bar relies on the [layout](layouts.md) calling the head and body essentials. The default layout already does this. If you ship a custom layout and want the bar visible there too, include `<x-zubzet::head :opt="$opt"/>` inside your `<head>` and the body essentials inside your `<body>`:
 
 ```blade
 <x-zubzet::body :opt="$opt"/>
@@ -26,9 +26,9 @@ The bar relies on the [layout](layouts.md) calling the body essentials. The defa
 
 ### Queries
 
-Every SQL statement that [runs through](../api/classes/ZubZet-Framework-Database-Connection.html#method_exec) `Connection::exec()` (or `Model::exec()`) is captured with its placeholders interpolated, the bound values, the duration, and the row count. Click a query to open a parameter table and copy the statement to the clipboard.
+Every SQL statement that [runs through](../api/classes/ZubZet-Framework-Database-Connection.html#method_exec) `Connection::exec()` (or `Model::exec()`) is captured with its placeholders interpolated, the bound values, the duration, and the row count; failed queries are not listed. Click a query to open a parameter table and copy the statement to the clipboard.
 
-Bound values are rendered as single quoted SQL literals so the displayed query can be pasted into a SQL client and executed as is.
+Bound values are shown as single quoted, `addslashes()`d literals (`NULL` for null) for display only; the statement itself ran with bound parameters.
 
 ```sql
 INSERT INTO `model_test_insert` (`value`)
@@ -47,11 +47,11 @@ Click the row to expand the params table. Values are formatted by the framework'
 
 ### Monolog
 
-Every log record produced through `logger()` shows up as a row on the monolog tab, including the channel, level, message, full context, and processor extras (`traceId`, `file`, `line`, `class`, `function`).
+Every log record produced through `logger()` shows up as a row on the monolog tab (also records below `logger_level`, but none when `logger_enabled` is false), including the channel, level, message, full context, and processor extras (`traceId`, `file`, `line`, `class`, `function`).
 
 The summary line is the trace id, channel, level, and message. Click the row to expand a key and value table with `context.*` and `extra.*` entries.
 
-The tab uses the standard messages widget and includes a search input. Searching matches against the channel, level, message, and every context and extra value, so you can quickly filter to a specific trace id, view path, or user id.
+The tab uses the standard messages widget and includes a search input. Searching matches against the trace id, channel, level, message, and every `context.*` and `extra.*` entry as `key=value`, so you can quickly filter to a specific trace id, view path, or user id.
 
 ### Resolutions
 
@@ -83,7 +83,7 @@ Set it to `false` to see every query, including the ones the framework runs inte
 | Key                              | Type    | Default | Description                                                                 |
 | -------------------------------- | ------- | ------- | --------------------------------------------------------------------------- |
 | `execution_type`                 | string  | `prod`  | Must be `test` for the debug bar to render                                  |
-| `debugbar_hide_internal_queries` | boolean | `true`  | Hide queries issued by models flagged with `IsInternalModel` from the bar |
+| `debugbar_hide_internal_queries` | boolean | `true`  | Hide queries issued by models flagged with `IsInternalModel` (bundled `z_*` models except `z_organizationModel`) from the bar |
 
 ## Marking your own models as internal
 
@@ -101,7 +101,7 @@ class CacheModel extends z_model {
 }
 ```
 
-Queries issued through this model are filtered out of the queries tab whenever `debugbar_hide_internal_queries = true`. Direct `db()->exec(...)` calls that bypass the model layer are always shown, regardless of the setting.
+Queries issued through this model are filtered out of the queries tab whenever `debugbar_hide_internal_queries = true`. Direct `db()->exec(...)` calls that bypass the model layer keep the tag of the last model query (also `z_logger` after a log write), so they are hidden whenever that model was internal.
 
 ## Adding your own log context
 

@@ -36,7 +36,7 @@
          * Retrieve all active sessions of a user by its id
          * @param User $user The user object
          * @param array $dbExpression Narrows the result to one kind of session
-         * @return array of session objects
+         * @return array Raw z_logintoken rows, wrapped into session objects by CanUseSession::byUser()
          * @internal
          */
         public function getSessionsByUserId(User $user, array $dbExpression = []): array {
@@ -340,7 +340,7 @@
         /**
          * Gets an user by its email
          * @param string $email The email of the user to get
-         * @return bool|array|null The dataset of the user
+         * @return array|false The user row, or false if no user matches
          */
         function getUserByLogin($email) {
             $query = "SELECT * FROM `z_user` WHERE email=? AND email IS NOT NULL";
@@ -472,9 +472,9 @@
         /**
          * Adds a code for the user to reset its password
          * @param int $userId The id of the user
-         * @param string $ref The reference
+         * @param string $ref Ignored, the code is generated randomly
          * @param string $reason The reason of the reset
-         * @return string The reference
+         * @return string The generated reset code ('ZIT-' followed by 64 hex characters), stored as refId
          */
         function addResetCode($userId, $ref, $reason) {
             // Random, so a code cannot be guessed from the time it was requested; $ref stays for callers passing it
@@ -487,8 +487,8 @@
         /**
          * Gets the dataset of a reset code
          * @param string $code The reset code
-         * @param string $timespan A sql conform formatted time
-         * @param false|array The dataset or false
+         * @param string $timespan A relative interval like "60 minutes", looked back from now via strtotime('-...')
+         * @return false|array The dataset or false
          */
         function getResetCode($code, $timespan) {
             $sql = "SELECT * FROM `z_password_reset` WHERE `refId` = ? AND `created` >= ? AND `active` = 1";
@@ -517,9 +517,9 @@
         }
 
         /**
-         * sendTooManyLoginsEmailByUserId
+         * Checks whether a too-many-logins warning mail may be sent (sends nothing itself)
          * @param int $userId Id of the user
-         * @return bool RES
+         * @return bool True if no warning was recorded for the user in the last 10 minutes
          */
         function sendTooManyLoginsEmailByUserId($userId) {
             $sql = "SELECT COUNT(*) > 0 AS RES 

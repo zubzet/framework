@@ -17,6 +17,8 @@ Then navigate to the root directory of your project (where the `index.php` file 
 php index.php {command}
 ```
 
+The package registers no Composer `scripts` and no `bin` executable (its only `require-dev` entry is a test-coverage library), so `php index.php <command>` is the only way to reach the CLI. A command's return value becomes the process exit status (`0` on success, `1` on failure).
+
 ### Available Commands
 
 ### completion
@@ -27,10 +29,11 @@ This improves command-line usability by enabling tab completion.
 ### help
 
 Displays help information for a specific command or for the console in general.
+Symfony's global options (`-h`, `-q`, `-v|-vv|-vvv`, `-V`, `--ansi`, `--no-ansi`, `-n`) apply to every command.
 
 ### list
 
-Lists all available console commands.
+Lists all available console commands; `php index.php` without a command prints the same list.
 
 ### run
 
@@ -39,15 +42,16 @@ This is useful for [running application logic](../advanced-features/commands.md)
 
 ### info:startup
 
-Prints a startup banner with the ZubZet version, application name, environment, PHP version, and asset
-version — a quick health check after deployment.
+Prints a startup banner with the ZubZet version (as Composer reports it, e.g. `v1.2.0`, or `unknown`), application name, environment, PHP version, and asset
+version — a quick health check after deployment. A missing `pageName`, `execution_type`, `assetVersion` or `host` prints `Unknown. Set <key> in settings!` (`host` prints `Unknown / Check docker-compose-base.yml`) instead.
 
 ```bash
 php index.php info:startup
 ```
 
 Pass `--pwd "$(pwd)"` so clickable file links in the [error page](error-handling.md) resolve to your
-host paths (the dev stack's `npm run info` does this for you).
+host paths (the dev stack's `npm run info` does this for you). The value is stored in
+`z_config/z_automated_setting.ini` as `automated_host_working_directory`.
 
 ### install
 
@@ -59,7 +63,7 @@ php index.php install /path/to/new-project
 
 The command copies the project template into the folder and prints a `created:` or `exists:` line
 per entry. Existing files are never overwritten, so it is safe to run on a folder that already
-contains files. It then makes `zubzet` and `project` executable and runs `composer require` for
+contains files. It then generates an `encryption_key` in `z_config/z_settings.ini` if none is set, makes `zubzet` and `project` executable and runs `composer require` for
 the framework inside the new project.
 
 It fails with a clear message if the folder does not exist, is not writable, or Composer is not
@@ -93,7 +97,7 @@ automatically; if they are missing, the script prints the `npm install` command 
 | ------- | ----------- |
 | `db:migrate` | Run all pending migrations (framework-bundled and your own under `app/Database/migrations`). |
 | `db:seed` | Run migrations, then load seed data from `app/Database/seed`. |
-| `db:status` | Show which migrations have been applied. |
+| `db:status` | Show whether the migration lock is set; exit code `0` when unlocked, `1` when locked. |
 | `db:sync` | Mark migrations as applied up to a version/date without running their SQL. |
 | `db:unlock-migration` | Release a stuck migration lock. |
 
@@ -149,6 +153,17 @@ with nothing left to convert changes nothing. Columns that deliberately use anot
     Converting rewrites the whole table and blocks writes to it meanwhile, which can take a
     long time on large tables. Take a backup and run it in a maintenance window.
 
+### auth:migrate-hashing
+
+Wraps every `legacy` password hash in an Argon2id layer and marks the row `onion`; rows without a password are skipped. Idempotent, so
+it is safe to run more than once, but the update does not re-check the scheme, so a password changed during the run can be overwritten. See [Password Handling](password-handling.md#migrating-an-existing-installation).
+
+```bash
+php index.php auth:migrate-hashing
+```
+
+With `--dry` (`-d`) it only prints how many legacy passwords it found.
+
 ### module:setup
 
 Merges missing default settings from installed [modules](../advanced-features/modules.md) into
@@ -185,4 +200,4 @@ php index.php testing:coverage:start
 php index.php testing:coverage:stop
 ```
 
-Add `--cli` to `testing:coverage:stop` to print a text summary instead of generating the HTML report.
+`start` writes a session id to `.coverage.session` in the working directory; while that file exists, every web request and CLI call collects coverage (an Xdebug or PCOV driver is required). `testing:coverage:stop` writes the HTML report to `.coverage/report/`; add `--cli` (`-c`) to print a text report (PHPUnit summary plus a per-file tree, green from 90 %, yellow from 50 %, red below) to stdout instead. Merging many collected files is memory-hungry; CI runs it as `php -d memory_limit=4G index.php testing:coverage:stop`.

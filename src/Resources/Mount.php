@@ -17,7 +17,11 @@
             $this->urlPrefix = trim($urlPrefix, "/");
         }
 
-        /** Returns the full file path or null if it does not belong to this mount. */
+        /**
+         * Returns the full file path or null if it does not belong to this mount.
+         * @return string|null Null for a missing prefix, missing, non-file or unreadable path.
+         * @throws \RuntimeException When the resolved path escapes the source root.
+         */
         public function resolve(string $assetPath): ?string {
             $subDirectory = $assetPath;
 

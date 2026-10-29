@@ -24,6 +24,7 @@
              * Proxy to the framework`s instance
              *
              * @return ZubZet ZubZet instance
+             * @throws NotInstantiatedException If the framework has not been constructed yet.
              */
             function zubzet(): ZubZet {
                 if(ZubZet::$instance instanceof ZubZet) return ZubZet::$instance;
@@ -33,11 +34,12 @@
 
         FunctionConflictResolution::requireAndThen("model", function() {
             /**
-             * Proxy to the framework's model loader.
+             * Returns a model, one shared instance per request; falls back to the framework models when not found
              *
-             * @param string $model Name of the model to load
-             * @param string|null $dir Optional directory override
+             * @param string $model Name of the model without the Model suffix, sub-folders dot separated (e.g. "admin.User")
+             * @param string|null $dir Set this when the model is stored in a specific directory, needs a trailing slash
              * @return z_model Loaded model instance
+             * @throws \Exception When the model does not exist
              */
             function model($model, $dir = null) {
                 return zubzet()->getModel($model, $dir);
@@ -49,6 +51,7 @@
              * Proxy to the framework`s request instance
              *
              * @return Request Loaded request instance
+             * @throws NotInstantiatedException If no Request instance exists yet.
              */
             function request(): Request {
                 if(zubzet()->req instanceof Request) return zubzet()->req;
@@ -69,12 +72,13 @@
 
         FunctionConflictResolution::requireAndThen("config", function() {
             /**
-             * Fetches a configuration value exposed by the request handler.
+             * Fetches a configuration value from the booter settings.
              *
-             * @param string|null $key Setting key or null to retrieve all settings
-             * @param bool $useDefault Whether to fall back to the provided default value
-             * @param mixed $default Value returned when the key is missing and $useDefault is true
+             * @param string|null $key Key of the setting, null or empty returns all settings
+             * @param bool $useDefault Return $default instead of throwing when the key does not exist
+             * @param mixed $default Value returned for a missing key when $useDefault is true
              * @return mixed Configuration value or array of all settings
+             * @throws \InvalidArgumentException If the key does not exist and $useDefault is false
              */
             function config($key = null, $useDefault = true, $default = null) {
                 return zubzet()->getBooterSettings($key, $useDefault, $default);
@@ -105,9 +109,9 @@
 
         FunctionConflictResolution::requireAndThen("user", function() {
             /**
-             * Proxy to the currently logged-in user's object
+             * Proxy to the requesting user's object, also for guests (check isLoggedIn)
              *
-             * @return User The currently logged-in user
+             * @return ?User The requesting user, null before the framework has loaded it
              */
             function user(): ?User {
                 return zubzet()->user;
@@ -118,8 +122,11 @@
             /**
              * Proxy to the loaded database connection
              *
+             * @param string $connection Connection name; only "default" is supported
+             * @param bool $allowUnsetConnection Return null instead of throwing while no connection exists yet
              * @throws InvalidArgumentException If a non-default connection is requested.
-             * @return ?Connection Loaded database connection
+             * @throws NotInstantiatedException If no connection exists yet and $allowUnsetConnection is false.
+             * @return ?Connection Loaded database connection, or null if none exists yet and $allowUnsetConnection is true
              */
             function db(string $connection = "default", bool $allowUnsetConnection = false): ?Connection {
                 if("default" !== $connection) {

@@ -459,6 +459,8 @@ LIMIT 10
 
 ### Limit with Offset (Pagination)
 
+`page(3, 10)` is shorthand for `limit(10)->offset(20)`.
+
 ```php
 $query = $this->dbSelect(['id', 'name'], 'users')
               ->limit(10)

@@ -5,9 +5,10 @@ namespace ZubZet\Framework\Authentication;
 trait HandleTrait {
 
     /**
-     * Refresh the current permission object (user or role) by clearing all its fields and setting them new
+     * Refresh the current permission object (user, role, session, organization or API key) by clearing all its fields and setting them new
      * 
-     * @throws \RuntimeException If the object no longer exists
+     * @throws \InvalidArgumentException If this instance was already detached
+     * @throws \RuntimeException If the object no longer exists (its fields are already cleared by then)
      * @return void
      */
     public function refresh(): void {

@@ -86,4 +86,4 @@ The form texts in `Z.Lang`, like *Submit*, *Saved!* and the validation errors, c
 | `form.choose_file` | File input |
 | `form.error_required`, `form.error_filter`, `form.error_length`, `form.error_unique`, `form.error_exist`, `form.error_range`, `form.error_file_to_big` | Validation errors |
 
-`<x-zubzet::head/>` writes them into `Z.Lang` for the active locale, so an application translates them like its own texts.
+`<x-zubzet::head/>` writes them into `Z.Lang` for the active locale, so an application translates them like its own texts or overwrites them in the layout after the head component. `submit`, `choose_file`, `addElement` and `CEDRemove` are read when a form is built, so set them before creating forms. The errors `in` (also from `checked()`), `integer`, `date` and `regex` have no `form.*` key; their English texts stay in `Z.Lang` and are overwritten there. `addElement` (a `fas fa-plus` icon), `CEDRemove` (`✕`), `saveError` (`Error while saving`), `error_password_reset` (`An error occurred. Did you use the correct email address?`) and `error_password_mismatch` (`The password are not the same!`) have no catalogue entry and keep these `Z.js` defaults.

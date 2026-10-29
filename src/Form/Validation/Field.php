@@ -8,7 +8,7 @@
     class Field {
 
         /**
-         * @var object[] $rules Array of rules that specify how to validate this form field.
+         * @var array[] $rules List of rules that specify how to validate this form field. Each rule is an associative array with `name`, `type` and rule-specific keys.
          */
         public $rules;
 
@@ -65,7 +65,7 @@
         /**
          * Adds a filter rule
          *
-         * Creates an error when a filter fails. All filter_var compatible filters are available.
+         * Creates an error when `filter_var()` returns a falsy value (`false`, `0`, `""`, `null`), so any `FILTER_*` constant works but no options or flags can be passed.
          *
          * Does not support array values (e.g. `multi-select`) — `filter_var()`
          * expects a scalar; pair `multi-select` with `->in()` instead.
@@ -91,10 +91,10 @@
          * Does not support array values (e.g. `multi-select`) — the rule
          * runs a single uniqueness query against a scalar value.
          *
-         * @param string $table Table name in the database
-         * @param string $field Field name in the table
-         * @param string $ignoreField name of the field in which the ignore value is
-         * @param string $ignoreValue value of the dataset that should be ignored
+         * @param string $table Table name in the database (inserted unescaped)
+         * @param string $field Field name in the table (inserted unescaped)
+         * @param string|null $ignoreField name of the field in which the ignore value is (inserted unescaped)
+         * @param mixed|null $ignoreValue value of the dataset that should be ignored
          * @return Field Returns itself to allow chaining
          */
         function unique($table, $field, $ignoreField = null, $ignoreValue = null) {
@@ -116,8 +116,8 @@
          * in the database. For array-valued fields (e.g. `multi-select`) the
          * rule is applied per item, every picked entry must exist.
          *
-         * @param string $table Table name in the database
-         * @param string $field Field name in the table
+         * @param string $table Table name in the database (inserted unescaped)
+         * @param string $field Field name in the table (inserted unescaped)
          * @return Field Returns itself to allow chaining
          */
         function exists($table, $field) {
@@ -158,7 +158,8 @@
          * A `checkbox` field always submits "1" (ticked) or "0" (unticked),
          * so `required()` is a no-op for it. Use this to enforce that the box
          * is actually ticked (e.g. accept-terms). Sugar over `in()` with the
-         * common truthy representations.
+         * common truthy representations. Skipped when the key is missing from
+         * the request (non-Z.js clients), so chain `required()` to enforce it.
          *
          * @return Field Returns itself to allow chaining
          */
@@ -170,7 +171,8 @@
          * Adds a required rule
          * 
          * With this rule an error is created when no input for this field is given.
-         * 
+         * It must be the first rule on a field, otherwise it overwrites the value cast by earlier rules like integer() with the raw input.
+         *
          * @return Field Returns itself to allow chaining
          */
         function required() {
@@ -188,11 +190,11 @@
          * This rule will create an error when the input is too long or too short.
          *
          * For array-valued fields (e.g. `multi-select`) length is measured as
-         * the item count (`count($value)`) instead of the character count, so
+         * the item count (`count($value)`) instead of the byte count (`strlen()`), so
          * `->length(1, 3)` means "between 1 and 3 selections."
          *
-         * @param int $min Minimum number of chars (or items for arrays)
-         * @param int $max Maximum number of chars (or items for arrays)
+         * @param int $min Minimum number of bytes (or items for arrays)
+         * @param int $max Maximum number of bytes (or items for arrays)
          * @return Field Returns itself to allow chaining
          */
         function length($min, $max) {
@@ -250,12 +252,12 @@
         /**
          * Adds a date rule
          *
-         * This rule checks if the input value adheres to a given date format.
+         * This rule checks if the input value is a date that `strtotime()` can parse.
          *
          * Does not support array values (e.g. `multi-select`) — `strtotime()`
          * expects a scalar.
          *
-         * @param string $format The tested date format
+         * @param string $format Currently unused, the format is not enforced
          * @return Field Returns itself to allow chaining
          */
         function date($format = "Y-m-d") {
@@ -270,8 +272,10 @@
         /**
          * Rule for validating file uploads. This rule must also be set when automatic uploads in insertDatabase is needed.
          * 
-         * @param integer $maxSize The maximum allowed file size. Constants for this are available.
-         * @param string[] $types Accepted file types
+         * Errors: file (no upload), file_to_big (above $maxSize), file_type (extension not in $types).
+         *
+         * @param integer $maxSize The maximum allowed file size in bytes. Constants for this are available.
+         * @param string[] $types Accepted lowercase file extensions without dot, e.g. ["png", "jpg"]; an empty array allows any type
          * @return Field Returns itself to allow chaining
          */
         function file($maxSize, $types = []) {
@@ -288,6 +292,8 @@
 
         /**
          * Adds a regular expression rule to the field
+         *
+         * The `$exceptions` are stripped from the value first, then every match of `$expression` is removed (preg_replace, not preg_match); the value passes only if nothing is left.
          *
          * For array-valued fields (e.g. `multi-select`) the regex is applied
          * per item; the field fails as soon as any single item fails.

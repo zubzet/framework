@@ -9,9 +9,9 @@
         use CanValidateForm;
 
         /**
-         * Validates a "Create Edit Delete" input
+         * Validates each row of a "Create Edit Delete" input read from getPost($name); sets doNothing if it is absent, and errors carry the row's subname and index
          * @param string $name Name of the input field
-         * @param array $rules Array of rules for validating
+         * @param Field[] $rules Fields every row is validated against
          * @return Result Result of the validation. Needed to perform response actions
          */
         public function validateCED($name, $rules) {

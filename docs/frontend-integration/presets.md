@@ -23,7 +23,9 @@ This is the basic layout for a login page:
 ```
 For this to work, three elements are needed. One error output label for reporting to the user if the login failed, and two inputs. The labels are technically not needed here as well as the button.
 
-To trigger the login action there is the function `Z.Presets.Login`. It takes the ids of the DOM elements as inputs.
+To trigger the login action there is the function `Z.Presets.Login`. It takes the ids of the DOM elements as inputs, posts `name` and `password` with `action=login` to `login`, reloads the page on success (or goes to `redirect`) and inserts any other server message into the error label as HTML. The bundled `login` answers an unknown email and a wrong password alike with `Username or password is wrong` (shown as `Z.Lang.error_login`; only a wrong password records a try), points an unverified account to `login/verify` before the password is checked, and rejects a locked account with `Too many login tries. Try again later.` before checking it, so even a correct password fails while locked; the preset shows `Z.Lang.error_too_many_login_tries` instead of that message. A success clears no tries and ends no other session. Its pages (`login`, `login_signup`, `login_forgotpassword`, `login_reset`, `login_verify`, `login_verify_wait`) are Blade views in `layout/min_layout` with fixed English texts (for example `Sign in`, `Send me an email`, `To the login`), replaced by a view of the same name in your project.
+
+`Z.Presets.ForgotPassword(unameemailElementId, errorLabel, redirect)` posts `unameemail` to `login/forgot_password` and on any failure shows `Z.Lang.error_password_reset`, so the answer reveals whether the account exists. The presets show the element with id `loading` (hidden by default, styled by `_zubzet/asset-proxy/css/loadCircle.css`) while their request runs.
 
 Optionally a fourth argument can be passed into the login function that gives the url to redirect to after a successfull login. This parameter should be absolute. Example:
 ```js
@@ -53,4 +55,6 @@ This is the basic layout for a singup page:
     });
 </script>
 ```
-Here the important method is `Z.Presets.Signup`. It works similar to login.
+Here the important method is `Z.Presets.Signup`. It works similar to login (the message `This email is not allowed!` is shown as `Z.Lang.error_invalid_email`) and posts `email` and `password`, merged with the optional `additionalData` object (for example `{userRoleType: "Secondary"}`), with `action=signup` to `login/signup`. With `alertErrors` errors are also shown in an `alert()` (a password mismatch only there), and a hidden error label is not made visible.
+
+The bundled `login/signup` action is open to anyone who can reach it and cannot be switched off with a setting. It has no CAPTCHA and no rate limit: every post with `action=signup`, an unused `email` and a `password` of 3 to 64 characters creates an account, assigns the role from `registerRoleId` (or `registerRoleIdSecondary` for the POST field `userRoleType=Secondary`; skipped when empty or not numeric) and sends a verification mail. Any validation failure answers `This email is not allowed!`, the new user is not logged in and the result of sending the mail is ignored. A verification link (`login/verify/<token>`, `v_` plus 64 random hex characters, stored in `z_email_verify` with its `end`) is valid for one day, opening it again re-stamps `verified`, and a post with `email` resends it and renders the same page whether or not the address exists. If the app should not allow public registration, or needs protection against automated signups, override the `login` controller in your own project or restrict the route yourself.

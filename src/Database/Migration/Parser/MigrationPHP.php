@@ -8,7 +8,7 @@
     use ZubZet\Framework\Database\Migration\Commands\Traits\Platform;
     use ZubZet\Framework\Database\Migration\Migration;
 
-    // Loads a SQL migration file
+    // Loads a PHP migration file
     class MigrationPHP {
 
         use Platform;

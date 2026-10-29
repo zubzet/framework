@@ -2,7 +2,7 @@
 
 ## What is this?
 
-ZubZet provides a built-in logging system powered by [Monolog](https://github.com/Seldaek/monolog). It allows you to record application events, errors, and diagnostic information either to a database table or to a stream (file or stderr). The framework automatically logs certain system events such as logins, page views, and REST errors.
+ZubZet provides a built-in logging system powered by [Monolog](https://github.com/Seldaek/monolog). It allows you to record application events, errors, and diagnostic information either to a database table or to a stream (file or stderr). The framework automatically logs certain system events such as logins, page views, and REST errors. Which of them are stored depends on [`logger_level`](#log-levels).
 
 Loggers are created lazily on first use and cached for the lifetime of the request, so there is no overhead for channels that are never written to.
 
@@ -23,9 +23,11 @@ All logger settings are configured in `z_config/z_settings.ini`.
 | Key                 | Type    | Default        | Description                                                    |
 | ------------------- | ------- | -------------- | -------------------------------------------------------------- |
 | `logger_enabled`    | boolean | `true`         | Enables or disables the logging system entirely                |
-| `logger_type`       | string  | `database`     | The logger backend to use: `database` or `stream`              |
-| `logger_level`      | string  | `notice`       | Minimum log level to record (see levels below)                 |
+| `logger_type`       | string  | `database`     | The logger backend, `database` or `stream` (case-sensitive); any other value throws an `InvalidArgumentException` |
+| `logger_level`      | string  | `notice`       | Minimum log level to record: a name (case-insensitive) or number, see below; an unknown name throws an `InvalidArgumentException` |
 | `logger_stream_url` | string  | `php://stderr` | Stream target — only used when `logger_type = stream`          |
+| `logger_slow_request_ms` | number | `1000`    | Requests at least this slow (`>=`) are logged as `SLOW_REQUEST` at shutdown (not after an uncaught exception; console commands count too); a negative or non-numeric value disables it |
+| `logger_slow_query_ms`   | number | `300`     | `exec()` queries (so `execQuery()`, not `executeMultiQuery()`) taking at least this many milliseconds (`>=`, so `0` logs every query; measured from prepare to execute, retries included, result fetch excluded) are logged as `SLOW_QUERY` (without disturbing `getInsertId()` or the current result); an INI file cannot disable it, so use a high threshold |
 
 ### Log Levels
 
@@ -42,6 +44,16 @@ Log levels follow the [Monolog/PSR-3 standard](https://www.php-fig.org/psr/psr-3
 | `alert`              | Action must be taken immediately    |
 | `emergency`          | System is unusable                  |
 
+The framework logs its own events on the `zubzet` channel (`Logger::ZUBZET`) at different levels. The event names are the constants of `ZubZet\Framework\Logger\LogEventType` and become the record `message`. With the default `notice`, the `info` events are dropped by the handler and not stored; set `logger_level = info` to record them.
+
+| Level     | Framework events                                                                                                                                                      |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `info`    | `RENDER` (every rendered view, mail renders included; context `location`, `view`, `viewName`, `layout`, `layoutName`), `USER_LOGGED_IN` (`userId`), `USER_LOGGED_IN_ANOTHER` (`userId`, `userId_exec`), `USER_LOGGED_OUT` (`userId`), `USER_CREATED` (`userId`, `email`; written by `z_userModel::add()`, so also by signup, `User::add()` and the admin add-user page), `ACCOUNT_UPDATED` (`userId`; admin edit-user adds the old `email`, two-factor changes a `reason`), `PASSWORD_RESET_REQUESTED` (`userId`; only when the email matched an account), `PASSWORD_RESET` (`userId`, `reason`) |
+| `warning` | `SLOW_REQUEST` (`duration_ms`, `uri`), `SLOW_QUERY` (`duration_ms`, `query` without bound values), `REST_ERROR` (`code`, `message`), `ACCOUNT_LOGIN_RATE_LIMITED` (`userId`)                                                                                              |
+| `error`   | `EXCEPTION` (`class`, `message`, `file`, `line`, `trace`)                                                                                                                                                           |
+
+PHP errors are logged as `ERROR` (`error`), `PARSE` (`critical`), `WARNING` (`warning`), `DEPRECATION`/`NOTICE` (`notice`) or `STRICT` (`debug`), depending on their severity (any other severity is logged as `ERROR` with level `warning`), with the context `message`, `file` and `line`. Failed password attempts, verification success, logouts of anonymous requests and admin actions (roles, permissions, database browsing) write no event, and `sendEmail()` failures are echoed instead of logged. `@`-suppressed errors and fatal errors are not logged.
+
 ## Writing Log Entries
 
 Use the global `logger()` [helper function](global-helper-functions.md) anywhere in your application.
@@ -54,7 +66,7 @@ logger()->info("User submitted a contact form", ["email" => $email]);
 logger("payments")->warning("Payment gateway timeout", ["orderId" => $id]);
 ```
 
-`logger()` without arguments defaults to the `"app"` channel. Any string can be passed to create a named channel — each channel is cached after the first call.
+`logger()` without arguments defaults to the `"app"` channel (`Logger::APP`). Any string can be passed to create a named channel — each channel is cached after the first call.
 
 ### Available Methods
 
@@ -67,17 +79,22 @@ logger()->error("message", $context);
 logger()->critical("message", $context);
 logger()->alert("message", $context);
 logger()->emergency("message", $context);
+logger()->log($level, "message", $context);
 ```
 
-The second parameter `$context` is an optional associative array with additional data to attach to the log record.
+The second parameter `$context` is an optional associative array with additional data to attach to the log record. PSR-3 `{placeholder}` interpolation in the message is not active.
+
+Keys that should accompany every later record of a channel go into `extra` instead, via `logger()->contextAdd([...])`, `contextMergeFrom($name = "app")` (the source channel wins on shared keys; an empty name or a channel that was never created throws), `contextInspect(fn($context) => ...)` (the return value replaces the context) and `contextClear()`. All of them return the logger and can be chained, and a key named `traceId`, `file` or `line` overrides the built-in value.
+
+Every record carries a 32-character hex `extra.traceId`, generated on first use and shared by the whole request. The framework reads no incoming trace header, so propagate one with `Logger::setTraceId($id)` (not validated, only later records carry it); `Logger::getTraceId()` returns it.
 
 ## Registering a Custom Logger
 
-If you need full control over a logger — [custom handlers, formatters, or processors](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md) — you can build a Monolog `Logger` instance manually and [register it under a channel name](../api/classes/ZubZet-Framework-Logger-LoggerFactory.html#method_register) using `LoggerFactory::register()`. Once registered, it is returned by `logger()` like any other channel.
+If you need full control over a logger — [custom handlers, formatters, or processors](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md) — you can build a `ZubZet\Framework\Logger\Logger` instance (it extends the Monolog `Logger`) manually and [register it under a channel name](../api/classes/ZubZet-Framework-Logger-LoggerFactory.html#method_register) using `LoggerFactory::register()`. Once registered, it is returned by `logger()` like any other channel, but it gets none of the `logger_*` handler and processor setup (no `traceId` or call-site `extra` unless you add a processor).
 
 ```php
-use Monolog\Logger;
 use Monolog\Handler\RotatingFileHandler;
+use ZubZet\Framework\Logger\Logger;
 use ZubZet\Framework\Logger\LoggerFactory;
 
 $customLogger = new Logger("audit");
@@ -91,7 +108,9 @@ LoggerFactory::register("audit", $customLogger);
 logger("audit")->info("User exported data", ["userId" => $id]);
 ```
 
-If a logger with that name was already created by the framework, `register()` overwrites it in the cache.
+If a logger with that name was already created by the framework, `register()` overwrites it in the cache. `logger()` builds channels from the `logger_*` settings via `LoggerFactory::getOrCreateLogger()`, while `LoggerFactory::getLogger($name)` only returns a cached channel or `null`.
+
+The parameter is typed `Logger|LoggerInterface`, but `register()` and `logger()` are declared to return the ZubZet `Logger`. A plain Monolog `Logger` or any other PSR-3 logger is therefore accepted and cached, yet `register()` and every later `logger()` call for that name throw a `TypeError` on return. Always register a `ZubZet\Framework\Logger\Logger`.
 
 ## Logger Types
 
@@ -114,11 +133,11 @@ Each log entry is stored as a row with the following columns:
 | `userId_exec` | INT        | ID of the executing user when using "login as" (nullable) |
 | `created`     | TIMESTAMP  | Timestamp of the log entry                                |
 
-If the database connection is not available at the time of logging, the entry is silently skipped.
+If the database connection is not available or the insert fails (for example a missing table mid-migration), the entry is silently skipped. Nothing purges `z_interaction_log`, so delete old rows yourself.
 
 #### `value` Column Structure
 
-The `value` column contains a JSON-encoded object with the full log record and environment context:
+The `value` column contains the JSON-encoded Monolog record. The processor adds `traceId`, `file`, `line`, `class` and `function` to `extra` (omitted below), and the environment keys `userId`, `execUserId` and `source` (`"web"` or `"cli"`) are appended at write time:
 
 ```json
 {
@@ -127,9 +146,8 @@ The `value` column contains a JSON-encoded object with the full log record and e
     "level": 200,
     "level_name": "INFO",
     "channel": "zubzet",
-    "datetime": "2026-04-08T12:00:00+00:00",
-    "extra": {},
-    "environment": {
+    "datetime": { "date": "2026-04-08 12:00:00.000000", "timezone_type": 3, "timezone": "UTC" },
+    "extra": {
         "userId": 42,
         "execUserId": 42,
         "source": "web"
@@ -137,23 +155,7 @@ The `value` column contains a JSON-encoded object with the full log record and e
 }
 ```
 
-The `environment.source` field is either `"web"` or `"cli"` depending on how the request was triggered.
-
-#### Value Normalization
-
-Before JSON encoding, context values are automatically normalized to ensure safe serialization:
-
-| PHP type                         | Stored as                                          |
-| -------------------------------- | -------------------------------------------------- |
-| `string`, `int`, `float`, `bool`, `null` | Passed through unchanged                   |
-| `array`                          | Recursively normalized                             |
-| `DateTimeInterface`              | ISO-8601 string (e.g. `2026-04-08T12:00:00+00:00`) |
-| `JsonSerializable`               | Result of `jsonSerialize()`, then normalized       |
-| Object with `__toString`         | String representation                              |
-| Other objects                    | Fully qualified class name                         |
-| Resource                         | `resource(stream)` style string                    |
-
-If JSON encoding fails despite normalization, a fallback record containing only the message and the encoding error is stored instead.
+Context values are not normalized. The record is encoded with `JSON_UNESCAPED_UNICODE`, `JSON_UNESCAPED_SLASHES`, `JSON_INVALID_UTF8_SUBSTITUTE` and `JSON_THROW_ON_ERROR`; if encoding fails, a fallback record containing only the message and the encoding error is stored instead.
 
 ---
 
@@ -166,7 +168,7 @@ logger_type = stream
 logger_stream_url = php://stderr
 ```
 
-`logger_stream_url` accepts any valid [PHP stream URL](https://www.php.net/manual/en/wrappers.php) or file path:
+`logger_stream_url` accepts any valid [PHP stream URL](https://www.php.net/manual/en/wrappers.php) or file path (relative paths resolve against the working directory):
 
 ```ini
 logger_stream_url = php://stderr
@@ -175,10 +177,10 @@ logger_stream_url = /var/log/app.log
 logger_stream_url = z_config/app.log
 ```
 
-Each log entry is a single JSON object followed by a newline character. The environment context is appended automatically before formatting:
+Each log entry is a single JSON object followed by a newline character (an empty `context` or `extra` is written as `{}`). Missing directories are created and there is no rotation; the `php://stderr` default ends up in the PHP or webserver error log. The environment keys are appended to `extra` automatically before formatting:
 
 ```json
-{"message":"User logged in","context":{"userId":42},"level":200,"level_name":"INFO","channel":"zubzet","datetime":"2026-04-08 12:00:00","extra":{},"environment":{"userId":42,"execUserId":42,"source":"web"}}
+{"message":"User logged in","context":{"userId":42},"level":200,"level_name":"INFO","channel":"zubzet","datetime":"2026-04-08 12:00:00","extra":{"userId":42,"execUserId":42,"source":"web"}}
 ``` 
 
 ## Example
