@@ -188,8 +188,8 @@ mkdir -p "$directory"
 directory="$(cd "$directory" && pwd)"
 echo "${green}ℹ${reset} Creating a new project in ${green}$directory${reset} with zubzet/framework ${green}$version${reset}."
 
-# The project belongs to the user running the installer, the application container takes over its uid.
-# Apache refuses to run as root, so for root the project goes to uid 1000 instead.
+# The project belongs to the user running the installer.
+# Apache refuses to run as root, so for root the project goes to uid 1000 instead, the uid of the application container.
 owner="$(id -u):$(id -g)"
 if [ "$(id -u)" = 0 ]; then
     owner="1000:1000"
