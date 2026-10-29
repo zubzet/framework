@@ -20,6 +20,48 @@ describe('Asset Proxy', () => {
         });
     });
 
+    // assetVersion is a fixed "1.0.0" in the test config
+    it('lets a link carrying the current assetVersion be cached for good', () => {
+        cy.request('/_zubzet/asset-proxy/Z.js?v=1.0.0').then((res) => {
+            expect(res.headers['cache-control']).to.eq('public, max-age=31536000, immutable');
+            expect(res.headers['etag']).to.match(/^"[0-9a-f]+-[0-9a-f]+(-gzip|-br)?"$/);
+        });
+    });
+
+    it('lets any other link only be revalidated', () => {
+        ['', '?v=0.9.0'].forEach((query) => {
+            cy.request(`/_zubzet/asset-proxy/Z.js${query}`).its('headers.cache-control').should('eq', 'no-cache');
+        });
+    });
+
+    it('answers a matching If-None-Match with 304', () => {
+        cy.request('/_zubzet/asset-proxy/Z.js').then((res) => {
+            cy.request({
+                url: '/_zubzet/asset-proxy/Z.js',
+                headers: { 'If-None-Match': res.headers['etag'] },
+                failOnStatusCode: false,
+            }).then((conditional) => {
+                expect(conditional.status).to.eq(304);
+                expect(conditional.body).to.be.empty;
+            });
+
+            // Matches the mtime-size fingerprint, without the quotes and a -gzip/-br suffix from Apache's compression
+            const fingerprint = res.headers['etag'].match(/^"([0-9a-f]+-[0-9a-f]+)/)[1];
+            [`W/"${fingerprint}"`, `"${fingerprint}-gzip"`].forEach((variant) => {
+                cy.request({
+                    url: '/_zubzet/asset-proxy/Z.js',
+                    headers: { 'If-None-Match': variant },
+                    failOnStatusCode: false,
+                }).its('status').should('eq', 304);
+            });
+
+            cy.request({
+                url: '/_zubzet/asset-proxy/Z.js',
+                headers: { 'If-None-Match': '"0-0"' },
+            }).its('status').should('eq', 200);
+        });
+    });
+
     it('returns 404 for an unknown asset', () => {
         cy.request({
             url: '/_zubzet/asset-proxy/does-not-exist.js',

@@ -15,7 +15,7 @@ Every request ensures a `z_csrf` cookie holding a random 40-character token: a f
 The cookie travels automatically on any request the browser makes, so on its own it proves nothing. The header does: setting it requires reading the cookie, and only code from the same origin is allowed to do that. An attacker's page can trigger a request, but cannot fill in the header.
 
 ## When the check runs
-The Router issues the cookie on every request. Before the middlewares and the action of a route run, the token is compared for every request that
+The Router issues the cookie on every request whose route did not [opt out of it](#opting-out). Before the middlewares and the action of a route run, the token is compared for every request that
 
 1. uses a method other than `GET`, `HEAD` or `OPTIONS`, and
 2. a cross-site page could send without a CORS preflight.
@@ -51,6 +51,8 @@ Route::group('/click/interaction')->withoutCsrf();
 Such a group only reaches convention paths. An explicit route opts out where it is declared, either directly or by being declared inside the group.
 
 An opted-out endpoint has to authenticate its caller by something other than the session cookie.
+
+A cacheable page that has to stay free of cookies opts out with `withoutCsrfCookie()` instead, inherited the same way: it skips the check and issues no `z_csrf` cookie either, so `CSRF::field()` renders an empty token there.
 
 ## Raw HTML forms
 A raw HTML form cannot set a header, so it carries the token in a hidden `_csrf` field instead, which the check accepts in place of the header. `CSRF::field()` renders that input from the cookie the Router has already issued:

@@ -147,6 +147,51 @@ describe('CSRF protection', () => {
         });
     });
 
+    describe('withoutCsrfCookie()', () => {
+        function issuesCookie(res) {
+            return [].concat(res.headers['set-cookie'] || []).some((cookie) => cookie.startsWith('z_csrf='));
+        }
+
+        beforeEach(() => {
+            cy.clearCookies();
+        });
+
+        it('issues no cookie on a single route', () => {
+            send({ url: '/csrf-cookie-free-route' }).then((res) => {
+                expect(res.status).to.eq(200);
+                expect(issuesCookie(res)).to.eq(false);
+            });
+        });
+
+        it('issues no cookie on the routes of a group', () => {
+            send({ url: '/csrf-cookie-free/group' }).then((res) => expect(issuesCookie(res)).to.eq(false));
+        });
+
+        it('keeps the opt-out of the outer group on a nested route with only withoutCsrf()', () => {
+            send({ url: '/csrf-cookie-free/nested/child' }).then((res) => expect(issuesCookie(res)).to.eq(false));
+        });
+
+        it('issues no cookie on convention paths under a group prefix', () => {
+            send({ url: '/CsrfProbe/cookiefree' }).then((res) => expect(issuesCookie(res)).to.eq(false));
+        });
+
+        it('issues no cookie on the asset proxy', () => {
+            send({ url: '/_zubzet/asset-proxy/Z.js' }).then((res) => expect(issuesCookie(res)).to.eq(false));
+        });
+
+        it('skips the check as well', () => {
+            post('/csrf-cookie-free-route', {}).its('status').should('eq', 200);
+            post('/csrf-cookie-free/group', {}).its('status').should('eq', 200);
+            post('/CsrfProbe/cookiefree', {}).its('status').should('eq', 200);
+        });
+
+        it('still issues the cookie on other routes and paths', () => {
+            send({ url: '/csrf-cookie-route' }).then((res) => expect(issuesCookie(res)).to.eq(true));
+            cy.clearCookies();
+            send({ url: '/CsrfProbe/plain' }).then((res) => expect(issuesCookie(res)).to.eq(true));
+        });
+    });
+
     describe('the bundled login', () => {
         // Login CSRF: a cross-site form posting valid credentials must not start a session
         it('does not log in a forged post without the header', () => {

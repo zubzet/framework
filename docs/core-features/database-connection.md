@@ -29,6 +29,8 @@ settings, so there is nothing to configure twice.
 ```ini
 db_connection_timeout = 900
 db_max_retries = 3
+db_wait_attempts = 10
+db_wait_delay = 3
 ```
 
 `db_connection_timeout` is the number of seconds after which an idle
@@ -44,6 +46,9 @@ to `0` to disable retries entirely.
     If a write reached the server but the acknowledgment was lost with the
     connection, the retry applies it again. Every `exec()` auto-commits, so
     the exposure is a single statement.
+
+`db_wait_attempts` and `db_wait_delay` (seconds) bound how long the database
+commands wait for a database that is still starting; `--no-wait` fails at once.
 
 ## Encrypted transport (TLS)
 Clusters that reject unencrypted clients (MariaDB's

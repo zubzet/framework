@@ -32,7 +32,7 @@
                 InputOption::VALUE_NONE,
                 "Report what would change without writing.",
             );
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {

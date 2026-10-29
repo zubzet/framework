@@ -55,6 +55,22 @@
                 }
                 if(is_null($file)) continue;
 
+                // Only a link carrying the configured assetVersion is busted by changing it, "dev" links carry time() instead
+                $version = config("assetVersion", default: "");
+                $isVersioned = !empty($version) && "dev" !== $version && $version === (request()->input->GET["v"] ?? "");
+
+                // Cache control: versioned assets are immutable, unversioned assets are not cached
+                header("Cache-Control: " . ($isVersioned ? "public, max-age=31536000, immutable" : "no-cache"));
+
+                $fingerprint = sprintf("%x-%x", filemtime($file), filesize($file));
+                header("ETag: \"$fingerprint\"");
+
+                // Matches our entity tag, also weak (W/) or with the -gzip/-br suffix Apache's compression appends
+                if(preg_match("#\"$fingerprint(-gzip|-br)?\"#", request()->input->SERVER["HTTP_IF_NONE_MATCH"] ?? "")) {
+                    http_response_code(304);
+                    return;
+                }
+
                 $mime = (new FinfoMimeTypeDetector())->detectMimeTypeFromPath($file) ?? "application/octet-stream";
                 header("Content-Type: $mime");
                 readfile($file);

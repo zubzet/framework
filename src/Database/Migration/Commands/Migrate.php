@@ -7,6 +7,7 @@
     use Symfony\Component\Console\Input\InputOption;
     use Symfony\Component\Console\Output\OutputInterface;
     use ZubZet\Framework\Registry\Registry;
+    use ZubZet\Framework\Database\Migration\SqlSplitter;
     use ZubZet\Framework\Database\Migration\Commands\Traits\DatabaseConnection;
 
     final class Migrate extends Command {
@@ -61,7 +62,7 @@
                 "Enforce skipped-check validation for external migrations"
             );
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
@@ -244,11 +245,8 @@
             foreach($statements as $sql) {
                 if(empty(trim($sql))) continue;
 
-                // Split into individual statements by semicolon
-                $parts = array_filter(
-                    array_map('trim', explode(";", $sql)), 
-                    fn($s) => !empty($s)
-                );
+                // Split into individual statements, ignoring semicolons in strings and comments
+                $parts = SqlSplitter::split($sql);
 
                 // Execute each individual statement
                 foreach($parts as $query) {

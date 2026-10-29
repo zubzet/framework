@@ -47,6 +47,11 @@
             print_r(json_encode($entries));
         }
 
+        // Rows of 2025-10-01_MigrationSemicolons.sql, imported by migration/import.cy.js
+        public function action_checkSemicolons(Request $req, Response $res) {
+            return $res->json($req->getModel("Migration")->checkSemicolons());
+        }
+
         // Probe for the custom DBAL TimeStamp type. Used by
         // migration/timestamp-type.cy.js to verify that the migration in
         // app/Database/migrations/2026-05-08_TimeStampType.php produced a
