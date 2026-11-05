@@ -285,6 +285,10 @@ Framework migrations live in `src/IncludedComponents/database/Migration/` and sh
 
 The `z_migration` table (with `z_migration_lock`) prevents re-execution under normal flow, but the rule still applies — a migration that fails on second run is a bug.
 
+## Installer
+
+`docs/setup/install.sh` writes the project's `composer.json`, runs `composer require zubzet/framework` in the project folder inside the PHP image, then runs `bin/install` from that vendor. `bin/install` is a standalone Symfony Console entry for the `install` command (`src/Support/Commands/Install.php`) that copies `stubs/project` around the vendor without booting the framework and never overwrites an existing file. The command is not registered in the framework's own console.
+
 ## Version migrator
 
 `migrator/` holds the upgrade tool, one class per framework version (`migrator/src/Version/V1_3_0.php`); the steps of a postponed release merge into the earlier version class.

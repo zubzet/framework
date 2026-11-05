@@ -2,6 +2,18 @@
 
 
 # ----------------
+# Check Bash
+# ----------------
+
+# Before anything else and in plain POSIX syntax, since `sh install.sh` would choke on the Bash-only parts below
+if [ -z "${BASH_VERSION:-}" ]; then
+    echo "Error: This installer needs Bash, but it was started with another shell." >&2
+    echo "Run it with: bash install.sh" >&2
+    exit 1
+fi
+
+
+# ----------------
 # Output
 # ----------------
 
@@ -148,12 +160,36 @@ else
 fi
 directory="${directory:-.}"
 
+# ----------------
+# Framework Version
+# ----------------
+
+# Given as second argument (./install.sh my-project 1.3.0), otherwise asked for. A release number,
+# any Composer constraint or branch (dev-develop), or "latest" for the newest stable release.
+# The docs deploy replaces the default with the version these docs belong to, so the script of a
+# release installs that release.
+default_version="latest"
+if [ $# -ge 2 ]; then
+    version="$2"
+else
+    question="${bold}Which version would you like to install?${reset}"
+    echo "${green}?${reset} $question ${dim}(leave empty for $default_version, or enter a constraint like ^1.3 or dev-develop)${reset}"
+    read -r -p "> " version
+
+    if [ -t 0 ] && [ -t 1 ]; then
+        printf '\033[2A\r\033[J'
+        echo "${green}✔${reset} $question"
+        echo "${version:-$default_version}"
+    fi
+fi
+version="${version:-$default_version}"
+
 mkdir -p "$directory"
 directory="$(cd "$directory" && pwd)"
-echo "${green}ℹ${reset} Creating a new project in ${green}$directory${reset}."
+echo "${green}ℹ${reset} Creating a new project in ${green}$directory${reset} with zubzet/framework ${green}$version${reset}."
 
-# The project belongs to the user running the installer, the application container takes over its uid.
-# Apache refuses to run as root, so for root the project goes to uid 1000 instead.
+# The project belongs to the user running the installer.
+# Apache refuses to run as root, so for root the project goes to uid 1000 instead, the uid of the application container.
 owner="$(id -u):$(id -g)"
 if [ "$(id -u)" = 0 ]; then
     owner="1000:1000"
@@ -161,17 +197,53 @@ if [ "$(id -u)" = 0 ]; then
 fi
 
 # ----------------
-# Require Framework, Run Install Command
+# Install
 # ----------------
 
-# The framework from source because the dist archive leaves out tests/, everything else as dist
+# Everything runs inside the PHP image the project uses, so the host needs nothing but Docker.
+# The project's composer.json comes first, then one `composer require` builds the vendor in place
+# (latest: without a constraint, so Composer picks the newest stable release and writes the ^
+# constraint itself), then bin/install from that vendor adds the rest of the project template.
+constraint="$version"
+if [ "$version" = latest ]; then
+    constraint=""
+fi
+
 install_start=$SECONDS
 spinner_start
-if ! docker run --rm -u "$owner" -e HOME=/tmp -v "$directory":/app --entrypoint sh ghcr.io/zubzet/php:8.5-apache -c '
-    mkdir /tmp/installer && cd /tmp/installer &&
-    echo "{\"config\":{\"preferred-install\":{\"zubzet/framework\":\"source\",\"*\":\"dist\"}}}" > composer.json &&
-    composer require --no-ansi zubzet/framework:dev-develop &&
-    cd vendor/zubzet/framework/tests/e2e && COMPOSER_VENDOR_DIR=/tmp/installer/vendor php index.php install /app
+if [ ! -f "$directory/composer.json" ]; then
+    cat > "$directory/composer.json" <<'JSON'
+{
+    "type": "project",
+    "config": {
+        "audit": {
+            "ignore": {
+                "GHSA-2jx3-65f3-xr8r": {
+                    "apply": "block",
+                    "reason": "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x"
+                },
+                "GHSA-g7m4-839x-ch6v": {
+                    "apply": "block",
+                    "reason": "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x"
+                }
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
+}
+JSON
+fi
+# Written by root -> the container (uid 1000) must be able to update it
+if [ "$(id -u)" = 0 ]; then
+    chown "$owner" "$directory/composer.json"
+fi
+if ! docker run --rm -u "$owner" -e HOME=/tmp -e "ZUBZET_CONSTRAINT=$constraint" -v "$directory":/app -w /app --entrypoint sh ghcr.io/zubzet/php:8.5-apache -c '
+    composer require --no-ansi "zubzet/framework${ZUBZET_CONSTRAINT:+:$ZUBZET_CONSTRAINT}" &&
+    php vendor/zubzet/framework/bin/install /app
 ' > "$log" 2>&1; then
     spinner_stop
     echo "${red}${bold}Error:${reset} The installation failed:" >&2
@@ -181,6 +253,19 @@ fi
 spinner_stop
 
 echo "${green}✔${reset} Done! ZubZet installed in ${bold}$directory.${reset} ${green}[$(clock "$((SECONDS - install_start))")]${reset}"
+
+
+# ----------------
+# Start
+# ----------------
+
+# The installer container is gone by now, the project starts on the host through its own script
+echo
+echo "${green}ℹ${reset} Starting the project..."
+if ! (cd "$directory" && ./project start); then
+    echo "${red}${bold}Error:${reset} The project was installed but could not be started. Run ${bold}./project start${reset} in ${bold}$directory${reset} again." >&2
+    exit 1
+fi
 
 
 # ----------------
@@ -201,7 +286,6 @@ echo "$rule"
 if [ "$directory" != "$PWD" ]; then
     info_row "Enter" "${bold}cd $(printf '%q' "$directory")${reset}"
 fi
-info_row "Start" "${bold}./project start${reset}"
 info_row "Stop" "${bold}./project stop${reset}"
 echo
 info_row "Docs" "${green}https://zubzet.com/docs${reset}"

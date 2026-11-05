@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+    // Standalone entry for the install command, it never boots the framework.
+    // Inside a project's vendor the autoloader is three folders up, in this checkout it is the one the e2e container points to.
+    foreach([
+        __DIR__ . "/../../../autoload.php",
+        (getenv("COMPOSER_VENDOR_DIR") ?: __DIR__ . "/../vendor") . "/autoload.php",
+    ] as $autoload) {
+        if(!is_file($autoload)) continue;
+
+        require $autoload;
+        break;
+    }
+
+    use Symfony\Component\Console\Application;
+    use ZubZet\Framework\Support\Commands\Install;
+
+    $application = new Application("ZubZet Installer");
+
+    $application->add($install = new Install());
+    $application->setDefaultCommand($install->getName(), true);
+
+    $application->run();
+
+?>
