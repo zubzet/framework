@@ -187,7 +187,7 @@
         public function action_login_as(Request $req, Response $res) {
             $req->checkPermission("admin.su");
 
-            // A GET link could be fired from another site, so only the CSRF checked post logs in
+            // A GET link from another site still carries the Lax session cookie, so only a post logs in
             if($req->isAction("login_as")) {
                 $userId = $req->getParameters(0, 1);
                 if(empty($userId) && $userId !== '0') return;

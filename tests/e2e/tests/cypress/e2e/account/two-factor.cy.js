@@ -7,13 +7,12 @@ describe('Two factor', () => {
     const login = (prefix) => cy.setCookie('z_login_token', token(prefix));
 
     function post(action, body, url = '/_zubzet/profile') {
-        return cy.zRequest({
+        return cy.request({
             method: 'POST',
             url: `${url}/${action}`,
             form: true,
             failOnStatusCode: false,
-            // The action Z.js sends along
-            body: { action, ...body },
+            body,
         }).then((res) => typeof res.body === 'string' ? JSON.parse(res.body) : res.body);
     }
 
@@ -499,7 +498,7 @@ describe('Two factor', () => {
         it('is closed to an account without admin.user.edit', () => {
             login('0851a');
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/edit_user/851',
                 form: true,

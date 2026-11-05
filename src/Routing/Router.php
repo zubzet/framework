@@ -26,8 +26,11 @@
                 request()->urlParts = $customUrlParts;
             }
 
-            // CSRF defense: issue a token on every request, dispatch verifies it before the route runs.
-            new CSRF();
+            // Before the route files load, so no app code runs for a forged request
+            if(!CSRF::verify()) {
+                $this->executePath(["error", "403"]);
+                exit;
+            }
 
             $dispatcher = $this->getRouteDispatcher();
 

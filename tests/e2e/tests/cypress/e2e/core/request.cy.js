@@ -47,7 +47,7 @@ describe('Request', () => {
     });
 
     it('POST', () => {
-        cy.zRequest({
+        cy.request({
             method: 'POST',
             url: '/Core/Post',
             form: true,
@@ -69,17 +69,15 @@ describe('Request', () => {
 
             cy.intercept('POST', '/Core/File').as('fileUpload');
 
-            cy.request('/_zubzet/health');
-            cy.getCookie('z_csrf').then((csrf) => cy.window().then((win) => {
+            cy.window().then((win) => {
                 const xhr = new win.XMLHttpRequest();
                 xhr.open('POST', '/Core/File');
-                xhr.setRequestHeader('X-CSRF-Token', csrf.value);
                 xhr.onload = function () {
                     expect(xhr.status).to.eq(200);
                     expect(xhr.responseText).to.include('TestFile_Small.txt');
                 };
                 xhr.send(formData);
-            }));
+            });
 
             cy.wait('@fileUpload');
         });
@@ -273,36 +271,113 @@ describe('Request', () => {
     });
 
     // Request::getBody() reads $this->input->body raw; Request::getJson()
-    // decodes it with JSON_THROW_ON_ERROR. Verify round-trip on valid JSON
-    // and that the throw surfaces on malformed input (probe catches it).
-    it('getBody() + getJson() - round-trips valid JSON, surfaces JsonException on bad input', () => {
-        const payload = { hello: 'world', n: 42, nested: { ok: true } };
-
+    // accepts only JSON sent as application/json and throws an
+    // UnexpectedValueException with the HTTP status as its code otherwise
+    // (probe catches it).
+    describe('getJson()', () => {
         // cy.request auto-deserializes when the response looks like JSON;
         // accept either shape so the test is robust to that behavior.
         const parseBody = (body) => (typeof body === 'string' ? JSON.parse(body) : body);
 
-        cy.zRequest({
-            method: 'POST',
-            url: '/Core/requestBody',
-            body: payload, // cypress JSON-serializes objects
-        }).then((res) => {
-            const out = parseBody(res.body);
-            expect(out.body).to.eq(JSON.stringify(payload));
-            expect(out.json).to.deep.equal(payload);
-            expect(out.jsonError).to.eq(null);
+        const sendJson = (body, { method = 'POST', contentType = 'application/json', query = '' } = {}) => cy.request({
+            method,
+            url: `/Core/requestBody${query}`,
+            body,
+            headers: { 'Content-Type': contentType },
+        }).then((res) => parseBody(res.body));
+
+        const expectRejected = (out, status, message) => {
+            expect(out.json).to.eq(null);
+            expect(out.jsonStatus).to.eq(status);
+            expect(out.jsonError).to.contain(message);
+        };
+
+        it('round-trips a JSON object next to the raw body', () => {
+            const payload = { hello: 'world', n: 42, nested: { ok: true } };
+
+            sendJson(JSON.stringify(payload)).then((out) => {
+                expect(out.body).to.eq(JSON.stringify(payload));
+                expect(out.json).to.deep.equal(payload);
+                expect(out.jsonError).to.eq(null);
+                expect(out.jsonStatus).to.eq(null);
+            });
         });
 
-        cy.zRequest({
-            method: 'POST',
-            url: '/Core/requestBody',
-            body: 'not-json{',
-            headers: { 'Content-Type': 'text/plain' },
-        }).then((res) => {
-            const out = parseBody(res.body);
-            expect(out.body).to.eq('not-json{');
-            expect(out.json).to.eq(null);
-            expect(out.jsonError, 'JsonException message captured').to.be.a('string').and.not.empty;
+        it('accepts a utf-8 charset in any case and spelling', () => {
+            sendJson('{"a":1}', { contentType: 'Application/JSON; Charset="UTF-8"' }).then((out) => {
+                expect(out.json).to.deep.equal({ a: 1 });
+            });
+        });
+
+        it('accepts the other methods that carry a body', () => {
+            ['PUT', 'PATCH', 'DELETE'].forEach((method) => {
+                sendJson('{"a":1}', { method }).then((out) => {
+                    expect(out.json, method).to.deep.equal({ a: 1 });
+                });
+            });
+        });
+
+        it('keeps integers beyond PHP_INT_MAX as strings', () => {
+            sendJson('{"big":123456789012345678901234567890}').then((out) => {
+                expect(out.json).to.deep.equal({ big: '123456789012345678901234567890' });
+            });
+        });
+
+        it('rejects a method without a body with 405', () => {
+            cy.request('/Core/requestBody').then((res) => {
+                expectRejected(parseBody(res.body), 405, 'Method does not accept a JSON body');
+            });
+        });
+
+        it('rejects every other Content-Type with 415', () => {
+            ['text/plain', 'application/x-www-form-urlencoded', 'application/jsonp', 'application/vnd.api+json'].forEach((contentType) => {
+                sendJson('{"a":1}', { contentType }).then((out) => {
+                    expectRejected(out, 415, 'Content-Type must be application/json');
+                });
+            });
+        });
+
+        it('rejects a charset other than utf-8 with 415', () => {
+            sendJson('{"a":1}', { contentType: 'application/json; charset=iso-8859-1' }).then((out) => {
+                expectRejected(out, 415, 'JSON must be UTF-8');
+            });
+        });
+
+        it('rejects a body beyond maxBytes with 413', () => {
+            sendJson('{"a":"0123456789"}', { query: '?maxBytes=10' }).then((out) => {
+                expectRejected(out, 413, 'Body too large');
+            });
+        });
+
+        it('rejects a leading BOM with 400', () => {
+            sendJson('﻿{"a":1}').then((out) => {
+                expectRejected(out, 400, 'JSON must not start with a BOM');
+            });
+        });
+
+        it('returns a top level list as array', () => {
+            sendJson('[1,2]').then((out) => {
+                expect(out.json).to.deep.equal([1, 2]);
+            });
+        });
+
+        it('rejects malformed JSON with 400', () => {
+            sendJson('{"a":').then((out) => {
+                expect(out.body).to.eq('{"a":');
+                expectRejected(out, 400, 'Malformed JSON');
+            });
+        });
+
+        it('rejects an empty body as malformed with 400', () => {
+            sendJson('').then((out) => {
+                expectRejected(out, 400, 'Malformed JSON');
+            });
+        });
+
+        it('rejects nesting beyond maxDepth with 400', () => {
+            sendJson('{"a":'.repeat(40) + '1' + '}'.repeat(40)).then((out) => {
+                expectRejected(out, 400, 'Malformed JSON');
+            });
         });
     });
 

@@ -232,7 +232,7 @@ Before v1.3.0 a view was a PHP file that returned an array of `head` and `body` 
 Beyond a cleaner syntax, the engine unlocks real template inheritance, reusable components and shared partials that the old closure format could not express.
 
 ## Not available in Katana
-Katana implements the common Blade directives, which is everything on this page. A handful of Laravel specific directives are **not** available, because they depend on parts of Laravel the framework does not use: `@csrf`, `@method`, `@error`, `@can` / `@cannot`, `@lang` / `@choice`, `@vite`, `@dump` / `@dd` and `@inject`. Use the framework's own equivalents (for example `@auth("permission")` in place of `@can`) or plain PHP.
+Katana implements the common Blade directives, which is everything on this page. A handful of Laravel specific directives are **not** available, because they depend on parts of Laravel the framework does not use: `@method`, `@error`, `@can` / `@cannot`, `@lang` / `@choice`, `@vite`, `@dump` / `@dd` and `@inject`. Use the framework's own equivalents (for example `@auth("permission")` in place of `@can`) or plain PHP.
 
 ## Learn more
 - [Katana](https://github.com/katanaphp/blade), the render engine ZubZet uses.
