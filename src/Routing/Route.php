@@ -34,7 +34,7 @@
 
         /**
          * Stack to manage middleware inheritance of nested groups.
-         * @var array<int, array{middleware: array, afterMiddleware: array, withoutCsrf: bool}>
+         * @var array<int, array{middleware: array, afterMiddleware: array, withoutCsrf: bool, withoutCsrfCookie: bool}>
          */
         private static array $groupStateStack = [];
 
@@ -77,6 +77,7 @@
             $toExecuteMiddlewares = [];
             $toExecuteAfterMiddlewares = [];
             $withoutCsrf = false;
+            $withoutCsrfCookie = false;
 
             foreach(self::$storedPrefixedGroups as $groupPath => $prefixGroup) {
                 // Check if the current path matches the group prefix
@@ -86,6 +87,7 @@
                 if(!$isMatch) continue;
 
                 $withoutCsrf = $withoutCsrf || $prefixGroup["withoutCsrf"];
+                $withoutCsrfCookie = $withoutCsrfCookie || $prefixGroup["withoutCsrfCookie"];
 
                 // Collect middlewares and afterwares to execute
                 foreach($prefixGroup["middleware"] as $middleware) {
@@ -95,6 +97,11 @@
                 foreach($prefixGroup["afterMiddleware"] as $afterMiddleware) {
                     $toExecuteAfterMiddlewares[] = $afterMiddleware;
                 }
+            }
+
+            // Issued once the path is known, so an opted-out group sends no cookie
+            if(!$withoutCsrfCookie) {
+                new CSRF();
             }
 
             // Before any middleware, which may act on the request just like the action
@@ -122,7 +129,7 @@
         /**
          * Creates a route group.
          */
-        public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware, bool $withoutCsrf): void {
+        public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware, bool $withoutCsrf, bool $withoutCsrfCookie): void {
             // Push the prefix onto the stack.
             self::$prefixStack[] = $prefix;
 
@@ -131,6 +138,7 @@
                 'middleware' => $middlewares,
                 'afterMiddleware' => $afterMiddleware,
                 'withoutCsrf' => $withoutCsrf,
+                'withoutCsrfCookie' => $withoutCsrfCookie,
             ];
 
             // Push inherited group middleware state.
@@ -138,6 +146,7 @@
                 'middleware' => $middlewares,
                 'afterMiddleware' => $afterMiddleware,
                 'withoutCsrf' => $withoutCsrf,
+                'withoutCsrfCookie' => $withoutCsrfCookie,
             ];
 
             $callback();
@@ -146,11 +155,12 @@
             array_pop(self::$prefixStack);
         }
 
-        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware, bool $withoutCsrf): void {
+        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware, bool $withoutCsrf, bool $withoutCsrfCookie): void {
             $router = self::getCurrentRouter();
 
             // Like a group middleware, the opt-out of a group covers every route declared inside it
             $withoutCsrf = $withoutCsrf || in_array(true, array_column(self::$groupStateStack, "withoutCsrf"), true);
+            $withoutCsrfCookie = $withoutCsrfCookie || in_array(true, array_column(self::$groupStateStack, "withoutCsrfCookie"), true);
 
             $effectiveMiddlewares = [
                 ...self::getInheritedMiddlewares(),
@@ -162,7 +172,12 @@
                 ...self::getInheritedAfterMiddlewares(),
             ];
 
-            $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares, $withoutCsrf) {
+            $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares, $withoutCsrf, $withoutCsrfCookie) {
+                // Issued once the route is known, so an opted-out route sends no cookie
+                if(!$withoutCsrfCookie) {
+                    new CSRF();
+                }
+
                 // Before any middleware, which may act on the request just like the action
                 if(!$withoutCsrf) {
                     CSRF::verify();

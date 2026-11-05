@@ -16,7 +16,7 @@
             $this->setName("db:unlock-migration");
             $this->setDescription("Unlock the migration table if it is locked.");
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {

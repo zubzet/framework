@@ -74,7 +74,7 @@
                 "Include external migrations in the sync",
             );
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {

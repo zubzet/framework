@@ -188,7 +188,7 @@ Route::group('/admin')->middleware([AuthController::class, 'checkAuth']);
 
 ### CSRF Opt-out
 
-The [CSRF check](csrf-protection.md) runs before the middlewares of a route. A route or group whose callers authenticate without the session cookie opts out with `withoutCsrf()`, which is inherited like a group middleware:
+The [CSRF check](csrf-protection.md) runs before the middlewares of a route. A route or group whose callers authenticate without the session cookie opts out with `withoutCsrf()`, a cacheable page that must stay cookie free with `withoutCsrfCookie()`; both are inherited like a group middleware:
 
 ```php
 Route::group('/api', function () {

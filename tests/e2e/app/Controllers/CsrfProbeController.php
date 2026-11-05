@@ -15,6 +15,11 @@
             return $res->success();
         }
 
+        // Reached by convention under a group that opted out of the cookie in CsrfRoutes.php
+        public function action_cookiefree(Request $req, Response $res) {
+            return $res->success();
+        }
+
         // Opted out in CsrfRoutes.php, sends a guest on to the login through checkPermission()
         public function action_guarded(Request $req, Response $res) {
             $req->checkPermission("admin.panel");

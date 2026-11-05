@@ -19,6 +19,7 @@ class PendingRoute extends PendingRoutingState {
             $this->middleware,
             $this->afterMiddleware,
             $this->withoutCsrf,
+            $this->withoutCsrfCookie,
         );
     }
 }

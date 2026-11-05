@@ -51,6 +51,8 @@
             $newSettings->addProperty("two_factor_tries", "5");
             $newSettings->addProperty("session_last_used_throttle_seconds", "60");
             $newSettings->addProperty("db_max_retries", "3");
+            $newSettings->addProperty("db_wait_attempts", "10");
+            $newSettings->addProperty("db_wait_delay", "3");
             $newSettings->addProperty("db_ssl", "false");
             $newSettings->addProperty("db_persistent", "false");
             $newSettings->addProperty("dbport", "");
