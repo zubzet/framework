@@ -7,8 +7,8 @@ describe('Authentication - Session', () => {
         return cy.request(path).then((res) => JSON.parse(res.body));
     }
 
-    // Issued tokens are a `zub-` prefix plus 32 random bytes in hex
-    const TOKEN_FORMAT = /^zub-[0-9a-f]{64}$/;
+    // Issued tokens are a `zub-sha256-` prefix plus 32 random bytes in hex
+    const TOKEN_FORMAT = /^zub-sha256-[0-9a-f]{64}$/;
 
 
     /**
@@ -16,10 +16,11 @@ describe('Authentication - Session', () => {
      */
 
     it('should return only active sessions for a user (byUser)', () => {
+        // Only the hash is stored, so a session not looked up by its token does not know it
         const expected = [
             {
                 id: 400,
-                token: '0400a00000000000000000000000000000000000',
+                token: null,
                 userId: 400,
                 userIdExec: 400,
                 extendedSeconds: null,
@@ -31,7 +32,7 @@ describe('Authentication - Session', () => {
             },
             {
                 id: 401,
-                token: '0400b00000000000000000000000000000000000',
+                token: null,
                 userId: 400,
                 userIdExec: 401,
                 extendedSeconds: null,
@@ -45,7 +46,6 @@ describe('Authentication - Session', () => {
 
         const shouldNotInclude = {
             id: 402,
-            token: '0400c00000000000000000000000000000000000',
         };
 
         requestJson('/session/byUser').then((output) => {
@@ -56,7 +56,6 @@ describe('Authentication - Session', () => {
             });
 
             output.forEach(session => {
-                expect(session.token).to.not.equal(shouldNotInclude.token);
                 expect(session.id).to.not.equal(shouldNotInclude.id);
             });
         });
@@ -66,7 +65,8 @@ describe('Authentication - Session', () => {
         requestJson('/session/getters').then((output) => {
             expect(output).to.deep.equal({
                 id: 404,
-                token: '0402a00000000000000000000000000000000000',
+                // Loaded by id, so the plaintext token is not known
+                token: null,
                 userId: 402,
                 userIdExec: 402,
                 extendedSeconds: 300,
@@ -154,6 +154,45 @@ describe('Authentication - Session', () => {
     it('should give a new session the 7 day default lifetime without loginTimeoutSeconds', () => {
         requestJson('/session/addWithoutTimeoutSetting').then((output) => {
             expect(output.lifetime).to.equal(7 * 24 * 60 * 60);
+        });
+    });
+
+
+    /**
+     * Tokens at rest
+     */
+
+    it('should store the hash of a new session and api key, not the token (add)', () => {
+        requestJson('/session/tokenAtRest').then((output) => {
+            ['session', 'apiKey'].forEach((kind) => {
+                const issued = output[kind];
+
+                expect(issued.token).to.match(TOKEN_FORMAT);
+                expect(issued.stored).to.equal(`zub-sha256-${issued.sha256}`);
+                expect(issued.stored).to.not.equal(issued.token);
+            });
+        });
+    });
+
+    it('should know the token only when a session is added or loaded by it', () => {
+        requestJson('/session/tokenKnown').then((output) => {
+            expect(output.added).to.match(TOKEN_FORMAT);
+            expect(output.byToken).to.equal(output.added);
+
+            expect(output.byId).to.be.null;
+            expect(output.byUser).to.not.be.empty;
+            output.byUser.forEach((token) => expect(token).to.be.null);
+        });
+    });
+
+    it('should set and extend the extension time of a hashed session loaded by id or token', () => {
+        requestJson('/session/extendHashed').then((output) => {
+            expect(output).to.deep.equal({
+                setById: 100,
+                extendedById: 150,
+                setByToken: 300,
+                extendedByToken: 325,
+            });
         });
     });
 

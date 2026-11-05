@@ -9,6 +9,8 @@
     // (and `found`/`exists` is false) when the row isn't there, so callers
     // can rely on the shape without the action branching on emptiness.
 
+    use ZubZet\Framework\Authentication\LoginToken;
+
     class AuthProbeController extends z_controller {
 
         /**
@@ -42,7 +44,8 @@
          * GET /auth-probe/tokenActive/<token>
          */
         public function action_tokenActive(Request $req, Response $res): void {
-            $token = $req->getParameters(0, 1);
+            // The row holds what LoginToken::hash() makes of the token
+            $token = LoginToken::hash((string) $req->getParameters(0, 1));
 
             $row = db()->exec(
                 "SELECT `active` FROM `z_logintoken` WHERE `token` = ?",

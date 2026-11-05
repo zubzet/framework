@@ -378,7 +378,7 @@ describe('Profile', () => {
             cy.wait('@create');
 
             cy.query('api-key-created').should('be.visible');
-            cy.query('api-key-token').invoke('val').should('match', /^zub-[0-9a-f]{64}$/);
+            cy.query('api-key-token').invoke('val').should('match', /^zub-sha256-[0-9a-f]{64}$/);
             cy.query('api-key-name').should('have.value', '');
 
             cy.query('btn-api-key-done').click();
