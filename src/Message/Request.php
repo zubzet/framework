@@ -45,9 +45,10 @@
                 return $this->urlParts;
             }
 
-            // Parse the path
+            // Cut the query like the router does. REQUEST_URI is a path, not a
+            // URL: parse_url() reads "/x:1" as host and port and returns false
             $path = $this->input->SERVER['REQUEST_URI'] ?? "";
-            $path = parse_url($path, PHP_URL_PATH) ?: "";
+            $path = explode("?", $path, 2)[0];
             $path = trim($path, '/');
 
             $urlParts = empty($path) ? [] : explode("/", $path);

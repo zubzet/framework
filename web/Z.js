@@ -1627,10 +1627,16 @@ class ZFormField {
               item.classList.add("text-primary");
             }
 
+            // Suggestions come from data users can enter, so every part is escaped
+            var escapeHtml = (text) => {
+              var span = document.createElement("span");
+              span.textContent = text;
+              return span.innerHTML;
+            };
             var start = value.toLowerCase().indexOf(e.target.value.toLowerCase());
-            var tmp = value.substr(0, start);
-            tmp += "<strong>" + value.substr(start, e.target.value.length) + "</strong>";
-            tmp += value.substring(start + e.target.value.length, value.length);
+            var tmp = escapeHtml(value.substr(0, start));
+            tmp += "<strong>" + escapeHtml(value.substr(start, e.target.value.length)) + "</strong>";
+            tmp += escapeHtml(value.substring(start + e.target.value.length, value.length));
             if(this.autocompleteTextCB) {
               tmp = this.autocompleteTextCB(tmp, value);
             }

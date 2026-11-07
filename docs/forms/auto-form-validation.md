@@ -405,6 +405,8 @@ public function action_favourite(Request $req, Response $res) {
 </script>
 ```
 
+Suggestions are rendered as text, so entries containing markup are shown as typed. `autocompleteTextCB` receives the label with the matching part wrapped in `<strong>`, already escaped; what the callback returns is inserted as HTML, so escape any value you add to it.
+
 The suggestion list carries the term it shows suggestions for in `data-search-term`, set once the endpoint's answer for that term has been rendered and removed when the list is cleared. Tests and scripts can wait on it, e.g. `[data-search-term="Apple"] button`.
 
 ### Select

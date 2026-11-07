@@ -451,7 +451,7 @@
 
                 return $res->generateRest([
                     "data" => array_values(array_filter(
-                        ["Aachen", "Aalen", "Berlin"],
+                        ["Aachen", "Aalen", "Berlin", "Xa<img src=x onerror=\"window.__xss=1\">"],
                         fn($city) => str_contains(strtolower($city), $value),
                     )),
                 ]);
