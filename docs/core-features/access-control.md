@@ -47,7 +47,7 @@ The [`User`](../api/classes/ZubZet-Framework-Authentication-Permission-User.html
 
 All retrieval methods are **public static** and return fully hydrated `User` objects. They only find active records; `all()` and `byId()` of `Role`, `Group` and `Organization` work the same way.
 
-* Returns all active users with an active assignment to the given role. `User::byGroup(Group $group)` does the same for a group.
+* Returns all active users with an active assignment to the given role, directly or through their organization. `User::byGroup(Group $group)` does the same for a group.
 
     ```php
     User::byRole(Role $role): array
@@ -66,14 +66,14 @@ All retrieval methods are **public static** and return fully hydrated `User` obj
     ```
 
 * Returns all active users that have **all** of the specified permissions.
-  This includes **user-based, role-based and group-based permissions**, which may come from different sources.
+  This includes **user-based, role-based, group-based and organization permissions**, which may come from different sources.
 
     ```php
     User::byAccessToAll(string ...$permissions): array
     ```
 
 * Returns all active users that have **at least one** of the specified permissions.
-  This includes **user-based, role-based and group-based permissions**.
+  This includes **user-based, role-based, group-based and organization permissions**.
 
     ```php
     User::byAccessToAnyOf(string ...$permissions): array
@@ -442,7 +442,7 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
 ### Role Retrieval
 
-* Returns all roles assigned to a user.
+* Returns all roles assigned to a user, including those of its organization.
 
     ```php
     Role::byUser(User $user): array
@@ -618,7 +618,7 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
 ## Organization Object
 
-The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization.html) object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique, may be `null`) and is soft-deletable (`active`) like the other authentication objects.
+The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization.html) object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique, may be `null`) and is soft-deletable (`active`) like the other authentication objects. Like a user, it can hold permissions, roles and groups, which all its members inherit.
 
 ### Organization Retrieval
 
