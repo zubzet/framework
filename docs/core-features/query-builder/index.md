@@ -9,7 +9,7 @@ The Query Builder allows you to build SQL queries programmatically in a safe and
 
 ## How it works
 
-Inside a [model](../models.md), you can now use [helper methods](../../api/classes/ZubZet-Framework-QueryBuilder-CanBuildQuery.html) like `select`, `update`, `delete`, and `insert`.
+Inside a [model](../models.md) or a PHP seed class (controllers do not have them), you can now use [helper methods](../../api/classes/ZubZet-Framework-QueryBuilder-CanBuildQuery.html) like `dbSelect`, `dbUpdate`, `dbDelete`, and `dbInsert`, provided by the trait `CanBuildQuery`.
 These methods internally delegate to the CakePHP Query Builder.
 
 Example methods inside a model:
@@ -23,16 +23,16 @@ public function dbUpdate($table = null, array $values = [], array $conditions = 
     return $this->getQueryBuilder()->updateQuery($table, $values, $conditions, $types);
 }
 
-public function dbDelete(string $table, array $conditions = [], array $types = []) {
+public function dbDelete(?string $table = null, array $conditions = [], array $types = []) {
     return $this->getQueryBuilder()->deleteQuery($table, $conditions, $types);
 }
 
-public function dbInsert(string $table = null, array $values = [], array $types = []) {
+public function dbInsert(?string $table = null, array $values = [], array $types = []) {
     return $this->getQueryBuilder()->insertQuery($table, $values, $types);
 }
 
 public function getQueryBuilder() {
-    return db()->cakePHPDatabase;
+    return db()->queryBuilderConnection;
 }
 ```
 
@@ -40,13 +40,15 @@ public function getQueryBuilder() {
 
 ## Executing Queries
 
-Once you have built a query, you can execute it with the [`exec`](../../api/classes/ZubZet-Framework-Core-Model.html#method_exec) method:
+Once you have built a query, you can execute it with the [`exec`](../../api/classes/ZubZet-Framework-Core-Model.html#method_exec) method (which ignores `$types` and `$params` for a `Query`) or `db()->execQuery($query)`; both return the `Connection`, so the result helpers can follow directly:
 ```php
 
 $query = $this->dbSelect(...);
 
 $this->exec($query);
 ```
+
+Values bind as strings unless typed: `integer`, `biginteger` and `smallinteger` bind as integers, `float` and `decimal` as doubles, and `where(fn($exp) => $exp->eq($field, $value, "integer"))` pins the type. Multi-row inserts use `new InsertQuery($this->getQueryBuilder())` with `into()`, `insert()` and repeated `values()`.
 
 ---
 
@@ -123,9 +125,15 @@ DELETE FROM users WHERE id = 42;
 
 ---
 
+## Untrusted identifiers
+
+Values are bound as prepared statement parameters, but table and column names are inserted into the SQL as written. ZubZet does not enable identifier quoting (`quoteIdentifiers`) on the query builder connection, so an identifier is never escaped or validated. Table and column names must never come from user input.
+
+---
+
 ## Summary
 
-* All query methods (`select`, `insert`, `update`, `delete`) return a **CakePHP Query object**.
+* All query methods (`select`, `insert`, `update`, `delete`) return a CakePHP `SelectQuery`, `InsertQuery`, `UpdateQuery` or `DeleteQuery`.
 * Queries are executed via `$this->exec($query)`.
 
 For more examples, see the [Examples](./examples.md) page.
@@ -147,7 +155,7 @@ Important:
     $this->exec($query);
     ```
 
-* The CakePHP Query Builder instance can always be accessed with:
+* The CakePHP Query Builder instance (one `Cake\Database\Connection`, shared by all models) can always be accessed with:
 
     ```php
     $this->getQueryBuilder();

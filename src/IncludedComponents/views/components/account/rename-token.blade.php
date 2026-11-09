@@ -42,7 +42,7 @@
                 });
 
                 rename.on("click", ".z-token-rename-save", () => {
-                    Z.Request.root("_zubzet/profile/rename-token", "rename-token", {
+                    Z.Request.root("_zubzet/profile/rename-token", null, {
                         uuid: rename.data("uuid"),
                         type: rename.data("type"),
                         name: rename.find(".z-token-name").val()

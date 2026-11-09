@@ -1,6 +1,6 @@
 // Helper: every Z.Forms POST needs the isFormData flag so hasFormData()
 // returns true. Cypress is the back-end client here.
-const postForm = (url, body) => cy.zRequest({
+const postForm = (url, body) => cy.request({
     method: 'POST',
     url,
     form: true,

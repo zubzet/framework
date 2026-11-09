@@ -19,7 +19,9 @@ first registered source that contains it.
 ## Referencing assets in views
 
 Use the `generateResourceLink` helper available on every [view's](views.md) `$opt` array — it builds a correct,
-root-relative URL for you:
+root-relative URL for you, versioned with `?v=<assetVersion>`. The proxy lets a link carrying the configured
+`assetVersion` (not `dev`) be cached for a year as `immutable`, any other link only with revalidation through
+its `ETag`, answered with `304` while the file is unchanged; change `assetVersion` with every asset change, a framework or module update included:
 
 ```blade
 @extends($layout)
@@ -33,6 +35,8 @@ root-relative URL for you:
     <script src="<?php $opt["generateResourceLink"]("_zubzet/asset-proxy/js/jquery.min.js"); ?>"></script>
 @endsection
 ```
+
+The link ends in `?v=<assetVersion>`, the only cache busting there is: the proxy ignores the query string and sends only a `Content-Type` header, no cache headers.
 
 ## Bundled assets
 
@@ -59,7 +63,7 @@ zubzet()->assetProxy->registerWebRootSource("/var/www/vendor/acme/ui-kit/dist", 
 
 The file `dist/app.css` is then available at `/_zubzet/asset-proxy/ui-kit/app.css`. Registration is
 lazy — the directory is only touched when a matching request arrives. Sources are checked in
-registration order, and the first match wins.
+registration order, and the first match wins. For an installed Composer package, `(new BundledPackage("acme/ui-kit", "dist", "ui-kit"))->mount(zubzet()->assetProxy)` resolves the path for you.
 
 ## Module assets and resolution order
 
@@ -83,6 +87,7 @@ The proxy is designed to serve only files that live inside a registered source:
   result stays within the registered source directory, so `../` sequences and symlink escapes cannot
   reach files outside the mount.
 - **Only readable, existing files are served**; anything else returns `404`.
+- **There is no allow-list and no access check.** Everything else readable below a mounted source is served to anyone via `GET`, including dotfiles and the `composer.json` of mounted packages.
 - **Source and config extensions are never served.** Requests for `.php`, `.phtml`, or `.ini`
   files return `404` from every source, including ones you register yourself.
 - **[Content types are detected](https://github.com/thephpleague/mime-type-detection)** with `league/mime-type-detection`, falling back to

@@ -445,12 +445,11 @@ describe('Authentication - Session', () => {
     const CHROME_ON_WINDOWS = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
     function login(userAgent) {
-        return cy.zRequest({
+        return cy.request({
             method: 'POST',
             url: '/login',
             form: true,
             body: {
-                action: 'login',
                 name: 'session_login_name@cypress.test',
                 password: 'password',
             },

@@ -112,7 +112,7 @@
             var root = $("#z-api-keys");
 
             root.on("click", ".z-api-key-create", () => {
-                Z.Request.root("_zubzet/profile/create-api-key", "create-api-key", {
+                Z.Request.root("_zubzet/profile/create-api-key", null, {
                     name: root.find(".z-api-key-name").val(),
                     lifetime: root.find(".z-api-key-lifetime").val()
                 }, (res) => {
@@ -131,7 +131,7 @@
             });
 
             root.on("click", ".z-revoke-api-key", function() {
-                Z.Request.root("_zubzet/profile/revoke-token", "revoke-token", {
+                Z.Request.root("_zubzet/profile/revoke-token", null, {
                     uuid: $(this).data("uuid"),
                     type: "api-key"
                 }, (res) => {

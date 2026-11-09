@@ -17,7 +17,7 @@ A new password ends every login of the account, the current browser included, so
 
 ## Two Factor
 
-*Set up* shows a QR code for the authenticator and the key to type in by hand. Two factor stays off until a code from the authenticator confirms that the secret arrived. Turning it off again asks for a current code. After 5 wrong codes the session is signed out.
+*Set up* shows a QR code for the authenticator and the key to type in by hand. Two factor stays off until a code from the authenticator confirms that the secret arrived. Turning it off again asks for a current code. After `two_factor_tries` (defaults to 5) wrong codes the session is signed out. Clearing sessions, revoking a session or key and creating a key ask for a [recent check](../core-features/two-factor-authentication.md#guarding-an-action) first.
 
 An owner who lost their authenticator cannot turn it off themselves. An admin with `admin.user.edit` can, with *Disable two factor* on the account's page under *Edit User*.
 
