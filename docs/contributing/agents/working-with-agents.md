@@ -41,6 +41,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 `src/ZubZet.php __construct` is sensitive to ordering. The current sequence:
 
 ```php
+Collector::initialize();          // coverage, only when .coverage.session exists
 self::$instance = $this;           // zubzet() resolves to this
 new GlobalReferences;              // defines config(), logger(), isCli(), …
 new Constants;                     // TIMESPAN_DAY_1 etc.
@@ -53,7 +54,8 @@ $this->setExceptionBehavior();
 $this->assetProxy = new AssetProxy;
 new Helpers;
 $this->setRequestResponse(...);
-$this->z_db = new Connection;
+$this->z_db = new Connection;         // connects lazily on the first query
+DebugBarBridge::bootstrap();
 $this->user = new User;
 ```
 
@@ -177,7 +179,7 @@ Useful Cypress helpers in `tests/e2e/tests/cypress/support/commands.js`:
 | `cy.loginAs(profile)` | Set session token from `fixtures/logins.json` |
 | `cy.setConfigSetting(key, value)` | Patch `tests/e2e/z_config/z_settings.ini` |
 | `cy.saveConfigBackup()` / `cy.restoreConfigBackup()` | Wrap suites that mutate config |
-| `cy.dbSeed()` | `npm run seed` + clear sessions |
+| `cy.dbSeed()` | `db:seed` (optional `exclude` / `include` selectors) + clear sessions |
 | `cy.http(method, endpoint, body, callback)` | API call with `X-API-KEY: 1234` |
 
 To exercise a CLI command end-to-end:
@@ -221,7 +223,7 @@ Call sites that feed the bar:
 | `LoggerFactory::getOrCreateLogger` | `DebugBarBridge::collectLogger(...)` | `MonologCollector` (a Monolog handler) |
 | `Registry::find` / `Registry::files` | `DebugBarBridge::collectResolution(...)` | `ResolutionCollector` (lookup provenance: userspace / module / framework) |
 
-Internal-query filtering uses source tagging: models that mark themselves with the `IsInternalModel` trait set `isInternalModel = true`, and `Connection::exec` records the calling model on the connection before the query runs. `QueryCollector::addQuery` then drops queries from internal models when `debugbar_hide_internal_queries = true` (default). Direct `db()->exec(...)` calls have no calling model and are always shown.
+Internal-query filtering uses source tagging: models that mark themselves with the `IsInternalModel` trait set `isInternalModel = true`, and only `Model::exec()` sets `Connection::$callingModel` before the query runs; `Connection::exec` hands it to the collector with every query. `QueryCollector::addQuery` then drops queries from internal models when `debugbar_hide_internal_queries = true` (default). The tag is never reset, so a later direct `db()->exec(...)`, `execQuery()` or `getFullTable()`, `getTableWhere()` and `countTableEntries()` call reuses the previous model's tag (`null` at request start).
 
 To add a new collector, implement `DebugBar\DataCollector\DataCollector` (or extend an existing one), register it in `DebugBarBridge::bootstrap()`, and expose a `collectXxx()` method on `CanCollect` that forwards via `self::collect("name", "addXxx", func_get_args())`.
 
@@ -238,9 +240,12 @@ docker exec application php index.php <command>
 | `db:migrate` | Run pending migrations |
 | `db:seed` | Drop and re-seed the database |
 | `db:sync` | Sync migration state up to a version/date |
-| `db:status` | Show migration status |
+| `db:status` | Show the migration lock state (exit 0 unlocked, 1 locked) |
 | `db:unlock-migration` | Release a stuck migration lock |
 | `repair:database-collation` | Convert the `z_` tables to `Connection::COLLATION`; `--include-app-tables` adds the app tables and the database default |
+| `run` | Execute a controller action from the console |
+| `install` | Build a new project in an existing, writable folder |
+| `auth:migrate-hashing` | Wrap legacy password hashes in an Argon2id layer (`onion`) |
 | `info:startup` | Print framework startup banner (no side effects — safe in tests) |
 | `module:setup` | Append-only merge of missing module ini defaults into the app ini |
 | `testing:coverage:start` / `:stop` | Bracket a coverage session |

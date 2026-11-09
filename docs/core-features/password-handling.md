@@ -12,10 +12,10 @@ Credentials live on the `z_user` table:
 
 | Column | Purpose |
 | ------ | ------- |
-| `password` | The stored credential (an Argon2id hash for current accounts). |
-| `password_scheme` | Which format `password` is in: `native`, `legacy`, `onion`, or `wordpress`. `NULL` for accounts without a password. |
-| `salt` | Per row salt for `legacy` and `onion` rows. `NULL` for `native` and `wordpress`, because those hashes embed their own salt. |
-| `last_password_rehash_at` | When the stored hash was last produced. Useful for credential age policies. |
+| `password` | The stored credential, `VARCHAR(255)` (an Argon2id hash for current accounts). |
+| `password_scheme` | Which format `password` is in: `native`, `legacy`, `onion`, or `wordpress`. `NULL` for accounts without a password: `User::add()` inserts `NULL` and sets `native` once a password is set. |
+| `salt` | `VARCHAR(255)`, per row salt for `legacy` and `onion` rows. `NULL` for `native` and `wordpress`, because those hashes embed their own salt; every upgrade to `native` resets it to `NULL`. |
+| `last_password_rehash_at` | `TIMESTAMP NULL`: when the stored hash was last produced (password change or rehash); the migration backfilled it from `created` for rows with a password. Useful for credential age policies. |
 
 There is no separate salt for native hashes. A native `password` value already
 contains the algorithm, the cost parameters, and a random salt in one
@@ -29,7 +29,7 @@ the formats can coexist while older accounts upgrade on their own.
 | Scheme | `password` holds | `salt` | Notes |
 | ------ | ---------------- | ------ | ----- |
 | `native` | An Argon2id hash from [`password_hash()`](https://www.php.net/manual/en/function.password-hash.php). | `NULL` | The target format for every account. |
-| `legacy` | The hash produced by the framework's previous scheme. | set | Verify only. Upgraded to `native` on the next login. |
+| `legacy` | The raw SHA-512 hex produced by the framework's previous scheme. | set | Verify only. Upgraded to `native` on the next login. |
 | `onion` | A native Argon2id hash wrapping the legacy value. | set | A dormant account moved onto Argon2id ahead of its next login. Upgraded to `native` when the owner logs in. |
 | `wordpress` | A hash imported from WordPress, `$wp$2y$…` (6.8 and later) or `$P$…` (phpass, earlier). | `NULL` | Verify only. Upgraded to `native` on the next login. See [Importing WordPress users](#importing-wordpress-users). |
 
@@ -79,6 +79,12 @@ login it transparently upgrades a stale stored hash to a current `native` hash
 (see [Self healing upgrades](#self-healing-upgrades)). It is the password check
 used by the framework's own login flow.
 
+### Reset codes
+
+The forgot-password flow stores a code per request in `z_password_reset` (`userId`, `refId`, `reason`, `active`, `created`; `reason` is always `forgot`). The reset page accepts a code while its row is `active = 1` and `created` is newer than the booter setting `forgotPasswordTimeSpan`. After a successful reset the code is deactivated. A code is `ZIT-` plus 64 random hex characters, a new request does not deactivate earlier codes, and `login/forgot_password` has no rate limit and answers `{"result":"success"}` or `{"result":"error"}`, so it reveals whether an email is registered. The email is matched exactly, without an `active` or `verified` filter. An invalid reset code dies with the bare text `ERROR: This code is not or no longer valid!`; a successful reset ends all sessions of the user without logging them in, and the server checks no confirmation field (the view compares both in JS only, with a client-side `minlength="4"`).
+
+`forgotPasswordTimeSpan` is a relative time string such as `60 minutes` (the project stub ships exactly that), which is handed to `strtotime('-' . $value)`. When the setting is unset, that call fails and the cut-off becomes `1970-01-01 00:00:00`, so an active code never expires. Always set it if codes should have a lifetime.
+
 ## The hash and verify API
 
 `User` is built on the lower level [`ZubZet\Framework\Authentication\PasswordHash\Password`](../api/classes/ZubZet-Framework-Authentication-PasswordHash-Password.html)
@@ -92,9 +98,9 @@ use ZubZet\Framework\Authentication\PasswordHash\Password;
 $stored = Password::hash($plaintext); // Argon2id
 ```
 
-`Password::hash()` rejects an empty or oversized input
-(`MIN_LENGTH_BYTES` to `MAX_LENGTH_BYTES`, the upper bound being a denial of
-service guard) by throwing an `InvalidArgumentException`.
+`Password::hash()` rejects input outside `MIN_LENGTH_BYTES` to `MAX_LENGTH_BYTES`
+(3 to 1024 bytes by `strlen`, the upper bound being a denial of service guard)
+by throwing `InvalidArgumentException("Invalid password length.")`.
 
 ### Verifying
 
@@ -117,10 +123,10 @@ refreshed:
 | `upgradePassword()` | The fresh `native` hash to persist. Guard with `isUpgradeNeeded()` first; calling it when no upgrade is pending throws a `LogicException`. |
 
 The hash inside `upgradePassword()` is computed only when you call it, so a
-plain `isCorrect()` check never pays for an upgrade it does not use.
+plain `isCorrect()` check never pays for an upgrade it does not use. An empty stored value, a password outside the length limits and an unknown scheme (including `null`) give a wrong result instead of throwing.
 
-For `legacy` and `onion` values, pass the scheme and salt so the verifier knows
-how to read them:
+For `legacy` and `onion` values, pass the scheme and a non-empty salt (otherwise an
+`InvalidArgumentException` is thrown) so the verifier knows how to read them:
 
 ```php
 $result = Password::verify($plaintext, $stored, Password::LEGACY, $salt);

@@ -124,7 +124,7 @@ class User extends AuthenticationObject {
      * @param ?string $password Optional the password of the new user (plain text, will be hashed)
      * @param ?DateTime $verified Optional datetime object indicating when the user was verified
      * @return User|null The created user object or null on failure
-     * @throws \InvalidArgumentException If the email is invalid or already used by another user
+     * @throws \InvalidArgumentException If the email is invalid or already used by another user, or the password is shorter than 3 or longer than 1024 bytes
      */
     public static function add(?string $email, ?string $password, ?DateTime $verified = null): ?User {
         self::assertValidEmail($email);
@@ -163,9 +163,9 @@ class User extends AuthenticationObject {
 
     /**
      * Update the email address of the user
-     * This will update the email in the database
+     * This will update the email in the database and clear all cached fields, so getters throw until refresh()
      *
-     * @param string $email The new email address
+     * @param ?string $email The new email address, null clears the email
      * @return void
      * @throws \InvalidArgumentException If the email is invalid or already used by another user
      */
@@ -178,9 +178,11 @@ class User extends AuthenticationObject {
 
     /**
      * Update the password of the user
-     * This will update the password in the database
+     * This will update the password in the database, clear all sessions of the user
+     * and clear all cached fields, so getters throw until refresh()
      *
      * @param string $password The new password
+     * @throws \InvalidArgumentException If the password is shorter than 3 or longer than 1024 bytes
      * @return void
      */
     public function updatePassword(string $password): void {
@@ -194,9 +196,11 @@ class User extends AuthenticationObject {
      * stale (rehash-on-login / onion peel). Self-healing.
      *
      * This is the password-check entry point for logging a user in.
+     * Only the database is upgraded; this instance's cached password, scheme and salt fields stay stale.
      *
      * @param string $password The plaintext password to check
      * @return bool Whether the password matched
+     * @throws \InvalidArgumentException when a legacy/onion row has no salt.
      */
     public function verifyPassword(string $password): bool {
         $result = Password::verify(
@@ -263,6 +267,7 @@ class User extends AuthenticationObject {
 
     /**
      * Deactivate this user
+     * The instance is detached afterwards, so every later call on it throws InvalidArgumentException
      *
      * @return void
      */
@@ -277,6 +282,7 @@ class User extends AuthenticationObject {
 
     /**
      * Verify the User
+     * This will write the verified timestamp to the database and clear all cached fields, so getters throw until refresh()
      *
      * @param ?DateTime $date Optional datetime object indicating when the user was verified. If null, current time will be used.
      * @return void
@@ -289,7 +295,7 @@ class User extends AuthenticationObject {
     }
 
     /**
-     * Add roles to the user
+     * Add roles to the user and clear all cached fields, so getters throw until refresh()
      * This will add the roles automatically into the database
      *
      * @param Role[] $roles The roles to add to the user
@@ -308,7 +314,7 @@ class User extends AuthenticationObject {
 
     /**
      * Add Groups to the user
-     * This will add the groups automatically into the database
+     * This will add the groups automatically into the database and clear all cached fields, so getters throw until refresh()
      *
      * @param Group[] $groups The groups to add to the user
      * @return void
@@ -325,7 +331,7 @@ class User extends AuthenticationObject {
     }
 
     /**
-     * Remove roles from the user
+     * Remove roles from the user and clear all cached fields, so getters throw until refresh()
      * This will remove the roles automatically from the database
      *
      * @param Role[] $roles The roles to remove from the user
@@ -344,7 +350,7 @@ class User extends AuthenticationObject {
 
     /**
      * Remove groups from the user
-     * This will remove the groups automatically from the database
+     * This will remove the groups automatically from the database and clear all cached fields, so getters throw until refresh()
      *
      * @param Group[] $groups The groups to remove from the user
      * @return void
@@ -399,7 +405,7 @@ class User extends AuthenticationObject {
     /**
      * Check if a User is verified
      *
-     * @param string $at When to check verification status (default: "NOW")
+     * @param string $at "NOW" or any strtotime()-parseable datetime string (e.g. "2024-05-01 12:00:00") to check verification status at; unparsable values yield false (default: "NOW")
      * @return bool Returns true if the user is verified at the specified time, false otherwise
      */
     public function isVerified(string $at = "NOW"): bool {
@@ -443,7 +449,7 @@ class User extends AuthenticationObject {
     /**
      * Get the user's permissions
      *
-     * @return string[] Array of permissions
+     * @return array<int, array{name: string}> Rows of directly assigned permissions
      */
     public function getUserPermissions(): array {
         if(is_null($this->getField("user-permissions")) || self::$permissionChanged) $this->refreshPermissions();
@@ -454,7 +460,7 @@ class User extends AuthenticationObject {
     /**
      * Get the user's permissions including those inherited from roles
      *
-     * @return string[] Array of permissions
+     * @return array<int, array{name: string}> Rows of permissions, each shaped ['name' => 'permission']
      */
     public function getPermissions(): array {
         if(is_null($this->getField("permissions")) || self::$permissionChanged) $this->refreshAllPermissions();
@@ -463,7 +469,7 @@ class User extends AuthenticationObject {
     }
 
     /**
-     * Reset the permissions cache
+     * Reload the user's directly assigned permissions (not role-inherited ones) into the cache
      *
      * @return void
      */
@@ -472,7 +478,7 @@ class User extends AuthenticationObject {
     }
 
     /**
-     * Reset the permissions cache
+     * Reload the user's direct and role-inherited permissions into the cache
      *
      * @return void
      */

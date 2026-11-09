@@ -9,10 +9,11 @@
     trait CanRetrieveModel {
 
         /**
-         * Returns a model
-         * @param string $model Name of the model
-         * @param string $dir Set this when the model is stored in a specific directory
+         * Returns a model, one shared instance per request; falls back to the framework models when not found
+         * @param string $model Name of the model, sub-folders dot separated (e.g. "admin.User")
+         * @param ?string $dir Set this when the model is stored in a specific directory, needs a trailing slash
          * @return Model The model
+         * @throws \Exception When the model does not exist
          */
         public function getModel(string $model, ?string $dir = null) {
             $modelParts = explode(".", $model);

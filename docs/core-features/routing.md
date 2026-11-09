@@ -16,13 +16,13 @@ This makes it possible to build clean, structured, and maintainable applications
 ## How to use the routing system?
 
 To define your routes, you first need a `Routes` folder in your project’s **app directory**.
-Inside this folder, you can create multiple files. Each file can contain routes, and all of them will be automatically registered by the framework.
+Inside this folder, you can create multiple files. Each file can contain routes, and all of them will be automatically registered by the framework. Every `*.php` file directly in `app/Routes/` is loaded (subdirectories are not) in alphabetical order, before the module and framework route files, and the file name carries no meaning. A request is matched against these routes first (by `REQUEST_METHOD`, without a method-override parameter, and the URL-decoded path without query string and trailing slash); only if none matches, it falls back to the [controller-based actions](controllers-and-actions.md) (or the console on the CLI), so a wrong HTTP verb never produces a 405. There is no route cache, the route files run on every request, and a duplicate or shadowed route throws a FastRoute `BadRouteException` while they load.
 
 ---
 
 ## How to register a route?
 
-You can register a route with the following syntax:
+In a route file, after `use ZubZet\Framework\Routing\Route;`, you can register a route with the following syntax:
 
 ```php
 Route::{method}({endpoint}, [{ControllerClass}::class, {ControllerAction}]);
@@ -32,21 +32,21 @@ Route::{method}({endpoint}, [{ControllerClass}::class, {ControllerAction}]);
 
 1. **`method`** → One of the supported [HTTP methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods):
 
-    - `any(endpoint, action)` → Match any HTTP method
+    - `any(endpoint, action)` → Match `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` and `HEAD`
     - `get(endpoint, action)` → Match `GET` requests
     - `post(endpoint, action)` → Match `POST` requests
     - `put(endpoint, action)` → Match `PUT` requests
     - `delete(endpoint, action)` → Match `DELETE` requests
     - `patch(endpoint, action)` → Match `PATCH` requests
     - `options(endpoint, action)` → Match `OPTIONS` requests
-    - `define(method, endpoint, action)` → Define a custom method
+    - `define(method, endpoint, action)` → Define any method (upper-cased, `ANY` works too); there is no `head()` helper and `get()` does not register `HEAD`
 
-2. **`endpoint`** → The URL path where the route will be accessible (e.g., `/users`, `/products/{id}`).  
-   You can also define [**Route Parameter**](#route-parameters) using curly braces (e.g., `/users/{id}`), which will be passed into your controller method.
+2. **`endpoint`** → The URL path where the route will be accessible (e.g., `/users`, `/products/{id}`), in [FastRoute](https://github.com/nikic/FastRoute) syntax: `{id:\d+}` restricts a placeholder with a regex (default `[^/]+`) and a trailing `[...]` segment is optional (`/users[/{id}]`).  
+   You can also define [**Route Parameter**](#route-parameters) using curly braces (e.g., `/users/{id}`), which you read with `$req->getRouteParameter()`. Group prefixes and endpoint are concatenated, a leading slash is added, repeated slashes collapse and the trailing slash is removed (empty becomes `/`).
 
-3. **`ControllerClass`** → The PHP class that contains the logic for handling the request.
+3. **`ControllerClass`** → The PHP class that contains the logic for handling the request. It must be a global-namespace class stored as `<ControllerClass>.php` in `z_controllers`, because it is looked up by file name.
 
-4. **`ControllerAction`** → The specific method inside the controller that should be executed.
+4. **`ControllerAction`** → The specific method inside the controller that should be executed. Any public method works, the `action_` prefix is not required. Instead of the pair, the action can be a closure whose parameters are resolved by type (`Request`, `Response`, or `array` for the route parameters), so 0 to 3 parameters work in any order; any other parameter gets its default value, else `null`. Static arguments are ignored for closures and `$req->getRouteParameter()` stays empty, use the `array` parameter.
 
 ---
 
@@ -59,7 +59,7 @@ Route::get('/users/{id}', [UserController::class, 'show']);
 This means:
 
 When a client makes a `GET` request to `/users/42`,  
-the router will call the `show()` method inside the `UserController` and pass the `{id}` parameter (`42`) as [**Route Parameter**](#route-parameters) to it.
+the router will call the `show()` method inside the `UserController` and make `{id}` (`42`) available as [**Route Parameter**](#route-parameters).
 
 ---
 
@@ -107,6 +107,8 @@ Route::group('/api/{apiVersion}', function () {
 });
 ```
 
+The prefixes are concatenated in order, and the routes inherit the [middleware](#middleware-on-groups) of all enclosing groups.
+
 This allows you to build **modular and structured route definitions** that are easy to maintain.
 
 ---
@@ -117,7 +119,7 @@ ZubZet allows you to attach **middleware** and **afterMiddleware** to both route
 
 * **Middleware** → Executed **before** the route runs.  
   Example use cases: `authentication`, `user validation`, `request logging`.
-* **AfterMiddleware** → Executed **after** the route has been processed.  
+* **AfterMiddleware** → Executed **after** the route has been processed; its return value is ignored, and it does not run if the action ends the script (`exit`, for example `generateRest()` or `rerouteUrl()`).  
   Example use cases: `response formatting`, `cleanup`, `analytics logging`.
 
 ### Syntax
@@ -129,7 +131,8 @@ Route::get('/test', [TestController::class, 'route'])
 ```
 
 * The middleware and afterMiddleware use the same format as routes:
-  `[ControllerClass::class, ControllerAction]`.
+  `[ControllerClass::class, ControllerAction]` arrays, never closures, and are called like actions with `($req, $res, ...$arguments)`.
+* A route or group registers when its fluent chain is destroyed, so end the statement after the last call and do not store the result in a variable.
 
 ---
 
@@ -147,7 +150,7 @@ Example flow with multiple middlewares:
 2. **UserRegistry** → returns `true` ✅ → continue
 3. **LoginLogging** → returns `true` ✅ → route runs
 
-But if **Authentication** returns anything else (e.g., an error response):
+But if **Authentication** returns anything else (it sets no status code and renders nothing itself, so it has to produce its own response):
 
 * Execution stops right there
 * Neither `UserRegistry`, the route, nor any afterMiddleware will be executed
@@ -176,13 +179,19 @@ Every request to `/api/{apiVersion}/users` or `/api/{apiVersion}/users/{id}`:
   2. Then executes the route  
   3. Finally runs `logRequest` `(afterMiddleware)`
 
+With several groups, group middleware run from outer to inner before the route's own middleware; afterMiddleware run the route's own first, then the groups from inner to outer.
+
 A group also guards the [controller-based actions](controllers-and-actions.md) below its prefix, so a group without routes is enough for them:
 
 ```php
 Route::group('/admin')->middleware([AuthController::class, 'checkAuth']);
 ```
 
-`checkAuth` runs before every action of the `AdminController`, in every spelling that reaches it: `/admin/users`, `/Admin/users` and `/%41dmin/users` alike. The prefix is compared the way the controller name is resolved: decoded, with `-` as `_`, `.` as `§2E` and `ä`, `ö`, `ü` as `ae`, `oe`, `ue`, regardless of case. A group `/admin-panel` therefore also covers `/admin_panel/...`.
+`checkAuth` runs before every action of the `AdminController`, in every spelling that reaches it: `/admin/users`, `/Admin/users` and `/%41dmin/users` alike. The prefix is compared the way the controller name is resolved: decoded, with `-` as `_`, `.` as `§2E` and `ä`, `ö`, `ü` as `ae`, `oe`, `ue`, regardless of case. A group `/admin-panel` therefore also covers `/admin_panel/...`. Direct `executePath()` calls (CLI `run`, `checkPermission()` redirects, error pages) skip explicit routes and group middleware. All matching groups run outer to inner, afterMiddleware in the same order, and a middleware returning anything but `true` ends the script with `exit`.
+
+An empty prefix covers every URL. Otherwise a prefix covers a URL only if it equals the URL or is followed by `/` in it, and the whole prefix is compared literally against the path, which always starts with `/`. Three kinds of prefix therefore never guard a controller-based URL: one with a trailing slash (`/admin/`), one without a leading slash (`admin`) and one with a `{placeholder}` (`/api/{apiVersion}`). Placeholders are only resolved for routes, not for controller URLs. Nested groups concatenate their prefixes without a separator, so every nested prefix needs its own leading slash and none may end with one. A nested group stores only its own middleware; the parent matches the URL separately.
+
+The groups for controller-based URLs are stored by their full prefix, spelled exactly as declared. Two groups with the same full prefix (`Route::group('/admin')` declared twice, or a nested `/admin` inside a group `/` that adds up to the same string) therefore do not add up: the later declaration replaces the earlier one, and only its `middleware`, `afterMiddleware` and `withoutCsrf()` guard the controller actions below that prefix. Merge them into one group instead. This only affects the controller fallback, the routes inside each group still run with the middlewares of every group around them. Prefixes that differ only in spelling (`/admin` and `/Admin`) are separate entries, so both apply to the same URL.
 
 ---
 
@@ -211,7 +220,7 @@ To access a parameter inside a controller action, you can use:
 $req->getRouteParameter("key");
 ```
 
-If you call [`$req->getRouteParameter()`](../api/classes/ZubZet-Framework-Message-Request.html#method_getRouteParameter) without passing a key, it will return **all route parameters** as an array.
+If you call [`$req->getRouteParameter()`](../api/classes/ZubZet-Framework-Message-Request.html#method_getRouteParameter) without passing a key, it will return **all route parameters** as an array. A key that does not exist gives `null`. The parameters, including the placeholders of group prefixes, are set before every stage (action, middleware, afterMiddleware) and reset for the next one, so controller-based actions and their group middleware see an empty array. Values are URL-decoded before matching, so an encoded `%2F` can span segments.
 
 ### Example
 
@@ -257,7 +266,7 @@ public function render(Request $req, Response $res, string $type, int $year) {
 }
 ```
 
-Middlewares and afterMiddlewares accept static arguments the same way:
+Middlewares and afterMiddlewares accept static arguments the same way; each stage receives only its own list, and a string-keyed array is passed as named arguments:
 
 ```php
 Route::get('/admin', [AdminController::class, 'index'], ['dashboard'])

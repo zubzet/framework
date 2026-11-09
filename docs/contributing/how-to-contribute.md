@@ -15,7 +15,7 @@ Practical implications:
 
 - Feature work targets `develop`. PRs may be opened as **draft / WIP** while in progress.
 - Promotions to `main` happen as a separate PR (`develop` → `main`) when the maintainer is satisfied with the integrated state.
-- CI runs the full PHP matrix (8.0–8.6) on pushes to `develop`, `main`, and version tags. PRs and other branches run an extremes-only smoke (8.0 + 8.6).
+- CI runs the full PHP matrix (8.0–8.6) on pushes to `develop`, `main`, and version tags. PRs and pushes to other branches (the push filter `'*'` skips names containing `/`) run an extremes-only smoke (8.0 + 8.6).
 
 ### Setup
 
@@ -105,7 +105,7 @@ The dockerized test app under `tests/e2e/` doubles as the local development envi
 
 - `npm run start` — bootstrap the stack: `npm install`, `docker compose up -d --build`, `composer install`, run seeds, print startup info. Returns to the shell when ready.
 - `npm run startup` — same bootstrap as `start`, then keeps `docker compose up` attached in the foreground so logs stream live. Exit (Ctrl-C / closing the terminal) tears the containers down.
-- `npm run stop` — `docker compose down -v`.
+- `npm run stop` — `docker compose down -v`, which also deletes the database volumes.
 
 ### VSCode Tasks
 

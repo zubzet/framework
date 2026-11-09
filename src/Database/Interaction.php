@@ -27,7 +27,7 @@
 
         /**
          * Returns the id of the last inserted element
-         * @return int|string|null Id of the last inserted element
+         * @return int|string|null Id of the last inserted element; 0 if the last query generated no AUTO_INCREMENT id, null before the first query
          */
         public function getInsertId() {
             return $this->insertId;
@@ -35,7 +35,9 @@
 
         /**
          * Converts the result of the last query into an array and returns it
+         * @param mixed[][] $out Existing rows the result rows are appended to
          * @return mixed[][] Results of the last query as two dimensional array
+         * @throws \Error If the last query returned no result set (non-SELECT)
          */
         public function resultToArray($out = []): array {
             while ($row = $this->result->fetch_assoc()) {
@@ -47,8 +49,8 @@
         /**
          * Converts the result of the last query into a grouped array
          * @param string $groupBy The field, by which the array is grouped by
-         * @param string $subElement If set, the only a sub element of the grouped element is returned
-         * @return mixed[][] Results of the last query as two dimensional array with the index as thr groupBy value
+         * @param string|null $subElement If set, groups hold only this column's plain values instead of full rows
+         * @return mixed[][] Results of the last query as two dimensional array with the index as the groupBy value
          */
         public function mergeAsGroup($groupBy, $subElement = null) {
             $elements = $this->resultToArray();
@@ -67,8 +69,8 @@
         }
 
         /**
-         * Returns one line of the last query
-         * @return mixed[] Line of the last result
+         * Returns the next line of the last query
+         * @return array|null Next line of the last result, null once the result is exhausted or empty
          */
         public function resultToLine(): ?array {
             return $this->result->fetch_assoc();
@@ -76,6 +78,7 @@
 
         /**
          * Selects a full table or specified fields of it and returns the result as two dimensional array
+         * Table and fields are not escaped, so never put user input in them.
          * @param string $table Name of the table in the database
          * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
          * @return array[] A two dimensional array with the results of the select statement
@@ -87,10 +90,10 @@
         }
 
         /**
-         * Selects a full table of specified fields of it filtered with an additional where statement. It returns the result as two dimensional array
+         * Selects a table or specified fields of it, filtered with a where statement, and returns the result as two dimensional array. Only $values are bound, $table, $fields and $where are not escaped
          * @param string $table Name of the table in the database
          * @param string $fields Fields to select. Formatted as in a SQL query ("*", "a, b, c"...)
-         * @param string $where The where statement in the query. Formatted as in a SQL query (a = 4 AND c = 4...);
+         * @param string $where The where statement in the query. Formatted as in a SQL query (a = 4 AND c = 4...). Required in practice: the empty default produces invalid SQL ("WHERE ")
          * @param string $types String with the types. Conform to prepared statements ("ssis")
          * @param mixed[] $values The values to insert in the prepared statement
          * @return array[] two dimensional array with table data
@@ -126,8 +129,8 @@
          * @param string $table Name of the table to check in
          * @param string $field Field to check in
          * @param mixed $value Value to check for
-         * @param string $ignoreField field of a dataset to ignore
-         * @param string $ignoreValue value of the in the argument before defined field of the dataset to ignore
+         * @param string|null $ignoreField Field used to exclude rows; rows where it equals $ignoreValue are not counted, null disables the exclusion (inserted unescaped)
+         * @param mixed|null $ignoreValue Value of $ignoreField that marks the rows to exclude, e.g. the id of the row being edited
          * @return bool True when not exists
          */
         public function checkIfUnique($table, $field, $value, $ignoreField = null, $ignoreValue = null) {

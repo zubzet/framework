@@ -30,7 +30,7 @@
         protected $booter;
 
         /**
-         * @var int $lastInsertId Holds the last ID returned from an insert query. Does not change during logging.
+         * @var int $lastInsertId Unused, never written. getInsertId() reads the ID from the connection instead.
          */
         protected $lastInsertId;
 
@@ -49,10 +49,10 @@
 
         /**
          * Executes a query as a prepared statement.
-         * @param string $query The query written as a prepared statement (with question marks).
-         * @param string $types The types for the individual parameters (i for int, s for string...).
-         * @param ...string $params Parameters to insert into the prepared statement
-         * @return Connection Returning this for chaining 
+         * @param string|Query $query The query written as a prepared statement (with question marks), or a Query object.
+         * @param string $types The types for the individual parameters (i for int, s for string...). Ignored for Query objects.
+         * @param ...string $params Parameters to insert into the prepared statement. Ignored for Query objects.
+         * @return Connection The Connection holding the result, for chaining
          */
         public function exec(string|Query $query, $types = "", $params = null): Connection {
             $this->z_db->callingModel = $this;
@@ -62,8 +62,8 @@
         }
 
         /**
-         * Returns the last insert id. Ignores inserts done by log.
-         * @return int The ID of the dataset created in the last insert
+         * Returns the last insert id. Only inserts of the slow-query log are ignored, other log writes on the shared connection overwrite it.
+         * @return int|string|null The ID of the dataset created in the last insert
          */
         public function getInsertId() {
             return $this->z_db->getInsertId();
@@ -71,7 +71,9 @@
 
         /**
          * Converts the result of the last query into an array and returns it.
+         * @param mixed[][] $out Optional, forwarded via func_get_args(): existing rows the result rows are appended to
          * @return mixed[][] Results of the last query as two-dimensional array
+         * @throws \Error If the last query returned no result set (non-SELECT)
          */
         public function resultToArray(): array {
             return $this->z_db->resultToArray(...func_get_args());
@@ -86,7 +88,7 @@
         }
 
         /**
-         * Selects a full table or specified fields of it and returns the result as two-dimensional array.
+         * Selects a full table or specified fields of it and returns the result as two-dimensional array. Table and fields are not escaped, so never put user input in them.
          * @param string $table Name of the table in the database
          * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
          * @return array[] A two-dimensional array with the results of the select statement
@@ -99,7 +101,9 @@
          * Selects a full table or specified fields, filtered with an additional where statement. It returns the result as a two-dimensional array.
          * @param string $table Name of the table in the database
          * @param string $fields Fields to select. Formatted as in an SQL query ("*", "a, b, c"...)
-         * @param string $where The where statement in the query. Formatted as in an SQL query ("a = 4 AND c = 4"...);
+         * @param string $where The where statement in the query, with "?" placeholders for values ("a = ? AND c = ?"...). Table, fields and where are not escaped, so never put user input in them.
+         * @param string $types (Forwarded, optional) Types of the placeholder values, conform to prepared statements ("ssis")
+         * @param mixed[] $values (Forwarded, optional) The values for the placeholders
          * @return array[] Two-dimensional array with table data
          */
         public function getTableWhere($table, $fields, $where) {

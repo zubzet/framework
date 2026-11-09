@@ -43,7 +43,7 @@
                 'endVersion',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Version from which migrations should be synced',
+                'Version until which migrations should be synced',
             );
 
             $this->addOption(

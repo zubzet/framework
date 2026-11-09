@@ -11,6 +11,8 @@
 
     /**
      * The Login controller handles all login/logout stuff
+     *
+     * Besides index (login) and logout it serves the actions signup, forgot_password, reset, verify, create_password and change_password.
      */
     class LoginController extends z_controller {
 
@@ -23,9 +25,9 @@
 
         /**
          * The index action
-         * 
-         * It will be called when no action is specified
-         * 
+         *
+         * It will be called when no action is specified: renders the login form, or for the "login" action checks CSRF, rate limit and password, then answers with an error, a two factor challenge or a started session.
+         *
          * @param Request $req The request object
          * @param Response $res The response object
          */
@@ -121,7 +123,7 @@
         }
 
         /**
-         * Logs out the requesting user.
+         * Logs out the requesting user by delegating to Response::logout(): invalidates the session, switches back to the exec user when sudoed, then redirects to the root URL and exits.
          * @param Request $req The request object
          * @param Response $res The response object
          */
@@ -130,7 +132,7 @@
         }
 
         /**
-         * Controls the view for registering as a user
+         * Controls the view for registering as a user: renders the signup form, or for the "signup" action validates email and password, creates the user, assigns the role from the config registerRoleId (registerRoleIdSecondary for the "Secondary" type), mails the verification link and answers success or an error.
          * @param Request $req The request object
          * @param Response $res The response object
          */
@@ -186,7 +188,7 @@
         }
 
         /**
-         * Serves the forgot password page and resets the a users password
+         * Serves the forgot password page, or on submit emails a reset link to an existing user and answers JSON ("success", or "error" for an unknown address)
          * @param Request $req The request object
          * @param Response $res The response object
          */
@@ -239,8 +241,8 @@
         /**
          * Serves the page where the user can reset its password
          * 
-         * For access the user needs a code he usally gets per mail. This code will also identify the user so he does not need to be logged in to reset his password
-         * 
+         * For access the user needs a code he usally gets per mail. This code will also identify the user so he does not need to be logged in to reset his password; an invalid code dies with a plain-text error, a POSTed password is saved, the code disabled and the client redirected to root
+         *
          * @param Request $req The request object
          * @param Response $res The response object
          */
@@ -281,8 +283,8 @@
         }
 
         /**
-         * Used to verify mails
-         * 
+         * Used to verify mails: verifies the URL token; with POST "email" it resends the verification mail and renders the wait page, otherwise it renders the result view
+         *
          * @param Request $req The request object
          * @param Response $res The response object
          */
@@ -314,10 +316,10 @@
         }
 
         /**
-         * Redirects the user to the password reset page
-         * 
-         * This action is used for user who create their password for the first time
-         * 
+         * Reroutes internally (no HTTP redirect) to action_reset without passing a reset code
+         *
+         * Meant for users who create their password for the first time, but action_reset then dies with "code not valid"
+         *
          * @param Request $req The request object
          * @param Response $res The response object
          */
@@ -326,10 +328,8 @@
         }
 
         /**
-         * Redirects the user to the password reset page
-         * 
-         * This action is used for user who wat to change their password but did not forgot it.
-         * 
+         * Reroutes internally (no HTTP redirect) to action_reset without a reset code
+         *
          * @param Request $req The request object
          * @param Response $res The response object
          */

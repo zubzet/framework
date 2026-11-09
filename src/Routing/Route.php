@@ -43,6 +43,9 @@
         /**
          * Initializes the static Router.
          * This must be called once before loading route files.
+         * Also resets the prefix stack, group state and stored groups, discarding earlier registrations.
+         * @param ZubZet $booter Unused.
+         * @param RouteCollector $collector Collector all following routes are registered on.
          */
         public static function init(ZubZet $booter, RouteCollector $collector): void {
             self::$collector = $collector;
@@ -67,7 +70,9 @@
         }
 
         /**
-         * Performs middleware matching for stored groups based on the current URL parts.
+         * Runs the middlewares of all groups matching the URL (exits if one returns non-true), then $callback, then the after-middlewares.
+         * @param array $urlParts URL segments of the current request
+         * @param \Closure|callable $callback Runs after the middlewares passed, e.g. the controller action
          */
         public static function performStoredGroupsMatchingPrefix(array $urlParts, \Closure|callable $callback): void {
             // Normalized like the controller name it resolves to, the url parts themselves stay as sent
@@ -120,7 +125,12 @@
         }
 
         /**
-         * Creates a route group.
+         * Stores the group's middlewares and CSRF opt-out under its full prefix for fallback matching, then runs $callback with the group state pushed and pops it afterwards.
+         * @param string $prefix Path segment appended to the enclosing group prefixes
+         * @param callable $callback Declares the routes inside the group
+         * @param array $middlewares Run before the action of every route in the group
+         * @param array $afterMiddleware Run after the action of every route in the group
+         * @param bool $withoutCsrf Skips the CSRF check for every route in the group
          */
         public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware, bool $withoutCsrf): void {
             // Push the prefix onto the stack.
@@ -233,7 +243,7 @@
         }
 
         /**
-         * Keeps callback compatibility with route closures using 0..3 parameters.
+         * Keeps callback compatibility with route closures using 0..3 parameters, injected by type: array gets the route args, Request/Response the current instances, anything else its default value or null.
          */
         private static function performCallableAction(callable $action, array $args): void {
             $reflection = new \ReflectionFunction(\Closure::fromCallable($action));

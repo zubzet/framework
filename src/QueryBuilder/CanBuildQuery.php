@@ -4,7 +4,7 @@
     trait CanBuildQuery {
 
         /**
-         * Create a new SelectQuery instance for the CakePHP\Database Connection.
+         * Create a new SelectQuery instance for the CakePHP\Database Connection. The query is only built, run it via exec()/execQuery() as the wrapped connection has no credentials for ->execute().
          *
          * @param \Cake\Database\ExpressionInterface|callable|array|string $fields fields to be added to the list.
          * @param array|string $table The table or list of tables to query.
@@ -20,7 +20,7 @@
         }
 
         /**
-         * Create a new UpdateQuery instance for the CakePHP\Database Connection.
+         * Create a new UpdateQuery instance for the CakePHP\Database Connection. The query is only built, run it via exec()/execQuery() as the wrapped connection has no credentials for ->execute().
          *
          * @param \Cake\Database\ExpressionInterface|string|null $table The table to update rows of.
          * @param array $values Values to be updated.
@@ -38,7 +38,7 @@
         }
 
         /**
-         * Create a new DeleteQuery instance for the CakePHP\Database Connection.
+         * Create a new DeleteQuery instance for the CakePHP\Database Connection. The query is only built, run it via exec()/execQuery() as the wrapped connection has no credentials for ->execute().
          *
          * @param string|null $table The table to delete rows from.
          * @param array $conditions Conditions to be set for the delete statement.
@@ -50,7 +50,7 @@
         }
 
         /**
-         * Create a new InsertQuery instance for the CakePHP\Database Connection.
+         * Create a new InsertQuery instance for the CakePHP\Database Connection. The query is only built, run it via exec()/execQuery() as the wrapped connection has no credentials for ->execute().
          *
          * @param string|null $table The table to insert rows into.
          * @param array $values Associative array of column => value to be inserted.

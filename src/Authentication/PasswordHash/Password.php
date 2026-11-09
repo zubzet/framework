@@ -38,7 +38,10 @@
             "threads" => 1,
         ];
 
-        /** Create a native hash from a plaintext password. */
+        /**
+         * Create a native hash from a plaintext password.
+         * @throws InvalidArgumentException when the password is shorter than 3 or longer than 1024 bytes.
+         */
         public static function hash(string $password): string {
             // Assert the correct length
             $length = strlen($password);
@@ -54,6 +57,12 @@
          * Verify a plaintext against a stored credential. `scheme` selects how to
          * read the stored value (defaults to native); `salt` is only needed for
          * legacy/onion rows.
+         * @param string $password Plaintext; outside MIN/MAX_LENGTH_BYTES counts as wrong, never truncated.
+         * @param string $stored The stored credential; empty counts as wrong.
+         * @param string|null $scheme One of the scheme constants; an explicit null or unknown value counts as wrong.
+         * @param string|null $salt The per-row salt; required for legacy/onion, ignored otherwise.
+         * @return Verification Never a bool; read it via isCorrect().
+         * @throws InvalidArgumentException when the scheme is legacy/onion and the salt is empty.
          */
         public static function verify(string $password, string $stored, ?string $scheme = self::NATIVE, ?string $salt = null): Verification {
             // Make sure the length is correct
