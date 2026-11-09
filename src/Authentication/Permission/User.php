@@ -126,7 +126,7 @@ class User extends AuthenticationObject {
      * @return User|null The created user object or null on failure
      * @throws \InvalidArgumentException If the email is invalid or already used by another user, or the password is shorter than 3 or longer than 1024 bytes
      */
-    public static function add(?string $email, ?string $password, ?DateTime $verified = null): ?User {
+    public static function add(?string $email, ?string $password = null, ?DateTime $verified = null): ?User {
         self::assertValidEmail($email);
 
         // If a datetime object is provided, format it to a string
