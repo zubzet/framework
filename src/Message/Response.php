@@ -82,13 +82,13 @@
             return str_starts_with((string) config("host"), "https://");
         }
 
-        // One attribute set for z_login_token and z_csrf, so the two can never drift apart
-        public function setFrameworkCookie(string $name, string $value, int $lifetime, bool $hostOnly = false): void {
-            // Not HttpOnly: Z.js reads the token, the session watcher in the body component the login cookie
+        // One attribute set for the framework's own cookies, scoped like the login cookie
+        public function setFrameworkCookie(string $name, string $value, int $lifetime): void {
+            // Not HttpOnly: the session watcher in the body component reads the login cookie
             $this->setCookie($name, $value, [
                 "expires" => time() + $lifetime,
                 "path" => "/",
-                "domain" => $hostOnly ? "" : $this->getCookieDomainScope(),
+                "domain" => $this->getCookieDomainScope(),
                 "secure" => $this->cookieSecure(),
                 "httponly" => false,
                 "samesite" => "Lax",

@@ -191,21 +191,7 @@ Route::group('/admin')->middleware([AuthController::class, 'checkAuth']);
 
 An empty prefix covers every URL. Otherwise a prefix covers a URL only if it equals the URL or is followed by `/` in it, and the whole prefix is compared literally against the path, which always starts with `/`. Three kinds of prefix therefore never guard a controller-based URL: one with a trailing slash (`/admin/`), one without a leading slash (`admin`) and one with a `{placeholder}` (`/api/{apiVersion}`). Placeholders are only resolved for routes, not for controller URLs. Nested groups concatenate their prefixes without a separator, so every nested prefix needs its own leading slash and none may end with one. A nested group stores only its own middleware; the parent matches the URL separately.
 
-The groups for controller-based URLs are stored by their full prefix, spelled exactly as declared. Two groups with the same full prefix (`Route::group('/admin')` declared twice, or a nested `/admin` inside a group `/` that adds up to the same string) therefore do not add up: the later declaration replaces the earlier one, and only its `middleware`, `afterMiddleware` and `withoutCsrf()` guard the controller actions below that prefix. Merge them into one group instead. This only affects the controller fallback, the routes inside each group still run with the middlewares of every group around them. Prefixes that differ only in spelling (`/admin` and `/Admin`) are separate entries, so both apply to the same URL.
-
----
-
-### CSRF Opt-out
-
-The [CSRF check](csrf-protection.md) runs before the middlewares of a route. A route or group whose callers authenticate without the session cookie opts out with `withoutCsrf()`, which is inherited like a group middleware:
-
-```php
-Route::group('/api', function () {
-    Route::post('/orders', [ApiController::class, 'action_orders']);
-})->withoutCsrf();
-```
-
-See [When the check runs](csrf-protection.md#when-the-check-runs) for the requests the check already skips by itself.
+The groups for controller-based URLs are stored by their full prefix, spelled exactly as declared. Two groups with the same full prefix (`Route::group('/admin')` declared twice, or a nested `/admin` inside a group `/` that adds up to the same string) therefore do not add up: the later declaration replaces the earlier one, and only its `middleware` and `afterMiddleware` guard the controller actions below that prefix. Merge them into one group instead. This only affects the controller fallback, the routes inside each group still run with the middlewares of every group around them. Prefixes that differ only in spelling (`/admin` and `/Admin`) are separate entries, so both apply to the same URL.
 
 ---
 

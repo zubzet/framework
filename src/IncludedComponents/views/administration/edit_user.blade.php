@@ -32,9 +32,12 @@
                 // A reason is optional; cancelling the prompt still logs in
                 var reason = window.prompt("Why are you logging in as this user? (optional)");
 
-                Z.Request.root("z/login_as/<?php echo $opt["userId"] ?>", "login_as", {reason: reason === null ? "" : reason.trim()}, function() {
-                    window.location.href = "<?php echo $opt["root"] ?>";
-                });
+                var url = "<?php echo $opt["root"] . "z/login_as/" . $opt["userId"] ?>";
+                if(reason !== null && reason.trim() !== "") {
+                    url += "?reason=" + encodeURIComponent(reason.trim());
+                }
+
+                window.location.href = url;
             });
 
 <?php if($opt["hasTwoFactor"]) { ?>

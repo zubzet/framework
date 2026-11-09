@@ -15,8 +15,6 @@
 			<form onSubmit="return false;">
 
 				<h2>Forgot password</h2>
-				<div id="reset-error-label" class="text-danger"></div>
-
 				<div class="input-group mb-2">
 					<div class="input-group-prepend">
 						<span class="input-group-text"><i class="fa fa-user"></i></span>
@@ -33,7 +31,23 @@
 
     <script>
         function check() {
-			Z.Presets.ForgotPassword("usernameemail", "reset-error-label", "<?= $opt["root"]; ?>login");
+			const url = "<?php echo $opt["root"]; ?>login/forgot_password/check";
+			$("#loading").show();
+            sendPost(url, {"unameemail": document.getElementById("usernameemail").value});
+        }
+
+        function sendPost(url, params) {
+            $.post(url, params).done((data) => {
+				if(JSON.parse(data).result == "success") {
+					$("#loading").hide(0, () => {
+						alert("An email was sent. Please check your inbox.");
+					});
+                } else {
+					$("#loading").hide();
+                    document.getElementById("login-error-label").innerHTML = `Your account could not be found. Please try again.`;
+                }
+			});
+			$("#loading").hide();
         }
     </script>
 @endsection
