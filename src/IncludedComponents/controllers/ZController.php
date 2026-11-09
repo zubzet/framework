@@ -185,6 +185,8 @@
 
         // Action for logging in as someone else
         public function action_login_as(Request $req, Response $res) {
+            // A GET that switches the user, so a link on another site must not reach it
+            $req->csrfBlockAdditionalMethod("GET", "HEAD");
             $req->checkPermission("admin.su");
 
             $userId = $req->getParameters(0, 1);
