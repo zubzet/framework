@@ -40,7 +40,7 @@ view
 To start working with permissions, we first need the basic structure of our application. This guide provides pre-built files in the [Resources](#resources) section, including templates for controllers and views. Using these resources ensures an organized setup and allows us to focus on implementing functionality and layouts.
 
 ## Creating a Layout
-Layouts in the ZubZet framework are defined as [Blade templates](../core-features/views.md) within the `z_views` folder. A layout is just the page's HTML shell with `@yield` placeholders where the view's sections are inserted.
+Layouts in the ZubZet framework are defined as [Blade templates](../core-features/views.md) within the `app/Views` folder. A layout is just the page's HTML shell with `@yield` placeholders where the view's sections are inserted.
 
 You can add your HTML and framework-related logic within this structure.  
 For instance:
@@ -106,7 +106,7 @@ To apply a layout to a view file, pass the layout file path as the third paramet
 In this example, the same view file is rendered twice, once with a custom layout `(view/layout)` and once with the `default layout`.
 
 ## Editing the Default Layout
-The framework's default layout, located at `z_views/layout/default_layout.blade.php`, is automatically used if no other layout is specified. This layout can be modified to include common components such as navigation bars, footers, or any other elements that should appear across pages without custom layouts.
+The framework's default layout, located at `app/Views/layout/default_layout.blade.php`, is automatically used if no other layout is specified. This layout can be modified to include common components such as navigation bars, footers, or any other elements that should appear across pages without custom layouts.
 
 ## Next Guide
 In the next guide, we will learn how to send emails and configure our SMTP server.

@@ -117,7 +117,7 @@ The permission data is stored in the database across several tables:
 
 - **z_user**: Contains information about registered users of the application.
 - **z_role**: Lists all roles available in the system.
-- **z_role_permissions**: Defines which permissions are assigned to each role.
+- **z_role_permission**: Defines which permissions are assigned to each role.
 - **z_user_role**: Tracks which roles are assigned to each user.
 
 #### Permission Format:

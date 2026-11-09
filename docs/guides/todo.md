@@ -328,7 +328,7 @@ If validation fails, return errors to the frontend using `$res->formErrors()`:
 ?>
 ```
 
-`$formResult->hasErrors()` checks if there is any invalid input. If errors are present, the method return `$res->formErrors($formResult->errors);` sends the errors to the frontend, allowing them to be displayed to the user for correction.
+`$formResult->hasErrors` tells if there is any invalid input. If errors are present, the method return `$res->formErrors($formResult->errors);` sends the errors to the frontend, allowing them to be displayed to the user for correction.
 
 Upon successful validation, use [$res->insertDatabase](../api/classes/ZubZet-Framework-Message-Response.html#method_insertDatabase) to save the data to a database. Ensure field names in the frontend match database column names:
 ```php
