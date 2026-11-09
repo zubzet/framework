@@ -16,7 +16,7 @@
                 $char = $sql[$i];
 
                 // "DELIMITER <token>" on its own line changes the terminator, as in the mysql client
-                if(($char === "d" || $char === "D" || ctype_space($char)) && trim($current) === "" && preg_match('/\G[ \t]*DELIMITER[ \t]+(\S+)[^\S\n]*(?:\n|$)/Ai', $sql, $match, 0, $i)) {
+                if(($char === "d" || $char === "D" || ctype_space($char)) && strspn($current, " \t\n\r\0\x0B") === strlen($current) && preg_match('/\G[ \t]*DELIMITER[ \t]+(\S+)[^\S\n]*(?:\n|$)/Ai', $sql, $match, 0, $i)) {
                     $delimiter = $match[1];
                     $i += strlen($match[0]);
                     continue;
