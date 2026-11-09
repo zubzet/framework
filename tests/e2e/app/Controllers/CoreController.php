@@ -338,6 +338,14 @@
             ], "email");
         }
 
+        public function action_sendemail_sendername_default(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Sender Default", "email/Static", "en", [], "email");
+        }
+
+        public function action_sendemail_sendername_custom(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Sender Custom", "email/Static", "en", [], "email", [], "Custom Sender");
+        }
+
         public function action_sendemailtouser_static(Request $req, Response $res) {
             $res->sendEmailToUser(1, "This is a Test Email Static", "email/Static", [], "email");
         }

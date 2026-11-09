@@ -4,7 +4,7 @@
      */
 
     /**
-     * The index controller handles by default all requests without a specified controller
+     * The index controller handles requests to /index; root requests run the controller from the config defaultIndex (default DashboardController)
      */
     class IndexController extends z_controller {
 

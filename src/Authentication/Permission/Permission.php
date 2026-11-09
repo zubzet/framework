@@ -31,7 +31,8 @@ trait Permission {
     }
 
     /**
-     * Check if the permission object (user or role) has all of the given permissions
+     * Check if the permission object (user or role) has all of the given permissions,
+     * wildcards count ("*.*" or "edit.*" cover "edit.article") and a user's permissions include those inherited from its roles
      *
      * @param string[] $permissionNames The names of the permissions to check
      * @return bool True if the object has all of the permissions, false otherwise
@@ -69,7 +70,8 @@ trait Permission {
 
 
     /**
-     * Check if the permission object (user or role) has one of the permissions
+     * Check if the permission object (user or role) has one of the permissions, wildcards included
+     * ("*.*" or "edit.*" cover "edit.article"); a user's role-inherited permissions count too
      *
      * @param string[] $permissionNames The names of the permissions to check
      * @return bool True if the object has at least one of the permissions, false otherwise

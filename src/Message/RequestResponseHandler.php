@@ -24,7 +24,7 @@
         }
 
         /**
-         * Returns the ZViews directory
+         * Returns the project's own views directory (config z_views, relative path with trailing slash), not the framework's IncludedComponents views
          * @return string
          */
         public function getZViews() {
