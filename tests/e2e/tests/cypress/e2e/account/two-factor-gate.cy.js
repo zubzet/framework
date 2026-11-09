@@ -324,7 +324,7 @@ describe('Two factor gate', () => {
             age('0854a', 10);
 
             cy.setCookie('z_login_token', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa01');
-            cy.request({ method: 'POST', url: '/z/login_as/854', form: true, body: { action: 'login_as' } });
+            cy.request({ url: '/z/login_as/854', followRedirect: false });
 
             // A fresh session of the same account does not lend its check
             guard('guardDefault').then(expectRenew);
