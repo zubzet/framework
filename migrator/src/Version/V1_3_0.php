@@ -70,7 +70,7 @@
                 "./assets/js/Z.js",
             ]);
 
-            // PHP 8.0 stays on otphp 10 and symfony/filesystem 6.0, which composer refuses to install because of advisories
+            // PHP 8.0 stays on symfony/filesystem 6.0, which composer refuses to install because of an advisory
             $auditIgnore = new JsonModifier($this, "composer-audit-ignore");
             $auditIgnore->from("composer.json");
             $auditIgnore->modify(function(array $data): ?array {
@@ -82,8 +82,6 @@
                 }
 
                 $advisories = [
-                    "GHSA-2jx3-65f3-xr8r" => "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x",
-                    "GHSA-g7m4-839x-ch6v" => "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x",
                     "PKSA-g499-cm4q-v35y" => "symfony/filesystem 6.4.50+ requires PHP 8.1+, PHP 8.0 stays on 6.0",
                 ];
 
