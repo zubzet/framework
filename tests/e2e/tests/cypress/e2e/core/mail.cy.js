@@ -131,4 +131,38 @@ describe('Mail System', () => {
             });
         });
     });
+
+    it('should use the pageName as sender name by default', () => {
+        cy.visit("/core/sendemail-sendername-default");
+
+        cy.request('http://localhost:3300/api/messages').then((response) => {
+            const responseBody = typeof response.body === 'string' 
+                ? JSON.parse(response.body) 
+                : response.body;
+
+            const newestEmail = responseBody.results[0];
+            expect(newestEmail.subject).to.equal('This is a Test Email Sender Default');
+
+            cy.request(`http://localhost:3300/api/messages/${newestEmail.id}`).then((detailResponse) => {
+                expect(detailResponse.body.from).to.equal('"QA Suite" <no-reply@zubzet.com>');
+            });
+        });
+    });
+
+    it('should use the given sender name', () => {
+        cy.visit("/core/sendemail-sendername-custom");
+
+        cy.request('http://localhost:3300/api/messages').then((response) => {
+            const responseBody = typeof response.body === 'string' 
+                ? JSON.parse(response.body) 
+                : response.body;
+
+            const newestEmail = responseBody.results[0];
+            expect(newestEmail.subject).to.equal('This is a Test Email Sender Custom');
+
+            cy.request(`http://localhost:3300/api/messages/${newestEmail.id}`).then((detailResponse) => {
+                expect(detailResponse.body.from).to.equal('"Custom Sender" <no-reply@zubzet.com>');
+            });
+        });
+    });
 });

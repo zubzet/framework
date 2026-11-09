@@ -117,7 +117,7 @@ The permission data is stored in the database across several tables:
 
 - **z_user**: Contains information about registered users of the application.
 - **z_role**: Lists all roles available in the system.
-- **z_role_permissions**: Defines which permissions are assigned to each role.
+- **z_role_permission**: Defines which permissions are assigned to each role.
 - **z_user_role**: Tracks which roles are assigned to each user.
 
 #### Permission Format:
@@ -204,10 +204,7 @@ Now that we understand how to use permissions, it’s essential to know how to c
 Open your browser and navigate to the admin panel at `http://localhost:8080/z`.
 
 2) **Login In as Admin**  
-Use the default administrator credentials:
-
-- Email: `admin@zubzet.com`
-- Password: `password`
+Use an account that holds the `Admin` role of the project seed (permission `*.*`). The framework creates no default administrator, so create the user first and assign the role in `z_user_role`.
 
 3) **Create a New Role**  
 

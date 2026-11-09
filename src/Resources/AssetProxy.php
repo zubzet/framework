@@ -26,8 +26,10 @@
 
         /**
          * This function registers a directory on disk as a source of assets to be served by the proxy.
-         * This does not immediately check the filesystem and will only fail once a request is made for
-         * an asset that belongs to this mount. The sourceRoot should be an absolute path.
+         * This does not immediately check the filesystem; a missing directory only means requests for
+         * its assets end in a 404. The sourceRoot should be an absolute path. The first registered
+         * mount that has the file wins.
+         * @param string $urlPrefix Optional URL path prefix the mount is scoped to; empty serves from the URL root.
          */
         public function registerWebRootSource(string $sourceRoot, string $urlPrefix = ''): void {
             $this->mounts[] = new Mount($sourceRoot, $urlPrefix);
@@ -54,6 +56,22 @@
                     break;
                 }
                 if(is_null($file)) continue;
+
+                // Only a link carrying the configured assetVersion is busted by changing it, "dev" links carry time() instead
+                $version = config("assetVersion", default: "");
+                $isVersioned = !empty($version) && "dev" !== $version && $version === (request()->input->GET["v"] ?? "");
+
+                // Cache control: versioned assets are immutable, unversioned assets are not cached
+                header("Cache-Control: " . ($isVersioned ? "public, max-age=31536000, immutable" : "no-cache"));
+
+                $fingerprint = sprintf("%x-%x", filemtime($file), filesize($file));
+                header("ETag: \"$fingerprint\"");
+
+                // Matches our entity tag, also weak (W/) or with the -gzip/-br suffix Apache's compression appends
+                if(preg_match("#\"$fingerprint(-gzip|-br)?\"#", request()->input->SERVER["HTTP_IF_NONE_MATCH"] ?? "")) {
+                    http_response_code(304);
+                    return;
+                }
 
                 $mime = (new FinfoMimeTypeDetector())->detectMimeTypeFromPath($file) ?? "application/octet-stream";
                 header("Content-Type: $mime");

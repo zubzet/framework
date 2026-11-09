@@ -11,7 +11,7 @@
         /**
          * Action for a 403 Error
          * 
-         * Access Denies
+         * Access Denied
          * 
          * @param Request $req The request object
          * @param Response $res The response object

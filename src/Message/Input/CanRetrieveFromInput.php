@@ -5,9 +5,9 @@
     trait CanRetrieveFromInput {
         /**
          * Gets a GET parameter
-         * @param string $key The key of the parameter
+         * @param string|null $key The key of the parameter, null returns the whole GET array
          * @param mixed $default Default value
-         * @return string|mixed The content of the GET value
+         * @return mixed The value, $default if the key is missing, or the whole array when $key is null
          */
         public function getGet(?string $key = null, mixed $default = null): mixed {
             if(is_null($key)) {
@@ -21,9 +21,9 @@
 
         /**
          * Gets a POST parameter
-         * @param ?string $key The key of the parameter
+         * @param string|null $key The key of the parameter, null returns the whole POST array
          * @param mixed $default Default value
-         * @return string|mixed The content of the POST value
+         * @return mixed The value, $default if the key is missing, or the whole array when $key is null
          */
         public function getPost(?string $key = null, mixed $default = null): mixed {
             if(is_null($key)) {
@@ -37,9 +37,9 @@
 
         /**
          * Gets a posted file
-         * @param ?string $key The name of the file
+         * @param string|null $key The name of the file, null returns all files
          * @param mixed $default Default value if the file is not posted
-         * @return mixed The posted file
+         * @return mixed The $_FILES entry (name, type, tmp_name, error, size), $default if the key is missing, or all files when $key is null
          */
         public function getFile(?string $key = null, mixed $default = null): mixed {
             if(is_null($key)) {
@@ -61,9 +61,9 @@
 
         /**
          * Gets a cookie
-         * @param string $key The key of the parameter
+         * @param string|null $key The key of the parameter, null returns all cookies
          * @param mixed $default Default value
-         * @return mixed Content of the cookie
+         * @return mixed The value, $default if the key is missing, or all cookies when $key is null
          */
         public function getCookie(?string $key = null, mixed $default = null): mixed {
             if(is_null($key)) {

@@ -150,7 +150,7 @@ describe('Z-Admin Panel', () => {
 
         function postAdd(body) {
             // hasFormData() requires the isFormData flag (set by Z.Forms).
-            return cy.zRequest({
+            return cy.request({
                 method: 'POST',
                 url: '/z/add_user',
                 form: true,
@@ -204,7 +204,7 @@ describe('Z-Admin Panel', () => {
 
         function postEdit(userId, body) {
             // hasFormData() requires the isFormData flag (set by Z.Forms).
-            return cy.zRequest({
+            return cy.request({
                 method: 'POST',
                 url: `/z/edit_user/${userId}`,
                 form: true,
@@ -322,7 +322,7 @@ describe('Z-Admin Panel', () => {
             cy.visit('/z/roles');
             cy.query(`role-${roleId}`).should('exist');
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: `/z/roles/${roleId}`,
                 form: true,
@@ -338,7 +338,7 @@ describe('Z-Admin Panel', () => {
 
         it('denies delete to users without admin.roles.delete', () => {
             cy.loginAs("customer");
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/roles/100',
                 form: true,
@@ -367,7 +367,7 @@ describe('Z-Admin Panel', () => {
         });
 
         it('only stores 0 or 1', () => {
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/roles/248',
                 form: true,
@@ -376,7 +376,7 @@ describe('Z-Admin Panel', () => {
                 expect(JSON.parse(res.body).formErrors).to.deep.include({ name: 'is_org_assignable', type: 'in' });
             });
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/roles/248',
                 form: true,
@@ -389,18 +389,17 @@ describe('Z-Admin Panel', () => {
 
     // ZController::action_login_as - the reason an admin may state for the sudo
     describe('action_login_as (reason)', () => {
-        function sudo(reason) {
-            cy.zRequest({
-                method: 'POST',
-                url: '/z/login_as/3',
-                form: true,
-                body: reason === undefined ? { action: 'login_as' } : { action: 'login_as', reason },
+        function sudo(query) {
+            cy.request({
+                url: `/z/login_as/3${query}`,
+                followRedirect: false,
+                failOnStatusCode: false,
             });
         }
 
         it('records the reason the admin stated', () => {
             cy.loginAs("admin");
-            sudo('Ticket #4711');
+            sudo('?reason=' + encodeURIComponent('Ticket #4711'));
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -410,7 +409,7 @@ describe('Z-Admin Panel', () => {
 
         it('falls back to a default reason when none is stated', () => {
             cy.loginAs("admin");
-            sudo();
+            sudo('');
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -420,7 +419,7 @@ describe('Z-Admin Panel', () => {
 
         it('falls back when the reason is only whitespace', () => {
             cy.loginAs("admin");
-            sudo('   ');
+            sudo('?reason=' + encodeURIComponent('   '));
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -430,7 +429,7 @@ describe('Z-Admin Panel', () => {
 
         it('cuts an overlong reason to what the column takes', () => {
             cy.loginAs("admin");
-            sudo('R'.repeat(400));
+            sudo('?reason=' + encodeURIComponent('R'.repeat(400)));
 
             cy.request('/session/currentSession').then((res) => {
                 const out = JSON.parse(res.body);
@@ -477,22 +476,10 @@ describe('Z-Admin Panel', () => {
                 adminUserId = out.userId;
             });
 
-            // A GET must not log in, it could be fired from another site
             cy.request({
-                url: '/z/login_as/3',
-                failOnStatusCode: false,
-            }).then((res) => {
-                expect(res.status).to.eq(405);
-            });
-            cy.request('/session/whoami').then((res) => {
-                expect(JSON.parse(res.body).userId, 'a get does not switch the user').to.eq(adminUserId);
-            });
-
-            cy.zRequest({
-                method: 'POST',
                 url: '/z/login_as/3', // user 3 = customer
-                form: true,
-                body: { action: 'login_as' },
+                followRedirect: false,
+                failOnStatusCode: false,
             });
 
             // The cookie rotates to a fresh session token after sudo.
@@ -544,14 +531,35 @@ describe('Z-Admin Panel', () => {
         it('non-admin without admin.su gets denied', () => {
             cy.loginAs("customer");
 
-            cy.zRequest({
-                method: 'POST',
+            cy.request({
                 url: '/z/login_as/1',
-                form: true,
-                body: { action: 'login_as' },
                 failOnStatusCode: false,
             }).then((res) => {
                 expect(res.status).to.eq(403);
+            });
+        });
+
+        // A GET that switches the user, so a link on another site must not reach it
+        it('rejects a link from another site before the sudo happens', () => {
+            cy.loginAs("admin");
+
+            [{ 'Sec-Fetch-Site': 'cross-site' }, { 'Sec-Fetch-Site': 'same-site' }].forEach((headers) => {
+                ['GET', 'HEAD'].forEach((method) => {
+                    cy.request({
+                        method,
+                        url: '/z/login_as/3',
+                        headers,
+                        followRedirect: false,
+                        failOnStatusCode: false,
+                    }).then((res) => {
+                        expect(res.status, `${method} ${JSON.stringify(headers)}`).to.eq(403);
+                    });
+                });
+            });
+
+            cy.request('/session/whoami').then((res) => {
+                const out = JSON.parse(res.body);
+                expect(out.userId, 'still the admin').to.eq(1);
             });
         });
     });
@@ -622,7 +630,7 @@ describe('Z-Admin Panel', () => {
 
         // hasFormData() requires the isFormData flag (set by Z.Forms).
         function postForm(url, body) {
-            return cy.zRequest({
+            return cy.request({
                 method: 'POST',
                 url: url,
                 form: true,
@@ -709,7 +717,7 @@ describe('Z-Admin Panel', () => {
             cy.visit('/z/organizations');
             cy.query('organization-561').should('exist');
 
-            cy.zRequest({
+            cy.request({
                 method: 'POST',
                 url: '/z/organizations/561',
                 form: true,

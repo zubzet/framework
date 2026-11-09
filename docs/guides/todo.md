@@ -250,7 +250,7 @@ Fields can now be added to the form. For example, to include a text input field 
     - `name`: Identifies the field for backend processing.
     - `type`: Determines the input type (e.g., text, number, password, or date).
     - `text`: Displays a label for the field above the input.
-    - `required`: Specifies whether the field must be filled before submission.
+    - `required`: Marks the field with a red asterisk in its label. It performs no client-side validation, so enforce it on the server with `->required()`.
 
     There are additional attributes available to customize your fields. You can find the full list [here](../forms/auto-form-validation.md)
 
@@ -328,7 +328,7 @@ If validation fails, return errors to the frontend using `$res->formErrors()`:
 ?>
 ```
 
-`$formResult->hasErrors()` checks if there is any invalid input. If errors are present, the method return `$res->formErrors($formResult->errors);` sends the errors to the frontend, allowing them to be displayed to the user for correction.
+`$formResult->hasErrors` tells if there is any invalid input. If errors are present, the method return `$res->formErrors($formResult->errors);` sends the errors to the frontend, allowing them to be displayed to the user for correction.
 
 Upon successful validation, use [$res->insertDatabase](../api/classes/ZubZet-Framework-Message-Response.html#method_insertDatabase) to save the data to a database. Ensure field names in the frontend match database column names:
 ```php

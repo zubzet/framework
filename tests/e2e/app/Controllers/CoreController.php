@@ -40,6 +40,12 @@
             // @codeCoverageIgnoreEnd
         }
 
+        // deprecated() raises E_USER_DEPRECATED, which BehaviorOption::ALL promotes like triggersDeprecation above
+        public function action_deprecatedHelper(Request $req, Response $res) {
+            deprecated("9.9.9", "regression-deprecated-helper-marker");
+            echo "deprecation was not promoted";
+        }
+
         public function action_command(Request $req, Response $res) {
             echo json_encode($req->getParameters());
         }
@@ -338,6 +344,14 @@
             ], "email");
         }
 
+        public function action_sendemail_sendername_default(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Sender Default", "email/Static", "en", [], "email");
+        }
+
+        public function action_sendemail_sendername_custom(Request $req, Response $res) {
+            $res->sendEmail("test@zierhut-it.de", "This is a Test Email Sender Custom", "email/Static", "en", [], "email", [], "Custom Sender");
+        }
+
         public function action_sendemailtouser_static(Request $req, Response $res) {
             $res->sendEmailToUser(1, "This is a Test Email Static", "email/Static", [], "email");
         }
@@ -434,22 +448,30 @@
             echo "core.permissions passed";
         }
 
-        // Round-trips getBody() + getJson(). The JSON parse uses
-        // JSON_THROW_ON_ERROR; we catch it here so the test can assert both
-        // the happy path and the malformed-body path within one request.
+        // Round-trips getBody() + getJson(). A rejected body surfaces as
+        // UnexpectedValueException with the HTTP status as its code, malformed
+        // JSON as JsonException (reported as 400); we catch them here so the test can assert status and message next to the raw
+        // body within one request. ?maxBytes lowers the size limit so the 413
+        // path needs no huge body.
         public function action_requestBody(Request $req, Response $res): void {
             $body = $req->getBody();
             $json = null;
             $jsonError = null;
+            $jsonStatus = null;
             try {
-                $json = $req->getJson();
-            } catch (\JsonException $e) {
+                $json = $req->getJson((int) $req->getGet("maxBytes", 1_048_576));
+            } catch (\UnexpectedValueException $e) {
                 $jsonError = $e->getMessage();
+                $jsonStatus = $e->getCode();
+            } catch (\JsonException $e) {
+                $jsonError = "Malformed JSON: " . $e->getMessage();
+                $jsonStatus = 400;
             }
             echo json_encode([
-                'body'      => $body,
-                'json'      => $json,
-                'jsonError' => $jsonError,
+                'body'       => $body,
+                'json'       => $json,
+                'jsonError'  => $jsonError,
+                'jsonStatus' => $jsonStatus,
             ]);
         }
     }

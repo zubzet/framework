@@ -5,26 +5,56 @@
     // Probe for tests/cypress/e2e/core/csrf.cy.js. No DB access - no seed.
     class CsrfProbeController extends z_controller {
 
-        // An action on the plain POST fields, without any Z.js marker
+        // Answers every method, so the real check can be tried with each of them
         public function action_plain(Request $req, Response $res) {
             return $res->success();
         }
 
-        // Reached by convention under a group that opted out in CsrfRoutes.php
-        public function action_exempt(Request $req, Response $res) {
+        // Opts GET back into the check, the default without arguments
+        public function action_optIn(Request $req, Response $res) {
+            $req->csrfBlockAdditionalMethod();
+
             return $res->success();
         }
 
-        // Opted out in CsrfRoutes.php, sends a guest on to the login through checkPermission()
+        // Opts GET and HEAD back in, written lowercase as the names are case insensitive
+        public function action_optInHead(Request $req, Response $res) {
+            $req->csrfBlockAdditionalMethod("get", "head");
+
+            return $res->success();
+        }
+
+        // Sends a guest on to the login through checkPermission()
         public function action_guarded(Request $req, Response $res) {
             $req->checkPermission("admin.panel");
 
             return $res->success();
         }
 
-        // What a raw HTML form embeds to carry the token
-        public function action_field(Request $req, Response $res) {
-            echo CSRF::field();
+        public function action_reroute(Request $req, Response $res) {
+            $res->reroute(["CsrfProbe", "plain"]);
+        }
+
+        // Runs the real check on the headers and settings of the JSON body:
+        // {"headers": {"Sec-Fetch-Site": "...", "Origin": "..."}, "host": "...", "settings": {...},
+        //  "method": "GET", "additionalMethods": ["GET"]}
+        // "host" is accepted for older callers and ignored. "method" defaults to the probe's own POST.
+        // The probe request itself carries none of these headers and passes the real check.
+        public function action_decide(Request $req, Response $res) {
+            $case = $req->getJson();
+            $headers = array_change_key_case($case["headers"] ?? [], CASE_LOWER);
+            $settings = $case["settings"] ?? [];
+
+            // Fakes the request and the settings, then runs the real check
+            foreach($headers as $name => $value) {
+                $req->input->SERVER["HTTP_".strtoupper(str_replace("-", "_", $name))] = $value;
+            }
+            zubzet()->csrf_allow = (string) ($settings["csrf_allow"] ?? "same-origin");
+            zubzet()->csrf_trusted_origins = (string) ($settings["csrf_trusted_origins"] ?? "");
+            zubzet()->csrf_blocked_origins = (string) ($settings["csrf_blocked_origins"] ?? "");
+            if(isset($case["method"])) $req->input->SERVER["REQUEST_METHOD"] = (string) $case["method"];
+
+            return $res->json(["verified" => CSRF::verify(...($case["additionalMethods"] ?? []))]);
         }
     }
 

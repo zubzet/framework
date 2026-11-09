@@ -37,10 +37,10 @@
 
         /**
          * Get an existing logger from the cache or create a new one if it doesn't exist.
-         * This uses the configuration settings to determine the type and level of the logger, and caches it for future use.
+         * The handler comes from the config keys logger_type, logger_level and logger_stream_url; if logger_enabled is false, the logger gets a NullHandler that discards everything. The logger is cached for future use.
          *
          * @param string $name The name of the logger to create or retrieve
-         * @throws \Exception if the logger type is invalid
+         * @throws \InvalidArgumentException if logger_type is neither "database" nor "stream"
          * @return Logger The logger instance
          */
         public static function getOrCreateLogger(string $name): Logger {

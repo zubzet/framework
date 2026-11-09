@@ -185,23 +185,19 @@
 
         // Action for logging in as someone else
         public function action_login_as(Request $req, Response $res) {
+            // A GET that switches the user, so a link on another site must not reach it
+            $req->csrfBlockAdditionalMethod("GET", "HEAD");
             $req->checkPermission("admin.su");
 
-            // A GET link could be fired from another site, so only the CSRF checked post logs in
-            if($req->isAction("login_as")) {
-                $userId = $req->getParameters(0, 1);
-                if(empty($userId) && $userId !== '0') return;
+            $userId = $req->getParameters(0, 1);
+            if(empty($userId) && $userId !== '0') return;
 
-                // The admin may state a reason; the column takes 255 characters
-                $reason = trim((string) $req->getPost("reason", ""));
-                if(empty($reason)) $reason = "z-admin impersonation";
+            // The admin may state a reason; the column takes 255 characters
+            $reason = trim((string) $req->getGet("reason", ""));
+            if(empty($reason)) $reason = "z-admin impersonation";
 
-                $res->loginAs($userId, $req->getRequestingUser()->execUserId, reason: mb_substr($reason, 0, 255));
-                return $res->success();
-            }
-
-            http_response_code(405);
-            return $res->generateRestError(405, "login_as needs a post");
+            $res->loginAs($userId, $req->getRequestingUser()->execUserId, reason: mb_substr($reason, 0, 255));
+            return $res->rerouteUrl();
         }
 
 

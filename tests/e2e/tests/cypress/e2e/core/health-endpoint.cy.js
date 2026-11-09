@@ -4,19 +4,15 @@ describe('Health Endpoint', () => {
 
     after(() => cy.restoreConfigBackup());
 
-    // "database" is the cluster endpoint (haproxy in front of Galera), so
-    // readiness is probed the way a client experiences it: through the
-    // health endpoint itself.
-    const waitForDatabase = (attempt = 0) => {
-        cy.request({
-            method: 'GET',
-            url: '/_zubzet/health',
-            failOnStatusCode: false,
-        }).then((res) => {
-            if(res.status === 200) return;
-            expect(attempt, 'database did not come back in time').to.be.lessThan(60);
-            cy.wait(1000);
-            waitForDatabase(attempt + 1);
+    // The application cannot tell a stopped database from an endpoint that
+    // refuses the connection, so the outage is a port nothing listens on.
+    // Restarting the database container instead made the browser miss the
+    // following spec on GitHub runners in about one of nine runs (measured
+    // in #255), which ended the whole Cypress run.
+    const CONFIG_PATH = '../z_config/z_settings.ini';
+    const pointDatabaseAtClosedPort = () => {
+        cy.readFile(CONFIG_PATH, 'utf8').then((content) => {
+            cy.writeFile(CONFIG_PATH, `${content}\ndbport = 1\n`);
         });
     };
 
@@ -40,13 +36,10 @@ describe('Health Endpoint', () => {
 
         before(() => {
             cy.setConfigSetting('health_endpoint_enabled', 'true');
-            cy.exec('docker stop database');
+            pointDatabaseAtClosedPort();
         });
 
-        after(() => {
-            cy.exec('docker start database');
-            waitForDatabase();
-        });
+        after(() => cy.restoreConfigBackup());
 
         it('should report unhealthy without exposing error details', () => {
             cy.request({
@@ -60,8 +53,7 @@ describe('Health Endpoint', () => {
         });
 
         it('should recover once the database is back', () => {
-            cy.exec('docker start database');
-            waitForDatabase();
+            cy.restoreConfigBackup();
 
             cy.request({
                 method: 'GET',

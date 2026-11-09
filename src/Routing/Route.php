@@ -6,7 +6,6 @@
     use Request;
     use Response;
     use ZubZet\Framework\ZubZet;
-    use ZubZet\Framework\Security\CSRF;
 
     class Route {
 
@@ -34,7 +33,7 @@
 
         /**
          * Stack to manage middleware inheritance of nested groups.
-         * @var array<int, array{middleware: array, afterMiddleware: array, withoutCsrf: bool}>
+         * @var array<int, array{middleware: array, afterMiddleware: array}>
          */
         private static array $groupStateStack = [];
 
@@ -43,6 +42,9 @@
         /**
          * Initializes the static Router.
          * This must be called once before loading route files.
+         * Also resets the prefix stack, group state and stored groups, discarding earlier registrations.
+         * @param ZubZet $booter Unused.
+         * @param RouteCollector $collector Collector all following routes are registered on.
          */
         public static function init(ZubZet $booter, RouteCollector $collector): void {
             self::$collector = $collector;
@@ -67,7 +69,9 @@
         }
 
         /**
-         * Performs middleware matching for stored groups based on the current URL parts.
+         * Runs the middlewares of all groups matching the URL (exits if one returns non-true), then $callback, then the after-middlewares.
+         * @param array $urlParts URL segments of the current request
+         * @param \Closure|callable $callback Runs after the middlewares passed, e.g. the controller action
          */
         public static function performStoredGroupsMatchingPrefix(array $urlParts, \Closure|callable $callback): void {
             // Normalized like the controller name it resolves to, the url parts themselves stay as sent
@@ -76,7 +80,6 @@
             // Collect middlewares to execute
             $toExecuteMiddlewares = [];
             $toExecuteAfterMiddlewares = [];
-            $withoutCsrf = false;
 
             foreach(self::$storedPrefixedGroups as $groupPath => $prefixGroup) {
                 // Check if the current path matches the group prefix
@@ -84,8 +87,6 @@
                 $isExactMatch = $currentPath === $groupPath;
                 $isMatch = $isExactMatch || str_starts_with($currentPath, $groupPath . '/');
                 if(!$isMatch) continue;
-
-                $withoutCsrf = $withoutCsrf || $prefixGroup["withoutCsrf"];
 
                 // Collect middlewares and afterwares to execute
                 foreach($prefixGroup["middleware"] as $middleware) {
@@ -95,11 +96,6 @@
                 foreach($prefixGroup["afterMiddleware"] as $afterMiddleware) {
                     $toExecuteAfterMiddlewares[] = $afterMiddleware;
                 }
-            }
-
-            // Before any middleware, which may act on the request just like the action
-            if(!$withoutCsrf) {
-                CSRF::verify();
             }
 
             // Execute collected middlewares and exit if any returns any other than true
@@ -120,9 +116,13 @@
         }
 
         /**
-         * Creates a route group.
+         * Stores the group's middlewares under its full prefix for fallback matching, then runs $callback with the group state pushed and pops it afterwards.
+         * @param string $prefix Path segment appended to the enclosing group prefixes
+         * @param callable $callback Declares the routes inside the group
+         * @param array $middlewares Run before the action of every route in the group
+         * @param array $afterMiddleware Run after the action of every route in the group
          */
-        public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware, bool $withoutCsrf): void {
+        public static function performGroup(string $prefix, callable $callback, array $middlewares, array $afterMiddleware): void {
             // Push the prefix onto the stack.
             self::$prefixStack[] = $prefix;
 
@@ -130,14 +130,12 @@
             self::$storedPrefixedGroups[(implode("", self::$prefixStack))] = [
                 'middleware' => $middlewares,
                 'afterMiddleware' => $afterMiddleware,
-                'withoutCsrf' => $withoutCsrf,
             ];
 
             // Push inherited group middleware state.
             self::$groupStateStack[] = [
                 'middleware' => $middlewares,
                 'afterMiddleware' => $afterMiddleware,
-                'withoutCsrf' => $withoutCsrf,
             ];
 
             $callback();
@@ -146,11 +144,8 @@
             array_pop(self::$prefixStack);
         }
 
-        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware, bool $withoutCsrf): void {
+        public static function performRoute(string $method, string $endpoint, PendingAction $action, array $middlewares, array $afterMiddleware): void {
             $router = self::getCurrentRouter();
-
-            // Like a group middleware, the opt-out of a group covers every route declared inside it
-            $withoutCsrf = $withoutCsrf || in_array(true, array_column(self::$groupStateStack, "withoutCsrf"), true);
 
             $effectiveMiddlewares = [
                 ...self::getInheritedMiddlewares(),
@@ -162,12 +157,7 @@
                 ...self::getInheritedAfterMiddlewares(),
             ];
 
-            $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares, $withoutCsrf) {
-                // Before any middleware, which may act on the request just like the action
-                if(!$withoutCsrf) {
-                    CSRF::verify();
-                }
-
+            $handler = function(array $args) use ($action, $effectiveMiddlewares, $effectiveAfterMiddlewares) {
                 foreach($effectiveMiddlewares as $middleware) {
                     [$middlewareClass, $middlewareMethod] = $middleware->getAction();
 
@@ -233,7 +223,7 @@
         }
 
         /**
-         * Keeps callback compatibility with route closures using 0..3 parameters.
+         * Keeps callback compatibility with route closures using 0..3 parameters, injected by type: array gets the route args, Request/Response the current instances, anything else its default value or null.
          */
         private static function performCallableAction(callable $action, array $args): void {
             $reflection = new \ReflectionFunction(\Closure::fromCallable($action));

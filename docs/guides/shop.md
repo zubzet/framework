@@ -229,7 +229,7 @@ Next, use `jQuery` to add an event listener for the buttons with the `delete-pro
                     <td><?= $product["price"] ?></td>
                     <td>
                         <?php if($opt["user"]->checkPermission("library.edit")) { ?>
-                            <button class="delete-product">">Delete</button>
+                            <button class="delete-product">Delete</button>
                         <?php } else { ?>
                             <i>No Permissions</i>
                         <?php } ?>
@@ -276,7 +276,7 @@ We are doing it like that:
                     <td><?= $product["price"] ?></td>
                     <td>
                         <?php if($opt["user"]->checkPermission("library.edit")) { ?>
-                            <button class="delete-product" data-id="<?= $opt['id'] ?>">">Delete</button>
+                            <button class="delete-product" data-id="<?= $product['id'] ?>">Delete</button>
                         <?php } else { ?>
                             <i>No Permissions</i>
                         <?php } ?>
@@ -318,7 +318,7 @@ Next, we send the product ID to the backend using the `Z.Request.action` method:
                     <td><?= $product["price"] ?></td>
                     <td>
                         <?php if($opt["user"]->checkPermission("library.edit")) { ?>
-                            <button class="delete-product" data-id="<?= $opt['id'] ?>">">Delete</button>
+                            <button class="delete-product" data-id="<?= $product['id'] ?>">Delete</button>
                         <?php } else { ?>
                             <i>No Permissions</i>
                         <?php } ?>

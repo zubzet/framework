@@ -14,7 +14,7 @@
             $this->setName("db:status");
             $this->setDescription("Show the current migration status");
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
