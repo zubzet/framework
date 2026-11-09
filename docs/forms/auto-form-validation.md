@@ -58,7 +58,7 @@ Further options of `Z.Forms.create`:
 
 ### **Simple input example**
 ```js
-var inputAmount = $form.createElement({
+var inputAmount = form.createField({
     name: "amount",
     type: "number",
     attributes: {
@@ -328,7 +328,7 @@ public function action_manage(Request $req, Response $res) {
         name: "type",
         type: "select",
         text: "Type",
-        food: "<?= $opt['types'] ?>"
+        food: <?= $opt['types'] ?>
     });
 
     form.addSeperator();

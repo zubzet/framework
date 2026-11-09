@@ -36,7 +36,7 @@ its `ETag`, answered with `304` while the file is unchanged; change `assetVersio
 @endsection
 ```
 
-The link ends in `?v=<assetVersion>`, the only cache busting there is: the proxy ignores the query string and sends only a `Content-Type` header, no cache headers.
+The link ends in `?v=<assetVersion>`, the only cache busting there is.
 
 ## Bundled assets
 

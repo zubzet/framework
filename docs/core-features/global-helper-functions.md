@@ -79,7 +79,7 @@ Retrieves a [configuration value](configuration.md) by its key.
 **Example:**
 
 ```php
-config("db_username");
+config("dbusername");
 
 ```
 
