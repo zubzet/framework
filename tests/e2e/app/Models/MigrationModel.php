@@ -73,6 +73,14 @@
             return $seeds;
         }
 
+        public function checkSemicolons() {
+            $sql = "SELECT `value`
+                    FROM `migration_semicolons`
+                    ORDER BY `id`";
+
+            return array_column($this->exec($sql)->resultToArray(), "value");
+        }
+
     }
 
 ?>

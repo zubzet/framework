@@ -26,7 +26,7 @@
                 "Convert the application tables too and set the database default to " . Connection::COLLATION . ".",
             );
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {

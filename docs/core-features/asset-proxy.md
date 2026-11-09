@@ -19,7 +19,9 @@ first registered source that contains it.
 ## Referencing assets in views
 
 Use the `generateResourceLink` helper available on every [view's](views.md) `$opt` array — it builds a correct,
-root-relative URL for you:
+root-relative URL for you, versioned with `?v=<assetVersion>`. The proxy lets a link carrying the configured
+`assetVersion` (not `dev`) be cached for a year as `immutable`, any other link only with revalidation through
+its `ETag`, answered with `304` while the file is unchanged; change `assetVersion` with every asset change, a framework or module update included:
 
 ```blade
 @extends($layout)

@@ -41,7 +41,7 @@
                 "Exclude seed folders/files from execution",
             );
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {
