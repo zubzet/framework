@@ -411,6 +411,7 @@
          * @param int $maxDepth Deepest accepted nesting
          * @return array The decoded value, objects as associative arrays
          * @throws \UnexpectedValueException Carrying the HTTP status to answer with as its code
+         * @throws \JsonException If the body is not well formed JSON
          */
         public function getJson(int $maxBytes = 1_048_576, int $maxDepth = 32): array {
             $method = strtoupper($this->input->SERVER['REQUEST_METHOD'] ?? "");
@@ -434,15 +435,8 @@
             $body = (string) $this->getBody();
             if(strlen($body) > $maxBytes) throw new \UnexpectedValueException("Body too large", 413);
 
-            // RFC 8259 forbids a BOM, json_decode would only report a syntax error
-            if(str_starts_with($body, "\xEF\xBB\xBF")) throw new \UnexpectedValueException("JSON must not start with a BOM", 400);
-
-            try {
-                return json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
-            } catch(\JsonException $e) {
-                // Syntax errors, invalid UTF-8, control characters and too deep nesting
-                throw new \UnexpectedValueException("Malformed JSON: " . $e->getMessage(), 400, $e);
-            }
+            // Syntax errors, a BOM, invalid UTF-8, control characters and too deep nesting throw a JsonException
+            return json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
         }
 
         /**

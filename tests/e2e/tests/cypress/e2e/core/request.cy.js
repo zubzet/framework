@@ -272,8 +272,8 @@ describe('Request', () => {
 
     // Request::getBody() reads $this->input->body raw; Request::getJson()
     // accepts only JSON sent as application/json and throws an
-    // UnexpectedValueException with the HTTP status as its code otherwise
-    // (probe catches it).
+    // UnexpectedValueException with the HTTP status as its code otherwise,
+    // a JsonException for malformed JSON (probe catches both).
     describe('getJson()', () => {
         // cy.request auto-deserializes when the response looks like JSON;
         // accept either shape so the test is robust to that behavior.
@@ -351,7 +351,7 @@ describe('Request', () => {
 
         it('rejects a leading BOM with 400', () => {
             sendJson('﻿{"a":1}').then((out) => {
-                expectRejected(out, 400, 'JSON must not start with a BOM');
+                expectRejected(out, 400, 'Malformed JSON');
             });
         });
 

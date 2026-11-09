@@ -435,8 +435,8 @@
         }
 
         // Round-trips getBody() + getJson(). A rejected body surfaces as
-        // UnexpectedValueException with the HTTP status as its code; we catch
-        // it here so the test can assert status and message next to the raw
+        // UnexpectedValueException with the HTTP status as its code, malformed
+        // JSON as JsonException (reported as 400); we catch them here so the test can assert status and message next to the raw
         // body within one request. ?maxBytes lowers the size limit so the 413
         // path needs no huge body.
         public function action_requestBody(Request $req, Response $res): void {
@@ -449,6 +449,9 @@
             } catch (\UnexpectedValueException $e) {
                 $jsonError = $e->getMessage();
                 $jsonStatus = $e->getCode();
+            } catch (\JsonException $e) {
+                $jsonError = "Malformed JSON: " . $e->getMessage();
+                $jsonStatus = 400;
             }
             echo json_encode([
                 'body'       => $body,
