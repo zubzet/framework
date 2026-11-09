@@ -29,13 +29,13 @@ To be able to use all functions, the following permissions are needed:
 - admin.panel (the dashboard at `/z` only)
 - admin.user.list (the user list at `/z/edit_user`)
 - admin.user.add (the Add User form and creating the user)
-- admin.user.edit (opening and saving a single user)
+- admin.user.edit (opening and saving a single user; `admin.user.list` is checked first on every `/z/edit_user` request)
 - admin.groups.list (the groups list)
 - admin.roles.list (the roles list; checked first on every `/z/roles` request, including create and delete)
 - admin.roles.create (the `create` action of `/z/roles`; the new role has an empty name and role names are unique, so rename it before creating the next)
 - admin.roles.edit (opening and saving a role; also required for delete)
 - admin.roles.delete (the `delete` action on a role)
-- admin.organizations.list
+- admin.organizations.list (checked first on every `/z/organizations` request)
 - admin.organizations.create
 - admin.organizations.edit (opening and renaming an organization; also required for delete)
 - admin.organizations.delete (the `delete` action on an organization)
@@ -64,7 +64,7 @@ Be advised, each role gives special permissions, some give the user special powe
 After you set a role, you can either add more roles or save the user by clicking ‘submit’ at the bottom of the page. The user should now be able to use their role.
 
 ## Two factor
-An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.edit`.
+An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.list` and `admin.user.edit`.
 ## Organizations
 Add Organization creates an [organization](../core-features/access-control.md). Ticking **Create a permission group** also creates a [group](../core-features/permission-system.md) named after the organization (`{name}_Group`) and links it to the organization. Organization names may repeat, group names may not, so the checkbox reports an error when a group of that name already exists.
 

@@ -26,7 +26,7 @@ public function action_list(Request $req, Response $res) {
         return $res->success();
     }
 
-    <!-- Remaining code -->
+    // Remaining code
     return $res->render("employee/list");
 }
 ```

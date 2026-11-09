@@ -17,7 +17,7 @@ Then navigate to the root directory of your project (where the `index.php` file 
 php index.php {command}
 ```
 
-The package registers no Composer `scripts` and no `bin` executable (its only `require-dev` entry is a test-coverage library), so `php index.php <command>` is the only way to reach the CLI. A command's return value becomes the process exit status (`0` on success, `1` on failure).
+The package registers no Composer `scripts` and no `bin` executable (its only `require-dev` entry is a test-coverage library), so the CLI is reached through the project: `php index.php <command>`, or `php zubzet <command>` and [`./project <command>`](#project) in a generated project. A command's return value becomes the process exit status (`0` on success, `1` on failure).
 
 ### Available Commands
 
@@ -80,21 +80,21 @@ automatically; if they are missing, the script prints the `npm install` command 
 | Command | Description |
 | ------- | ----------- |
 | `db:migrate` | Run all pending migrations (framework-bundled and your own under `app/Database/migrations`). |
-| `db:seed` | Run migrations, then load seed data from `app/Database/seed`. |
+| `db:seed` | **Drop and recreate the database**, run all migrations, then load seed data from `app/Database/seed`. All existing data is lost unless `--skip-migrations` is passed. |
 | `db:status` | Show whether the migration lock is set; exit code `0` when unlocked, `1` when locked. |
 | `db:sync` | Mark migrations as applied up to a version/date without running their SQL. |
 | `db:unlock-migration` | Release a stuck migration lock. |
 
-`db:seed` accepts environment filters to control which seed folders run:
+`db:seed` accepts path filters (relative to `app/Database/seed`) to control which seed folders run. Every file starts selected, so `--environments-included` alone changes nothing; it only brings back paths removed by `--environments-excluded`:
 
 ```bash
-# Only seed the "Dev" environment
-php index.php db:seed --environments-included=Dev
+# Only seed "Environments/Dev": exclude the folder, then re-include the subset
+php index.php db:seed --environments-excluded=Environments --environments-included=Environments/Dev
 
 # Seed everything except "Prod" (repeatable)
 php index.php db:seed --environments-excluded=Prod
 
-# Skip the automatic migration step
+# Keep the database and only run the seed files (no drop, no migrations)
 php index.php db:seed --skip-migrations
 ```
 

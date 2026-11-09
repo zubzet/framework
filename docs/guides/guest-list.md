@@ -10,7 +10,7 @@ CREATE TABLE `guest` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `first_name` VARCHAR(255) NOT NULL,
     `last_name` VARCHAR(255) NOT NULL,
-    `email` VARCHAR(255) NOT NULL.
+    `email` VARCHAR(255) NOT NULL,
     `active` TINYINT NOT NULL DEFAULT 1,
     `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -36,9 +36,9 @@ INSERT INTO `guest` (`first_name`, `last_name`, `email`) VALUES
     **[Migration](../core-features/migrations/index.md)** refers to the process of modifying a database's structure, such as adding, removing, or altering tables and columns. Migration files document these changes and allow them to be applied automatically across different environments, ensuring the database structure remains consistent and versioned.
 
     **Seeding** is the process of populating a database with sample or test data. It is commonly used in development and testing environments to provide realistic data for testing or to initialize the database with predefined values for consistency. Seeding is often used alongside migrations to set up the database.
-To define the database structure, go to the `database/migrations` folder. Create a file named `[DATE]_guest.sql`, replacing `[DATE]` with the current date in the format `YYYY-MM-DD`. Then, paste the `CREATE TABLE` statement from the Resources section into the file. 
+To define the database structure, go to the `app/Database/migrations` folder. Create a file named `[DATE]_guest.sql`, replacing `[DATE]` with the current date in the format `YYYY-MM-DD`. Then, paste the `CREATE TABLE` statement from the Resources section into the file. 
 
-To add initial data, go to the `database/seeds` folder. Create a file named `guest.sql` and paste the `INSERT INTO` statement from the Resources section.
+To add initial data, go to the `app/Database/seed` folder. Create a file named `guest.sql` and paste the `INSERT INTO` statement from the Resources section.
 
 This separates the database structure and seed data, keeping your setup organized.  
 While the file names are customizable, it is recommended to follow a clear and consistent naming convention, such as including the date and a descriptive name.
@@ -52,7 +52,7 @@ While the file names are customizable, it is recommended to follow a clear and c
     More information can be found [here](../core-features/controllers-and-actions.md)
 
 To handle all requests, we need to create a [Controller](../core-features/controllers-and-actions.md).
-For this example, create a file named `GuestsController.php` in the `z_controllers` folder.
+For this example, create a file named `GuestsController.php` in the `app/Controllers` folder.
 The file name, controller name, and action name are flexible but should be chosen for clear, logical understanding and consistency.
 
 ```php
@@ -84,7 +84,7 @@ To handle a request, you also need to define a method for the specific [action](
 
     More information can be found [here](../core-features/models.md)
 To interact with the database where the guests are stored, we need a [Model](../core-features/models.md).  
-For this example, create a file named `GuestsModel.php` in the `z_models` folder.  
+For this example, create a file named `GuestsModel.php` in the `app/Models` folder.  
 You have flexibility in the naming of the file and model, but it is best to use a clear and logical structure for better understanding.
 
 ```php
@@ -102,7 +102,7 @@ To fetch data from the database, create a method named `getGuests()`:
     class GuestsModel extends z_model {
         public function getGuests(): array {
             $sql = "SELECT *
-                    FROM `guests`";
+                    FROM `guest`";
 
             $guestList = $this->exec($sql)->resultToArray();
 
@@ -143,7 +143,7 @@ Finally, we need to render a view and pass the guest list to it.
 
     More information can be found [here](../core-features/views.md)
 
-To create a [view](../core-features/views.md), add a folder named `guests` in the `z_views` folder and inside this folder add a file named `guests_list.blade.php`:
+To create a [view](../core-features/views.md), add a folder named `guests` in the `app/Views` folder and inside this folder add a file named `guests_list.blade.php`:
 ```blade
 @extends($layout)
 

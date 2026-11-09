@@ -482,7 +482,7 @@ OFFSET 20
 
 ```php
 $query = $this->dbSelect(['status', 'COUNT(*) AS count'], 'users')
-              ->groupBy(['status']);
+              ->group(['status']);
 ```
 
 ```sql
@@ -495,7 +495,7 @@ GROUP BY status
 
 ```php
 $query = $this->dbSelect(['status', 'COUNT(*) AS count'], 'users')
-              ->groupBy(['status'])
+              ->group(['status'])
               ->having(['COUNT(*) >' => 5]);
 ```
 

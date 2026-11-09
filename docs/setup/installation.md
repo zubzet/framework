@@ -53,11 +53,14 @@ The install script starts the project itself. Later, or after a `./project stop`
 ./project start
 ```
 
+!!! warning "Every start resets the database on purpose"
+    `./project start` drops and recreates the database, so all local data is lost each time.
+
 This single command:
 
 1. Builds the application image and starts the Docker stack (detached),
 2. Runs `composer install` inside the application container,
-3. Seeds the database with `db:seed`, which applies all pending migrations,
+3. Seeds the database with `db:seed`, which **drops and recreates the database**, runs all migrations and loads the seed data (local data is lost on every start),
 4. Prints the startup info with `info:startup`.
 
 To stop and remove the stack (and its volumes), run `./project stop`. `./project shell` opens a shell inside the application container. See [console commands](../core-features/console-commands.md#project) for all `project` commands.

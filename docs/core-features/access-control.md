@@ -136,14 +136,14 @@ Users can be created through the static `add` method.
 * Creates a new user.
 
     ```php
-    User::add(?string $email, ?string $password, ?DateTime $verified = null);
+    User::add(?string $email, ?string $password = null, ?DateTime $verified = null);
     ```
 
 If no verification date is provided, the user is created as **unverified**.
 
 Throws an `InvalidArgumentException` if the email is not a valid address or already belongs to another user. Passing `null` creates a user without an email. A password outside 3 to 1024 bytes throws `InvalidArgumentException` only after the user row is inserted, so that user stays without a password.
 
-The `$password` parameter is optional. When `null` is passed, the user is created without a password - useful for invite or SSO flows where a credential is set later via `updatePassword()`.
+The `$password` parameter is optional. When it is omitted or `null`, the user is created without a password - useful for invite or SSO flows where a credential is set later via `updatePassword()`.
 
 ---
 
@@ -1105,13 +1105,13 @@ A session remembers when it last passed a [two factor](two-factor-authentication
 * Returns the ID of the user who owns the session.
 
     ```php
-    $session->userId(): int|string
+    $session->userId(): ?int
     ```
 
 * Returns the ID of the user being executed as (relevant for impersonation sessions).
 
     ```php
-    $session->userIdExec(): int|string
+    $session->userIdExec(): ?int
     ```
 
 * Returns the name of the session, or `null` if it has none.
@@ -1159,7 +1159,7 @@ A session remembers when it last passed a [two factor](two-factor-authentication
 * Returns the creation timestamp of the session.
 
     ```php
-    $session->created(): string
+    $session->created(): ?string
     ```
 
 * Returns when the session was last used, or `null` while it has not been used since it was created. Every authenticated request refreshes it, but at most once per `session_last_used_throttle_seconds` (defaults to 60), so the timestamp costs one write per throttle window rather than one per request - read it as "last seen around then", not to the second. Set the key to `0` to write on every request. A request from a new address is always written, because that is what updates `ipLast()`.
