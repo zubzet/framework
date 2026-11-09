@@ -1,9 +1,9 @@
 <?php
 
-    use OTPHP\TOTP;
     use ZubZet\Framework\Authentication\LoginToken;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Session;
+    use ZubZet\Framework\Authentication\Totp;
 
     // Probe routes for tests/cypress/e2e/account/two-factor*.cy.js
     class TwoFactorProbeController extends z_controller {
@@ -23,7 +23,7 @@
 
             echo json_encode([
                 "found" => !is_null($secret),
-                "code" => is_null($secret) ? null : TOTP::create($secret)->at(time() + $offset),
+                "code" => is_null($secret) ? null : Totp::create($secret)->at(time() + $offset),
             ]);
         }
 
@@ -32,8 +32,40 @@
             $secret = (string) $req->getParameters(0, 1);
 
             echo json_encode([
-                "code" => TOTP::create($secret)->now(),
+                "code" => Totp::create($secret)->now(),
             ]);
+        }
+
+        // GET /TwoFactorProbe/codeAt/<secret>/<timestamp>
+        public function action_codeAt(Request $req, Response $res): void {
+            $secret = (string) $req->getParameters(0, 1);
+            $timestamp = (int) $req->getParameters(1, 1);
+
+            echo json_encode([
+                "code" => Totp::create($secret)->at($timestamp),
+            ]);
+        }
+
+        // GET /TwoFactorProbe/verifyAt/<secret>/<timestamp>/<code>, one period of drift like the login
+        public function action_verifyAt(Request $req, Response $res): void {
+            $secret = (string) $req->getParameters(0, 1);
+            $timestamp = (int) $req->getParameters(1, 1);
+            $code = (string) $req->getParameters(2, 1);
+
+            echo json_encode([
+                "valid" => Totp::create($secret)->verify($code, 1, $timestamp),
+            ]);
+        }
+
+        // GET /TwoFactorProbe/provisioningUri?secret=<base32>&label=<label>&issuer=<issuer>
+        public function action_provisioningUri(Request $req, Response $res): void {
+            $totp = Totp::create(
+                (string) $req->getGet("secret", ""),
+                (string) $req->getGet("label", ""),
+                (string) $req->getGet("issuer", ""),
+            );
+
+            echo json_encode(["uri" => $totp->getProvisioningUri()]);
         }
 
         // GET /TwoFactorProbe/user/<userId>
