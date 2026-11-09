@@ -35,6 +35,7 @@
         /**
          * Gets the id of a language by its value
          * @param string $value The short form of the language (EN, DE_Formal...)
+         * @param int $defaultLanguageId The id returned when no language matches (default 1)
          * @return int The id of the language
          */
         function getLanguageByValue($value, $defaultLanguageId = 1) {

@@ -43,7 +43,7 @@
                 'endVersion',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Version from which migrations should be synced',
+                'Version until which migrations should be synced',
             );
 
             $this->addOption(
@@ -74,7 +74,7 @@
                 "Include external migrations in the sync",
             );
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {

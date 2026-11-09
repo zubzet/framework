@@ -10,6 +10,11 @@ describe('Authentication - Bearer', () => {
         return cy.request({ url: '/session/whoami', headers }).then((res) => JSON.parse(res.body));
     }
 
+    // A fresh session and api key, each with its plaintext token and the value the row stores
+    function issue() {
+        return cy.request('/session/tokenAtRest').then((res) => JSON.parse(res.body));
+    }
+
     // cy.session() ties the cookie to the app origin before cy.request(), like the cookie auth tests
     function sendCookie() {
         cy.session('bearer_cookie_451', () => {
@@ -81,6 +86,64 @@ describe('Authentication - Bearer', () => {
                 headers: { Authorization: `Bearer ${logins.customer.token}` },
                 failOnStatusCode: false,
             }).its('status').should('equal', 403);
+        });
+    });
+
+    it('should authenticate a new session and api key by their bearer token', () => {
+        issue().then((issued) => {
+            whoami({ Authorization: `Bearer ${issued.session.token}` }).then((output) => {
+                expect(output.isLoggedIn).to.be.true;
+                expect(output.userId).to.equal(issued.session.userId);
+            });
+
+            whoami({ Authorization: `Bearer ${issued.apiKey.token}` }).then((output) => {
+                expect(output.isLoggedIn).to.be.true;
+                expect(output.userId).to.equal(issued.apiKey.userId);
+            });
+        });
+    });
+
+    it('should authenticate a new session and api key by their cookie', () => {
+        issue().then((issued) => {
+            cy.setCookie('z_login_token', issued.session.token);
+            whoami({}).then((output) => {
+                expect(output.isLoggedIn).to.be.true;
+                expect(output.userId).to.equal(issued.session.userId);
+            });
+
+            cy.setCookie('z_login_token', issued.apiKey.token);
+            whoami({}).then((output) => {
+                expect(output.isLoggedIn).to.be.true;
+                expect(output.userId).to.equal(issued.apiKey.userId);
+            });
+        });
+    });
+
+    it('should reject the stored hash of a new token sent as bearer token', () => {
+        issue().then((issued) => {
+            [issued.session, issued.apiKey].forEach((token) => {
+                whoami({ Authorization: `Bearer ${token.stored}` }).then((output) => {
+                    expect(output.isLoggedIn).to.be.false;
+                    expect(output.userId).to.be.null;
+                });
+            });
+        });
+    });
+
+    it('should end a new session on logout with its cookie', () => {
+        issue().then((issued) => {
+            const token = issued.session.token;
+
+            cy.request(`/AuthProbe/tokenActive/${token}`).then((res) => {
+                expect(JSON.parse(res.body)).to.deep.equal({ exists: true, active: true });
+            });
+
+            cy.setCookie('z_login_token', token);
+            cy.request({ url: '/login/logout', followRedirect: false });
+
+            cy.request(`/AuthProbe/tokenActive/${token}`).then((res) => {
+                expect(JSON.parse(res.body)).to.deep.equal({ exists: true, active: false });
+            });
         });
     });
 

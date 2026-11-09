@@ -28,6 +28,14 @@ describe('Exception Handling (ALL mode)', () => {
             expect(res.body).to.include('regression-controller-deprecation-marker');
         });
     });
+
+    it('promotes a deprecated() notice with its version and message', () => {
+        cy.request({ url: '/Core/deprecatedHelper', failOnStatusCode: false }).then((res) => {
+            expect(res.status).to.eq(500);
+            // The status is the guard: the Whoops page quotes the action's source, echo line included
+            expect(res.body).to.include('Deprecated since 9.9.9: regression-deprecated-helper-marker');
+        });
+    });
 });
 
 // ErrorController::action_500 is reached when an action throws and

@@ -291,7 +291,7 @@ describe('Routing', () => {
 
 
     it("should check if POST method is working", () => {
-        cy.zRequest({
+        cy.request({
             method: 'POST',
             url: '/post-test'
         }).then((response) => {
@@ -314,7 +314,7 @@ describe('Routing', () => {
         const expected = "TestRoute ExecutedArray ( )".replace(/\s+/g, ' ').trim();
 
         verbs.forEach(({ method, url }) => {
-            cy.zRequest({ method, url }).then((response) => {
+            cy.request({ method, url }).then((response) => {
                 expect(response.status, `${method} ${url}`).to.eq(200);
                 const actual = response.body.replace(/\s+/g, ' ').trim();
                 expect(actual, `${method} ${url}`).to.equal(expected);
@@ -326,7 +326,7 @@ describe('Routing', () => {
         const cases = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
 
         cases.forEach((method) => {
-            cy.zRequest({
+            cy.request({
                 method: method,
                 url: '/any-test'
             }).then((response) => {
@@ -353,7 +353,7 @@ describe('Routing', () => {
             expect(actual).to.equals(expected);
         });
 
-        cy.zRequest({
+        cy.request({
             method: 'POST',
             url: '/define-get',
             failOnStatusCode: false

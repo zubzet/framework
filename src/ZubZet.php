@@ -55,7 +55,9 @@
         public AssetProxy $assetProxy;
 
         /**
-         * Parses all the options as variables, instantiates the z_db, and establishes the db connection.
+         * Boots the framework and instantiates the z_db proxy, which connects to the database lazily.
+         *
+         * @param array $params Overrides settings that already exist in the configuration file.
          */
         function __construct(array $params = []) {
             // Collecting code coverage as early as possible. The coverage intiailization is

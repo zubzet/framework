@@ -109,6 +109,10 @@ jobs:
 
           if [ "$REF_TYPE" = "tag" ]; then
             version="$REF_NAME" # e.g. v0.11.0
+            # The install script of a release installs that release (older docs have no script)
+            if [ -f docs/setup/install.sh ]; then
+              sed -i "s/^default_version=.*/default_version=\"${version#v}\"/" docs/setup/install.sh
+            fi
             aliases=""
             if [ "$PROMOTE" = "true" ]; then aliases="$aliases latest"; fi
             if [ "$UPDATE_EDGE" = "true" ]; then aliases="$aliases edge"; fi

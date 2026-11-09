@@ -11,10 +11,14 @@
 
         protected bool $shouldRefresh = false;
 
+        // A hashed row no longer holds the token, so only the object created or looked up by it knows it
+        private ?string $token = null;
 
-        public function __construct(array $data) {
+
+        public function __construct(array $data, ?string $token = null) {
             parent::__construct($data);
             $this->loadObject($data);
+            $this->token = $token;
         }
 
         public function loadObject(array $data) {
@@ -46,9 +50,9 @@
 
             if(is_null($result)) return null;
 
-            if($result["is_apikey"]) return new APIKey($result);
+            if($result["is_apikey"]) return new APIKey($result, $token);
 
-            return new Session($result);
+            return new Session($result, $token);
         }
 
         /**
@@ -244,6 +248,22 @@
         }
 
         public function token(): ?string {
+            $this->checkInstance();
+
+            if(!is_null($this->token)) return $this->token;
+
+            // A row from before hashing stores the token itself, so it is still known
+            $stored = $this->storedToken();
+            if(LoginToken::isPlain($stored)) {
+                deprecated("1.3.0", "token() on a session not created by add() or byToken() only works for legacy tokens, use storedToken() instead");
+                return $stored;
+            }
+
+            return null;
+        }
+
+        // The value z_logintoken holds for the token, see LoginToken
+        public function storedToken(): string {
             return $this->getField("token");
         }
 

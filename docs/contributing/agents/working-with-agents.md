@@ -32,7 +32,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 - `Registry/` — Central resolver for convention lookups + module discovery (see below)
 - `Resources/` — Asset proxy: ordered `Mount` chain, bundled Composer packages
 - `Routing/` — `Router` trait, FastRoute integration, `Route` builder
-- `Security/` — `Secrets/`: `Encryption` (versioned `zenc:<cipher>:` values, key from the `encryption_key` setting), `Cipher/` (`Cipher` interface, `AesGcmCipher`), `DecryptionException`
+- `Security/` — `CSRF` (the header-based check `Router::execute()` runs first, returning whether the request is verified; the router answers a rejected one with the `error/403` page; `GET`, `HEAD` and `OPTIONS` are skipped unless an action opts back in with `Request::csrfBlockAdditionalMethod()`); `Secrets/`: `Encryption` (versioned `zenc:<cipher>:` values, key from the `encryption_key` setting), `Cipher/` (`Cipher` interface, `AesGcmCipher`), `DecryptionException`
 - `Support/` — Global helpers, dynamic attributes, function-conflict resolution
 - `Testing/` — Coverage commands
 
@@ -41,6 +41,7 @@ There is no top-level `package.json` and no PHPUnit suite — testing is end-to-
 `src/ZubZet.php __construct` is sensitive to ordering. The current sequence:
 
 ```php
+Collector::initialize();          // coverage, only when .coverage.session exists
 self::$instance = $this;           // zubzet() resolves to this
 new GlobalReferences;              // defines config(), logger(), isCli(), …
 new Constants;                     // TIMESPAN_DAY_1 etc.
@@ -53,7 +54,8 @@ $this->setExceptionBehavior();
 $this->assetProxy = new AssetProxy;
 new Helpers;
 $this->setRequestResponse(...);
-$this->z_db = new Connection;
+$this->z_db = new Connection;         // connects lazily on the first query
+DebugBarBridge::bootstrap();
 $this->user = new User;
 ```
 
@@ -121,7 +123,7 @@ The only Katana-specific glue is `src/Rendering/Katana/`:
 
 ## Global helpers
 
-Defined in `src/Support/GlobalReferences.php`, all wrapped with `FunctionConflictResolution::requireAndThen` so they can't be redeclared:
+Defined in `src/Support/GlobalReferences.php`, wrapped with `FunctionConflictResolution::requireAndThen` so they can't be redeclared. Helpers with a generic name that an application may already define (`__()`, `deprecated()`) use `optionalAndThen` instead and yield to the existing declaration:
 
 | Helper | Returns |
 | ------ | ------- |
@@ -137,8 +139,30 @@ Defined in `src/Support/GlobalReferences.php`, all wrapped with `FunctionConflic
 | `logger($name=null)` | `Logger` (default: `app` channel) |
 | `encryptSecret($plaintext)` / `decryptSecret($encrypted)` | Encrypted / decrypted value, throws `DecryptionException` on a wrong key |
 | `isCli()` | `php_sapi_name() === "cli"` |
+| `deprecated($version, $message)` | Nothing; raises an `E_USER_DEPRECATED` notice |
 
 See [Global Helper Functions](../../core-features/global-helper-functions.md).
+
+### Deprecating behavior
+
+When a code path has to keep working for existing projects but should no longer be used, keep it working and call `deprecated()` on that path.
+
+- **`$version`** is the framework version the deprecation starts in, the one the current `Changelog.md` section is for.
+- **`$message`** names what is deprecated and what to use instead, in one sentence. The caller sees it in the exception or log entry, so it has to be enough to fix the call site without opening framework code.
+- Call it right before the deprecated path does its work, not at the top of the method, so the supported paths stay silent.
+- The notice follows the `showErrors` contract like a PHP deprecation: `2` promotes it to an exception so development setups fail loudly, `1` logs it as a `DEPRECATION` event, `0` is silent.
+- When a whole method is retired, add a `@deprecated since <version>` docblock tag as well, so IDEs flag the callers. The tag alone cannot target a single branch, which is what the helper is for.
+- Mention the deprecation in `Changelog.md` as a migrator note.
+
+Because the e2e app runs with `showErrors = 2`, a probe that exercises a deprecated path on purpose switches the mode off around the call and back on afterwards:
+
+```php
+zubzet()->setExceptionBehavior(0);
+echo(json_encode($this->getSession($session)));
+zubzet()->setExceptionBehavior(2);
+```
+
+To assert the log entry instead, use mode `1` inside an output buffer, since that mode also displays the notice; see `SessionController::action_legacyTokenDeprecated()`.
 
 ## Testing
 
@@ -177,7 +201,7 @@ Useful Cypress helpers in `tests/e2e/tests/cypress/support/commands.js`:
 | `cy.loginAs(profile)` | Set session token from `fixtures/logins.json` |
 | `cy.setConfigSetting(key, value)` | Patch `tests/e2e/z_config/z_settings.ini` |
 | `cy.saveConfigBackup()` / `cy.restoreConfigBackup()` | Wrap suites that mutate config |
-| `cy.dbSeed()` | `npm run seed` + clear sessions |
+| `cy.dbSeed()` | `db:seed` (optional `exclude` / `include` selectors) + clear sessions |
 | `cy.http(method, endpoint, body, callback)` | API call with `X-API-KEY: 1234` |
 
 To exercise a CLI command end-to-end:
@@ -221,7 +245,7 @@ Call sites that feed the bar:
 | `LoggerFactory::getOrCreateLogger` | `DebugBarBridge::collectLogger(...)` | `MonologCollector` (a Monolog handler) |
 | `Registry::find` / `Registry::files` | `DebugBarBridge::collectResolution(...)` | `ResolutionCollector` (lookup provenance: userspace / module / framework) |
 
-Internal-query filtering uses source tagging: models that mark themselves with the `IsInternalModel` trait set `isInternalModel = true`, and `Connection::exec` records the calling model on the connection before the query runs. `QueryCollector::addQuery` then drops queries from internal models when `debugbar_hide_internal_queries = true` (default). Direct `db()->exec(...)` calls have no calling model and are always shown.
+Internal-query filtering uses source tagging: models that mark themselves with the `IsInternalModel` trait set `isInternalModel = true`, and only `Model::exec()` sets `Connection::$callingModel` before the query runs; `Connection::exec` hands it to the collector with every query. `QueryCollector::addQuery` then drops queries from internal models when `debugbar_hide_internal_queries = true` (default). The tag is never reset, so a later direct `db()->exec(...)`, `execQuery()` or `getFullTable()`, `getTableWhere()` and `countTableEntries()` call reuses the previous model's tag (`null` at request start).
 
 To add a new collector, implement `DebugBar\DataCollector\DataCollector` (or extend an existing one), register it in `DebugBarBridge::bootstrap()`, and expose a `collectXxx()` method on `CanCollect` that forwards via `self::collect("name", "addXxx", func_get_args())`.
 
@@ -238,9 +262,12 @@ docker exec application php index.php <command>
 | `db:migrate` | Run pending migrations |
 | `db:seed` | Drop and re-seed the database |
 | `db:sync` | Sync migration state up to a version/date |
-| `db:status` | Show migration status |
+| `db:status` | Show the migration lock state (exit 0 unlocked, 1 locked) |
 | `db:unlock-migration` | Release a stuck migration lock |
 | `repair:database-collation` | Convert the `z_` tables to `Connection::COLLATION`; `--include-app-tables` adds the app tables and the database default |
+| `run` | Execute a controller action from the console |
+| `install` | Build a new project in an existing, writable folder |
+| `auth:migrate-hashing` | Wrap legacy password hashes in an Argon2id layer (`onion`) |
 | `info:startup` | Print framework startup banner (no side effects — safe in tests) |
 | `module:setup` | Append-only merge of missing module ini defaults into the app ini |
 | `testing:coverage:start` / `:stop` | Bracket a coverage session |
@@ -284,6 +311,10 @@ Framework migrations live in `src/IncludedComponents/database/Migration/` and sh
 - `INSERT … ON DUPLICATE KEY UPDATE` or guarded with `WHERE NOT EXISTS`
 
 The `z_migration` table (with `z_migration_lock`) prevents re-execution under normal flow, but the rule still applies — a migration that fails on second run is a bug.
+
+## Installer
+
+`docs/setup/install.sh` writes the project's `composer.json`, runs `composer require zubzet/framework` in the project folder inside the PHP image, then runs `bin/install` from that vendor. `bin/install` is a standalone Symfony Console entry for the `install` command (`src/Support/Commands/Install.php`) that copies `stubs/project` around the vendor without booting the framework and never overwrites an existing file. The command is not registered in the framework's own console.
 
 ## Version migrator
 

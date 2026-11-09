@@ -41,39 +41,39 @@ scoped to the class it is called on - `Session::byUuid()` does not find an API k
 
 ## User Object
 
-The [`User`](../api/classes/ZubZet-Framework-Authentication-Permission-User.html) object represents an application user and exposes a comprehensive API for retrieval, lifecycle management, and permission handling.
+The [`User`](../api/classes/ZubZet-Framework-Authentication-Permission-User.html) object represents an application user and exposes a comprehensive API for retrieval, lifecycle management, and permission handling. Import it with `use ZubZet\Framework\Authentication\Permission\User;`: the global alias `User` is the [request user](global-helper-functions.md#user) instead, and `Role`, `Group` and `Organization` have no alias either.
 
 ### User Retrieval
 
-All retrieval methods are **public static** and return fully hydrated `User` objects.
+All retrieval methods are **public static** and return fully hydrated `User` objects. They only find active records; `all()` and `byId()` of `Role`, `Group` and `Organization` work the same way.
 
-* Returns all users assigned to the given role.
+* Returns all active users with an active assignment to the given role, directly or through their organization. `User::byGroup(Group $group)` does the same for a group.
 
     ```php
     User::byRole(Role $role): array
     ```
 
-* Returns a single user by email address or `null` if no user exists.
+* Returns the active user with that email address or `null`. Users without an email are never matched.
 
     ```php
     User::byEmail(string $email): ?User
     ```
 
-* Returns all users that were **not verified up to the given date**.
+* Returns all active users that were **not verified up to the given date**: `verified` is `NULL` or later than it.
 
     ```php
     User::byNotVerified(DateTime $since): array
     ```
 
-* Returns all users that have **all** of the specified permissions.
-  This includes **user-based permissions and role-based permissions**.
+* Returns all active users that have **all** of the specified permissions.
+  This includes **user-based, role-based, group-based and organization permissions**, which may come from different sources.
 
     ```php
     User::byAccessToAll(string ...$permissions): array
     ```
 
-* Returns all users that have **at least one** of the specified permissions.
-  This includes **user-based permissions and role-based permissions**.
+* Returns all active users that have **at least one** of the specified permissions.
+  This includes **user-based, role-based, group-based and organization permissions**.
 
     ```php
     User::byAccessToAnyOf(string ...$permissions): array
@@ -121,10 +121,10 @@ All retrieval methods are **public static** and return fully hydrated `User` obj
 
 If a user instance needs to be created from an existing database row, the object can be hydrated manually.
 
-* Loads raw database data into a user object.
+* Creates a user object from a raw `z_user` row, which must contain the `id` key.
 
     ```php
-    $user = (new User())->loadObject(array $data);
+    $user = new User(array $data);
     ```
 
 ---
@@ -136,14 +136,14 @@ Users can be created through the static `add` method.
 * Creates a new user.
 
     ```php
-    User::add(?string $email, ?string $password, ?DateTime $verified = null);
+    User::add(?string $email, ?string $password = null, ?DateTime $verified = null);
     ```
 
 If no verification date is provided, the user is created as **unverified**.
 
-Throws an `InvalidArgumentException` if the email is not a valid address or already belongs to another user. Passing `null` creates a user without an email.
+Throws an `InvalidArgumentException` if the email is not a valid address or already belongs to another user. Passing `null` creates a user without an email. A password outside 3 to 1024 bytes throws `InvalidArgumentException` only after the user row is inserted, so that user stays without a password.
 
-The `$password` parameter is optional. When `null` is passed, the user is created without a password - useful for invite or SSO flows where a credential is set later via `updatePassword()`.
+The `$password` parameter is optional. When it is omitted or `null`, the user is created without a password - useful for invite or SSO flows where a credential is set later via `updatePassword()`.
 
 ---
 
@@ -151,7 +151,7 @@ The `$password` parameter is optional. When `null` is passed, the user is create
 
 User attributes can be updated directly on the instance.
 
-* Updates the user’s email address. Throws an `InvalidArgumentException` if the address is not a valid email or already belongs to another user. Passing `null` clears it.
+* Updates the user’s email address. Throws an `InvalidArgumentException` if the address is not a valid email or already belongs to another user. Passing `null` clears it. It updates only active rows and neither resets `verified` nor ends sessions.
 
     ```php
     $user->updateEmail(?string $email);
@@ -163,8 +163,8 @@ User attributes can be updated directly on the instance.
     $user->updatePassword(string $password);
     ```
 
-* Assigns the user to an organization, or unsets it when `null` is passed.
-  If the previous and/or the new organization has a linked permission group (see `Organization::getGroup()`), the user's group memberships are kept in sync: the previous organization's group is removed and the new organization's group is added.
+* Assigns the user to an organization (`z_user.organizationId`), or unsets it when `null` is passed.
+  If the previous and/or the new organization has a linked permission group (see `Organization::getGroup()`), the user's group memberships are kept in sync: the previous organization's group is removed (even when it was assigned manually, and skipped when that organization is already removed) and the new organization's group is added. The user's fields are cleared.
 
     ```php
     $user->updateOrganization(?Organization $organization);
@@ -183,7 +183,7 @@ User attributes can be updated directly on the instance.
 
 Removing a user performs a **soft delete**.
 
-* Soft deletes the user (`active = 0`).
+* Soft deletes the user (`active = 0`) and nulls the object, so any further call on it, `id()` included, throws `InvalidArgumentException("Instance no longer exists")`. Nothing else is touched, and the email stays taken (`z_user.email` is unique, inactive users included): the user's roles, sessions, api keys and reset codes stay as they are. Existing sessions stop identifying the user as logged in anyway, because the [login check](#bearer-authentication) requires `active = 1`; call [`$user->clearSessions()`](#updating-user-data) as well to end them.
 
     ```php
     $user->remove();
@@ -195,14 +195,14 @@ Removing a user performs a **soft delete**.
 
 Verification status is time-aware and can be set or queried at arbitrary points in time.
 
-* Marks the user as verified.
+* Marks the user as verified, overwriting an earlier date.
   Defaults to `NOW` if no date is provided.
 
     ```php
     $user->verify(?DateTime $date = null);
     ```
 
-* Checks whether the user was verified at a specific time.
+* Checks whether the user was verified at a specific time: `true` when `verified` is set and not later than `$at` (any `strtotime` string), so a future date counts as unverified now.
 
     ```php
     $user->isVerified(string $at = "NOW"): bool
@@ -251,7 +251,7 @@ The account side of [two factor authentication](two-factor-authentication.md). T
 
 Failed logins are counted per account to rate-limit password guessing.
 
-* Returns `false` when the user has more failed tries than `maxLoginTriesPerTimespan` within the last `maxLoginTriesTimespan`. The event is logged as `ACCOUNT_LOGIN_RATE_LIMITED`.
+* Returns `false` when the user has more failed tries than `maxLoginTriesPerTimespan` within the last `maxLoginTriesTimespan`. The event is logged as `ACCOUNT_LOGIN_RATE_LIMITED`. `maxLoginTriesTimespan` is a relative time string such as `3 minutes`. When it is unset, the window start becomes `1970-01-01`, so every recorded try of the account counts, however old. When `maxLoginTriesPerTimespan` is unset, it is `null` and the comparison only passes for zero tries, so the account is blocked as soon as a single try is recorded in the window.
 
     ```php
     $user->checkLoginTries(): bool
@@ -281,17 +281,19 @@ The framework does not notify the owner of a blocked login, an application does 
 
 Users can have multiple roles assigned or removed dynamically.
 
-* Adds one or more roles to the user.
+* Adds one or more roles to the user and clears the user's cached fields. Adding a role the user already has inserts a duplicate row.
 
     ```php
     $user->rolesAdd(Role ...$roles);
     ```
 
-* Removes one or more roles from the user.
+* Removes one or more roles from the user (the assignment is set inactive) and clears the user's cached fields.
 
     ```php
     $user->rolesRemove(Role ...$roles);
     ```
+
+* `groupsAdd(Group ...$groups)` and `groupsRemove(Group ...$groups)` do the same for groups and reject plain `Role` objects.
 
 ---
 
@@ -299,7 +301,7 @@ Users can have multiple roles assigned or removed dynamically.
 
 Permissions can be assigned directly to users in addition to role-based permissions.
 
-* Adds user-based permissions.
+* Adds user-based permissions. Names are not deduplicated: an identical active row is inserted again.
 
     ```php
     $user->permissionsAdd(string ...$permissionNames);
@@ -315,19 +317,23 @@ Permissions can be assigned directly to users in addition to role-based permissi
 
 ### Permission Checks
 
-Permission checks always resolve the **complete permission set**.
+Permission checks always resolve the **complete permission set**. The permission methods (`permissionsAdd`, `permissionsRemove`, `hasAccessAll`, `hasAccessAnyOf` and the static `buildPermissionVariants`) come from the `Permission` trait that `User`, `Role`, `Group` and `Organization` share.
 
-* Checks whether the user has **all** specified permissions.
+* Checks whether the user has **all** specified permissions, wildcards included.
 
     ```php
     $user->hasAccessAll(string ...$permissionNames): bool
     ```
 
-* Checks whether the user has **at least one** of the specified permissions.
+    Without arguments it returns `true`, since no permission is missing.
+
+* Checks whether the user has **at least one** of the specified permissions, wildcards included.
 
     ```php
     $user->hasAccessAnyOf(string ...$permissionNames): bool
     ```
+
+    Without arguments it returns `false`, since no permission can match.
 
 ---
 
@@ -339,7 +345,7 @@ Permission checks always resolve the **complete permission set**.
     $user->getUserPermissions(): array
     ```
 
-* Returns all effective permissions (user-based + role-based).
+* Returns all effective permissions (user-based + role-based + group-based), cached on the instance until a permission, role or group is changed through these objects, after which the getters re-query on every call. The rows look like `["name" => "x.y"]`, while `Role::getPermissions()` returns plain strings. Only active role links, roles and permission rows count; `z_user.active` is not filtered.
 
     ```php
     $user->getPermissions(): array
@@ -351,7 +357,7 @@ Permission checks always resolve the **complete permission set**.
     $user->refreshPermissions();
     ```
 
-* Reloads all permissions including roles.
+* Reloads all permissions including roles. Changes made outside these objects (admin forms, direct SQL) only show up after this or `refresh()`.
 
     ```php
     $user->refreshAllPermissions();
@@ -361,7 +367,7 @@ Permission checks always resolve the **complete permission set**.
 
 ### User Data & Utility Methods
 
-* Reloads the user data from the database.
+* Reloads the user data from the database and throws `RuntimeException("Object no longer exists")` when the row is gone or inactive. Call it after `updateEmail()`, `updatePassword()`, `verify()` and role or group changes, which clear the object's fields; reading a field like `email()` before throws `Field 'email' does not exist`.
 
     ```php
     $user->refresh();
@@ -382,7 +388,7 @@ Permission checks always resolve the **complete permission set**.
 * Returns the user ID.
 
     ```php
-    $user->id(): int|string|null
+    $user->id(): int
     ```
 
 * Returns the user's [UUID](#uuids).
@@ -391,10 +397,16 @@ Permission checks always resolve the **complete permission set**.
     $user->uuid(): string
     ```
 
-* Returns all roles assigned to the user.
+* Returns the user's active roles without groups, cached on the instance.
 
     ```php
     $user->getRoles(): array
+    ```
+
+* Returns the user's active groups, cached on the instance.
+
+    ```php
+    $user->getGroups(): array
     ```
 
 * Returns the organization the user belongs to, or `null` if none is assigned.
@@ -410,39 +422,51 @@ Permission checks always resolve the **complete permission set**.
     $user->isMemberOf(Organization $organization): bool
     ```
 
-* Validates that the instance exists and is not null.
+* Returns the cached data of the user as an array. This is the full `z_user` row, including the `password` hash and the `salt` column (`null` for natively hashed passwords), plus the internal cache keys `permissions`, `user-permissions`, `roles`, `groups` and `organization`. Never output it unfiltered, for example in a response or a log; read single values with `getField()` instead.
 
     ```php
-    $user->checkInstance(): bool
+    $user->getAll(): array
+    ```
+
+* Throws an `InvalidArgumentException` ("Instance no longer exists") once the object was nulled by `remove()`; every other method on it throws the same.
+
+    ```php
+    $user->checkInstance(): void
     ```
 
 ---
 
 ## Role Object
 
-The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html) object represents a named collection of permissions that can be assigned to users.
+The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html) object represents a named collection of permissions that can be assigned to users. A `Group` is a `Role` restricted to `z_role.is_group = 1`: it grants permissions the same way, has all methods below (returning only groups, so `Role::byId()` never finds a group id), and is accepted wherever a `Role` is type-hinted. Role and group names share one unique column.
 
 ### Role Retrieval
 
-* Returns all roles assigned to a user.
+* Returns all roles assigned to a user, including those of its organization.
 
     ```php
     Role::byUser(User $user): array
     ```
 
-* Returns a role by its name.
+* Returns the active roles an organization holds. `Group::byOrganization(Organization $organization)` does the same for groups.
+
+    ```php
+    Role::byOrganization(Organization $organization): array
+    ```
+
+* Returns the active role with that exact name or `null`.
 
     ```php
     Role::byName(string $name): ?Role
     ```
 
-* Returns all roles that have **all** specified permissions.
+* Returns all roles that have **all** specified permissions, wildcards included. Without arguments it returns all active roles.
 
     ```php
     Role::byAccessToAll(string ...$permissions): array
     ```
 
-* Returns all roles that have **at least one** of the specified permissions.
+* Returns all roles that have **at least one** of the specified permissions, wildcards included.
 
     ```php
     Role::byAccessToAnyOf(string ...$permissions): array
@@ -482,29 +506,29 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
 ### Role Creation and Loading
 
-* Creates a new role.
+* Creates a new role and returns it.
 
     ```php
-    Role::add(string $roleName);
+    Role::add(string $roleName): Role;
     ```
 
-* Loads a role from database data.
+* Creates a role from a raw `z_role` row, which must contain the `id` key.
 
     ```php
-    $role = (new Role())->loadObject(array $data);
+    $role = new Role(array $data);
     ```
 
 ---
 
 ### Updating and Removing Roles
 
-* Updates the role name.
+* Updates the role name. All fields are cleared, so call `$role->refresh()` before reading the object again.
 
     ```php
     $role->update(string $newName);
     ```
 
-* Soft deletes the role.
+* Soft deletes the role. The instance is nulled, so any further call on it throws `InvalidArgumentException("Instance no longer exists")`. Its permissions and user assignments stay but stop counting, and its name stays reserved.
 
     ```php
     $role->remove();
@@ -526,16 +550,10 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
     $role->name(): string
     ```
 
-* Returns all users assigned to the role.
+* Returns all active users assigned to the role, cached until `$role->refresh()`.
 
     ```php
     $role->getUsers(): array
-    ```
-
-* Reloads the role’s users.
-
-    ```php
-    $role->refreshUsers();
     ```
 
 ---
@@ -560,7 +578,7 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
     $role->permissionsAdd(string ...$permissionNames);
     ```
 
-* Removes permissions from the role.
+* Removes permissions from the role (soft delete).
 
     ```php
     $role->permissionsRemove(string ...$permissionNames);
@@ -576,17 +594,21 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
 ### Role Permission Checks
 
-* Checks whether the role has **all** specified permissions.
+* Checks whether the role has **all** specified permissions, wildcards included.
 
     ```php
     $role->hasAccessAll(string ...$permissionNames): bool
     ```
 
-* Checks whether the role has **at least one** of the specified permissions.
+    Without arguments it returns `true`, since no permission is missing.
+
+* Checks whether the role has **at least one** of the specified permissions, wildcards included.
 
     ```php
     $role->hasAccessAnyOf(string ...$permissionNames): bool
     ```
+
+    Without arguments it returns `false`, since no permission can match.
 
 ---
 
@@ -602,7 +624,7 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
 ## Organization Object
 
-The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization.html) object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique) and is soft-deletable like the other authentication objects.
+The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization.html) object represents a group of users. Users can belong to at most one organization. An organization has a name (not unique, may be `null`) and is soft-deletable (`active`) like the other authentication objects. Like a user, it can hold permissions, roles and groups, which all its members inherit.
 
 ### Organization Retrieval
 
@@ -649,15 +671,33 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     Organization::byUuids(string ...$uuids): array
     ```
 
+* Returns all active organizations that hold the role. `Organization::byGroup(Group $group)` does the same for groups.
+
+    ```php
+    Organization::byRole(Role $role): array
+    ```
+
+* Returns all active organizations that have **all** specified permissions, wildcards included, through their own permissions or their roles and groups.
+
+    ```php
+    Organization::byAccessToAll(string ...$permissions): array
+    ```
+
+* Returns all active organizations that have **at least one** of the specified permissions, wildcards included.
+
+    ```php
+    Organization::byAccessToAnyOf(string ...$permissions): array
+    ```
+
 ---
 
 ### Creating an Organization
 
 * Creates a new organization with the given name (which may be `null`).
-  When `$createGroup` is `true`, a permission `Group` named `"{$name}_Group"` is created and linked to the organization. The linked group is then available via `$organization->getGroup()` and is used by `User::updateOrganization()` to sync group membership.
+  When `$createGroup` is `true`, a permission `Group` named `$groupName`, by default `"{$name}_Group"`, is created and linked to the organization (`z_organization.groupId`, `NULL` without a group). The linked group is then available via `$organization->getGroup()` and is used by `User::updateOrganization()` to sync group membership.
 
     ```php
-    Organization::add(?string $name, bool $createGroup = false): Organization
+    Organization::add(?string $name, bool $createGroup = false, ?string $groupName = null): Organization
     ```
 
 ---
@@ -724,19 +764,81 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 
 ---
 
+### Organization Roles and Groups
+
+* Adds one or more roles to the organization. Adding a role it already has inserts a duplicate row.
+
+    ```php
+    $organization->rolesAdd(Role ...$roles);
+    ```
+
+* Removes one or more roles from the organization (the assignment is set inactive).
+
+    ```php
+    $organization->rolesRemove(Role ...$roles);
+    ```
+
+* `groupsAdd(Group ...$groups)` and `groupsRemove(Group ...$groups)` do the same for groups and reject plain `Role` objects.
+
+* Returns only the roles, respectively only the groups, the organization holds. Neither is cached.
+
+    ```php
+    $organization->getRoles(): array
+    $organization->getGroups(): array
+    ```
+
+---
+
+### Organization Permissions
+
+Organization permissions are inherited by all its members.
+
+* Adds organization-based permissions. Names are not deduplicated: an identical active row is inserted again.
+
+    ```php
+    $organization->permissionsAdd(string ...$permissionNames);
+    ```
+
+* Removes organization-based permissions.
+
+    ```php
+    $organization->permissionsRemove(string ...$permissionNames);
+    ```
+
+* Checks whether the organization has **all**, respectively **at least one**, of the specified permissions, wildcards included, through its own permissions or its roles and groups.
+
+    ```php
+    $organization->hasAccessAll(string ...$permissionNames): bool
+    $organization->hasAccessAnyOf(string ...$permissionNames): bool
+    ```
+
+* Returns the names of all effective permissions (own + role-based + group-based), each once, as plain strings like `Role::getPermissions()`.
+
+    ```php
+    $organization->getPermissions(): array
+    ```
+
+* Reloads the permissions.
+
+    ```php
+    $organization->refreshPermissions();
+    ```
+
+---
+
 ## Session Object
 
 The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) object represents a login session (stored in `z_logintoken`) and provides methods for creation, retrieval, lifetime management, and invalidation. An api key is the same row with `is_apikey` set, represented by [`APIKey`](#api-keys). The two are siblings, not parent and child: they get their behavior from the `CanUseSession` trait, so everything documented here applies to both. Type as `Session|APIKey` where either kind may turn up.
 
 ### Session Retrieval
 
-* Returns a session by its token string, or `null` if not found. The row decides the class, so a token belonging to an api key returns an [`APIKey`](#api-keys). This is the entry point of the authentication and therefore resolves both kinds, whichever class it is called on.
+* Returns a session by its token string, or `null` for an unknown or invalidated token; an expired session that was not yet invalidated is still returned. The row decides the class, so a token belonging to an api key returns an [`APIKey`](#api-keys). This is the entry point of the authentication and therefore resolves both kinds, whichever class it is called on.
 
     ```php
     Session::byToken(string $token): Session|APIKey|null
     ```
 
-* Returns all active logins of a user. Api keys are listed by `APIKey::byUser()` instead.
+* Returns all active logins of a user, expired ones not yet invalidated included, or an empty array. Api keys are listed by `APIKey::byUser()` instead.
 
     ```php
     Session::byUser(User $user): array
@@ -748,7 +850,7 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
     Session::byId(int|string $id): ?Session
     ```
 
-* Returns all logins matching the given IDs.
+* Returns all active logins matching the given IDs. Like `all()` and the UUID finders, it skips invalidated rows.
 
     ```php
     Session::byIds(int ...$ids): array
@@ -766,7 +868,7 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
     Session::byUuids(string ...$uuids): array
     ```
 
-* Returns all logins.
+* Returns all active logins.
 
     ```php
     Session::all(): array
@@ -776,7 +878,7 @@ The [`Session`](../api/classes/ZubZet-Framework-Authentication-Session.html) obj
 
 ### Creating a Session
 
-* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`. The optional `$name` labels the session, which is what a "your active sessions" list shows, and `$reason` records why it was created.
+* Creates a new login session for a user. An optional `$userExec` can be passed to create an impersonation session where `$user` is the target user and `$userExec` is the acting. If omitted, both are set to `$user`. No cookie is sent; use `$res->loginAs()` for that. The optional `$name` labels the session, which is what a "your active sessions" list shows, and `$reason` records why it was created.
 
     ```php
     Session::add(User $user, ?User $userExec = null, ?string $name = null, ?string $reason = null): Session
@@ -807,7 +909,7 @@ other: PHP would not allow the narrower signature on a subclass.
 $key = APIKey::add($user, name: "Deployment pipeline");
 $key->setCanExpire(false); // from CanUseSession, like setName() and extend()
 
-$key->token(); // the value the client sends as its z_login_token
+$key->token(); // the plain value the client sends as its z_login_token, known after add() or byToken()
 
 APIKey::byUser($user);  // the user's api keys
 Session::byUser($user); // the user's logins
@@ -861,11 +963,16 @@ like `Basic`, an empty `Bearer `, a value with more than one token like `Bearer 
 request then uses the cookie, if there is one. `$req->bearerToken()` returns the token of the
 header, or `null`.
 
+A valid session does not log a deactivated user in. Whichever way the token arrived, a session or an
+api key, the request is anonymous (`$user->isLoggedIn` is `false`) as soon as the user's `active` is
+`0`, for example after [`$user->remove()`](#removing-a-user). The check runs on every request, so it
+takes effect immediately without ending the session.
+
 ---
 
 ### Lifetime Management
 
-* Extends the session's lifetime by the given number of seconds on top of the base timeout and any existing extension.
+* Extends the session's lifetime by the given number of seconds on top of the base timeout and any existing extension. This only changes server-side validity and needs an active row, so an invalidated session cannot be revived.
 
     ```php
     $session->extend(int $seconds): void
@@ -896,15 +1003,18 @@ header, or `null`.
 
 !!! note "The login cookie has its own lifetime"
     `is_permanent` and `expires_at` are server-side. `loginAs()` sets the
-    `z_login_token` cookie to expire after `loginTimeoutSeconds` regardless, so a
-    browser drops the cookie at that point even though the session itself lives
-    on. Clients that send the token themselves are unaffected.
+    `z_login_token` cookie to expire after `loginTimeoutSeconds` (defaults to
+    7 days when unset) regardless, so a browser drops the cookie at that point
+    even though the session itself lives on. The expiry is fixed when the cookie
+    is set at login and is not re-issued when the session is extended, so
+    `extend()` and `setExtensionTime()` keep the session alive on the server but
+    not the cookie. Clients that send the token themselves are unaffected.
 
 ---
 
 ### Invalidation
 
-* Immediately invalidates the session, preventing further use.
+* Immediately invalidates the session, preventing further use. The object is nulled, so any further call on it throws `InvalidArgumentException("Instance no longer exists")`.
 
     ```php
     $session->invalidate(): void
@@ -920,13 +1030,13 @@ header, or `null`.
 
 ### Expiry Check
 
-* Returns `true` if the session has expired. A session exempt from expiring never is; otherwise the expiry is the one [fixed on the session](#lifetime-management), or, when it carries none, `created` plus the configured `loginTimeoutSeconds` (defaults to 7 days) plus any `extended_seconds`.
+* Returns `true` if the session has expired. A session exempt from expiring never is; otherwise the expiry is the one [fixed on the session](#lifetime-management), or, when it carries none, `created` plus the configured `loginTimeoutSeconds` (defaults to 7 days) plus any `extended_seconds`. The maths use PHP's `strtotime()` and `time()` on the database `created` value, so PHP and database timezones must agree.
 
     ```php
     $session->isExpired(): bool
     ```
 
-* Returns the point in time the session becomes unusable, or `null` when the session is exempt from expiring. This is the effective expiry, whether it was fixed through [`setExpiresAt()`](#lifetime-management) or computed from the lifetime.
+* Returns the point in time the session becomes unusable, or `null` when the session is exempt from expiring. This is the effective expiry, whether it was fixed through [`setExpiresAt()`](#lifetime-management) or computed from the lifetime, which is absolute from creation and not sliding.
 
     ```php
     $session->expiresAt(): ?string
@@ -980,22 +1090,28 @@ A session remembers when it last passed a [two factor](two-factor-authentication
     $session->uuid(): string
     ```
 
-* Returns the session token string. Issued tokens are a `zub-` prefix plus 32 random bytes in hex, 68 characters in total. Tokens issued before this format keep working, so do not validate one by its length.
+* Returns the plain session token, the value the client sends. Issued tokens are `zub-sha256-` plus 64 hex characters, 75 in total, and `z_logintoken.token` stores only `zub-sha256-` plus the SHA-256 of the plain value. The plain value of a hashed token exists only on an object created by `add()` or `byToken()`; on one loaded by any other retriever it is `null`. A token issued before hashing is stored as is and is still returned by every retriever, with a deprecation notice: compare against `storedToken()` instead. Tokens issued before this format stay in plain text and keep working, so do not validate one by its length. Sessions are never deleted, only set to `active = 0` (logout, expiry, `clearSessions()`).
 
     ```php
-    $session->token(): string
+    $session->token(): ?string
+    ```
+
+* Returns the value stored in `z_logintoken.token`: the hash for a session issued in the new format, the plain token for an older one. Use it, or `LoginToken::hash($token)`, when comparing in your own SQL.
+
+    ```php
+    $session->storedToken(): string
     ```
 
 * Returns the ID of the user who owns the session.
 
     ```php
-    $session->userId(): int|string
+    $session->userId(): ?int
     ```
 
 * Returns the ID of the user being executed as (relevant for impersonation sessions).
 
     ```php
-    $session->userIdExec(): int|string
+    $session->userIdExec(): ?int
     ```
 
 * Returns the name of the session, or `null` if it has none.
@@ -1043,7 +1159,7 @@ A session remembers when it last passed a [two factor](two-factor-authentication
 * Returns the creation timestamp of the session.
 
     ```php
-    $session->created(): string
+    $session->created(): ?string
     ```
 
 * Returns when the session was last used, or `null` while it has not been used since it was created. Every authenticated request refreshes it, but at most once per `session_last_used_throttle_seconds` (defaults to 60), so the timestamp costs one write per throttle window rather than one per request - read it as "last seen around then", not to the second. Set the key to `0` to write on every request. A request from a new address is always written, because that is what updates `ipLast()`.
@@ -1056,7 +1172,7 @@ A session remembers when it last passed a [two factor](two-factor-authentication
 
 ### Refreshing Session Data
 
-* Reloads the session data from the database.
+* Reloads the session data from the database. The getters return the loaded data without reloading, so call it after a setter such as `setName()` or `extend()` to see the change.
 
     ```php
     $session->refresh(): void

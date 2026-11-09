@@ -18,7 +18,7 @@
 
         protected function configure(): void {
             $this->setName("db:seed");
-            $this->setDescription("Execute a database seeding task.");
+            $this->setDescription("Drop and recreate the database, run all migrations and seed it (--skip-migrations seeds only)");
 
             $this->addOption(
                 "skip-migrations",
@@ -41,7 +41,7 @@
                 "Exclude seed folders/files from execution",
             );
 
-            $this->setDatabaseConnection();
+            $this->addDatabaseWaitOption();
         }
 
         protected function execute(InputInterface $in, OutputInterface $out): int {

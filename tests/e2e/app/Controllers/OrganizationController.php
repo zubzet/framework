@@ -1,6 +1,8 @@
 <?php
 
     use ZubZet\Framework\Authentication\Organization;
+    use ZubZet\Framework\Authentication\Permission\Group;
+    use ZubZet\Framework\Authentication\Permission\Role;
     use ZubZet\Framework\Authentication\Permission\User;
 
     class OrganizationController extends z_controller {
@@ -205,6 +207,325 @@
 
         /**
          *
+         * @var Organization Permissions, Roles and Groups
+         *
+         */
+        public function action_hasAccess(Request $req, Response $res): void {
+            $organization = Organization::byId(520);
+
+            echo(json_encode([
+                "all" => $organization->hasAccessAll("orgperm.direct.read", "orgperm.direct.write"),
+                "allWithMissing" => $organization->hasAccessAll("orgperm.direct.read", "orgperm.direct.missing"),
+                "anyOf" => $organization->hasAccessAnyOf("orgperm.direct.missing", "orgperm.direct.write"),
+                "anyOfInactive" => $organization->hasAccessAnyOf("orgperm.direct.missing", "orgperm.direct.inactive"),
+                "wildcard" => $organization->hasAccessAll("orgperm.wild.deep.name"),
+                "wildcardOutside" => $organization->hasAccessAnyOf("orgperm.other.name")
+            ]));
+        }
+
+        public function action_getPermissions(Request $req, Response $res): void {
+            echo(json_encode(Organization::byId(521)->getPermissions()));
+        }
+
+        public function action_getRoles(Request $req, Response $res): void {
+            $organization = Organization::byId(522);
+
+            echo(json_encode([
+                "roles" => $this->getNames($organization->getRoles()),
+                "groups" => $this->getNames($organization->getGroups())
+            ]));
+        }
+
+        public function action_byOrganization(Request $req, Response $res): void {
+            $organization = Organization::byId(522);
+
+            echo(json_encode([
+                "roles" => $this->getNames(Role::byOrganization($organization)),
+                "groups" => $this->getNames(Group::byOrganization($organization))
+            ]));
+        }
+
+        public function action_byRole(Request $req, Response $res): void {
+            echo(json_encode([
+                "byRole" => $this->getNames(Organization::byRole(Role::byId(157))),
+                "byGroup" => $this->getNames(Organization::byGroup(Group::byId(159)))
+            ]));
+        }
+
+        public function action_byAccessToAll(Request $req, Response $res): void {
+            $organizations = Organization::byAccessToAll("orgperm.byAccess.1", "orgperm.byAccess.2");
+            echo(json_encode($this->getNames($organizations)));
+        }
+
+        public function action_byAccessToAnyOf(Request $req, Response $res): void {
+            $organizations = Organization::byAccessToAnyOf("orgperm.byAccess.1", "orgperm.byAccess.2");
+            echo(json_encode($this->getNames($organizations)));
+        }
+
+
+        /**
+         *
+         * @var Members inherit what their Organization holds
+         *
+         */
+        public function action_inheritDirect(Request $req, Response $res): void {
+            $member = User::byId(570);
+            $none = User::byId(571);
+            $other = User::byId(572);
+
+            echo(json_encode([
+                "memberAll" => $member->hasAccessAll("orgperm.direct.read", "orgperm.direct.write"),
+                "memberAllWithMissing" => $member->hasAccessAll("orgperm.direct.read", "orgperm.direct.missing"),
+                "memberAnyOf" => $member->hasAccessAnyOf("orgperm.direct.missing", "orgperm.direct.write"),
+                "memberAnyOfInactive" => $member->hasAccessAnyOf("orgperm.direct.inactive"),
+                "memberWildcard" => $member->hasAccessAll("orgperm.wild.deep.name"),
+                "memberPermissions" => $member->getPermissions(),
+                "noneAll" => $none->hasAccessAll("orgperm.direct.write"),
+                "noneAnyOf" => $none->hasAccessAnyOf("orgperm.direct.write", "orgperm.wild.deep.name"),
+                "otherAnyOf" => $other->hasAccessAnyOf("orgperm.direct.write", "orgperm.wild.deep.name"),
+                "otherPermissions" => $other->getPermissions()
+            ]));
+        }
+
+        public function action_inheritRoleGroup(Request $req, Response $res): void {
+            $member = User::byId(598);
+            $none = User::byId(599);
+
+            echo(json_encode([
+                "memberAll" => $member->hasAccessAll("orgperm.viaRole.perm", "orgperm.viaGroup.perm"),
+                "memberPermissions" => $member->getPermissions(),
+                "noneAnyOf" => $none->hasAccessAnyOf("orgperm.viaRole.perm", "orgperm.viaGroup.perm"),
+                "nonePermissions" => $none->getPermissions()
+            ]));
+        }
+
+        public function action_userByRoleGroup(Request $req, Response $res): void {
+            $user = User::byId(580);
+
+            echo(json_encode([
+                "roles" => $this->getNames(Role::byUser($user)),
+                "groups" => $this->getNames(Group::byUser($user)),
+                "userRoles" => $this->getNames($user->getRoles()),
+                "userGroups" => $this->getNames($user->getGroups())
+            ]));
+        }
+
+        public function action_usersByRoleGroup(Request $req, Response $res): void {
+            echo(json_encode([
+                "byRole" => $this->getNames(User::byRole(Role::byId(170)), "email"),
+                "byGroup" => $this->getNames(User::byGroup(Group::byId(171)), "email"),
+                "roleGetUsers" => $this->getNames(Role::byId(170)->getUsers(), "email"),
+                "groupGetUsers" => $this->getNames(Group::byId(171)->getUsers(), "email"),
+                "otherRole" => $this->getNames(Role::byId(172)->getUsers(), "email")
+            ]));
+        }
+
+        public function action_userByAccessToAll(Request $req, Response $res): void {
+            $users = User::byAccessToAll("orgperm.userAccess.1", "orgperm.userAccess.2");
+            echo(json_encode($this->getNames($users, "email")));
+        }
+
+        public function action_userByAccessToAnyOf(Request $req, Response $res): void {
+            $users = User::byAccessToAnyOf("orgperm.userAccess.1", "orgperm.userAccess.2");
+            echo(json_encode($this->getNames($users, "email")));
+        }
+
+        public function action_inactiveOrganization(Request $req, Response $res): void {
+            $member = User::byId(592);
+
+            echo(json_encode([
+                "permissions" => $member->getPermissions(),
+                "anyOf" => $member->hasAccessAnyOf("orgperm.inactiveOrganization.direct", "orgperm.inactiveOrganization.role"),
+                "roles" => $this->getNames(Role::byUser($member)),
+                "users" => $this->getNames(User::byRole(Role::byId(176)), "email"),
+                "organizations" => $this->getNames(Organization::byRole(Role::byId(176)))
+            ]));
+        }
+
+        public function action_noOrganization(Request $req, Response $res): void {
+            $none = User::byId(596);
+            $member = User::byId(597);
+
+            echo(json_encode([
+                "nonePermissions" => $none->getPermissions(),
+                "noneRoles" => $this->getNames(Role::byUser($none)),
+                "noneAll" => $none->hasAccessAll("orgperm.regression.direct", "orgperm.regression.role"),
+                "memberPermissions" => $member->getPermissions(),
+                "memberRoles" => $this->getNames(Role::byUser($member)),
+                "byRole" => $this->getNames(User::byRole(Role::byId(181)), "email")
+            ]));
+        }
+
+
+        /**
+         *
+         * @var Changing what an Organization holds
+         *
+         */
+        public function action_mutatePermissions(Request $req, Response $res): void {
+            $organization = Organization::byId(543);
+            $member = User::byId(587);
+
+            $before = $member->hasAccessAnyOf("orgperm.mutatePermissions.perm");
+
+            $organization->permissionsAdd("orgperm.mutatePermissions.perm", "orgperm.mutatePermissions.other");
+            $added = [
+                "organization" => $organization->getPermissions(),
+                "member" => $member->getPermissions()
+            ];
+
+            $organization->permissionsAdd("*.*");
+            $wildcard = $member->hasAccessAll("orgperm.mutatePermissions.anything");
+            $organization->permissionsRemove("*.*");
+            $wildcardRemoved = $member->hasAccessAll("orgperm.mutatePermissions.anything");
+
+            $organization->permissionsRemove("orgperm.mutatePermissions.perm");
+            $removed = [
+                "organization" => $organization->getPermissions(),
+                "member" => $member->getPermissions(),
+                "memberAccess" => $member->hasAccessAnyOf("orgperm.mutatePermissions.perm")
+            ];
+
+            echo(json_encode([
+                "before" => $before,
+                "added" => $added,
+                "wildcard" => $wildcard,
+                "wildcardRemoved" => $wildcardRemoved,
+                "removed" => $removed
+            ]));
+        }
+
+        public function action_mutateRoles(Request $req, Response $res): void {
+            $organization = Organization::byId(544);
+            $member = User::byId(588);
+            $role = Role::byId(173);
+
+            $before = $member->hasAccessAnyOf("orgperm.mutateRoles.perm");
+
+            $organization->rolesAdd($role);
+            $added = [
+                "organization" => $this->getNames($organization->getRoles()),
+                "memberRoles" => $this->getNames(Role::byUser($member)),
+                "memberAccess" => $member->hasAccessAnyOf("orgperm.mutateRoles.perm")
+            ];
+
+            $organization->rolesRemove($role);
+            $removed = [
+                "organization" => $this->getNames($organization->getRoles()),
+                "memberRoles" => $this->getNames(Role::byUser($member)),
+                "memberAccess" => $member->hasAccessAnyOf("orgperm.mutateRoles.perm")
+            ];
+
+            echo(json_encode([
+                "before" => $before,
+                "added" => $added,
+                "removed" => $removed
+            ]));
+        }
+
+        public function action_mutateGroups(Request $req, Response $res): void {
+            $organization = Organization::byId(545);
+            $member = User::byId(589);
+            $group = Group::byId(174);
+
+            $before = $member->hasAccessAnyOf("orgperm.mutateGroups.perm");
+
+            $organization->groupsAdd($group);
+            $added = [
+                "organization" => $this->getNames($organization->getGroups()),
+                "memberGroups" => $this->getNames(Group::byUser($member)),
+                "memberAccess" => $member->hasAccessAnyOf("orgperm.mutateGroups.perm")
+            ];
+
+            $organization->groupsRemove($group);
+            $removed = [
+                "organization" => $this->getNames($organization->getGroups()),
+                "memberGroups" => $this->getNames(Group::byUser($member)),
+                "memberAccess" => $member->hasAccessAnyOf("orgperm.mutateGroups.perm")
+            ];
+
+            echo(json_encode([
+                "before" => $before,
+                "added" => $added,
+                "removed" => $removed
+            ]));
+        }
+
+        public function action_userMoveOrganization(Request $req, Response $res): void {
+            $before = User::byId(590)->getPermissions();
+
+            User::byId(590)->updateOrganization(Organization::byId(547));
+            $moved = User::byId(590)->getPermissions();
+
+            User::byId(590)->updateOrganization(null);
+            $unset = User::byId(590)->getPermissions();
+
+            echo(json_encode([
+                "before" => $before,
+                "moved" => $moved,
+                "unset" => $unset
+            ]));
+        }
+
+        public function action_removeOrganization(Request $req, Response $res): void {
+            $member = User::byId(591);
+            $before = [
+                "permissions" => $member->getPermissions(),
+                "roles" => $this->getNames(Role::byUser($member))
+            ];
+
+            Organization::byId(548)->remove();
+
+            $member = User::byId(591);
+            echo(json_encode([
+                "before" => $before,
+                "after" => [
+                    "permissions" => $member->getPermissions(),
+                    "roles" => $this->getNames(Role::byUser($member))
+                ]
+            ]));
+        }
+
+        public function action_roleRemoved(Request $req, Response $res): void {
+            $organization = Organization::byId(550);
+            $member = User::byId(593);
+
+            $before = [
+                "organization" => $this->getNames($organization->getRoles()),
+                "memberAccess" => $member->hasAccessAnyOf("orgperm.roleRemoved.perm")
+            ];
+
+            Role::byId(177)->remove();
+
+            echo(json_encode([
+                "before" => $before,
+                "after" => [
+                    "organization" => $this->getNames($organization->getRoles()),
+                    "memberRoles" => $this->getNames(Role::byUser($member)),
+                    "memberAccess" => $member->hasAccessAnyOf("orgperm.roleRemoved.perm")
+                ]
+            ]));
+        }
+
+
+        /**
+         *
+         * @var Request checkPermission, Authentication\User::checkPermissionOf
+         *
+         */
+        public function action_legacyCheck(Request $req, Response $res): void {
+            echo(json_encode([
+                "direct" => $req->checkPermission("orgperm.legacy.direct", true),
+                "role" => $req->checkPermission("orgperm.legacy.role", true),
+                "missing" => $req->checkPermission("orgperm.legacy.missing", true),
+                "ofMember" => user()->checkPermissionOf("orgperm.legacy.role", 594),
+                "ofNone" => user()->checkPermissionOf("orgperm.legacy.role", 595)
+            ]));
+        }
+
+
+        /**
+         *
          * @var Organization <-> Group Link
          *
          */
@@ -320,6 +641,10 @@
             }
 
             return $organizationData;
+        }
+
+        private function getNames(array $objects, string $method = "name"): array {
+            return array_map(fn($object) => $object->$method(), $objects);
         }
 
         private function getGroupsOfUser(User $user): array {
