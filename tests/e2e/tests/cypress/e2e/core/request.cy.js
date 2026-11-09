@@ -29,6 +29,22 @@ describe('Request', () => {
     });
 
 
+    // parse_url() fails on a path like "/x:1" and used to leave no url parts
+    it('url parts keep a segment that ends in a colon and digits', () => {
+        cy.request('/Routing/urlPartsProbe/b:1').then((res) => {
+            expect(res.body).to.deep.equal(['Routing', 'urlPartsProbe', 'b:1']);
+        });
+        cy.request('/Routing/urlPartsProbe/b:1?y=2').then((res) => {
+            expect(res.body).to.deep.equal(['Routing', 'urlPartsProbe', 'b:1']);
+        });
+    });
+
+    it('a path ending in a colon and digits is not the start page', () => {
+        cy.request({ url: '/anything:1', failOnStatusCode: false }).then((res) => {
+            expect(res.status).to.equal(404);
+        });
+    });
+
     it('GET', () => {
         cy.visit("/Core/Get?TestGet=JustATest");
         cy.contains("JustATest");

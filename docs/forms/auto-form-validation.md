@@ -85,7 +85,7 @@ Inserted as HTML, escape these:
 - the `value` of a `button` field and the `text` of `createActionButton()`
 - `form.hint(alertClass, content)`
 - `form.addCustomHTML(html)`
-- the suggestions of an `autocomplete` field (`autocompleteData` entries and the return value of `autocompleteTextCB`)
+- the return value of `autocompleteTextCB` of an `autocomplete` field (its `autocompleteData` entries are escaped)
 
 Inserted as plain text, no escaping needed: the `text` of `select` and `multi-select` options and the text of `multi-select` badges.
 
@@ -455,7 +455,7 @@ public function action_favourite(Request $req, Response $res) {
 </script>
 ```
 
-Every key press posts `value` with `action=autocomplete` to the path and renders the returned `data` array as soon as it arrives. `autocompleteTextCB(html, entry)` returns the HTML of a list item from the highlighted text and the raw entry, `autocompleteCB(entry)` runs when a suggestion is picked (which also fills the input), and Escape or a click anywhere closes the list.
+Every key press posts `value` with `action=autocomplete` to the path and renders the returned `data` array as soon as it arrives. Entries are rendered as text, so markup in them is shown as typed. `autocompleteTextCB(html, entry)` returns the HTML of a list item from the highlighted text, already escaped with the matching part wrapped in `<strong>`, and the raw entry; what it returns is inserted as HTML, so escape any value you add to it. `autocompleteCB(entry)` runs when a suggestion is picked (which also fills the input), and Escape or a click anywhere closes the list.
 
 The suggestion list carries the term it shows suggestions for in `data-search-term`, set once the endpoint's answer for that term has been rendered and removed when the list is cleared. Tests and scripts can wait on it, e.g. `[data-search-term="Apple"] button`.
 
