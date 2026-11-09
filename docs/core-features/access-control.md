@@ -317,7 +317,7 @@ Permissions can be assigned directly to users in addition to role-based permissi
 
 ### Permission Checks
 
-Permission checks always resolve the **complete permission set**. The permission methods (`permissionsAdd`, `permissionsRemove`, `hasAccessAll`, `hasAccessAnyOf` and the static `buildPermissionVariants`) come from the `Permission` trait that `User`, `Role` and `Group` share.
+Permission checks always resolve the **complete permission set**. The permission methods (`permissionsAdd`, `permissionsRemove`, `hasAccessAll`, `hasAccessAnyOf` and the static `buildPermissionVariants`) come from the `Permission` trait that `User`, `Role`, `Group` and `Organization` share.
 
 * Checks whether the user has **all** specified permissions, wildcards included.
 
@@ -446,6 +446,12 @@ The [`Role`](../api/classes/ZubZet-Framework-Authentication-Permission-Role.html
 
     ```php
     Role::byUser(User $user): array
+    ```
+
+* Returns the active roles an organization holds. `Group::byOrganization(Organization $organization)` does the same for groups.
+
+    ```php
+    Role::byOrganization(Organization $organization): array
     ```
 
 * Returns the active role with that exact name or `null`.
@@ -665,6 +671,24 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     Organization::byUuids(string ...$uuids): array
     ```
 
+* Returns all active organizations that hold the role. `Organization::byGroup(Group $group)` does the same for groups.
+
+    ```php
+    Organization::byRole(Role $role): array
+    ```
+
+* Returns all active organizations that have **all** specified permissions, wildcards included, through their own permissions or their roles and groups.
+
+    ```php
+    Organization::byAccessToAll(string ...$permissions): array
+    ```
+
+* Returns all active organizations that have **at least one** of the specified permissions, wildcards included.
+
+    ```php
+    Organization::byAccessToAnyOf(string ...$permissions): array
+    ```
+
 ---
 
 ### Creating an Organization
@@ -736,6 +760,68 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 
     ```php
     $organization->refreshGroup();
+    ```
+
+---
+
+### Organization Roles and Groups
+
+* Adds one or more roles to the organization. Adding a role it already has inserts a duplicate row.
+
+    ```php
+    $organization->rolesAdd(Role ...$roles);
+    ```
+
+* Removes one or more roles from the organization (the assignment is set inactive).
+
+    ```php
+    $organization->rolesRemove(Role ...$roles);
+    ```
+
+* `groupsAdd(Group ...$groups)` and `groupsRemove(Group ...$groups)` do the same for groups and reject plain `Role` objects.
+
+* Returns only the roles, respectively only the groups, the organization holds. Neither is cached.
+
+    ```php
+    $organization->getRoles(): array
+    $organization->getGroups(): array
+    ```
+
+---
+
+### Organization Permissions
+
+Organization permissions are inherited by all its members.
+
+* Adds organization-based permissions. Names are not deduplicated: an identical active row is inserted again.
+
+    ```php
+    $organization->permissionsAdd(string ...$permissionNames);
+    ```
+
+* Removes organization-based permissions.
+
+    ```php
+    $organization->permissionsRemove(string ...$permissionNames);
+    ```
+
+* Checks whether the organization has **all**, respectively **at least one**, of the specified permissions, wildcards included, through its own permissions or its roles and groups.
+
+    ```php
+    $organization->hasAccessAll(string ...$permissionNames): bool
+    $organization->hasAccessAnyOf(string ...$permissionNames): bool
+    ```
+
+* Returns the names of all effective permissions (own + role-based + group-based), each once, as plain strings like `Role::getPermissions()`.
+
+    ```php
+    $organization->getPermissions(): array
+    ```
+
+* Reloads the permissions.
+
+    ```php
+    $organization->refreshPermissions();
     ```
 
 ---
