@@ -88,6 +88,7 @@ Emails are sent from [controllers](../core-features/controllers-and-actions.md),
     5. `options`: An array of values to pass to the view file.
     6. `layout`: The layout file to use for the email.
     7. `attachments`: File contents (not paths) to attach, keyed by file name.
+    8. `senderName`: The display name of the sender, defaults to the `pageName`.
 
 2. `sendEmailToUser`: This method is used to send an email directly to a registered user by specifying their user ID. It accepts the following parameters:
 

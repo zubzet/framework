@@ -177,8 +177,9 @@
          * @param array $options Options to use in the view
          * @param string $layout Layout name: ".php" is stripped, "_layout" is appended, and "layout/" is prefixed unless that path exists in the app views ("mail" -> layout/mail_layout). The default "email" needs an app layout/email_layout; the framework only ships mail_layout
          * @param string[] $attachments Contents of each attachment, not their path. Array keys can be used to set the filename i.e. $filename => $content
+         * @param ?string $senderName Display name of the sender, defaults to the pageName
          */
-        public function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email", array $attachments = []) {
+        public function sendEmail($to, $subject, $document, $lang = "en", $options = [], $layout = "email", array $attachments = [], ?string $senderName = null) {
             //Import the email template
             $layout = str_replace(".php", "", $layout);
             $layout = str_replace("_layout", "", $layout);
@@ -236,7 +237,7 @@
                 $mail->Port       = $this->getBooterSettings("mail_port");  // TCP port to connect to
 
                 //Recipients
-                $mail->setFrom($from, $this->getBooterSettings("pageName"));
+                $mail->setFrom($from, $senderName ?? config("pageName"));
                 $mail->addAddress($to);
 
                 // Content
