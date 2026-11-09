@@ -3,14 +3,19 @@
     namespace ZubZet\Framework\Authentication;
 
     use ZubZet\Framework\Authentication\Permission\Group;
+    use ZubZet\Framework\Authentication\Permission\Permission;
+    use ZubZet\Framework\Authentication\Permission\Role;
     use ZubZet\Framework\Authentication\Permission\User;
 
     class Organization extends AuthenticationObject {
 
+        use Permission;
         use RetrievalTrait;
         use HandleTrait;
 
         public static string $dbTable = "z_organization";
+        public static string $dbPermissionsTable = "z_organization_permission";
+        public static string $dbPermissionsObjectColumn = "organization";
         public static array $dbExpression = [];
 
         public function __construct(array $data) {
@@ -22,6 +27,7 @@
             $this->data = $data;
             $this->setField("users", null);
             $this->setField("group", null);
+            $this->setField("permissions", null);
         }
 
         public static function add(?string $name, bool $createGroup = false, ?string $groupName = null): Organization {
@@ -45,6 +51,27 @@
          */
         public static function byUser(User $user): ?Organization {
             return $user->organization();
+        }
+
+        public static function byRole(Role $role): array {
+            $organizations = model("z_permission")->getOrganizationsByRoleGroup($role);
+            return array_map(fn($data) => new Organization($data), $organizations);
+        }
+
+        public static function byGroup(Group $group): array {
+            return static::byRole($group);
+        }
+
+        public static function byAccessToAll(string ...$permissionNames): array {
+            $variants = array_map(fn($name) => static::buildPermissionVariants($name), $permissionNames);
+            $organizations = model("z_permission")->getOrganizationsByAccessToAll($variants);
+            return array_map(fn($data) => new Organization($data), $organizations);
+        }
+
+        public static function byAccessToAnyOf(string ...$permissionNames): array {
+            $variants = array_map(fn($name) => static::buildPermissionVariants($name), $permissionNames);
+            $organizations = model("z_permission")->getOrganizationsByAccessToAnyOf(array_merge(...$variants));
+            return array_map(fn($data) => new Organization($data), $organizations);
         }
 
         /**
@@ -106,7 +133,47 @@
             $this->setField("group", $group);
         }
 
+        public function rolesAdd(Role ...$roles): void {
+            self::$permissionChanged = true;
+            model("z_permission")->addRolesGroupsToOrganization($this, ...$roles);
+        }
+
+        public function groupsAdd(Group ...$groups): void {
+            $this->rolesAdd(...$groups);
+        }
+
+        public function rolesRemove(Role ...$roles): void {
+            self::$permissionChanged = true;
+            model("z_permission")->removeRolesGroupsFromOrganization($this, ...$roles);
+        }
+
+        public function groupsRemove(Group ...$groups): void {
+            $this->rolesRemove(...$groups);
+        }
+
+        public function getRoles(): array {
+            return Role::byOrganization($this);
+        }
+
+        public function getGroups(): array {
+            return Group::byOrganization($this);
+        }
+
+        // Own permissions plus those of its roles and groups
+        public function getPermissions(): array {
+            if(is_null($this->getField("permissions")) || self::$permissionChanged) $this->refreshPermissions();
+
+            return $this->getField("permissions");
+        }
+
+        public function refreshPermissions(): void {
+            $permissions = model("z_permission")->getPermissionsByOrganizationAll($this);
+            $this->setField("permissions", array_column($permissions, "name"));
+        }
+
         public function remove(): void {
+            self::$permissionChanged = true;
+
             // Detach the members first, their group only resolves while the organization is active
             foreach($this->getUsers() as $user) $user->updateOrganization(null);
 

@@ -8,7 +8,7 @@
     class Rest {
 
         /**
-         * @var object $data Payload of the rest
+         * @var array $data Payload of the rest
          */
         private $data;
 
@@ -19,7 +19,7 @@
 
         /**
          * Creates a rest object
-         * @param array $data Data should be send.
+         * @param array $data Payload to send; merged after the auto-generated 'meta' block (endpoint, request, timestamp), so a 'meta' key in it overwrites that block.
          * @param string[] $urlParts to which the request was targeted at
          */
         function __construct($data, $urlParts) {
@@ -36,8 +36,8 @@
         }
 
         /**
-         * Sends an error to the client
-         * @param string $code The error code
+         * Replaces the payload with an error object, sends it to the client and exits via execute()
+         * @param string|int $code The error code
          * @param string $message A human readable message, explaining the error
          */
         public function ShowError($code, $message) {
@@ -51,8 +51,8 @@
         }
 
         /**
-         * Sends the rest stuff to the client
-         * @param bool $die Should the program end after sending?
+         * Echoes the payload as pretty-printed JSON (no Content-Type header is sent)
+         * @param bool $die Whether to call exit after echoing
          */
         public function execute($die = true) {
             $this->json = json_encode($this->data, JSON_PRETTY_PRINT);

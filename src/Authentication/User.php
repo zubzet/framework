@@ -3,7 +3,7 @@
     namespace ZubZet\Framework\Authentication;
 
     /**
-     * The User class holds information about the user
+     * The User class holds the user of the current request (user() helper, alias User), identified on construction by bearer token or the z_login_token cookie; not Permission\User
      */
     class User {
 
@@ -65,7 +65,7 @@
 
         /**
          * Checks if the user is registered. Checks by the bearer token of the Authorization header, else by the z_login_token cookie.
-         * The properties $isLoggedIn, $userId, and $execUserId will be set after calling this function.
+         * Sets $isLoggedIn, $userId, $execUserId, $orgId, $fields, $uuid and the session token (nothing is returned). An expired session is invalidated in the database, a valid one gets its last use recorded.
          */
         public function identify() {
             // A bearer header wins over the cookie, even when its token turns out invalid
@@ -106,7 +106,7 @@
         }
 
         /**
-         * Checks if a user has a given permission
+         * Checks if the effective user (not the sudo exec user) has a given permission, wildcards included ("*.*" or "edit.*" cover "edit.article"). Always false for anonymous users.
          * @param string $permission Name of the permission
          * @return bool True when the permission is given
          */

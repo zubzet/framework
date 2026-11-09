@@ -10,7 +10,8 @@
         /**
          * Validates form data from the client
          * @param Field[] $fields Array of fields with the validation rules
-         * @param array $data Input for the validation. getGet() or getPost() can be used here as parameters
+         * @param array $data Input for the validation, defaults to getPost() + getFiles() when null or empty. getGet() or getPost() can be used here as parameters
+         * Rules other than required() are skipped for empty values.
          * @return Result A result to work with
          */
         public function validateForm($fields, $data = null) {

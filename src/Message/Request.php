@@ -9,9 +9,10 @@
     use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
     use ZubZet\Framework\Form\Validation\CanValidateMultiForm;
+    use ZubZet\Framework\Security\CSRF;
 
     /**
-     * Base class for Response and Request
+     * The incoming request: input, URL parts, permission checks and form helpers
      */
     class Request extends RequestResponseHandler {
 
@@ -68,7 +69,7 @@
 
         /**
          * Gets the IP of a request
-         * @return ?string The IP of the client. False if no IP is detected
+         * @return ?string The IP of the client, client-supplied headers (spoofable) are trusted first. Empty string if none is found
          */
         public function ip(): ?string {
             $ip = $this->input->SERVER['HTTP_CLIENT_IP']
@@ -184,7 +185,7 @@
 
         /**
          * Returns the current URL
-         * @return string Returns the current URL, consisting of the configured host and the actual current path
+         * @return string Returns the current URL, consisting of the configured host followed by the raw REQUEST_URI (root directory, path and query string)
          */
         public function getCurrentURL(): string {
             return config("host") . ($this->input->SERVER['REQUEST_URI'] ?? "");
@@ -199,7 +200,7 @@
         }
 
         /**
-         * Returns the app domain as specified in the configuration (`host=`)
+         * Returns the app domain as specified in the configuration (`host=`), with scheme, slashes and port stripped (`https://example.com:8080/` becomes `example.com`)
          * @return string the domain
          */
         public function getDomain(): string {
@@ -214,11 +215,11 @@
         }
 
         /**
-         * Gets the URL parameters (including the leading controller and action) specified by the path.
+         * Gets the URL parameters (excluding the leading controller and action) specified by the path.
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @param int $length The amount of array elements that will be returned at the set offset. If null, every element will be returned
-         * @param string $val If the length is 1, a Boolean will be returned. $val will be compared to the parameter
-         * @return mixed[]|string
+         * @param string $val If the length is 1 and $val is set, a Boolean will be returned. $val will be compared to the parameter
+         * @return mixed[]|string|bool Array of parameters, the single parameter (or a Boolean comparison with $val) if length is 1, false if length is 1 and the parameter is missing
          */
         public function getParameters($offset = 0, $length = null, $val = null): mixed {
             //Get the current url parts from the booter
@@ -241,7 +242,7 @@
         /**
          * Works like getParameters and decodes an SEO optimized URL. Example: test.com/episodes/this-is-some-text-64 The 64 is an id
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
-         * @return string[] [id, text] of the URL
+         * @return array{id: string, text: string} Associative array; both are empty strings when the URL segment is missing
          */
         public function getReadableParameter($offset = 0): array {
             $param = $this->getParameters($offset, 1);
@@ -255,16 +256,16 @@
         }
 
         /**
-         * Gets the user who made the request.
-         * @return \User Object of the requesting user
+         * Gets the user who made the request, also for guests (check isLoggedIn).
+         * @return \ZubZet\Framework\Authentication\User Object of the requesting user
          */
         public function getRequestingUser(): User {
             return user();
         }
 
         /**
-         * Gets the path to the root folder of the project.
-         * @return string Path to the root folder
+         * Gets the URL base path of the app ("/" plus rootDirectory, with trailing slash).
+         * @return string URL base path used to prefix links and cookie paths
          */
         public function getRootFolder(): string {
             return config("rootFolder");
@@ -275,10 +276,12 @@
         }
 
         /**
-         * Checks if the current user has a permission. If the user is not logged in, they will be redirected to the login page. 
-         * If the user is logged in but does not have the permission, they will be redirected to 403.
+         * Checks if the current user has a permission. If the user is not logged in, the login page is rendered and the script exits.
+         * If the user is logged in but does not have the permission, the 403 page is rendered and the script exits. The permission "console" passes only on CLI.
          * @param string $permission Permission to check for
-         * @param bool $boolResult If true, the function will return a boolean result instead of redirecting
+         * @param bool $boolResult If true, the function will return false instead of rendering the login/403 page and exiting
+         * @param bool $includeSuperUser If true, the permission may also be held by the executing user (the user acting as another one)
+         * @return bool True if the permission is granted (otherwise false with $boolResult, or the script exits)
          */
         public function checkPermission(string $permission, bool $boolResult = false, bool $includeSuperUser = false): bool {
             if($permission == "console") {
@@ -367,7 +370,7 @@
         }
 
         /**
-         * Checks if the request contains form data. When a form action is provided, it must match the submitted action.
+         * Checks if the request contains form data, i.e. the POST flag isFormData that Z.js ZForm sends (plain HTML form posts return false). When a form action is provided, it must match the submitted action.
          * When it contains form data, methods like validateForm() can be used.
          * @param string|null $formAction Optional action identifying one form among multiple forms
          * @return bool
@@ -379,7 +382,7 @@
         }
 
         /**
-         * Checks if the request is an async AJAX request of a given type
+         * Checks if the POST field action loosely equals $type; it does not verify that the request came via AJAX
          * @param string $type Type of the request. Request is sent via Z.js => Z.Request.action()
          * @return bool True if the request is of the specified type
          */
@@ -392,25 +395,68 @@
          *
          * Reads the raw input from the request body.
          *
-         * @return ?string The raw body content of the request (Returns an empty string if empty or unavailable).
+         * @return ?string The raw body content of the request (Returns null if empty or unavailable, so a body of "0" is null too).
          */
         public function getBody(): ?string {
             return $this->input->body;
         }
 
         /**
-         * Decode request body as JSON.
+         * Decode the request body as JSON.
          *
-         * This method decodes the raw request body as JSON and returns the resulting value.
-         * Objects and arrays are returned as associative arrays.
+         * Accepts only a POST, PUT, PATCH or DELETE request whose Content-Type is exactly
+         * `application/json` (a `charset` parameter must be utf-8), whose body is at most
+         * $maxBytes long and holds well formed JSON. Large integers come back as strings
+         * instead of lossy floats.
          *
-         * @return mixed The decoded JSON value, or null if the body is empty.
-         * @throws \JsonException If the body contains invalid JSON.
+         * @param int $maxBytes Longest accepted body in bytes
+         * @param int $maxDepth Deepest accepted nesting
+         * @return array The decoded value, objects as associative arrays
+         * @throws \UnexpectedValueException Carrying the HTTP status to answer with as its code
+         * @throws \JsonException If the body is not well formed JSON
          */
-        public function getJson(): mixed {
-            $data = $this->getBody();
-            if(is_null($data)) return null;
-            return json_decode($data, true, flags: JSON_THROW_ON_ERROR);
+        public function getJson(int $maxBytes = 1_048_576, int $maxDepth = 32): array {
+            $method = strtoupper($this->input->SERVER['REQUEST_METHOD'] ?? "");
+            if(!in_array($method, ["POST", "PUT", "PATCH", "DELETE", "QUERY"], true)) {
+                throw new \UnexpectedValueException("Method does not accept a JSON body", 405);
+            }
+
+            // Strict on purpose: a cross site form can send text/plain and form types, never application/json
+            $header = $this->input->SERVER['CONTENT_TYPE'] ?? $this->input->SERVER['HTTP_CONTENT_TYPE'] ?? "";
+            $header = str_replace([" ", '"'], "", strtolower($header));
+            if("application/json" !== strtok($header, ";")) {
+                throw new \UnexpectedValueException("Content-Type must be application/json", 415);
+            }
+
+            // A charset, if given, has to be utf-8: `; charset=utf-8` or `; charset="UTF-8"`
+            if(str_contains($header, "charset=") && !str_contains("$header;", "charset=utf-8;")) {
+                throw new \UnexpectedValueException("JSON must be UTF-8", 415);
+            }
+
+            // post_max_size does not cover a non form body, so the limit is enforced here
+            $body = (string) $this->getBody();
+            if(strlen($body) > $maxBytes) throw new \UnexpectedValueException("Body too large", 413);
+
+            // Syntax errors, a BOM, invalid UTF-8, control characters and too deep nesting throw a JsonException
+            return json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+        }
+
+        /**
+         * Runs the CSRF check, additionally covering methods normally exempt as safe
+         * (e.g. "GET"), so this request also gets CSRF-checked for them.
+         * A rejected request is redirected to 403 and the script ends.
+         *
+         * @param string ...$additionalMethods Methods to remove from the safe-method
+         *        exemption for this call, "GET" when none is given
+         */
+        public function csrfBlockAdditionalMethod(string ...$additionalMethods): void {
+            // Protect GET by default, when called without arguments.
+            if(empty($additionalMethods)) $additionalMethods = ["GET"];
+
+            if(CSRF::verify(...$additionalMethods)) return;
+
+            zubzet()->executePath(["error", "403"]);
+            exit;
         }
     }
 ?>
