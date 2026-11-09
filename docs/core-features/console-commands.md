@@ -65,7 +65,7 @@ Every generated project ships a `project` script in its root for the everyday ta
 | `./project tests` | Run the Cypress suite headless; extra arguments (e.g. `--spec`) are passed through. |
 | `./project cypress` | Open the interactive Cypress UI. |
 
-Any other arguments are forwarded to `php index.php`: inside the application container when it
+Any other arguments are forwarded to `php zubzet`: inside the application container when it
 is running, otherwise directly with the host's PHP.
 
 ```bash
