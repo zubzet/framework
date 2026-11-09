@@ -53,22 +53,6 @@ Pass `--pwd "$(pwd)"` so clickable file links in the [error page](error-handling
 host paths (the dev stack's `npm run info` does this for you). The value is stored in
 `z_config/z_automated_setting.ini` as `automated_host_working_directory`.
 
-### install
-
-Builds a new ZubZet project in an existing, writable folder.
-
-```bash
-php index.php install /path/to/new-project
-```
-
-The command copies the project template into the folder and prints a `created:` or `exists:` line
-per entry. Existing files are never overwritten, so it is safe to run on a folder that already
-contains files. It then generates an `encryption_key` in `z_config/z_settings.ini` if none is set, makes `zubzet` and `project` executable and runs `composer require` for
-the framework inside the new project.
-
-It fails with a clear message if the folder does not exist, is not writable, or Composer is not
-in your `PATH`.
-
 ### project
 
 Every generated project ships a `project` script in its root for the everyday tasks:
@@ -81,7 +65,7 @@ Every generated project ships a `project` script in its root for the everyday ta
 | `./project tests` | Run the Cypress suite headless; extra arguments (e.g. `--spec`) are passed through. |
 | `./project cypress` | Open the interactive Cypress UI. |
 
-Any other arguments are forwarded to `php index.php`: inside the application container when it
+Any other arguments are forwarded to `php zubzet`: inside the application container when it
 is running, otherwise directly with the host's PHP.
 
 ```bash

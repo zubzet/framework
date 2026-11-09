@@ -50,7 +50,7 @@
                 $relativePath = substr($entry->getPathname(), strlen($template) + 1);
                 $target = "{$project}/{$relativePath}";
 
-                // Never overwrite, files already in the project stay untouched
+                // Never overwrite: composer.json, the lock file and vendor are already there, user files stay untouched
                 if(file_exists($target)) {
                     $out->writeln("exists:  {$relativePath}");
                     continue;
@@ -92,21 +92,6 @@
                 if(chmod("{$project}/{$script}", 0755)) continue;
 
                 $out->writeln("<error>Could not make {$script} executable</error>");
-                return Command::FAILURE;
-            }
-
-            // Require the framework, the caller's COMPOSER_VENDOR_DIR points at the framework's vendor, not the new project's
-            $out->writeln("<info>composer require zubzet/framework:dev-develop</info>");
-            passthru("env -u COMPOSER_VENDOR_DIR composer require zubzet/framework:dev-develop --no-interaction --working-dir=" . escapeshellarg($project), $exitCode);
-
-            // 127: env could not find the composer binary
-            if($exitCode === 127) {
-                $out->writeln("<error>Composer is required but was not found in your PATH.</error>");
-                return Command::FAILURE;
-            }
-
-            if($exitCode !== 0) {
-                $out->writeln("<error>composer require failed, run it again inside {$project}</error>");
                 return Command::FAILURE;
             }
 
