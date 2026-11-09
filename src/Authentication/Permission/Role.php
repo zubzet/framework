@@ -4,6 +4,7 @@ namespace ZubZet\Framework\Authentication\Permission;
 
 use ZubZet\Framework\Authentication\AuthenticationObject;
 use ZubZet\Framework\Authentication\HandleTrait;
+use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\RetrievalTrait;
 
 class Role extends AuthenticationObject {
@@ -28,7 +29,7 @@ class Role extends AuthenticationObject {
     }
 
     /**
-     * Get a list of Roles by User
+     * Get a list of Roles by User, including the roles of its organization
      *
      * @param User $user The user to filter roles by
      * @return Role[] An array of Role objects associated with the specified user
@@ -42,6 +43,11 @@ class Role extends AuthenticationObject {
         }
 
         return $roleArray;
+    }
+
+    public static function byOrganization(Organization $organization): array {
+        $roles = model("z_permission")->getRolesGroupByOrganization($organization, static::$dbExpression);
+        return array_map(fn($role) => new static($role), $roles);
     }
 
     /**

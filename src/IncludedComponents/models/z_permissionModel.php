@@ -1,6 +1,7 @@
 <?php
 
     use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Authentication\Organization;
     use ZubZet\Framework\Authentication\Permission\Role;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Permission\Group;
@@ -147,6 +148,47 @@
                 "zr" => "z_role"
             ], "zur.role = zr.id");
 
+            // Roles of the organization the user is a member of
+            $organizationRoles = $this->dbSelect("zr.*", [
+                "zor" => "z_organization_role"
+            ])->innerJoin([
+                "zu" => "z_user"
+            ], "zu.organizationId = zor.organization"
+            )->innerJoin([
+                "zo" => "z_organization"
+            ], "zo.id = zor.organization"
+            )->innerJoin([
+                "zr" => "z_role"
+            ], "zr.id = zor.role"
+            )->where([
+                "zu.id" => $user->id(),
+                "zor.active" => 1,
+                "zo.active" => 1,
+                "zr.active" => 1
+            ]);
+
+            if(!empty($dbExpression)) {
+                $query->where($dbExpression);
+                $organizationRoles->where($dbExpression);
+            }
+
+            return $this->exec($query->union($organizationRoles))->resultToArray();
+        }
+
+        /**
+         * @internal
+         */
+        public function getRolesGroupByOrganization(Organization $organization, array $dbExpression): array {
+            $query = $this->dbSelect("zr.*", [
+                "zor" => "z_organization_role"
+            ])->innerJoin([
+                "zr" => "z_role"
+            ], "zor.role = zr.id"
+            )->distinct(true)->where([
+                "zor.organization" => $organization->id(),
+                "zor.active" => 1,
+                "zr.active" => 1
+            ]);
 
             if(!empty($dbExpression)) {
                 $query->where($dbExpression);
@@ -193,13 +235,47 @@
                 "zu" => "z_user"
             ], "zur.user = zu.id");
 
-            $results = $this->exec($query)->resultToArray();
+            // Members of an organization holding the role
+            $organizationMembers = $this->dbSelect("zu.*", [
+                "zor" => "z_organization_role"
+            ])->innerJoin([
+                "zu" => "z_user"
+            ], "zu.organizationId = zor.organization"
+            )->innerJoin([
+                "zo" => "z_organization"
+            ], "zo.id = zor.organization"
+            )->where([
+                "zor.role" => $role->id(),
+                "zor.active" => 1,
+                "zo.active" => 1,
+                "zu.active" => 1
+            ]);
+
+            $results = $this->exec($query->union($organizationMembers))->resultToArray();
 
             foreach($results as $userData) {
                 $users[] = new User($userData);
             }
 
             return $users;
+        }
+
+        /**
+         * @internal
+         */
+        public function getOrganizationsByRoleGroup(Role|Group $role): array {
+            $query = $this->dbSelect("zo.*", [
+                "zor" => "z_organization_role"
+            ])->innerJoin([
+                "zo" => "z_organization"
+            ], "zor.organization = zo.id"
+            )->distinct(true)->where([
+                "zor.role" => $role->id(),
+                "zor.active" => 1,
+                "zo.active" => 1
+            ]);
+
+            return $this->exec($query)->resultToArray();
         }
 
         /**
@@ -241,7 +317,81 @@
                 "zr" => "z_role"
             ], "zur.role = zr.id");
 
-            $unionQuery = $userPermissions->union($userRolePermissions);
+            $organizationPermissions = $this->dbSelect("zop.name", [
+                "zop" => "z_organization_permission"
+            ])->innerJoin([
+                "zu" => "z_user"
+            ], "zu.organizationId = zop.organization"
+            )->innerJoin([
+                "zo" => "z_organization"
+            ], "zo.id = zop.organization"
+            )->where([
+                "zu.id" => $user->id(),
+                "zop.active" => 1,
+                "zo.active" => 1
+            ]);
+
+            $organizationRolePermissions = $this->dbSelect("zrp.name", [
+                "zor" => "z_organization_role"
+            ])->innerJoin([
+                "zu" => "z_user"
+            ], "zu.organizationId = zor.organization"
+            )->innerJoin([
+                "zo" => "z_organization"
+            ], "zo.id = zor.organization"
+            )->innerJoin([
+                "zrp" => "z_role_permission"
+            ], "zor.role = zrp.role"
+            )->innerJoin([
+                "zr" => "z_role"
+            ], "zor.role = zr.id"
+            )->where([
+                "zu.id" => $user->id(),
+                "zor.active" => 1,
+                "zo.active" => 1,
+                "zrp.active" => 1,
+                "zr.active" => 1
+            ]);
+
+            $unionQuery = $userPermissions
+                ->union($userRolePermissions)
+                ->union($organizationPermissions)
+                ->union($organizationRolePermissions);
+
+            $finalPermissions = $this->dbSelect("perm.name", [
+                "perm" => $unionQuery
+            ])->distinct(true);
+
+            return $this->exec($finalPermissions)->resultToArray();
+        }
+
+        /**
+         * @internal
+         */
+        public function getPermissionsByOrganizationAll(Organization $organization): array {
+            $organizationPermissions = $this->dbSelect("zop.name", [
+                "zop" => "z_organization_permission"
+            ])->where([
+                "zop.organization" => $organization->id(),
+                "zop.active" => 1
+            ]);
+
+            $organizationRolePermissions = $this->dbSelect("zrp.name", [
+                "zor" => "z_organization_role"
+            ])->innerJoin([
+                "zrp" => "z_role_permission"
+            ], "zor.role = zrp.role"
+            )->innerJoin([
+                "zr" => "z_role"
+            ], "zor.role = zr.id"
+            )->where([
+                "zor.organization" => $organization->id(),
+                "zor.active" => 1,
+                "zrp.active" => 1,
+                "zr.active" => 1
+            ]);
+
+            $unionQuery = $organizationPermissions->union($organizationRolePermissions);
 
             $finalPermissions = $this->dbSelect("perm.name", [
                 "perm" => $unionQuery
@@ -406,6 +556,24 @@
         /**
          * @internal
          */
+        public function addRolesGroupsToOrganization(Organization $organization, Role|Group ...$roles): void {
+            $insertQuery = new InsertQuery($this->getQueryBuilder());
+            $insertQuery->into("z_organization_role");
+            $insertQuery->insert(["organization", "role"]);
+
+            foreach($roles as $role) {
+                $insertQuery->values([
+                    "organization" => $organization->id(),
+                    "role" => $role->id()
+                ]);
+            }
+
+            $this->exec($insertQuery);
+        }
+
+        /**
+         * @internal
+         */
         public function removeRolesGroupsFromUser(User $user, Role|Group ...$roles): void {
             $roleIds = array_map(fn($role) => $role->id(), $roles);
 
@@ -413,6 +581,21 @@
                 "active" => 0
             ])->where([
                 "user" => $user->id()
+            ])->whereInList("role", $roleIds);
+
+            $this->exec($deleteQuery);
+        }
+
+        /**
+         * @internal
+         */
+        public function removeRolesGroupsFromOrganization(Organization $organization, Role|Group ...$roles): void {
+            $roleIds = array_map(fn($role) => $role->id(), $roles);
+
+            $deleteQuery = $this->dbUpdate("z_organization_role", [
+                "active" => 0
+            ])->where([
+                "organization" => $organization->id()
             ])->whereInList("role", $roleIds);
 
             $this->exec($deleteQuery);
@@ -535,7 +718,46 @@
                         'r.active' => 1
                     ]);
 
-                $union = $srcUser->unionAll($srcRole);
+                $srcOrganization = $this->dbSelect(['user' => 'org_user.id'], [
+                    'zop' => 'z_organization_permission'
+                ])->innerJoin([
+                    'zo' => 'z_organization'
+                ], 'zo.id = zop.organization'
+                )->innerJoin([
+                    'org_user' => 'z_user'
+                ], 'org_user.organizationId = zo.id'
+                )->where([
+                    'zop.name IN' => $permissionsSet,
+                    'zop.active' => 1,
+                    'zo.active' => 1
+                ]);
+
+                $srcOrganizationRole = $this->dbSelect(['user' => 'org_user.id'], [
+                    'zor' => 'z_organization_role'
+                ])->innerJoin([
+                    'zo' => 'z_organization'
+                ], 'zo.id = zor.organization'
+                )->innerJoin([
+                    'org_user' => 'z_user'
+                ], 'org_user.organizationId = zo.id'
+                )->innerJoin([
+                    'zrp' => 'z_role_permission'
+                ], 'zrp.role = zor.role'
+                )->innerJoin([
+                    'zr' => 'z_role'
+                ], 'zr.id = zor.role'
+                )->where([
+                    'zrp.name IN' => $permissionsSet,
+                    'zor.active' => 1,
+                    'zo.active' => 1,
+                    'zrp.active' => 1,
+                    'zr.active' => 1
+                ]);
+
+                $union = $srcUser
+                    ->unionAll($srcRole)
+                    ->unionAll($srcOrganization)
+                    ->unionAll($srcOrganizationRole);
 
                 $exists = $this->getQueryBuilder()
                     ->selectQuery()
@@ -558,66 +780,46 @@
         }
 
         public function getUsersByAccessToAnyOf(array $extractedPermissions): array {
-            $qb = $this->getQueryBuilder();
+            return $this->getUsersByAccessToAll([$extractedPermissions]);
+        }
 
-            $query = $qb->selectQuery()
-                ->select(['zu.*'])
-                ->from(['zu' => 'z_user'])
-                ->where(['zu.active' => 1]);
+        public function getOrganizationsByAccessToAll(array $extractedPermissionsGroup): array {
+            $query = $this->dbSelect('zo.*', [
+                'zo' => 'z_organization'
+            ])->where(['zo.active' => 1]);
 
-            $srcUser = $this->getQueryBuilder()
-                ->selectQuery()
-                ->select(['user' => 'up.user'])
-                ->from(['up' => 'z_user_permission'])
-                ->where(function (QueryExpression $exp) use ($extractedPermissions) {
-                    return $exp->in('up.name', $extractedPermissions);
-                })->where([
-                    'up.active' => 1
+            foreach ($extractedPermissionsGroup as $permissionsSet) {
+
+                $srcPermission = $this->dbSelect('zop.organization', [
+                    'zop' => 'z_organization_permission'
+                ])->where([
+                    'zop.name IN' => $permissionsSet,
+                    'zop.active' => 1
                 ]);
 
-            $srcRole = $this->getQueryBuilder()
-                ->selectQuery()
-                ->select(['user' => 'ur.user'])
-                ->from(['ur' => 'z_user_role'])
-                ->join([
-                    'rp' => [
-                        'table' => 'z_role_permission',
-                        'type' => 'INNER',
-                        'conditions' => 'rp.role = ur.role',
-                    ],
-                ])
-                ->where([
-                    "rp.active" => 1,
-                    "ur.active" => 1,
-                ])
-                ->where(function (QueryExpression $exp) use ($extractedPermissions) {
-                    return $exp->in('rp.name', $extractedPermissions);
-                })->leftJoin([
-                    'r' => 'z_role'
-                ], 'ur.role = r.id')->where([
-                    'r.active' => 1
+                $srcRole = $this->dbSelect('zor.organization', [
+                    'zor' => 'z_organization_role'
+                ])->innerJoin([
+                    'zrp' => 'z_role_permission'
+                ], 'zrp.role = zor.role'
+                )->innerJoin([
+                    'zr' => 'z_role'
+                ], 'zr.id = zor.role'
+                )->where([
+                    'zrp.name IN' => $permissionsSet,
+                    'zor.active' => 1,
+                    'zrp.active' => 1,
+                    'zr.active' => 1
                 ]);
 
-            $union = $srcUser->unionAll($srcRole);
-
-            $exists = $this->getQueryBuilder()
-                ->selectQuery()
-                ->select(['1'])
-                ->from(['x' => $union])
-                ->where(function (QueryExpression $exp) {
-                    return $exp->eq('x.user', new IdentifierExpression('zu.id'));
-                });
-
-            $query->where(fn(QueryExpression $exp) => $exp->exists($exists));
-
-            $result = $this->exec($query)->resultToArray();
-            $userObjects = [];
-
-            foreach($result as $userData) {
-                $userObjects[] = new User($userData);
+                $query->where(['zo.id IN' => $srcPermission->unionAll($srcRole)]);
             }
 
-            return $userObjects;
+            return $this->exec($query)->resultToArray();
+        }
+
+        public function getOrganizationsByAccessToAnyOf(array $extractedPermissions): array {
+            return $this->getOrganizationsByAccessToAll([$extractedPermissions]);
         }
 
     }
