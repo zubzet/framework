@@ -68,8 +68,8 @@
                 "./assets/js/Z.js",
             ]);
 
-            // PHP 8.0 stays on otphp 10, which composer refuses to install because of two advisories
-            $auditIgnore = new JsonModifier($this, "composer-audit-ignore-otphp");
+            // PHP 8.0 stays on otphp 10 and symfony/filesystem 6.0, which composer refuses to install because of advisories
+            $auditIgnore = new JsonModifier($this, "composer-audit-ignore");
             $auditIgnore->from("composer.json");
             $auditIgnore->modify(function(array $data): ?array {
                 $ignore = $data["config"]["audit"]["ignore"] ?? [];
@@ -79,10 +79,16 @@
                     $ignore = array_fill_keys($ignore, "Ignored before the ZubZet 1.3.0 upgrade");
                 }
 
-                foreach(["GHSA-2jx3-65f3-xr8r", "GHSA-g7m4-839x-ch6v"] as $advisory) {
+                $advisories = [
+                    "GHSA-2jx3-65f3-xr8r" => "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x",
+                    "GHSA-g7m4-839x-ch6v" => "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x",
+                    "PKSA-g499-cm4q-v35y" => "symfony/filesystem 6.4.50+ requires PHP 8.1+, PHP 8.0 stays on 6.0",
+                ];
+
+                foreach($advisories as $advisory => $reason) {
                     $ignore[$advisory] ??= [
                         "apply" => "block",
-                        "reason" => "otphp 11 requires PHP 8.1+, PHP 8.0 stays on 10.x",
+                        "reason" => $reason,
                     ];
                 }
 
