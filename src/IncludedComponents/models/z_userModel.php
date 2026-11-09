@@ -222,9 +222,33 @@
                         FROM z_user_permission up
                         WHERE up.active = 1
                         AND up.user = ?
+
+                        UNION
+
+                        SELECT zop.name
+                        FROM z_user zu
+                        INNER JOIN z_organization zo
+                        ON zo.id = zu.organizationId AND zo.active = 1
+                        INNER JOIN z_organization_permission zop
+                        ON zop.organization = zo.id AND zop.active = 1
+                        WHERE zu.id = ?
+
+                        UNION
+
+                        SELECT p.name
+                        FROM z_user zu
+                        INNER JOIN z_organization zo
+                        ON zo.id = zu.organizationId AND zo.active = 1
+                        INNER JOIN z_organization_role zor
+                        ON zor.organization = zo.id AND zor.active = 1
+                        INNER JOIN z_role zr
+                        ON zr.id = zor.role AND zr.active = 1
+                        INNER JOIN z_role_permission p
+                        ON p.role = zr.id AND p.active = 1
+                        WHERE zu.id = ?
                         ) AS all_permissions
                         ORDER BY name;";
-                $this->exec($sql, "ii", $userId, $userId);
+                $this->exec($sql, "iiii", $userId, $userId, $userId, $userId);
 
             $arr = $this->resultToArray();
             $out = [];

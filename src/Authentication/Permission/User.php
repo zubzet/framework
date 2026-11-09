@@ -38,7 +38,7 @@ class User extends AuthenticationObject {
 
 
     /**
-     * Get a list of users by a specific role
+     * Get a list of users by a specific role, including members of organizations holding it
      *
      * @param Role $role The role to filter users by
      * @return User[] An array of User objects associated with the specified role
@@ -241,6 +241,8 @@ class User extends AuthenticationObject {
     }
 
     public function updateOrganization(?Organization $organization): void {
+        self::$permissionChanged = true;
+
         $previousGroup = $this->organization()?->getGroup();
         if(!is_null($previousGroup)) {
             $this->groupsRemove($previousGroup);
