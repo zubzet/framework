@@ -7,8 +7,8 @@ describe('Authentication - Session', () => {
         return cy.request(path).then((res) => JSON.parse(res.body));
     }
 
-    // Issued tokens are a `zub-` prefix plus 32 random bytes in hex
-    const TOKEN_FORMAT = /^zub-[0-9a-f]{64}$/;
+    // Issued tokens are a `zub-sha256-` prefix plus 32 random bytes in hex
+    const TOKEN_FORMAT = /^zub-sha256-[0-9a-f]{64}$/;
 
 
     /**
@@ -16,6 +16,7 @@ describe('Authentication - Session', () => {
      */
 
     it('should return only active sessions for a user (byUser)', () => {
+        // Rows from before hashing store the token itself, so these still know it
         const expected = [
             {
                 id: 400,
@@ -45,7 +46,6 @@ describe('Authentication - Session', () => {
 
         const shouldNotInclude = {
             id: 402,
-            token: '0400c00000000000000000000000000000000000',
         };
 
         requestJson('/session/byUser').then((output) => {
@@ -56,7 +56,6 @@ describe('Authentication - Session', () => {
             });
 
             output.forEach(session => {
-                expect(session.token).to.not.equal(shouldNotInclude.token);
                 expect(session.id).to.not.equal(shouldNotInclude.id);
             });
         });
@@ -66,6 +65,7 @@ describe('Authentication - Session', () => {
         requestJson('/session/getters').then((output) => {
             expect(output).to.deep.equal({
                 id: 404,
+                // A row from before hashing, so the token is known even when loaded by id
                 token: '0402a00000000000000000000000000000000000',
                 userId: 402,
                 userIdExec: 402,
@@ -154,6 +154,58 @@ describe('Authentication - Session', () => {
     it('should give a new session the 7 day default lifetime without loginTimeoutSeconds', () => {
         requestJson('/session/addWithoutTimeoutSetting').then((output) => {
             expect(output.lifetime).to.equal(7 * 24 * 60 * 60);
+        });
+    });
+
+
+    /**
+     * Tokens at rest
+     */
+
+    it('should store the hash of a new session and api key, not the token (add)', () => {
+        requestJson('/session/tokenAtRest').then((output) => {
+            ['session', 'apiKey'].forEach((kind) => {
+                const issued = output[kind];
+
+                expect(issued.token).to.match(TOKEN_FORMAT);
+                expect(issued.stored).to.equal(`zub-sha256-${issued.sha256}`);
+                expect(issued.stored).to.not.equal(issued.token);
+            });
+        });
+    });
+
+    it('should still answer token() on a session from before hashing, but log a deprecation', () => {
+        requestJson('/session/legacyTokenDeprecated').then((output) => {
+            expect(output.token).to.equal('0402a00000000000000000000000000000000000');
+
+            const deprecations = output.logs
+                .map((log) => JSON.parse(log.value))
+                .filter((value) => value.message === 'DEPRECATION');
+            expect(deprecations).to.have.length(1);
+            expect(deprecations[0].context.message).to.include('Deprecated since 1.3.0: token()');
+            expect(deprecations[0].context.message).to.include('storedToken()');
+        });
+    });
+
+    it('should know a hashed token only when the session is added or loaded by it', () => {
+        requestJson('/session/tokenKnown').then((output) => {
+            expect(output.added).to.match(TOKEN_FORMAT);
+            expect(output.byToken).to.equal(output.added);
+
+            expect(output.byId).to.be.null;
+            expect(output.byUser).to.not.be.empty;
+            output.byUser.forEach((token) => expect(token).to.be.null);
+        });
+    });
+
+    it('should set and extend the extension time of a hashed session loaded by id or token', () => {
+        requestJson('/session/extendHashed').then((output) => {
+            expect(output).to.deep.equal({
+                setById: 100,
+                extendedById: 150,
+                setByToken: 300,
+                extendedByToken: 325,
+            });
         });
     });
 

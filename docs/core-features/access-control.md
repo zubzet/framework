@@ -909,7 +909,7 @@ other: PHP would not allow the narrower signature on a subclass.
 $key = APIKey::add($user, name: "Deployment pipeline");
 $key->setCanExpire(false); // from CanUseSession, like setName() and extend()
 
-$key->token(); // the value the client sends as its z_login_token
+$key->token(); // the plain value the client sends as its z_login_token, known after add() or byToken()
 
 APIKey::byUser($user);  // the user's api keys
 Session::byUser($user); // the user's logins
@@ -1090,10 +1090,16 @@ A session remembers when it last passed a [two factor](two-factor-authentication
     $session->uuid(): string
     ```
 
-* Returns the session token string. Issued tokens are a `zub-` prefix plus 32 random bytes in hex, 68 characters in total. Tokens issued before this format keep working, so do not validate one by its length. Tokens are stored as is in `z_logintoken.token`, and sessions are never deleted, only set to `active = 0` (logout, expiry, `clearSessions()`).
+* Returns the plain session token, the value the client sends. Issued tokens are `zub-sha256-` plus 64 hex characters, 75 in total, and `z_logintoken.token` stores only `zub-sha256-` plus the SHA-256 of the plain value. The plain value of a hashed token exists only on an object created by `add()` or `byToken()`; on one loaded by any other retriever it is `null`. A token issued before hashing is stored as is and is still returned by every retriever, with a deprecation notice: compare against `storedToken()` instead. Tokens issued before this format stay in plain text and keep working, so do not validate one by its length. Sessions are never deleted, only set to `active = 0` (logout, expiry, `clearSessions()`).
 
     ```php
-    $session->token(): string
+    $session->token(): ?string
+    ```
+
+* Returns the value stored in `z_logintoken.token`: the hash for a session issued in the new format, the plain token for an older one. Use it, or `LoginToken::hash($token)`, when comparing in your own SQL.
+
+    ```php
+    $session->storedToken(): string
     ```
 
 * Returns the ID of the user who owns the session.

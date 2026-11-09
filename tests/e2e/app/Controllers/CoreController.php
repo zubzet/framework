@@ -40,6 +40,12 @@
             // @codeCoverageIgnoreEnd
         }
 
+        // deprecated() raises E_USER_DEPRECATED, which BehaviorOption::ALL promotes like triggersDeprecation above
+        public function action_deprecatedHelper(Request $req, Response $res) {
+            deprecated("9.9.9", "regression-deprecated-helper-marker");
+            echo "deprecation was not promoted";
+        }
+
         public function action_command(Request $req, Response $res) {
             echo json_encode($req->getParameters());
         }

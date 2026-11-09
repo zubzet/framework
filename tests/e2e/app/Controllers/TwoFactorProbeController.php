@@ -1,6 +1,7 @@
 <?php
 
     use OTPHP\TOTP;
+    use ZubZet\Framework\Authentication\LoginToken;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Session;
 
@@ -56,7 +57,8 @@
 
         // GET /TwoFactorProbe/session/<token>
         public function action_session(Request $req, Response $res): void {
-            $token = (string) $req->getParameters(0, 1);
+            // The row holds what LoginToken::hash() makes of the token, a fresh login's cookie included
+            $token = LoginToken::hash((string) $req->getParameters(0, 1));
 
             $row = db()->exec(
                 "SELECT `active`, `last_two_factor`, `remaining_two_factor_tries` FROM `z_logintoken` WHERE `token` = ?",
@@ -74,7 +76,7 @@
 
         // GET /TwoFactorProbe/ageSession/<token>[?seconds=<n>], php clock like recordTwoFactor()
         public function action_ageSession(Request $req, Response $res): void {
-            $token = (string) $req->getParameters(0, 1);
+            $token = LoginToken::hash((string) $req->getParameters(0, 1));
             $seconds = $req->getGet("seconds", null);
 
             $stamp = is_null($seconds) ? null : date("Y-m-d H:i:s", time() - (int) $seconds);
@@ -91,7 +93,7 @@
 
         // GET /TwoFactorProbe/resetSession/<token>[?tries=<n>]
         public function action_resetSession(Request $req, Response $res): void {
-            $token = (string) $req->getParameters(0, 1);
+            $token = LoginToken::hash((string) $req->getParameters(0, 1));
             $tries = (int) $req->getGet("tries", 5);
 
             db()->exec(

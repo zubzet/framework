@@ -177,6 +177,18 @@
             }
         });
 
+        FunctionConflictResolution::optionalAndThen("deprecated", function() {
+            /**
+             * Raises a deprecation notice for a code path that still works but should no longer be used.
+             *
+             * @param string $version The version the deprecation starts with, e.g. "1.3.0"
+             * @param string $message What is deprecated and what to use instead
+             */
+            function deprecated(string $version, string $message): void {
+                trigger_error("Deprecated since $version: $message", E_USER_DEPRECATED);
+            }
+        });
+
         FunctionConflictResolution::requireAndThen("encryptSecret", function() {
             /**
              * Encrypts a secret with the `encryption_key` setting, e.g. before storing it.

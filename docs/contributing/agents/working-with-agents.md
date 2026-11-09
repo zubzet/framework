@@ -123,7 +123,7 @@ The only Katana-specific glue is `src/Rendering/Katana/`:
 
 ## Global helpers
 
-Defined in `src/Support/GlobalReferences.php`, all wrapped with `FunctionConflictResolution::requireAndThen` so they can't be redeclared:
+Defined in `src/Support/GlobalReferences.php`, wrapped with `FunctionConflictResolution::requireAndThen` so they can't be redeclared. Helpers with a generic name that an application may already define (`__()`, `deprecated()`) use `optionalAndThen` instead and yield to the existing declaration:
 
 | Helper | Returns |
 | ------ | ------- |
@@ -139,8 +139,30 @@ Defined in `src/Support/GlobalReferences.php`, all wrapped with `FunctionConflic
 | `logger($name=null)` | `Logger` (default: `app` channel) |
 | `encryptSecret($plaintext)` / `decryptSecret($encrypted)` | Encrypted / decrypted value, throws `DecryptionException` on a wrong key |
 | `isCli()` | `php_sapi_name() === "cli"` |
+| `deprecated($version, $message)` | Nothing; raises an `E_USER_DEPRECATED` notice |
 
 See [Global Helper Functions](../../core-features/global-helper-functions.md).
+
+### Deprecating behavior
+
+When a code path has to keep working for existing projects but should no longer be used, keep it working and call `deprecated()` on that path.
+
+- **`$version`** is the framework version the deprecation starts in, the one the current `Changelog.md` section is for.
+- **`$message`** names what is deprecated and what to use instead, in one sentence. The caller sees it in the exception or log entry, so it has to be enough to fix the call site without opening framework code.
+- Call it right before the deprecated path does its work, not at the top of the method, so the supported paths stay silent.
+- The notice follows the `showErrors` contract like a PHP deprecation: `2` promotes it to an exception so development setups fail loudly, `1` logs it as a `DEPRECATION` event, `0` is silent.
+- When a whole method is retired, add a `@deprecated since <version>` docblock tag as well, so IDEs flag the callers. The tag alone cannot target a single branch, which is what the helper is for.
+- Mention the deprecation in `Changelog.md` as a migrator note.
+
+Because the e2e app runs with `showErrors = 2`, a probe that exercises a deprecated path on purpose switches the mode off around the call and back on afterwards:
+
+```php
+zubzet()->setExceptionBehavior(0);
+echo(json_encode($this->getSession($session)));
+zubzet()->setExceptionBehavior(2);
+```
+
+To assert the log entry instead, use mode `1` inside an output buffer, since that mode also displays the notice; see `SessionController::action_legacyTokenDeprecated()`.
 
 ## Testing
 

@@ -228,6 +228,26 @@ The framework only declares it when no global `__()` exists yet, so an applicati
 echo __("dashboard.welcome", ["{name}" => $name]);
 ```
 
+### `deprecated()`
+
+Raises a deprecation notice for a code path that still works but should no longer be used. The notice goes through PHP's error handling like a deprecation of PHP itself: with `showErrors = 2` it is promoted to an exception, with `showErrors = 1` it is logged as a `DEPRECATION` event and displayed, and with `showErrors = 0` it is silent, like every other PHP notice.
+
+**Syntax:** `deprecated(string $version, string $message): void`
+
+* **$version**: The version the deprecation starts with, e.g. `"1.3.0"`.
+* **$message**: What is deprecated and what to use instead.
+
+The framework only declares it when no global `deprecated()` exists yet, so an application or library that brings its own keeps it.
+
+**Example:**
+
+```php
+public function legacyLookup(string $key) {
+    deprecated("1.3.0", "legacyLookup() is replaced by lookup(), which also handles prefixed keys");
+    return $this->lookup($key);
+}
+```
+
 ### `e()`
 
 Escapes a string for safe HTML output. It strips tags (everything between `<` and `>`, so `1<2 and 3>2` becomes `12`) and then escapes the remaining special characters through the render engine, so its output matches what `{{ }}` produces in a [view](views.md).
