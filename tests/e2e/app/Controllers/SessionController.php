@@ -17,12 +17,35 @@ class SessionController extends z_controller {
         $session = Session::byId(400);
         $sessions = $session->byUser($user);
 
+        // token() on these rows from before hashing raises a deprecation, which showErrors = 2 would promote
+        zubzet()->setExceptionBehavior(0);
         $this->echoSessions($sessions);
+        zubzet()->setExceptionBehavior(2);
     }
 
     public function action_getters(Request $req, Response $res): void {
         $session = Session::byId(404);
+
+        zubzet()->setExceptionBehavior(0);
         echo(json_encode($this->getSession($session)));
+        zubzet()->setExceptionBehavior(2);
+    }
+
+    // GET /session/legacyTokenDeprecated, token() on a row from before hashing still answers but is deprecated
+    public function action_legacyTokenDeprecated(Request $req, Response $res): void {
+        model("Logger")->clearLogs();
+
+        // showErrors = 1 logs the notice instead of promoting it, but also displays it, so swallow that output
+        ob_start();
+        zubzet()->setExceptionBehavior(1);
+        $token = Session::byId(404)->token();
+        zubzet()->setExceptionBehavior(2);
+        ob_end_clean();
+
+        echo(json_encode([
+            'token' => $token,
+            'logs'  => model("Logger")->getLogs(),
+        ]));
     }
 
 

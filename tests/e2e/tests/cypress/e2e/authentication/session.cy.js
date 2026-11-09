@@ -16,11 +16,11 @@ describe('Authentication - Session', () => {
      */
 
     it('should return only active sessions for a user (byUser)', () => {
-        // Only the hash is stored, so a session not looked up by its token does not know it
+        // Rows from before hashing store the token itself, so these still know it
         const expected = [
             {
                 id: 400,
-                token: null,
+                token: '0400a00000000000000000000000000000000000',
                 userId: 400,
                 userIdExec: 400,
                 extendedSeconds: null,
@@ -32,7 +32,7 @@ describe('Authentication - Session', () => {
             },
             {
                 id: 401,
-                token: null,
+                token: '0400b00000000000000000000000000000000000',
                 userId: 400,
                 userIdExec: 401,
                 extendedSeconds: null,
@@ -65,8 +65,8 @@ describe('Authentication - Session', () => {
         requestJson('/session/getters').then((output) => {
             expect(output).to.deep.equal({
                 id: 404,
-                // Loaded by id, so the plaintext token is not known
-                token: null,
+                // A row from before hashing, so the token is known even when loaded by id
+                token: '0402a00000000000000000000000000000000000',
                 userId: 402,
                 userIdExec: 402,
                 extendedSeconds: 300,
@@ -174,7 +174,20 @@ describe('Authentication - Session', () => {
         });
     });
 
-    it('should know the token only when a session is added or loaded by it', () => {
+    it('should still answer token() on a session from before hashing, but log a deprecation', () => {
+        requestJson('/session/legacyTokenDeprecated').then((output) => {
+            expect(output.token).to.equal('0402a00000000000000000000000000000000000');
+
+            const deprecations = output.logs
+                .map((log) => JSON.parse(log.value))
+                .filter((value) => value.message === 'DEPRECATION');
+            expect(deprecations).to.have.length(1);
+            expect(deprecations[0].context.message).to.include('Deprecated since 1.3.0: token()');
+            expect(deprecations[0].context.message).to.include('storedToken()');
+        });
+    });
+
+    it('should know a hashed token only when the session is added or loaded by it', () => {
         requestJson('/session/tokenKnown').then((output) => {
             expect(output.added).to.match(TOKEN_FORMAT);
             expect(output.byToken).to.equal(output.added);
