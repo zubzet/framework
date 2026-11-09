@@ -538,6 +538,30 @@ describe('Z-Admin Panel', () => {
                 expect(res.status).to.eq(403);
             });
         });
+
+        // A GET that switches the user, so a link on another site must not reach it
+        it('rejects a link from another site before the sudo happens', () => {
+            cy.loginAs("admin");
+
+            [{ 'Sec-Fetch-Site': 'cross-site' }, { 'Sec-Fetch-Site': 'same-site' }].forEach((headers) => {
+                ['GET', 'HEAD'].forEach((method) => {
+                    cy.request({
+                        method,
+                        url: '/z/login_as/3',
+                        headers,
+                        followRedirect: false,
+                        failOnStatusCode: false,
+                    }).then((res) => {
+                        expect(res.status, `${method} ${JSON.stringify(headers)}`).to.eq(403);
+                    });
+                });
+            });
+
+            cy.request('/session/whoami').then((res) => {
+                const out = JSON.parse(res.body);
+                expect(out.userId, 'still the admin').to.eq(1);
+            });
+        });
     });
 
     // ZController::action_groups
