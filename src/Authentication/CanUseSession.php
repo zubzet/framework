@@ -11,7 +11,7 @@
 
         protected bool $shouldRefresh = false;
 
-        // The row stores the token hashed, so only the object created or looked up by it knows it
+        // A hashed row no longer holds the token, so only the object created or looked up by it knows it
         private ?string $token = null;
 
 
@@ -250,7 +250,16 @@
         public function token(): ?string {
             $this->checkInstance();
 
-            return $this->token;
+            if(!is_null($this->token)) return $this->token;
+
+            // A row from before hashing stores the token itself, so it is still known
+            $stored = $this->storedToken();
+            if(LoginToken::isPlain($stored)) {
+                deprecated("1.3.0", "token() on a session not created by add() or byToken() only works for legacy tokens, use storedToken() instead");
+                return $stored;
+            }
+
+            return null;
         }
 
         // The value z_logintoken holds for the token, see LoginToken
