@@ -4,7 +4,7 @@
 
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Registry\Registry;
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
     use Symfony\Component\Translation\Translator;
     use Symfony\Component\Translation\Loader\IniFileLoader;
     use Symfony\Component\Translation\Loader\CsvFileLoader;
@@ -22,7 +22,7 @@
         ];
 
         public static function translate(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
-            $translator = StaticCache::getOrNull("translation", "translator");
+            $translator = InternalRuntimeCache::getOrNull("translation", "translator");
 
             if(is_null($translator)) {
                 $translator = new Translator(self::locale());
@@ -41,7 +41,7 @@
                     );
                 }
 
-                StaticCache::set("translation", "translator", $translator);
+                InternalRuntimeCache::set("translation", "translator", $translator);
             }
 
             return $translator->trans($id, $parameters, $domain, $locale);
@@ -49,7 +49,7 @@
 
         // Every catalogue file, in the order the translator loads them.
         public static function catalogues(): array {
-            $cached = StaticCache::getOrNull("translation", "catalogues");
+            $cached = InternalRuntimeCache::getOrNull("translation", "catalogues");
             if(!is_null($cached)) return $cached;
 
             $catalogues = [];
@@ -72,7 +72,7 @@
                 ];
             }
 
-            return StaticCache::set("translation", "catalogues", $catalogues);
+            return InternalRuntimeCache::set("translation", "catalogues", $catalogues);
         }
 
         // The preferred locale of the given or else the logged in user in bcp47 format

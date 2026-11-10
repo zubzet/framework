@@ -3,7 +3,7 @@
     namespace ZubZet\Framework\Registry;
 
     use Composer\InstalledVersions;
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
 
     /**
      * Discovery and ordering of installed modules (composer type "zubzet-module").
@@ -19,7 +19,7 @@
 
         /** @return string[] Ordered composer package names of installed modules. */
         public static function packages(): array {
-            $cached = StaticCache::getOrNull("registry", "module_packages");
+            $cached = InternalRuntimeCache::getOrNull("registry", "module_packages");
             if(!is_null($cached)) return $cached;
 
             $installed = array_values(array_unique(
@@ -37,12 +37,12 @@
                 $ordered[] = $package;
             }
 
-            return StaticCache::set("registry", "module_packages", $ordered);
+            return InternalRuntimeCache::set("registry", "module_packages", $ordered);
         }
 
         /** @return string[] Ordered absolute module install roots, keyed by package name. */
         public static function roots(): array {
-            $cached = StaticCache::getOrNull("registry", "module_roots");
+            $cached = InternalRuntimeCache::getOrNull("registry", "module_roots");
             if(!is_null($cached)) return $cached;
 
             $roots = [];
@@ -53,7 +53,7 @@
                 $roots[$package] = rtrim($root, "/\\");
             }
 
-            return StaticCache::set("registry", "module_roots", $roots);
+            return InternalRuntimeCache::set("registry", "module_roots", $roots);
         }
     }
 

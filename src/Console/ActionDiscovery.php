@@ -2,7 +2,7 @@
 
     namespace ZubZet\Framework\Console;
 
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
 
     class ActionDiscovery {
 
@@ -16,8 +16,8 @@
          * @return string[][]
          */
         public static function find(string $directory): array {
-            if(StaticCache::has(self::CACHE_KEY, $directory)) {
-                return StaticCache::get(self::CACHE_KEY, $directory);
+            if(InternalRuntimeCache::has(self::CACHE_KEY, $directory)) {
+                return InternalRuntimeCache::get(self::CACHE_KEY, $directory);
             }
 
             $actionsByController = [];
@@ -56,7 +56,7 @@
                 }, $methods);
             }
 
-            return StaticCache::set(self::CACHE_KEY, $directory, $actionsByController);
+            return InternalRuntimeCache::set(self::CACHE_KEY, $directory, $actionsByController);
         }
     }
 
