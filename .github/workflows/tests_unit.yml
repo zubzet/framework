@@ -1,0 +1,64 @@
+name: Unit tests
+
+# Called by the E2E workflow, which only starts its own jobs once these pass
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # The suite takes well under a second, so every supported version
+        # runs on every push instead of only the extremes.
+        php: [ '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6' ]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      # The committed lock file is resolved on one PHP version. A library
+      # is installed without it, so the dependencies are resolved for the
+      # version under test.
+      - name: Install dependencies
+        run: composer update --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHP unit tests
+        run: composer test
+
+  js:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: tests/unit/js
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tests/unit/js/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Z.js unit tests
+        run: npm test

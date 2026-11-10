@@ -6,19 +6,25 @@ on:
     types: [ opened, reopened, synchronize, ready_for_review ]
     paths:
       - 'tests/e2e/**'
+      - 'tests/unit/**'
       - 'composer*'
+      - 'phpunit.xml'
       - 'src/**'
       - 'web/**'
       - '.github/workflows/tests_e2e.yml'
+      - '.github/workflows/tests_unit.yml'
   push:
     branches: [ '*' ]
     tags: [ 'v*.*.*' ]
     paths:
       - 'tests/e2e/**'
+      - 'tests/unit/**'
       - 'composer*'
+      - 'phpunit.xml'
       - 'src/**'
       - 'web/**'
       - '.github/workflows/tests_e2e.yml'
+      - '.github/workflows/tests_unit.yml'
   workflow_dispatch:
     inputs:
       scope:
@@ -33,7 +39,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The unit tests take seconds, so a failure there is reported before the
+  # Docker stack of the E2E suite is even built.
+  unit:
+    uses: ./.github/workflows/tests_unit.yml
+    permissions:
+      contents: read
+
   e2e:
+    needs: unit
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
