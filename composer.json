@@ -16,8 +16,6 @@
         "symfony/translation": "^6.0 || ^7.0",
         "doctrine/dbal": "^3.10 || ^4.4",
         "monolog/monolog": "^2.11",
-        "symfony/filesystem": "^6.0 || ^7.0",
-        "league/mime-type-detection": "^1.16",
         "filp/whoops": "^2.18.4",
         "php-debugbar/php-debugbar": "^1.23.6",
         "components/jquery": "3.7.*",
