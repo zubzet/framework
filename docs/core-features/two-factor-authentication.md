@@ -1,6 +1,6 @@
 # Two Factor Authentication
 
-An account can protect its logins with a second factor: a time based one time password (TOTP) from an authenticator app. The framework handles the enrollment, asks for the code during the login and can guard single actions behind a recent check. The codes are generated and verified with [`spomky-labs/otphp`](https://github.com/Spomky-Labs/otphp).
+An account can protect its logins with a second factor: a time based one time password (TOTP) from an authenticator app. The framework handles the enrollment, asks for the code during the login and can guard single actions behind a recent check. The codes follow RFC 6238 (HMAC-SHA1, six digits, 30 seconds) and are generated and verified by the framework's own `ZubZet\Framework\Authentication\Totp`, without a library.
 
 Users turn it on and off themselves on their [profile page](../z-admin/profile.md). The methods behind it are documented on the [User](access-control.md#two-factor) and [Session](access-control.md#two-factor-checks) objects.
 

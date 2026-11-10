@@ -5,12 +5,11 @@ namespace ZubZet\Framework\Authentication\Permission;
 use ZubZet\Framework\Authentication\AuthenticationObject;
 
 use DateTime;
-use OTPHP\TOTP;
-use ParagonIE\ConstantTime\Base32;
 use ZubZet\Framework\Authentication\HandleTrait;
 use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\PasswordHash\Password;
 use ZubZet\Framework\Authentication\RetrievalTrait;
+use ZubZet\Framework\Authentication\Totp;
 use ZubZet\Framework\Logger\LogEventType;
 use ZubZet\Framework\Logger\Logger;
 
@@ -513,26 +512,19 @@ class User extends AuthenticationObject {
      * The returned object carries the secret and the provisioning uri, the two
      * shapes an authenticator takes it in.
      *
-     * @return TOTP The enrollment, to be shown once and never again
+     * @return Totp The enrollment, to be shown once and never again
      */
-    public function startTwoFactor(): TOTP {
-        $secret = Base32::encodeUpperUnpadded(random_bytes(20));
-
-        $totp = TOTP::create($secret);
+    public function startTwoFactor(): Totp {
+        $secret = Totp::generateSecret();
 
         // An account without an email is named generically in the authenticator
         $email = $this->email();
         $label = empty($email) ? "User" : $email;
 
-        // otphp rejects a colon in the label and the issuer, in each encoding it looks for
-        $totp->setLabel(str_replace([":", "%3A", "%3a"], "", $label));
-        $issuer = str_replace([":", "%3A", "%3a"], "", config("pageName", default: "ZubZet"));
-        $totp->setIssuer($issuer);
-
         model("z_user")->setTwoFactorSecret($this, $secret);
         $this->clearFields();
 
-        return $totp;
+        return Totp::create($secret, $label, config("pageName", default: "ZubZet"));
     }
 
     /**
@@ -547,14 +539,8 @@ class User extends AuthenticationObject {
         if(is_null($secret)) return false;
 
         // One 30 second step each way, so a clock that drifts a little and a code
-        // read just before its window turns still land. Checked per timestamp, because
-        // otphp 10 counts verify()'s window in periods and otphp 11 in seconds
-        $totp = TOTP::create($secret);
-        $now = time();
-        $period = $totp->getPeriod();
-        return $totp->verify($code, $now - $period)
-            || $totp->verify($code, $now)
-            || $totp->verify($code, $now + $period);
+        // read just before its window turns still land
+        return Totp::create($secret)->verify($code, 1);
     }
 
     /**
