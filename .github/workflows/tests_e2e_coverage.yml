@@ -32,7 +32,7 @@ jobs:
       - name: Compare with the published coverage
         id: compare
         run: |
-          published=$(curl -fsS https://zubzet.com/docs/transparency/qa-test-suite-coverage.json | jq -r '.commit' || true)
+          published=$(curl -fsS https://zubzet.com/transparency/qa-test-suite-coverage.json | jq -r '.commit' || true)
           echo "published: $published, develop: $GITHUB_SHA"
           echo "stale=$([ "$published" != "$GITHUB_SHA" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
@@ -149,7 +149,7 @@ jobs:
         if: always()
         run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop | tee coverage-summary
 
-      # The number goes next to the docs, where the badge in the README and
+      # The number goes to the website, where the badge in the README and
       # the website read it
       - name: Summarize the coverage
         if: env.PUBLISH == 'true'

@@ -1,5 +1,5 @@
 name: Publish transparency data
-description: Puts a JSON file next to the docs on the website, where the README badges and the website read it
+description: Puts a JSON file into the transparency folder of the website, where the README badges and the website read it
 
 inputs:
   file:
@@ -15,8 +15,8 @@ inputs:
 runs:
   using: composite
   steps:
-    # The docs live on the gh-pages branch of the website. Its own
-    # deployment keeps the docs folder, so the file goes below it.
+    # The website is served from its gh-pages branch. Its own deployment
+    # keeps the transparency folder, see pages.yml over there.
     - name: Check out the website
       uses: actions/checkout@v7
       with:
@@ -32,8 +32,8 @@ runs:
         FILE: ${{ inputs.file }}
         MESSAGE: ${{ inputs.message }}
       run: |
-        mkdir -p website/docs/transparency
-        cp "$FILE" website/docs/transparency/
-        git -C website add docs/transparency
+        mkdir -p website/transparency
+        cp "$FILE" website/transparency/
+        git -C website add transparency
         git -C website -c user.name="GitHub Actions Bot" -c user.email="actions@github.com" commit -m "$MESSAGE"
         git -C website push
