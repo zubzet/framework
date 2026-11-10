@@ -18,7 +18,7 @@ runs:
     # The docs live on the gh-pages branch of the website. Its own
     # deployment keeps the docs folder, so the file goes below it.
     - name: Check out the website
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: zubzet/website
         ref: gh-pages

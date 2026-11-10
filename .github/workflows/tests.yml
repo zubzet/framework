@@ -48,7 +48,7 @@ jobs:
       - name: Look for changes the tests cover
         id: filter
         if: github.event_name == 'pull_request'
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             tests:
@@ -106,7 +106,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Summarize the test counts
         run: |

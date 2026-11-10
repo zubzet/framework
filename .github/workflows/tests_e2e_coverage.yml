@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -66,7 +66,7 @@ jobs:
           bun-version: latest
 
       - name: Cache Cypress binary
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/Cypress
           key: cypress-${{ runner.os }}-${{ hashFiles('tests/e2e/package-lock.json') }}
@@ -80,12 +80,12 @@ jobs:
         run: echo "HOST_UID=$(id -u)" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Build with the xdebug-enabled PHP 8.5 base so the coverage driver
       # is available inside the application container.
       - name: Docker build (8.5-xdebug)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./tests/e2e/packaging/docker
           file: ./tests/e2e/packaging/docker/Dockerfile.apache-local
@@ -176,7 +176,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report-${{ github.run_attempt }}
           if-no-files-found: warn
@@ -184,7 +184,7 @@ jobs:
 
       - name: Upload Cypress screenshots
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cypress-screenshots-${{ github.run_attempt }}
           if-no-files-found: ignore
