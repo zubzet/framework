@@ -12,8 +12,10 @@ describe('auth:migrate-hashing command', () => {
     const UNTOUCHED = { id: 1, email: 'admin@zierhut-it.de' };
     const PASSWORD = 'password';
 
-    // XDEBUG_MODE=off keeps stdout clean; cy.exec already fails on a non-zero exit.
-    const migrate = () => cy.exec('docker exec -e XDEBUG_MODE=off application php index.php auth:migrate-hashing');
+    // Xdebug keeps the mode of the container: a coverage run measures this
+    // command too, and it fails when its driver is switched off. cy.exec
+    // already fails on a non-zero exit.
+    const migrate = () => cy.exec('docker exec application php index.php auth:migrate-hashing');
     const scheme = (id) => cy.request(`/AuthProbe/scheme/${id}`).then((r) => JSON.parse(r.body).scheme);
     const authenticates = (id) =>
         cy.request(`/AuthProbe/checkPassword/${id}?password=${PASSWORD}`).then((r) => JSON.parse(r.body).ok);
