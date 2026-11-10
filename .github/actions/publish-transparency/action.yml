@@ -1,9 +1,9 @@
 name: Publish transparency data
-description: Puts a JSON file into the transparency folder of the website, where the README badges and the website read it
+description: Puts JSON files into the transparency folder of the website, where the README badges and the website read them
 
 inputs:
-  file:
-    description: Path of the JSON file, relative to the workspace. Its name is kept.
+  directory:
+    description: Folder with the JSON files, relative to the workspace. Their names are kept.
     required: true
   message:
     description: Commit message on the website repository
@@ -29,11 +29,11 @@ runs:
       shell: bash
       working-directory: ${{ github.workspace }}
       env:
-        FILE: ${{ inputs.file }}
+        DIRECTORY: ${{ inputs.directory }}
         MESSAGE: ${{ inputs.message }}
       run: |
         mkdir -p website/transparency
-        cp "$FILE" website/transparency/
+        cp "$DIRECTORY"/*.json website/transparency/
         git -C website add transparency
         git -C website -c user.name="GitHub Actions Bot" -c user.email="actions@github.com" commit -m "$MESSAGE"
         git -C website push
