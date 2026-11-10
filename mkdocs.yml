@@ -134,6 +134,7 @@ nav:
     - Support:
         - Overview: support
         - Filesystem: support/filesystem
+        - Runtime Cache: support/runtime-cache
         - Checkpoints: support/checkpoints
         - Dynamic Attributes: support/dynamic-attributes
     - Admin Dashboard:

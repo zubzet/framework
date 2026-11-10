@@ -3,7 +3,7 @@
     namespace ZubZet\Framework\Logger;
 
     use ZubZet\Framework\Message\Request;
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
     use ZubZet\Framework\Logger\Method\StreamLogger;
     use ZubZet\Framework\Logger\Method\DatabaseLogger;
     use ZubZet\Framework\Logger\BacktraceProcessor as LoggerBacktraceProcessor;
@@ -32,7 +32,7 @@
          * @return Logger The registered Logger instance
          */
         public static function register(string $name, Logger|LoggerInterface $logger): Logger {
-            return StaticCache::set(self::CACHE_KEY, $name, $logger);
+            return InternalRuntimeCache::set(self::CACHE_KEY, $name, $logger);
         }
 
         /**
@@ -45,8 +45,8 @@
          */
         public static function getOrCreateLogger(string $name): Logger {
             // Check if the logger already exists in the cache
-            if(StaticCache::has(self::CACHE_KEY, $name)) {
-                return StaticCache::get(self::CACHE_KEY, $name);
+            if(InternalRuntimeCache::has(self::CACHE_KEY, $name)) {
+                return InternalRuntimeCache::get(self::CACHE_KEY, $name);
             }
 
             $logger = new Logger($name);
@@ -57,7 +57,7 @@
             if(!$enabled) {
                 // If logging is disabled, use a NullHandler to discard all log messages
                 $logger->pushHandler(new NullHandler());
-                return StaticCache::set(self::CACHE_KEY, $name, $logger);
+                return InternalRuntimeCache::set(self::CACHE_KEY, $name, $logger);
             }
 
             // Resolve logger type
@@ -81,7 +81,7 @@
             $logger->pushProcessor(new LoggerBacktraceProcessor($logger, $loggerLevel));
 
             // Cache the logger instance for future use
-            return StaticCache::set(self::CACHE_KEY, $name, $logger);
+            return InternalRuntimeCache::set(self::CACHE_KEY, $name, $logger);
         }
 
         public static function getTraceId(): string {
@@ -94,8 +94,8 @@
         }
 
         public static function getLogger(string $name): ?Logger {
-            if(!StaticCache::has(self::CACHE_KEY, $name)) return null;
-            return StaticCache::get(self::CACHE_KEY, $name);
+            if(!InternalRuntimeCache::has(self::CACHE_KEY, $name)) return null;
+            return InternalRuntimeCache::get(self::CACHE_KEY, $name);
         }
 
         public static function handleSlowRequest(): void {

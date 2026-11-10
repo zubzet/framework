@@ -2,7 +2,7 @@
 
     namespace ZubZet\Framework\ErrorHandling;
 
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
 
     use Whoops\Run;
     use Whoops\Handler\PrettyPageHandler;
@@ -22,7 +22,7 @@
 
         public static function initialize() {
             if(config("execution_type", default: "prod") !== "test") return;
-            StaticCache::set("handler", "whoops", new WhoopsHandler);
+            InternalRuntimeCache::set("handler", "whoops", new WhoopsHandler);
         }
 
         public function __construct() {
