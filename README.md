@@ -16,8 +16,8 @@
 
 <p align="center">
   <a href="https://github.com/zubzet/framework/actions/workflows/tests.yml?query=branch%3Adevelop"><img alt="Test status" src="https://img.shields.io/github/actions/workflow/status/zubzet/framework/tests.yml?branch=develop&style=for-the-badge&label=Tests&logo=githubactions&logoColor=white"></a>
-  <a href="https://github.com/zubzet/framework/actions/workflows/tests.yml?query=branch%3Adevelop"><img alt="Tests passing across all supported PHP versions" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzubzet.com%2Fdocs%2Ftransparency%2Fqa-test-suite-size.json&query=%24.total&label=Tests%20passing&color=brightgreen&style=for-the-badge"></a>
-  <a href="https://github.com/zubzet/framework/actions/workflows/tests_e2e_coverage.yml"><img alt="Line coverage" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzubzet.com%2Fdocs%2Ftransparency%2Fqa-test-suite-coverage.json&query=%24.lines_percent&suffix=%25&label=Coverage&color=blue&style=for-the-badge"></a>
+  <a href="https://github.com/zubzet/framework/actions/workflows/tests.yml?query=branch%3Adevelop"><img alt="Tests passing across all supported PHP versions" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzubzet.com%2Ftransparency%2Fqa-test-suite-size.json&query=%24.total&label=Tests%20passing&color=brightgreen&style=for-the-badge"></a>
+  <a href="https://github.com/zubzet/framework/actions/workflows/tests_e2e_coverage.yml"><img alt="Line coverage" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzubzet.com%2Ftransparency%2Fqa-test-suite-coverage.json&query=%24.lines_percent&suffix=%25&label=Coverage&color=blue&style=for-the-badge"></a>
 </p>
 
 <br>
