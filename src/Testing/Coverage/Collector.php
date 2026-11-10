@@ -93,7 +93,9 @@
             // parses all the files it loaded again to find their executable lines.
             self::$coverage->cacheStaticAnalysis(self::$dataDirectory . 'cache');
 
-            self::$coverage->start(uniqid('request_'));
+            // One id for all requests. The library keeps a list of ids per
+            // line, and merging gets slower with every id that is added to it.
+            self::$coverage->start('request');
         }
 
         /** Stops collection and serializes the coverage data to disk. */
