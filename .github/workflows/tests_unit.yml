@@ -1,14 +1,27 @@
 name: Unit tests
 
-# Called by the E2E workflow, which only starts its own jobs once these pass
+# Called by the tests workflow, which only starts the E2E suite once these pass
 on:
   workflow_call:
+    # How many tests one job runs and how many jobs ran them, for the
+    # transparency job of the tests workflow
+    outputs:
+      php_tests:
+        value: ${{ jobs.php.outputs.tests }}
+      php_jobs:
+        value: ${{ jobs.php.outputs.jobs }}
+      js_tests:
+        value: ${{ jobs.js.outputs.tests }}
   workflow_dispatch:
 
 jobs:
   php:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Every version runs the same tests, so one job's count stands for all
+    outputs:
+      tests: ${{ steps.count.outputs.tests }}
+      jobs: ${{ strategy.job-total }}
     permissions:
       contents: read
     strategy:
@@ -37,9 +50,15 @@ jobs:
       - name: Run PHP unit tests
         run: composer test
 
+      - name: Count the tests
+        id: count
+        run: echo "tests=$(vendor/bin/phpunit --list-tests | grep -c '^ - ')" >> "$GITHUB_OUTPUT"
+
   js:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      tests: ${{ steps.count.outputs.tests }}
     permissions:
       contents: read
     defaults:
@@ -62,3 +81,7 @@ jobs:
 
       - name: Run Z.js unit tests
         run: npm test
+
+      - name: Count the tests
+        id: count
+        run: echo "tests=$(npx mocha --dry-run --reporter json | jq '.stats.tests')" >> "$GITHUB_OUTPUT"

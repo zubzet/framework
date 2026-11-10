@@ -1,0 +1,136 @@
+name: Tests
+
+on:
+  # Not filtered by path: branch protection requires the "Tests passed"
+  # check on every pull request. The `changes` job decides what has to run.
+  pull_request:
+    branches: [ '*' ]
+    types: [ opened, reopened, synchronize, ready_for_review ]
+  push:
+    branches: [ '*' ]
+    tags: [ 'v*.*.*' ]
+    paths:
+      - 'tests/e2e/**'
+      - 'tests/unit/**'
+      - 'composer*'
+      - 'phpunit.xml'
+      - 'src/**'
+      - 'web/**'
+      - '.github/workflows/tests.yml'
+      - '.github/workflows/tests_e2e.yml'
+      - '.github/workflows/tests_unit.yml'
+      - '.github/actions/**'
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Run scope'
+        required: false
+        default: 'smoke'
+        type: choice
+        options: [ smoke, full ]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # A pull request that only touches unrelated files, such as the docs,
+  # skips the tests and still gets a passing "Tests passed" check
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      relevant: ${{ github.event_name != 'pull_request' || steps.filter.outputs.tests == 'true' }}
+
+    steps:
+      - name: Look for changes the tests cover
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            tests:
+              - 'tests/e2e/**'
+              - 'tests/unit/**'
+              - 'composer*'
+              - 'phpunit.xml'
+              - 'src/**'
+              - 'web/**'
+              - '.github/workflows/tests.yml'
+              - '.github/workflows/tests_e2e.yml'
+              - '.github/workflows/tests_unit.yml'
+              - '.github/actions/**'
+
+  unit:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    uses: ./.github/workflows/tests_unit.yml
+    permissions:
+      contents: read
+
+  # The unit tests take seconds, so a failure there is reported before the
+  # Docker stack of the E2E suite is even built.
+  e2e:
+    needs: unit
+    uses: ./.github/workflows/tests_e2e.yml
+    permissions:
+      contents: read
+
+  # The one check branch protection requires. It stands for every job above,
+  # so the protection does not have to list the PHP versions of the matrix.
+  # Skipped test jobs count as passed, see the `changes` job.
+  passed:
+    name: Tests passed
+    needs: [ changes, unit, e2e ]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+
+    steps:
+      - name: Fail when a job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+
+  # The size of the test suite is published for the badge in the README and
+  # the website. Only develop publishes: it runs every PHP version.
+  transparency:
+    needs: [ unit, e2e ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Summarize the test counts
+        run: |
+          jq -n \
+            --argjson e2e ${{ needs.e2e.outputs.tests }} \
+            --argjson e2e_jobs ${{ needs.e2e.outputs.jobs }} \
+            --argjson php ${{ needs.unit.outputs.php_tests }} \
+            --argjson php_jobs ${{ needs.unit.outputs.php_jobs }} \
+            --argjson js ${{ needs.unit.outputs.js_tests }} \
+            '{
+              total: ($e2e * $e2e_jobs + $php * $php_jobs + $js),
+              e2e: ($e2e * $e2e_jobs),
+              unit_php: ($php * $php_jobs),
+              unit_js: $js,
+              e2e_per_php_version: $e2e,
+              unit_php_per_php_version: $php,
+              php_versions: $e2e_jobs,
+              commit: env.GITHUB_SHA,
+              updated_at: (now | todate)
+            }' > qa-test-suite-size.json
+
+      - name: Publish the test suite size
+        uses: ./.github/actions/publish-transparency
+        with:
+          file: qa-test-suite-size.json
+          message: Update the test suite size
+          ssh-key: ${{ secrets.WEBSITE_DEPLOY_KEY }}

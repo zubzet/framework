@@ -1,55 +1,25 @@
 name: E2E tests
 
+# Called by the tests workflow, after the unit tests passed
 on:
-  pull_request:
-    branches: [ '*' ]
-    types: [ opened, reopened, synchronize, ready_for_review ]
-    paths:
-      - 'tests/e2e/**'
-      - 'tests/unit/**'
-      - 'composer*'
-      - 'phpunit.xml'
-      - 'src/**'
-      - 'web/**'
-      - '.github/workflows/tests_e2e.yml'
-      - '.github/workflows/tests_unit.yml'
-  push:
-    branches: [ '*' ]
-    tags: [ 'v*.*.*' ]
-    paths:
-      - 'tests/e2e/**'
-      - 'tests/unit/**'
-      - 'composer*'
-      - 'phpunit.xml'
-      - 'src/**'
-      - 'web/**'
-      - '.github/workflows/tests_e2e.yml'
-      - '.github/workflows/tests_unit.yml'
+  workflow_call:
+    # How many tests one job runs and how many jobs ran them, for the
+    # transparency job of the tests workflow
+    outputs:
+      tests:
+        value: ${{ jobs.e2e.outputs.tests }}
+      jobs:
+        value: ${{ jobs.e2e.outputs.jobs }}
   workflow_dispatch:
-    inputs:
-      scope:
-        description: 'Run scope'
-        required: false
-        default: 'smoke'
-        type: choice
-        options: [ smoke, full ]
-
-concurrency:
-  group: e2e-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
-  # The unit tests take seconds, so a failure there is reported before the
-  # Docker stack of the E2E suite is even built.
-  unit:
-    uses: ./.github/workflows/tests_unit.yml
-    permissions:
-      contents: read
-
   e2e:
-    needs: unit
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # Every version runs the same tests, so one job's count stands for all
+    outputs:
+      tests: ${{ steps.cypress.outputs.tests }}
+      jobs: ${{ strategy.job-total }}
     permissions:
       contents: read
     strategy:
@@ -128,6 +98,7 @@ jobs:
         run: docker exec application php index.php db:seed
 
       - name: Run E2E tests (Cypress)
+        id: cypress
         env:
           CI: true
         run: bun run tests
