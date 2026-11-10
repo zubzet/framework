@@ -157,25 +157,6 @@
             $res->generateRestError(400,"TestErr");
         }
 
-        public function action_get(Request $req, Response $res) {
-            print_r($req->getGet("TestGet"));
-        }
-
-        // Probes the no-key branch of CanRetrieveFromInput::getGet(),
-        // which returns the full GET array. Used by core/request.cy.js.
-        public function action_getAll(Request $req, Response $res) {
-            return $res->json($req->getGet());
-        }
-
-        public function action_post(Request $req, Response $res) {
-            echo($req->getPost("TestPost"));
-        }
-
-        public function action_file(Request $req, Response $res) {
-            $File = $req->getFile("file");
-            echo($File["name"]);
-        }
-
         public function action_cookiesset(Request $req, Response $res) {
             $res->setCookie('testCookie', 'cookieValue', time() + 3600, '/', '', false, true);
         }
@@ -367,72 +348,8 @@
             ], "email");
         }
 
-        // Returns the resolved client IP. json_encode preserves a real null
-        // (vs flattening it to "") when the method legitimately returns null.
-        public function action_clientIp(Request $req, Response $res): void {
-            echo json_encode($req->ip());
-        }
-
-        // referer / userAgent / getExecutionTime all may return null per the
-        // method contract - json_encode keeps that observable in the test.
-        public function action_referer(Request $req, Response $res): void {
-            echo json_encode($req->referer());
-        }
-
-        public function action_userAgent(Request $req, Response $res): void {
-            echo json_encode($req->userAgent());
-        }
-
-        // Sleeps for ?delay=<ms> when given, then emits Request::getExecutionTime().
-        // The test compares a "fast" call to a deliberately delayed one to prove
-        // the value tracks wall-clock time since REQUEST_TIME_FLOAT.
-        public function action_executionTime(Request $req, Response $res): void {
-            $delayMs = (int)$req->getGet("delay", 0);
-            if ($delayMs > 0) {
-                usleep($delayMs * 1000);
-            }
-            echo json_encode($req->getExecutionTime());
-        }
-
-        // getCurrentURL / getDomain may mutate the framework's configured host
-        // via DynamicAttributes (zubzet()->host = ...). HasDynamicAttributes
-        // routes that through __set, and config("host") reads the new value
-        // back via __get on the same request. The override lasts one request -
-        // the INI re-loads on the next boot.
-        public function action_currentUrl(Request $req, Response $res): void {
-            $hostOverride = $req->getGet("hostOverride");
-            if ($hostOverride !== null && $hostOverride !== "") {
-                zubzet()->host = $hostOverride;
-            }
-            echo $req->getCurrentURL();
-        }
-
-        public function action_domain(Request $req, Response $res): void {
-            $hostOverride = $req->getGet("hostOverride");
-            if ($hostOverride !== null && $hostOverride !== "") {
-                zubzet()->host = $hostOverride;
-            }
-            echo $req->getDomain();
-        }
-
-        // `/Core/readable[/skip…]/<slug>?offset=<n>` → JSON {id, text} per
-        // getReadableParameter's last-hyphen split rule. Offset is passed
-        // through so the test covers both 0 and non-zero offsets.
-        public function action_readable(Request $req, Response $res): void {
-            $offset = (int)$req->getGet("offset", 0);
-            echo json_encode($req->getReadableParameter($offset));
-        }
-
         // Probes for Request::checkPermission, covered by:
-        //   advanced/command.cy.js         - "console" + boolResult branch
         //   core/permissions.cy.js         - !isLoggedIn + boolResult branch
-        //
-        // consoleBool exercises checkPermission("console", boolResult: true)
-        // over HTTP - the branch that returns false without exit so the
-        // action can keep running and echo our marker.
-        public function action_consoleBool(Request $req, Response $res): void {
-            echo $req->checkPermission("console", boolResult: true) ? "allowed" : "denied";
-        }
 
         // permissionCheck runs both checkPermission shapes back-to-back:
         //   1) boolResult=true   - emits "allowed" / "denied" without exiting.
@@ -446,33 +363,6 @@
             echo "\n";
             $req->checkPermission("core.permissions");
             echo "core.permissions passed";
-        }
-
-        // Round-trips getBody() + getJson(). A rejected body surfaces as
-        // UnexpectedValueException with the HTTP status as its code, malformed
-        // JSON as JsonException (reported as 400); we catch them here so the test can assert status and message next to the raw
-        // body within one request. ?maxBytes lowers the size limit so the 413
-        // path needs no huge body.
-        public function action_requestBody(Request $req, Response $res): void {
-            $body = $req->getBody();
-            $json = null;
-            $jsonError = null;
-            $jsonStatus = null;
-            try {
-                $json = $req->getJson((int) $req->getGet("maxBytes", 1_048_576));
-            } catch (\UnexpectedValueException $e) {
-                $jsonError = $e->getMessage();
-                $jsonStatus = $e->getCode();
-            } catch (\JsonException $e) {
-                $jsonError = "Malformed JSON: " . $e->getMessage();
-                $jsonStatus = 400;
-            }
-            echo json_encode([
-                'body'       => $body,
-                'json'       => $json,
-                'jsonError'  => $jsonError,
-                'jsonStatus' => $jsonStatus,
-            ]);
         }
     }
 
