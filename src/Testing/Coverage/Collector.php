@@ -89,6 +89,10 @@
                 $filter
             );
 
+            // Every request is a new process. Without the cache each one
+            // parses all the files it loaded again to find their executable lines.
+            self::$coverage->cacheStaticAnalysis(self::$dataDirectory . 'cache');
+
             self::$coverage->start(uniqid('request_'));
         }
 
