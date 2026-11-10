@@ -2,7 +2,6 @@
 
     namespace ZubZet\Framework\Resources;
 
-    use League\MimeTypeDetection\FinfoMimeTypeDetector;
     use ZubZet\Framework\Registry\Registry;
 
     class AssetProxy {
@@ -73,8 +72,7 @@
                     return;
                 }
 
-                $mime = (new FinfoMimeTypeDetector())->detectMimeTypeFromPath($file) ?? "application/octet-stream";
-                header("Content-Type: $mime");
+                header("Content-Type: " . MimeType::fromPath($file));
                 readfile($file);
                 return;
             }
