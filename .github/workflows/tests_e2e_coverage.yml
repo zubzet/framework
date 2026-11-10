@@ -1,6 +1,11 @@
 name: E2E coverage report
 
 on:
+  # Nightly on develop, the default branch. The run takes about two hours,
+  # so nothing waits for it: the number is a metric to keep an eye on.
+  # Off the full hour on purpose: that is when GitHub delays scheduled runs.
+  schedule:
+    - cron: '43 3 * * *'
   workflow_dispatch:
   # Fallback trigger so the workflow can be started from a fork PR before
   # this file lands on the base repo's default branch. Adding the `coverage`
@@ -13,8 +18,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # A nightly run is only worth it when develop moved since the published
+  # coverage was measured
+  changes:
+    if: github.event_name == 'schedule' && github.repository == 'zubzet/framework'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      stale: ${{ steps.compare.outputs.stale }}
+
+    steps:
+      - name: Compare with the published coverage
+        id: compare
+        run: |
+          published=$(curl -fsS https://zubzet.com/docs/transparency/qa-test-suite-coverage.json | jq -r '.commit' || true)
+          echo "published: $published, develop: $GITHUB_SHA"
+          echo "stale=$([ "$published" != "$GITHUB_SHA" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   coverage:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'coverage')
+    needs: changes
+    # `always()` lets the manual and the label trigger run although the
+    # nightly check above was skipped for them
+    if: always() && (needs.changes.outputs.stale == 'true' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'coverage'))
     runs-on: ubuntu-latest
     timeout-minutes: 120  # xdebug coverage is ~5x slower than a normal e2e run
     permissions:
@@ -23,6 +49,8 @@ jobs:
     env:
       COMPOSE_DOCKER_CLI_BUILD: "1"
       DOCKER_BUILDKIT: "1"
+      # Only a nightly or manual run on develop publishes its number
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/develop' }}
 
     defaults:
       run:
@@ -119,7 +147,32 @@ jobs:
 
       - name: Stop coverage and generate report
         if: always()
-        run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop
+        run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop | tee coverage-summary
+
+      # The number goes next to the docs, where the badge in the README and
+      # the website read it
+      - name: Summarize the coverage
+        if: env.PUBLISH == 'true'
+        run: |
+          sed -E 's/\x1b\[[0-9;]*m//g' coverage-summary | grep -m1 'Lines:' | jq -R '
+            capture("(?<percent>[0-9.]+)% \\((?<covered>[0-9]+)/(?<total>[0-9]+)\\)")
+            | {
+              lines_percent: (.percent | tonumber),
+              lines_covered: (.covered | tonumber),
+              lines_total: (.total | tonumber),
+              php_version: "8.5",
+              commit: env.GITHUB_SHA,
+              updated_at: (now | todate)
+            }
+          ' > qa-test-suite-coverage.json
+
+      - name: Publish the coverage
+        if: env.PUBLISH == 'true'
+        uses: ./.github/actions/publish-transparency
+        with:
+          file: tests/e2e/qa-test-suite-coverage.json
+          message: Update the test suite coverage
+          ssh-key: ${{ secrets.WEBSITE_DEPLOY_KEY }}
 
       - name: Upload coverage report
         if: always()
