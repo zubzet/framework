@@ -80,10 +80,11 @@ jobs:
     permissions:
       contents: read
 
-  # The line coverage of the E2E suite, measured next to it on develop. It
-  # is left out of "Tests passed": the number is a metric to keep an eye
-  # on, it does not decide whether something can be merged. A fork has no
-  # use for it: it cannot publish the number.
+  # The line coverage of the E2E suite and the PHP unit tests, measured
+  # next to the E2E suite on develop. It is left out of "Tests passed": the
+  # number is a metric to keep an eye on, it does not decide whether
+  # something can be merged. A fork has no use for it: it cannot publish
+  # the number.
   coverage:
     needs: unit
     if: github.repository == 'zubzet/framework' && github.event_name == 'push' && github.ref == 'refs/heads/develop'

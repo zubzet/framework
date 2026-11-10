@@ -1,4 +1,4 @@
-name: E2E coverage report
+name: Coverage report
 
 on:
   # Called by the tests workflow on develop, which publishes the number
@@ -124,11 +124,20 @@ jobs:
         continue-on-error: true
         run: bun run tests
 
+      # The PHP unit tests run in the same container, so their coverage
+      # names the source files by the same paths and can be merged in.
+      # Installed after the E2E run to leave that one as it is.
+      - name: Install the development dependencies of the framework
+        run: docker exec -w /var/www/framework application composer update --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHP unit tests with coverage
+        run: docker exec -w /var/www/framework application vendor/bin/phpunit --coverage-php /tmp/unit.cov
+
       - name: Stop coverage and generate report
         if: always()
         # With pipefail a failed report is not hidden behind `tee`
         shell: bash
-        run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop | tee coverage-summary
+        run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop --merge /tmp/unit.cov | tee coverage-summary
 
       - name: Summarize the coverage
         id: summary
