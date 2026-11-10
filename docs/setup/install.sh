@@ -215,16 +215,6 @@ if [ ! -f "$directory/composer.json" ]; then
     cat > "$directory/composer.json" <<'JSON'
 {
     "type": "project",
-    "config": {
-        "audit": {
-            "ignore": {
-                "PKSA-g499-cm4q-v35y": {
-                    "apply": "block",
-                    "reason": "symfony/filesystem 6.4.50+ requires PHP 8.1+, PHP 8.0 stays on 6.0"
-                }
-            }
-        }
-    },
     "autoload": {
         "psr-4": {
             "App\\": "app/"

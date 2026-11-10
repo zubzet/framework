@@ -13,7 +13,7 @@ No other SQL dialect is wired up: the runtime connection is `mysqli`, the migrat
 The Docker image provides every extension the framework needs. On your own PHP build, `composer.json` only requires `ext-openssl`, but you also need:
 
 - `ext-mysqli` built against `mysqlnd`: every query calls `mysqli_stmt::get_result()`, which the `libmysqlclient` build of mysqli does not offer.
-- `ext-mbstring` and `ext-fileinfo`: the framework calls `mb_*` functions (e.g. in `Helpers`), and the asset proxy detects MIME types through `league/mime-type-detection`, which needs fileinfo.
+- `ext-mbstring`: the framework calls `mb_*` functions (e.g. in `Helpers`).
 - `ext-ctype`, `ext-filter` and `ext-hash`: required by PHPMailer, which sends the mails of `Response::sendEmail()`.
 - Argon2id support: new password hashes use `password_hash()` with `PASSWORD_ARGON2ID`, so PHP must be compiled with Argon2 (`--with-password-argon2`, or the `PASSWORD_ARGON2ID` constant is undefined).
 

@@ -90,5 +90,6 @@ The proxy is designed to serve only files that live inside a registered source:
 - **There is no allow-list and no access check.** Everything else readable below a mounted source is served to anyone via `GET`, including dotfiles and the `composer.json` of mounted packages.
 - **Source and config extensions are never served.** Requests for `.php`, `.phtml`, or `.ini`
   files return `404` from every source, including ones you register yourself.
-- **[Content types are detected](https://github.com/thephpleague/mime-type-detection)** with `league/mime-type-detection`, falling back to
-  `application/octet-stream` when the type is unknown.
+- **Content types follow the file extension** (`ZubZet\Framework\Resources\MimeType`): scripts, stylesheets,
+  source maps, images, fonts and the other common web asset types are known, anything else is served as
+  `application/octet-stream`. The content of the file is not inspected.

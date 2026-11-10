@@ -5,7 +5,7 @@
     use SebastianBergmann\CodeCoverage\CodeCoverage;
     use SebastianBergmann\CodeCoverage\Driver\Selector;
     use SebastianBergmann\CodeCoverage\Filter;
-    use Symfony\Component\Filesystem\Filesystem;
+    use ZubZet\Framework\Support\Filesystem;
 
     /**
      * @internal
@@ -127,12 +127,14 @@
 
         public static function cleanup(): void {
             // Remove all coverage data files for the current session
-            $dir = self::$dataDirectory . self::getSessionId() . '/';
-            (new Filesystem())->remove($dir);
+            // Without a session id the path would be the data directory itself, which also holds the report
+            $sessionId = self::isActive() ? self::getSessionId() : self::$sessionId;
+            if(!empty($sessionId)) {
+                Filesystem::remove(self::$dataDirectory . $sessionId);
+            }
 
             // Remove current session file to allow starting a new session
-            $sessionLocation = Collector::$sessionLocation;
-            (new Filesystem())->remove($sessionLocation);
+            Filesystem::remove(self::$sessionLocation);
 
             self::$sessionId = "";
         }

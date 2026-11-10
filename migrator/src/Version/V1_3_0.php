@@ -70,32 +70,6 @@
                 "./assets/js/Z.js",
             ]);
 
-            // PHP 8.0 stays on symfony/filesystem 6.0, which composer refuses to install because of an advisory
-            $auditIgnore = new JsonModifier($this, "composer-audit-ignore");
-            $auditIgnore->from("composer.json");
-            $auditIgnore->modify(function(array $data): ?array {
-                $ignore = $data["config"]["audit"]["ignore"] ?? [];
-
-                // The list form ignores an advisory everywhere, the map form needs the same meaning per id
-                if(array_values($ignore) === $ignore) {
-                    $ignore = array_fill_keys($ignore, "Ignored before the ZubZet 1.3.0 upgrade");
-                }
-
-                $advisories = [
-                    "PKSA-g499-cm4q-v35y" => "symfony/filesystem 6.4.50+ requires PHP 8.1+, PHP 8.0 stays on 6.0",
-                ];
-
-                foreach($advisories as $advisory => $reason) {
-                    $ignore[$advisory] ??= [
-                        "apply" => "block",
-                        "reason" => $reason,
-                    ];
-                }
-
-                $data["config"]["audit"]["ignore"] = $ignore;
-                return $data;
-            });
-
             // db:status flipped its exit code, find() alone would also search vendor/ and node_modules/
             if(is_file("package.json")) {
                 $dbStatus = new FileContent($this, "db-status-exit-code");
