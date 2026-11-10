@@ -126,9 +126,11 @@ jobs:
 
       # The PHP unit tests run in the same container, so their coverage
       # names the source files by the same paths and can be merged in.
-      # Installed after the E2E run to leave that one as it is.
+      # Installed after the E2E run to leave that one as it is. The container
+      # points Composer to the vendor folder of the application, so the
+      # framework is told to use its own.
       - name: Install the development dependencies of the framework
-        run: docker exec -w /var/www/framework application composer update --no-interaction --prefer-dist --no-progress
+        run: docker exec -e COMPOSER_VENDOR_DIR=vendor -w /var/www/framework application composer update --no-interaction --prefer-dist --no-progress
 
       - name: Run PHP unit tests with coverage
         run: docker exec -w /var/www/framework application vendor/bin/phpunit --coverage-php /tmp/unit.cov
