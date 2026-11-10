@@ -24,12 +24,34 @@ describe("Form Interactions", () => {
         cy.get("@submit.all").should("have.length", 1);
     });
 
+    // The answer is held back longer than the 300 ms window in which send()
+    // ignores a repeated call. A slow server, like under coverage, must not
+    // decide whether a second submit gets through.
+    const interceptSlowSubmit = () => cy.intercept("POST", "/Form/interactions", (req) => {
+        req.on("response", (res) => res.setDelay(500));
+    }).as("submit");
+
     it("Debounces a rapid double-click submit so only one POST is sent", () => {
-        cy.intercept("POST", "/Form/interactions").as("submit");
+        interceptSlowSubmit();
         cy.visit("/Form/interactions");
 
         cy.form("field_a").type("Neuer Test");
-        cy.query("form").find("button").click().click();
+        cy.query("form").find("button").dblclick();
+
+        cy.wait("@submit");
+        cy.query("form").contains("Saved!");
+        cy.get("@submit.all").should("have.length", 1);
+    });
+
+    it("Ignores a second send while the first one is in flight", () => {
+        interceptSlowSubmit();
+        cy.visit("/Form/interactions");
+
+        cy.form("field_a").type("Neuer Test");
+        cy.window().then((win) => {
+            win.form.send();
+            win.form.send();
+        });
 
         cy.wait("@submit");
         cy.query("form").contains("Saved!");
