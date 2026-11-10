@@ -57,7 +57,7 @@
                 register_shutdown_function(function() {
                     Collector::cleanup();
                 });
-            } catch(\Exception $e) {
+            } catch(\Throwable $e) {
                 $out->writeln("<error>Failed to generate coverage report: {$e->getMessage()}</error>");
                 return Command::FAILURE;
             }
