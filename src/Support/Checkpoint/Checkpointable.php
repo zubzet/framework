@@ -8,7 +8,7 @@
      * that doesn't use the trait must provide its own equivalent.
      */
     interface Checkpointable {
-        public function checkpointCurrentState(?array $properties = null, ?string $attributeClass = null): Checkpoint;
+        public function checkpointCurrentState(?array $properties = null, ?string $attributeClass = IncludeInCheckpoint::class): Checkpoint;
     }
 
 ?>

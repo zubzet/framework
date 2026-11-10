@@ -10,10 +10,10 @@
         /**
          * Snapshot selected properties into a Checkpoint for later restore()
          * Only public properties can be captured and restored.
-         * @param string[]|null $properties Names to snapshot; null discovers all non-static properties.
-         * @param string|null $attributeClass With null $properties, keeps only properties carrying this attribute; the default null applies no IncludeInCheckpoint filtering.
+         * @param string[]|null $properties Names to snapshot; null discovers them by the attribute.
+         * @param string|null $attributeClass With null $properties, keeps only properties carrying this attribute; null applies no filtering and takes every non-static property.
          * */
-        public function checkpointCurrentState(?array $properties = null, ?string $attributeClass = null): Checkpoint {
+        public function checkpointCurrentState(?array $properties = null, ?string $attributeClass = IncludeInCheckpoint::class): Checkpoint {
             if(is_null($properties)) {
                 $properties = $this->checkpointablePropertyNames($attributeClass);
             }

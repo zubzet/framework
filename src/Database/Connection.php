@@ -297,7 +297,7 @@
                 // The slow-query log itself runs an INSERT through this same Connection,
                 // which clobbers every #[IncludeInCheckpoint] property. Reentrancy into the
                 // logger is prevented by DatabaseLogger's own guard.
-                $checkpoint = $this->checkpointCurrentState(attributeClass: IncludeInCheckpoint::class);
+                $checkpoint = $this->checkpointCurrentState();
                 try {
                     logger(Logger::ZUBZET)->warning(LogEventType::SLOW_QUERY, [
                         'duration_ms' => round($queryDuration, 2),
