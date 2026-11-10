@@ -21,6 +21,8 @@
     class_alias(Form\Validation\Field::class, "FormField");
 
     class_alias(Support\Rest::class, "Rest");
+    class_alias(Support\RuntimeCache\RuntimeCache::class, Support\StaticCache::class);
+
     class_alias(Authentication\User::class, "User");
 
     // @codeCoverageIgnoreEnd
