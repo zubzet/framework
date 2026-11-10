@@ -26,7 +26,8 @@
         "katanaphp/blade": "^0.3.0"
     },
     "require-dev": {
-        "phpunit/php-code-coverage": "9.*"
+        "phpunit/php-code-coverage": "9.*",
+        "phpunit/phpunit": "^9.6"
     },
     "conflict": {
         "phpunit/php-code-coverage": "<9.0 || >=10.0"
@@ -38,5 +39,13 @@
         "psr-4": {
             "ZubZet\\Framework\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/unit/php/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
     }
 }
