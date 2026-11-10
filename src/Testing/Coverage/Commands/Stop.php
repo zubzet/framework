@@ -50,6 +50,7 @@
                 } else {
                     $reportDir = Collector::$dataDirectory . 'report/';
                     (new HtmlReport)->process($coverage, $reportDir);
+                    $out->write((new TextReport())->summary($coverage));
                     $out->writeln("Report generated at <info>{$reportDir}</info>");
                 }
 

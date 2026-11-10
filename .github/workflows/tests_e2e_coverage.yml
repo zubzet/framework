@@ -147,14 +147,19 @@ jobs:
 
       - name: Stop coverage and generate report
         if: always()
+        # With pipefail a failed report is not hidden behind `tee`
+        shell: bash
         run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop | tee coverage-summary
 
       # The number goes to the website, where the badge in the README and
       # the website read it
       - name: Summarize the coverage
         if: env.PUBLISH == 'true'
+        # With pipefail a summary without the line fails instead of
+        # publishing an empty file
+        shell: bash
         run: |
-          sed -E 's/\x1b\[[0-9;]*m//g' coverage-summary | grep -m1 'Lines:' | jq -R '
+          sed -E 's/\x1b\[[0-9;]*m//g' coverage-summary | grep 'Lines:' | jq -R '
             capture("(?<percent>[0-9.]+)% \\((?<covered>[0-9]+)/(?<total>[0-9]+)\\)")
             | {
               lines_percent: (.percent | tonumber),
