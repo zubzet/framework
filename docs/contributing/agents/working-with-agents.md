@@ -14,7 +14,7 @@ This page is for AI coding agents (Claude Code, Cursor, Codex, Aider, etc.) and 
 | `mkdocs.yml` | Docs site nav and theme config |
 | `composer.json` | PHP 8.0–8.6 support, autoload, dependencies |
 
-There is no top-level `package.json` and no PHPUnit suite — testing is end-to-end only, run from `tests/e2e/`.
+Testing is mostly end-to-end, run from `tests/e2e/`. Logic that needs neither a request nor a database has unit tests in `tests/unit/`: PHPUnit for `src/` (`composer test`) and Mocha and Chai for `web/Z.js`, the same pair Cypress specs are written in (`npm install` once, then `npm test` in `tests/unit/js/`). A new Z.js test is a `*.test.js` file anywhere under `tests/unit/js/`. Like a Cypress spec it imports nothing: `describe`, `it`, `expect`, a fresh `Z` per test and the `$.ajax()` stand-in `ajax` are globals, provided by `tests/unit/js/support/setup.js`. In CI the e2e job only starts after the unit tests passed.
 
 `src/` subdirectories at a glance:
 
@@ -329,7 +329,7 @@ The `z_migration` table (with `z_migration_lock`) prevents re-execution under no
 ## Common pitfalls
 
 - **Port confusion.** App is at `:8080`, not `:4000`. The `host` setting in INI is informational, not the listening port.
-- **No PHPUnit / unit tests.** All testing is Cypress e2e in `tests/e2e/`.
+- **Unit tests only cover what runs without the framework booted.** `tests/unit/php/` (PHPUnit, namespace `Tests\`) and `tests/unit/js/` are for pure logic. Everything that needs a request, the database or a rendered page stays a Cypress spec in `tests/e2e/`.
 - **Multiple PHP versions in CI.** The floor is PHP 8.0, the ceiling the newest line. Known breakers: `#[\Override]` does not exist before 8.3; implicit nullable parameters (`string $x = null`) are deprecated since 8.4, write `?string $x = null`; `finfo_close()` is deprecated on the newest line; by-ref model constructors were removed in 1.2.
 - **`config()` is unavailable before bootstrap.** Anything called from `MaintenanceHandler::gate()` must already have configuration loaded; anything earlier must read INI directly.
 - **A red CI run is classified first**: a flake, a rebase side effect, or a real regression. Reproduce on the base branch before blaming your change. Local green is not CI green: CI runs PHP 8.0 and 8.6 on fresh volumes. Flakiness is never acceptable: a test that fails sometimes is fixed (deterministic app state, retrying assertions, proper waits), never re-run until green.
