@@ -4,7 +4,9 @@
 
     use PHPUnit\Framework\TestCase as BaseTestCase;
     use ReflectionClass;
+    use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Core\Constants;
+    use ZubZet\Framework\Database\Endpoint;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Message\Request;
     use ZubZet\Framework\Message\Response;
@@ -34,6 +36,7 @@
         protected function tearDown(): void {
             ZubZet::$instance = null;
             $this->clearRuntimeCaches();
+            $this->clearEndpoint();
 
             foreach($this->temporaryDirectories as $directory) {
                 Filesystem::remove($directory);
@@ -125,6 +128,32 @@
             return $framework->res;
         }
 
+        /**
+         * Makes a user without database access the current one, the one user()
+         * returns. Its constructor would identify it through the database, so
+         * it is left out: the user is anonymous unless the test says otherwise.
+         */
+        protected function currentUser(bool $loggedIn = false): User {
+            $framework = ZubZet::$instance ?? $this->bootFramework();
+
+            $user = (new ReflectionClass(User::class))->newInstanceWithoutConstructor();
+            $user->isLoggedIn = $loggedIn;
+            $framework->user = $user;
+
+            return $user;
+        }
+
+        /**
+         * Skips the test on a PHP built without Argon2. The framework hashes with
+         * PASSWORD_ARGON2ID unconditionally and composer.json does not require
+         * the support, so the tests that reach it have to tolerate its absence.
+         */
+        protected function requireArgon2id(): void {
+            if(defined("PASSWORD_ARGON2ID")) return;
+
+            $this->markTestSkipped("This PHP was built without Argon2 support.");
+        }
+
         /** An empty directory with a trailing slash, removed after the test. */
         protected function temporaryDirectory(): string {
             $directory = sys_get_temp_dir() . "/zubzet-unit-" . uniqid() . "/";
@@ -132,6 +161,22 @@
 
             $this->temporaryDirectories[] = $directory;
             return $directory;
+        }
+
+        /**
+         * Runs the action with the given directory as the working directory, for
+         * code that reads relative paths. The previous directory is restored
+         * afterwards, also when the action throws.
+         */
+        protected function inDirectory(string $directory, callable $action): mixed {
+            $previous = getcwd();
+            chdir($directory);
+
+            try {
+                return $action();
+            } finally {
+                chdir($previous);
+            }
         }
 
         /**
@@ -171,6 +216,11 @@
             $store = (new ReflectionClass(RuntimeCache::class))->getProperty("cache");
             $store->setAccessible(true);
             $store->setValue(null, []);
+        }
+
+        // Endpoint::get() keeps the settings it was first asked for
+        private function clearEndpoint(): void {
+            (new ReflectionClass(Endpoint::class))->setStaticPropertyValue("instance", null);
         }
     }
 
