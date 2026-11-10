@@ -9,15 +9,17 @@
 <p align="center">
   <a href="https://github.com/zubzet/framework"><img alt="GitHub Repo stars" src="https://img.shields.io/badge/Star%20on-GitHub-blue?style=for-the-badge&logo=github"></a>
   <a href="https://zubzet.com/docs"><img alt="Documentation" src="https://img.shields.io/badge/Read-the%20Docs-brightgreen?style=for-the-badge&logo=readthedocs"></a>
-  <a href="https://github.com/zubzet/framework/releases"><img alt="Latest Release" src="https://img.shields.io/github/v/release/zubzet/framework?include_prereleases&style=for-the-badge&label=Latest%20Release&color=orange&logo=github"></a>
   <a href="https://github.com/zubzet/framework/issues"><img alt="GitHub Issues" src="https://img.shields.io/badge/Report-Issues-yellow?style=for-the-badge&logo=bug"></a>
   <a href="https://github.com/zubzet/framework/blob/main/LICENSE"><img alt="APL 2.0 License" src="https://img.shields.io/github/license/zubzet/framework?style=for-the-badge&logo=open-source-initiative"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/zubzet/framework/actions/workflows/tests.yml?query=branch%3Adevelop"><img alt="Test status" src="https://img.shields.io/github/actions/workflow/status/zubzet/framework/tests.yml?branch=develop&style=for-the-badge&label=Tests&logo=githubactions&logoColor=white"></a>
-  <a href="https://github.com/zubzet/framework/actions/workflows/tests.yml?query=branch%3Adevelop"><img alt="Tests passing across all supported PHP versions" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzubzet.com%2Ftransparency%2Fqa-test-suite-size.json&query=%24.total&label=Tests%20passing&color=brightgreen&style=for-the-badge"></a>
+  <a href="https://github.com/zubzet/framework/actions/workflows/tests.yml?query=branch%3Adevelop"><img alt="Tests passing across all supported PHP versions" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzubzet.com%2Ftransparency%2Fqa-test-suite-size.json&query=%24.total&suffix=%20passing&label=Tests&logo=githubactions&logoColor=white&color=brightgreen&style=for-the-badge"></a>
   <a href="https://github.com/zubzet/framework/actions/workflows/tests_e2e_coverage.yml"><img alt="Line coverage" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzubzet.com%2Ftransparency%2Fqa-test-suite-coverage.json&query=%24.lines_percent&suffix=%25&label=Coverage&color=blue&style=for-the-badge"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/zubzet/framework/releases"><img alt="Latest Release" src="https://img.shields.io/github/v/release/zubzet/framework?include_prereleases&style=for-the-badge&label=Latest%20Release&color=orange&logo=github"></a>
 </p>
 
 <br>
