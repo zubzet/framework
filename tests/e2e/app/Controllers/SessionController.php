@@ -111,34 +111,6 @@ class SessionController extends z_controller {
 
     /**
      *
-     * @var Session Business Logic
-     *
-     */
-
-    public function action_isExpiredActive(Request $req, Response $res): void {
-        $session = Session::byId(407);
-        echo(json_encode([
-            'isExpired' => $session->isExpired(),
-        ]));
-    }
-
-    public function action_isExpiredExpired(Request $req, Response $res): void {
-        $session = Session::byId(408);
-        echo(json_encode([
-            'isExpired' => $session->isExpired(),
-        ]));
-    }
-
-    public function action_isExpiredExtended(Request $req, Response $res): void {
-        $session = Session::byId(409);
-        echo(json_encode([
-            'isExpired' => $session->isExpired(),
-        ]));
-    }
-
-
-    /**
-     *
      * @var Session byToken
      *
      */
@@ -276,19 +248,6 @@ class SessionController extends z_controller {
         ]));
     }
 
-    /** Without loginTimeoutSeconds a new session lives for the documented 7 days. */
-    public function action_addWithoutTimeoutSetting(Request $req, Response $res): void {
-        $settings = zubzet()->getAllAttributes();
-        unset($settings["loginTimeoutSeconds"]);
-        zubzet()->setAttributes($settings);
-
-        $session = Session::add(User::byId(421));
-        echo(json_encode([
-            'lifetime' => strtotime($session->expiresAt()) - strtotime($session->created()),
-        ]));
-    }
-
-
     /**
      * Session 438 is an ordinary login created in the year 2000, so it is
      * expired until it is exempted from expiring.
@@ -307,26 +266,6 @@ class SessionController extends z_controller {
         ]));
     }
 
-
-    /**
-     * Session 440 was created in the year 2000, so the computed lifetime has
-     * long run out - the expiry fixed on it is what keeps it usable.
-     */
-    public function action_expiresAtFixed(Request $req, Response $res): void {
-        echo(json_encode($this->getExpiry(Session::byId(440))));
-    }
-
-    /**
-     * Session 441 was created now and extended by decades, both of which the
-     * expiry fixed in the past overrules.
-     */
-    public function action_expiresAtOverrules(Request $req, Response $res): void {
-        $session = Session::byId(441);
-
-        echo(json_encode(array_merge($this->getExpiry($session), [
-            'extendedSeconds' => (int) $session->extendedSeconds(),
-        ])));
-    }
 
     /**
      * Session 442 is an ordinary login from the year 2000, so it expires by its
@@ -348,15 +287,6 @@ class SessionController extends z_controller {
             'dropped' => $this->getExpiry($session),
         ]));
     }
-
-    /**
-     * Session 443 carries an expiry long past but is exempt from expiring,
-     * which outranks the date.
-     */
-    public function action_expiresAtPermanent(Request $req, Response $res): void {
-        echo(json_encode($this->getExpiry(Session::byId(443))));
-    }
-
 
     /**
      * A session records why it was created and where from, both taken at
