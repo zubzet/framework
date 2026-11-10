@@ -74,6 +74,35 @@
             $this->assertFalse(isset($target->late));
         }
 
+        public function testRestoresInitializedPropertiesAndUnsetsUninitializedOnes(): void {
+            $target = new class implements Checkpointable {
+                use CanCheckpoint;
+
+                public string $initializedProp;
+                public string $uninitializedProp;
+            };
+            $target->initializedProp = "initial-value";
+
+            $checkpoint = $target->checkpointCurrentState(["initializedProp", "uninitializedProp"]);
+            $target->initializedProp = "changed";
+            $target->uninitializedProp = "newly-set";
+            $checkpoint->restore();
+
+            $this->assertSame("initial-value", $target->initializedProp);
+            $this->assertFalse((new \ReflectionProperty($target, "uninitializedProp"))->isInitialized($target));
+        }
+
+        public function testANamedPropertyThatDoesNotExistIsSkipped(): void {
+            $target = $this->getTarget();
+
+            $checkpoint = $target->checkpointCurrentState(["unmarked", "missing"]);
+            $target->unmarked = "changed";
+            $checkpoint->restore();
+
+            $this->assertSame("initial", $target->unmarked);
+            $this->assertFalse(property_exists($target, "missing"));
+        }
+
         private function getTarget(): Checkpointable {
             return new class implements Checkpointable {
                 use CanCheckpoint;
