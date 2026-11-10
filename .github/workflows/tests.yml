@@ -84,7 +84,9 @@ jobs:
   passed:
     name: Tests passed
     needs: [ changes, unit, e2e ]
-    if: always()
+    # Runs although jobs above failed or were skipped. A cancelled run
+    # cancels this job too, which does not satisfy the protection either.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
