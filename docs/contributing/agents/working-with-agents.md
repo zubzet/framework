@@ -96,7 +96,7 @@ calls on `Registry`: `paths($kind)` (ordered roots), `files($kind)` (every file 
 then framework. Asset-proxy mounts follow the same order (modules before the framework layers);
 the application's webroot needs no mount because the web server serves it before PHP runs.
 
-`find()` memoizes per request in `StaticCache` and probes each root flat first; the recursive
+`find()` memoizes per request in `InternalRuntimeCache` and probes each root flat first; the recursive
 per-root index (`RootIndex`) only runs for bare names after a flat miss, shallowest match first.
 Do not add new `file_exists`/`glob` lookups at call sites: route them through the Registry.
 
