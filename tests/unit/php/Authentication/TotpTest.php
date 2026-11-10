@@ -18,32 +18,33 @@
 
         private const ERROR_INVALID_SECRET = "The two factor secret is not valid Base32.";
 
-        public function testMatchesRfc6238Vectors(): void {
-            // The RFC lists eight digits for SHA1, a six digit code is their last six
-            $cases = [
-                ["timestamp" => 59, "expected" => "287082"],
-                ["timestamp" => 1111111109, "expected" => "081804"],
-                ["timestamp" => 1111111111, "expected" => "050471"],
-                ["timestamp" => 1234567890, "expected" => "005924"],
-                ["timestamp" => 2000000000, "expected" => "279037"],
-                ["timestamp" => 20000000000, "expected" => "353130"],
-            ];
+        // Generation
 
-            $totp = $this->getTotp();
-
-            foreach($cases as $case) {
-                $this->assertSame($case["expected"], $totp->at($case["timestamp"]));
-            }
+        /** @dataProvider rfc6238Vectors */
+        public function testMatchesTheRfc6238VectorFor(int $timestamp, string $expected): void {
+            $this->assertSame($expected, $this->getTotp()->at($timestamp));
         }
 
-        public function testCodeLastsWholePeriod(): void {
+        public static function rfc6238Vectors(): array {
+            // The RFC lists eight digits for SHA1, a six digit code is their last six
+            return [
+                "59" => [59, "287082"],
+                "1111111109" => [1111111109, "081804"],
+                "1111111111" => [1111111111, "050471"],
+                "1234567890" => [1234567890, "005924"],
+                "2000000000" => [2000000000, "279037"],
+                "20000000000" => [20000000000, "353130"],
+            ];
+        }
+
+        public function testKeepsTheCodeForAWholePeriodAndChangesItWithTheNext(): void {
             $totp = $this->getTotp();
 
             $this->assertSame($totp->at(30), $totp->at(59));
             $this->assertNotSame($totp->at(30), $totp->at(60));
         }
 
-        public function testSecretIsReadRegardlessOfCaseAndPadding(): void {
+        public function testReadsASecretRegardlessOfCaseAndPadding(): void {
             $totp = $this->getTotp(strtolower(self::RFC_SECRET) . "====");
 
             $this->assertSame("287082", $totp->at(59));
@@ -122,22 +123,31 @@
             $this->assertTrue($totp->verify($totp->now()));
         }
 
-        public function testVerifyAcceptsCodeOfCurrentPeriod(): void {
+        // Verification
+
+        public function testAcceptsTheCodeOfTheCurrentPeriod(): void {
             $this->assertTrue($this->getTotp()->verify(self::CODE_NOW, 1, self::NOW));
         }
 
-        public function testVerifyAcceptsCodeOfPeriodBeforeAndAfter(): void {
+        public function testAcceptsTheCodeOfThePeriodBeforeAndAfter(): void {
             $totp = $this->getTotp();
 
             $this->assertTrue($totp->verify(self::CODE_NOW, 1, self::NOW + 30));
             $this->assertTrue($totp->verify(self::CODE_NOW, 1, self::NOW - 59));
         }
 
-        public function testVerifyRejectsCodeTwoPeriodsAway(): void {
+        public function testRejectsACodeTwoPeriodsAway(): void {
             $totp = $this->getTotp();
 
             $this->assertFalse($totp->verify(self::CODE_NOW, 1, self::NOW + 31));
             $this->assertFalse($totp->verify(self::CODE_NOW, 1, self::NOW - 60));
+        }
+
+        public function testVerifyToleratesOnePeriodByDefault(): void {
+            $totp = $this->getTotp();
+
+            $this->assertTrue($totp->verify(self::CODE_NOW, timestamp: self::NOW + 30));
+            $this->assertFalse($totp->verify(self::CODE_NOW, timestamp: self::NOW + 31));
         }
 
         public function testVerifyWithoutDriftAcceptsOnlyCurrentPeriod(): void {
@@ -157,24 +167,26 @@
             $this->assertFalse($totp->verify(self::CODE_NOW, 2, self::NOW + 61));
         }
 
-        public function testVerifyRejectsWrongCodes(): void {
-            $cases = [
-                "081805",
-                "81804",
-                "0081804",
-                "",
-                " 081804",
-            ];
-
-            $totp = $this->getTotp();
-
-            foreach($cases as $code) {
-                $this->assertFalse($totp->verify($code, 1, self::NOW));
-            }
+        /** @dataProvider wrongCodes */
+        public function testRejectsAWrongCodeAndACodeOfTheWrongLength(string $code): void {
+            $this->assertFalse($this->getTotp()->verify($code, 1, self::NOW));
         }
 
-        public function testProvisioningUriCarriesIssuerLabelAndSecret(): void {
-            $totp = new Totp(self::RFC_SECRET, "user+a@example.com", "QA Suite & Co");
+        public static function wrongCodes(): array {
+            return [
+                "a wrong code" => ["081805"],
+                "five digits" => ["81804"],
+                "seven digits" => ["0081804"],
+                "an empty code" => [""],
+                "a leading space" => [" 081804"],
+                "a trailing newline" => ["081804\n"],
+            ];
+        }
+
+        // Provisioning uri
+
+        public function testCarriesIssuerLabelAndSecretInTheFormAuthenticatorsRead(): void {
+            $totp = Totp::create(self::RFC_SECRET, "user+a@example.com", "QA Suite & Co");
 
             $this->assertSame(
                 "otpauth://totp/QA%20Suite%20%26%20Co%3Auser%2Ba%40example.com"
@@ -183,8 +195,8 @@
             );
         }
 
-        public function testProvisioningUriDropsColonFromLabelAndIssuer(): void {
-            $totp = new Totp(self::RFC_SECRET, "a:b@example.com", "QA: Suite");
+        public function testDropsAColonFromTheLabelAndTheIssuerWhichSeparatesTheTwo(): void {
+            $totp = Totp::create(self::RFC_SECRET, "a:b@example.com", "QA: Suite");
 
             $this->assertSame(
                 "otpauth://totp/QA%20Suite%3Aab%40example.com?issuer=QA%20Suite&secret=" . self::RFC_SECRET,
@@ -209,7 +221,7 @@
         }
 
         protected function getTotp(string $secret = self::RFC_SECRET): Totp {
-            return new Totp($secret);
+            return Totp::create($secret);
         }
     }
 ?>

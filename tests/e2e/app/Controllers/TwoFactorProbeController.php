@@ -36,38 +36,6 @@
             ]);
         }
 
-        // GET /TwoFactorProbe/codeAt/<secret>/<timestamp>
-        public function action_codeAt(Request $req, Response $res): void {
-            $secret = (string) $req->getParameters(0, 1);
-            $timestamp = (int) $req->getParameters(1, 1);
-
-            echo json_encode([
-                "code" => Totp::create($secret)->at($timestamp),
-            ]);
-        }
-
-        // GET /TwoFactorProbe/verifyAt/<secret>/<timestamp>/<code>, one period of drift like the login
-        public function action_verifyAt(Request $req, Response $res): void {
-            $secret = (string) $req->getParameters(0, 1);
-            $timestamp = (int) $req->getParameters(1, 1);
-            $code = (string) $req->getParameters(2, 1);
-
-            echo json_encode([
-                "valid" => Totp::create($secret)->verify($code, 1, $timestamp),
-            ]);
-        }
-
-        // GET /TwoFactorProbe/provisioningUri?secret=<base32>&label=<label>&issuer=<issuer>
-        public function action_provisioningUri(Request $req, Response $res): void {
-            $totp = Totp::create(
-                (string) $req->getGet("secret", ""),
-                (string) $req->getGet("label", ""),
-                (string) $req->getGet("issuer", ""),
-            );
-
-            echo json_encode(["uri" => $totp->getProvisioningUri()]);
-        }
-
         // GET /TwoFactorProbe/user/<userId>
         public function action_user(Request $req, Response $res): void {
             $userId = (int) $req->getParameters(0, 1);
