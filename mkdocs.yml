@@ -134,6 +134,7 @@ nav:
     - Support:
         - Overview: support
         - Filesystem: support/filesystem
+        - Checkpoints: support/checkpoints
         - Dynamic Attributes: support/dynamic-attributes
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
