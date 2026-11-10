@@ -10,27 +10,6 @@
             $res->json(fopen("php://memory", "r"));
         }
 
-        // -------------------------------------------------------------
-        // Response::getCookieDomainScope() probes. Reads the
-        // login_scope_allow_subdomains config; the docker test env doesn't
-        // pin it, so a runtime DynamicAttributes override works here
-        // (same idiom as action_currentUrl's hostOverride).
-        // -------------------------------------------------------------
-
-        public function action_cookieDomainScopeDefault(Request $req, Response $res) {
-            return $res->json([
-                "scope" => $res->getCookieDomainScope(),
-            ]);
-        }
-
-        public function action_cookieDomainScopeSubdomain(Request $req, Response $res) {
-            zubzet()->login_scope_allow_subdomains = "true";
-            return $res->json([
-                "scope" => $res->getCookieDomainScope(),
-                "domain" => $req->getDomain(),
-            ]);
-        }
-
         // Logs in user 1 with login_scope_allow_subdomains=true so the
         // primary z_login_token cookie is emitted with the subdomain-wide
         // Domain attribute. Cypress inspects Set-Cookie to verify the
