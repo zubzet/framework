@@ -1,0 +1,39 @@
+name: Publish transparency data
+description: Puts a JSON file next to the docs on the website, where the README badges and the website read it
+
+inputs:
+  file:
+    description: Path of the JSON file, relative to the workspace. Its name is kept.
+    required: true
+  message:
+    description: Commit message on the website repository
+    required: true
+  ssh-key:
+    description: Deploy key of the website repository
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # The docs live on the gh-pages branch of the website. Its own
+    # deployment keeps the docs folder, so the file goes below it.
+    - name: Check out the website
+      uses: actions/checkout@v7
+      with:
+        repository: zubzet/website
+        ref: gh-pages
+        ssh-key: ${{ inputs.ssh-key }}
+        path: website
+
+    - name: Publish to the website
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        FILE: ${{ inputs.file }}
+        MESSAGE: ${{ inputs.message }}
+      run: |
+        mkdir -p website/docs/transparency
+        cp "$FILE" website/docs/transparency/
+        git -C website add docs/transparency
+        git -C website -c user.name="GitHub Actions Bot" -c user.email="actions@github.com" commit -m "$MESSAGE"
+        git -C website push

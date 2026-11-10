@@ -55,7 +55,7 @@ git push upstream main:main          # triggers the E2E matrix + unstable-docs d
 
 ### 2. Wait for the tests
 
-`main` is the gate; only promote once its **E2E tests** run is green:
+`main` is the gate; only promote once its **Tests** run is green:
 
 ```bash
 git fetch upstream --tags
@@ -109,9 +109,9 @@ gh release edit v1.2.0-RC1 \
 
 Know what each push sets off (see `.github/workflows/`):
 
-- **`tests_e2e.yml`** runs the PHP 8.0 to 8.6 matrix on a push to **`main`** or **`develop`** and on
-  `v*.*.*` **tags** (path-filtered to `src/`, `web/`, `tests/e2e/`, `composer*`, and the
-  workflow file; PRs and other branches run 8.0 + 8.6 only).
+- **`tests.yml`** runs the unit tests and then the E2E suite, the latter on the PHP 8.0 to 8.6 matrix on a push to **`main`** or **`develop`** and on
+  `v*.*.*` **tags** (path-filtered to `src/`, `web/`, `tests/`, `composer*`, and the
+  workflow files; PRs and other branches run the E2E suite on 8.0 + 8.6 only).
 - **`docs.yml`**:
     - push to **`main`** deploys docs to the **`unstable`** channel.
     - push of any **`v*.*.*` tag** deploys that version's docs and points the

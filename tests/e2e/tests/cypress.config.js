@@ -1,3 +1,4 @@
+const fs = require("fs");
 const { defineConfig } = require("cypress");
 const { compareScreenshot } = require("./cypress/support/visualRegression");
 
@@ -14,6 +15,12 @@ module.exports = defineConfig({
     viewportHeight: 720,
     setupNodeEvents(on) {
       on("task", { compareScreenshot });
+
+      // In CI the transparency job publishes how many tests the suite has
+      on("after:run", (results) => {
+        if (!process.env.GITHUB_OUTPUT) return;
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `tests=${results.totalTests}\n`);
+      });
     },
   },
 });
