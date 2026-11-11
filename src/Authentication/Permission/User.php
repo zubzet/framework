@@ -419,7 +419,7 @@ class User extends AuthenticationObject {
 
         // Parse times
         $verifiedTime = strtotime($verified);
-        $atTime = $at === "NOW" ? time() :strtotime($at);
+        $atTime = $at === "NOW" ? time() : strtotime($at);
 
         // false would compare as 0, the earliest time there is
         if(false === $verifiedTime || false === $atTime) return false;
