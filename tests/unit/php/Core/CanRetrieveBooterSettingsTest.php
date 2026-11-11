@@ -47,7 +47,7 @@
             file_put_contents($directory . "z_config/z_settings.ini", $content);
 
             $this->bootFramework();
-            $frameworkRoot = dirname(__DIR__, 4) . "/src/";
+            $frameworkRoot = FRAMEWORK_ROOT . "/src/";
             $this->inDirectory($directory, fn() => zubzet()->loadConfiguration($frameworkRoot, []));
         }
     }

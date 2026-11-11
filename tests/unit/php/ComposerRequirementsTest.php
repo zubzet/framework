@@ -6,13 +6,11 @@
 
     class ComposerRequirementsTest extends BaseTestCase {
 
-        private const ROOT = __DIR__ . "/../../../";
-
         // Translation::locale() calls \Locale::lookup(), which only exists with the extension
         public function testRequiresTheIntlExtensionTheTranslationNeeds(): void {
             $this->assertStringContainsString(
                 "\\Locale::",
-                file_get_contents(self::ROOT . "src/Translation/Translation.php"),
+                file_get_contents(FRAMEWORK_ROOT . "/src/Translation/Translation.php"),
                 "The translation no longer uses the extension, the requirement can go.",
             );
 
@@ -37,7 +35,7 @@
 
         /** @return array<string, mixed> */
         private function read(string $file): array {
-            return json_decode(file_get_contents(self::ROOT . $file), true, 512, JSON_THROW_ON_ERROR);
+            return json_decode(file_get_contents(FRAMEWORK_ROOT . "/$file"), true, 512, JSON_THROW_ON_ERROR);
         }
     }
 

@@ -7,7 +7,7 @@
     use Tests\TestCase;
     use z_migrationModel;
 
-    require_once __DIR__ . "/../../../../../src/IncludedComponents/models/z_migrationModel.php";
+    require_once FRAMEWORK_ROOT . "/src/IncludedComponents/models/z_migrationModel.php";
 
     class z_migrationModelTest extends TestCase {
 
