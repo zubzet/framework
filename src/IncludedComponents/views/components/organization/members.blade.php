@@ -1,7 +1,13 @@
-@props(["members", "food"])
+@php
+    use ZubZet\Framework\Authentication\Organization;
+@endphp
 
 @auth
     @if(user()->checkPermission("z.organization.roles") && !is_null(user()->orgId))
+        @php
+            $members = model("z_organization")->getMembers(Organization::byId(user()->orgId));
+        @endphp
+
         <ul {{ $attributes->class("list-group z-organization-members") }}>
             @forelse($members as $member)
                 <li class="list-group-item" data-test="organization-member-{{ $member['id'] }}">
@@ -29,7 +35,7 @@
         <script>
             $(() => {
                 // Role names and addresses come from users, they must not close the script tag
-                var food = <?= json_encode($food, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+                var food = <?= json_encode(model("z_organization")->getAssignableRoles(), JSON_HEX_TAG | JSON_HEX_AMP) ?>.map((role) => ({value: role.id, text: role.name}));
 
                 <?= json_encode($members, JSON_HEX_TAG | JSON_HEX_AMP) ?>.forEach((member) => {
                     var form = Z.Forms.create({

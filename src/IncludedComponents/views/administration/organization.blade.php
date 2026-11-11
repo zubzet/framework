@@ -9,7 +9,7 @@
             <div class="mr-3">
                 <small class="text-muted text-uppercase">{{ __("admin.organization.title") }}</small>
                 <h2 class="mb-0 z-organization-name mt-2">
-                    {{ $organizationName }}
+                    {{ $organization->getField("name") }}
                 </h2>
             </div>
             <div class="mt-2">
@@ -32,9 +32,9 @@
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="font-weight-bold"><i class="fa fa-fw fa-users"></i> {{ __("admin.organization.members") }}</span>
-                            <span class="badge badge-pill badge-secondary">{{ count($members) }}</span>
+                            <span class="badge badge-pill badge-secondary">{{ count($organization->getUsers()) }}</span>
                         </div>
-                        <x-zubzet::organization.members :members="$members" :food="$roleFood" class="list-group-flush"/>
+                        <x-zubzet::organization.members class="list-group-flush"/>
                         <div class="card-footer small text-muted">
                             {{ __("admin.organization.members_hint") }}
                         </div>
@@ -47,9 +47,9 @@
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="font-weight-bold"><i class="fa fa-fw fa-envelope-open-text"></i> {{ __("admin.organization.invites") }}</span>
-                            <span class="badge badge-pill badge-secondary">{{ count($invites) }}</span>
+                            <span class="badge badge-pill badge-secondary">{{ count(model("z_organization")->getInvitesByOrganization($organization)) }}</span>
                         </div>
-                        <x-zubzet::organization.invites :invites="$invites" class="list-group-flush"/>
+                        <x-zubzet::organization.invites class="list-group-flush"/>
                         <div class="card-footer small text-muted">
                             {{ __("admin.organization.invites_hint") }}
                         </div>
@@ -72,7 +72,7 @@
                             </button>
                         </div>
                         <div class="modal-body">
-                            <x-zubzet::organization.rename :name="$organizationName"/>
+                            <x-zubzet::organization.rename/>
                         </div>
                     </div>
                 </div>
