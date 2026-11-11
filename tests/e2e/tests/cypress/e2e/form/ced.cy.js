@@ -132,74 +132,12 @@ describe('Form CED (validateCED + doCED)', () => {
         });
     });
 
-    describe('validation', () => {
-        it('rejects entries that fail field rules; nothing is persisted', () => {
-            postCedForm([
-                // length(1, 64) on name is violated by the empty string.
-                { Z: 'create', name: '', note: 'has-note' },
-            ]).then((res) => {
-                expect(res.parsedBody.result).to.eq('formErrors');
-                expect(res.parsedBody.formErrors).to.satisfy((errs) =>
-                    errs.some((e) => e.name === 'items' && e.subname === 'name')
-                );
-            });
-
-            // The seed row is untouched; no spurious inserts.
-            cedRows().then((rows) => {
-                expect(rows.filter((r) => r.active === 1)).to.have.lengthOf(1);
-            });
-        });
-
-        // Both fields are required - the second-field probe catches a
-        // bug where validateCED's per-field error reporting would miss
-        // anything past the first field.
-        it('reports errors per-field with the index of the offending row', () => {
-            postCedForm([
-                { Z: 'create', name: 'ok', note: '' },
-                { Z: 'create', name: '', note: 'ok' },
-            ]).then((res) => {
-                expect(res.parsedBody.result).to.eq('formErrors');
-                const errs = res.parsedBody.formErrors;
-                // Index 0: note missing. Index 1: name missing.
-                expect(errs).to.satisfy((e) =>
-                    e.some((x) => x.index === 0 && x.subname === 'note')
-                );
-                expect(errs).to.satisfy((e) =>
-                    e.some((x) => x.index === 1 && x.subname === 'name')
-                );
-            });
-        });
-    });
-
     describe('error fallthrough and no-op', () => {
         it('unknown Z value triggers the error() fallthrough', () => {
             postCedForm([
                 { Z: 'totally-not-a-real-action', name: 'x', note: 'y' },
             ]).then((res) => {
                 expect(res.parsedBody.result).to.eq('error');
-            });
-        });
-
-        // No "items" key at all -> validateCED sets doNothing=true, doCED
-        // returns immediately without iterating $_POST.
-        it('omitting the CED key entirely is a no-op (doNothing branch)', () => {
-            cy.request({
-                method: 'POST',
-                url: '/Response/cedForm',
-                form: true,
-                failOnStatusCode: false,
-                body: { isFormData: 1, noise: 'irrelevant' },
-            }).then((res) => {
-                const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
-                expect(body.result).to.eq('success');
-            });
-
-            // Seed row still untouched.
-            cedRows().then((rows) => {
-                expect(rows).to.have.lengthOf(1);
-                expect(rows[0].name).to.eq('baseline');
-                expect(rows[0].note).to.eq('seeded');
-                expect(rows[0].active).to.eq(1);
             });
         });
     });

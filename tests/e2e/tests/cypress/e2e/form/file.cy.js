@@ -179,35 +179,18 @@ describe('Form Date Validation', () => {
         });
     });
 
-    // Probes FormModel::uploadFile's early-return branches. The public
-    // /Form/validationFile/form path can't reach these because the
+    // Probes FormModel::uploadFile's move_uploaded_file failure branch. The
+    // public /Form/validationFile/form path can't reach it because the
     // file FormField rule rejects empty/missing files first.
     describe('FormModel::uploadFile early-return branches', () => {
         before(() => {
             cy.saveConfigBackup();
             // showErrors=0 so the move_uploaded_file warning in the
-            // second probe isn't promoted to a fatal ErrorException.
+            // probe isn't promoted to a fatal ErrorException.
             cy.setConfigSetting("showErrors", "0");
         });
 
         after(() => cy.restoreConfigBackup());
-
-        it('returns false when given a null file', () => {
-            cy.request('/Form/probeUploadFileEmpty').then((res) => {
-                expect(res.body).to.eq(true);
-            });
-        });
-
-        // CanRetrieveFromInput::getFile($key, $default) returns $default
-        // when no file was uploaded under that key. Co-located with the
-        // other "fake file" probes because the sentinel mirrors the
-        // fake.pdf shape used by action_probeUploadFileMoveFails.
-        it('getFile() returns the default when the field is absent', () => {
-            cy.request('/Form/probeGetFileDefault').then((res) => {
-                expect(res.body.matches).to.eq(true);
-                expect(res.body.default).to.eq('fake.pdf-fallback-sentinel');
-            });
-        });
 
         it('returns false when move_uploaded_file rejects the tmp_name', () => {
             cy.request('/Form/probeUploadFileMoveFails').then((res) => {

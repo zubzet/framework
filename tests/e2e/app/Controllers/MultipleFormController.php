@@ -69,12 +69,5 @@
             return $res->render("multipleForm/unnamed");
         }
 
-        public function action_probe(Request $req, Response $res) {
-            return $res->json([
-                "any" => $req->hasFormData(),
-                "named" => $req->hasFormData("target-action"),
-            ]);
-        }
-
     }
 ?>
