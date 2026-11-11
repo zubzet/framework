@@ -238,6 +238,75 @@
             $this->assertFalse($request->getParameters(1, 1));
         }
 
+        // The comparison used to be a loose ==, which takes "1e1" for 10 and "0.0" for 0
+        /** @dataProvider parameterComparisons */
+        public function testGetParametersComparesTheParameterAsText(string $parameter, mixed $value, bool $equal): void {
+            $request = $this->requestFor("/Core/action/$parameter");
+
+            $this->assertSame($equal, $request->getParameters(0, 1, $value));
+        }
+
+        public static function parameterComparisons(): array {
+            return [
+                "the same text" => ["edit", "edit", true],
+                "another text" => ["edit", "show", false],
+                "an integer to compare with" => ["5", 5, true],
+                "a zero" => ["0", "0", true],
+                "another case" => ["Edit", "edit", false],
+                "an exponent is no number here" => ["1e1", "10", false],
+                "a decimal is no integer here" => ["0.0", "0", false],
+                "a leading zero" => ["05", "5", false],
+            ];
+        }
+
+        public function testGetParametersReturnsAParameterOfZero(): void {
+            $request = $this->requestFor("/Core/action/0");
+
+            $this->assertSame("0", $request->getParameters(0, 1));
+            $this->assertSame(["0"], $request->getParameters());
+        }
+
+        public function testGetParametersWithANegativeOffsetReachesControllerAndAction(): void {
+            $request = $this->requestFor("/Core/action/a");
+
+            $this->assertSame(["action", "a"], $request->getParameters(-1));
+            $this->assertSame(["Core", "action", "a"], $request->getParameters(-2));
+            $this->assertSame("Core", $request->getParameters(-2, 1));
+        }
+
+        public function testGetParametersSlicesByTheLength(): void {
+            $request = $this->requestFor("/Core/action/a/b/c");
+
+            $this->assertSame(["a", "b"], $request->getParameters(0, 2));
+            $this->assertSame(["b", "c"], $request->getParameters(1));
+            $this->assertSame([], $request->getParameters(3));
+            $this->assertSame([], $request->getParameters(0, 0));
+        }
+
+        // isAction()
+
+        /** @dataProvider actions */
+        public function testIsActionComparesThePostedActionAsText(array $post, string $type, bool $expected): void {
+            $request = $this->request($this->input()->withPost($post));
+
+            $this->assertSame($expected, $request->isAction($type));
+        }
+
+        public static function actions(): array {
+            return [
+                "the posted action" => [["action" => "save"], "save", true],
+                "another action" => [["action" => "save"], "delete", false],
+                "another case" => [["action" => "Save"], "save", false],
+                // A loose == took all of these for equal
+                "no action posted, asked for an empty one" => [[], "", false],
+                "a zero and a double zero" => [["action" => "0"], "00", false],
+                "a zero and a decimal zero" => [["action" => "0"], "0.0", false],
+                "an exponent" => [["action" => "1e1"], "10", false],
+                "a list of actions" => [["action" => ["save"]], "save", false],
+                "a zero" => [["action" => "0"], "0", true],
+            ];
+        }
+
         // getJson()
         // Decodes the body whatever the method and the Content-Type are: the CSRF check of the
         // router guards every request by its headers. A body that is too long throws an
@@ -496,6 +565,74 @@
                 "the start page with a query" => ["/?a=b"],
                 "an empty uri" => [""],
             ];
+        }
+
+        // Only a path below the root directory loses it. The parts used to be cut off by their number alone
+        /** @dataProvider pathsOutsideTheRootDirectory */
+        public function testGetUrlPartsKeepsAPathThatIsNotBelowTheRootDirectory(string $rootDirectory, string $uri, array $expected): void {
+            $this->setSettings(["rootDirectory" => $rootDirectory]);
+
+            $this->assertSame($expected, $this->requestFor($uri)->getUrlParts());
+        }
+
+        public static function pathsOutsideTheRootDirectory(): array {
+            return [
+                "another folder" => ["sub", "/other/a/b", ["other", "a", "b"]],
+                "a folder that only starts like the root" => ["sub", "/subway/a", ["subway", "a"]],
+                "another case, the router is case sensitive too" => ["sub", "/SUB/a", ["SUB", "a"]],
+                "only the first of two folders" => ["sub/app", "/sub/other/a", ["sub", "other", "a"]],
+                "a path shorter than the root" => ["sub/app", "/sub", ["sub"]],
+                "the root folder further down" => ["sub", "/a/sub/b", ["a", "sub", "b"]],
+            ];
+        }
+
+        /** @dataProvider pathsBelowTheRootDirectory */
+        public function testGetUrlPartsStripsTheRootDirectoryOfAPathBelowIt(string $rootDirectory, string $uri, array $expected): void {
+            $this->setSettings(["rootDirectory" => $rootDirectory]);
+
+            $this->assertSame($expected, $this->requestFor($uri)->getUrlParts());
+        }
+
+        public static function pathsBelowTheRootDirectory(): array {
+            return [
+                "the root itself" => ["sub", "/sub", []],
+                "the root itself with a slash" => ["sub", "/sub/", []],
+                "the root itself with a query" => ["sub", "/sub/?a=b", []],
+                "a page below the root" => ["sub", "/sub/a/b", ["a", "b"]],
+                "the root folder twice" => ["sub", "/sub/sub/a", ["sub", "a"]],
+                "an encoded letter in the root, decoded like the router does" => ["sub", "/s%75b/a", ["a"]],
+                "two folders" => ["sub/app", "/sub/app/a", ["a"]],
+                "a segment of zero below the root" => ["sub", "/sub/0", ["0"]],
+            ];
+        }
+
+        // "0" is a segment, PHP's empty() takes it for none
+        /** @dataProvider urisWithAZero */
+        public function testGetUrlPartsKeepsASegmentOfZero(string $uri, array $expected): void {
+            $this->assertSame($expected, $this->requestFor($uri)->getUrlParts());
+        }
+
+        public static function urisWithAZero(): array {
+            return [
+                "only a zero" => ["/0", ["0"]],
+                "a zero with a query" => ["/0?a=b", ["0"]],
+                "a zero with a trailing slash" => ["/0/", ["0"]],
+                "two zeros" => ["/0/0", ["0", "0"]],
+                "a zero at the end" => ["/a/0", ["a", "0"]],
+            ];
+        }
+
+        public function testGetUrlPartsKeepsAnEmptySegmentBetweenTwoSlashes(): void {
+            $this->assertSame(["a", "", "b"], $this->requestFor("/a//b")->getUrlParts());
+        }
+
+        public function testGetUrlPartsIgnoresSlashesAtBothEnds(): void {
+            $this->assertSame(["a", "b"], $this->requestFor("//a/b//")->getUrlParts());
+        }
+
+        public function testGetUrlPartsCutsAtTheFirstQuestionMarkOnly(): void {
+            $this->assertSame(["a", "b"], $this->requestFor("/a/b?x=1?y=/c")->getUrlParts());
+            $this->assertSame(["a", "b"], $this->requestFor("/a/b?")->getUrlParts());
         }
 
         public function testGetUrlPartsDoesNotDecodeSegmentsAndKeepsASlashInsideAQuery(): void {

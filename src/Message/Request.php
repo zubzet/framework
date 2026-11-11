@@ -52,14 +52,18 @@
             $path = explode("?", $path, 2)[0];
             $path = trim($path, '/');
 
-            $urlParts = empty($path) ? [] : explode("/", $path);
+            // Not empty(): "0" is a segment
+            $urlParts = "" === $path ? [] : explode("/", $path);
             // Surrounding slashes are no segments, "sub/" strips one
             $rootDirectory = trim((string) config("rootDirectory"), '\/');
-            if("" !== $rootDirectory) {
-                $rootDirectoryLength = count(explode("/", $rootDirectory));
-                for($i = 0; $i < $rootDirectoryLength; $i++) {
-                    array_shift($urlParts);
-                }
+            $rootParts = "" === $rootDirectory ? [] : explode("/", $rootDirectory);
+
+            // The root directory is only cut off a path that really starts with it: with the root "sub",
+            // "/sub/users" gives ["users"] and "/other/users" keeps both parts. The comparison decodes
+            // the parts ("/s%75b/users" starts with "sub" too), because the Router decides the same way.
+            $leadingParts = array_map("rawurldecode", array_slice($urlParts, 0, count($rootParts)));
+            if([] !== $rootParts && $leadingParts === $rootParts) {
+                $urlParts = array_slice($urlParts, count($rootParts));
                 // A doubled slash after the root (root . "/x") is no segment, as in the Router
                 while("" === ($urlParts[0] ?? null)) array_shift($urlParts);
             }
@@ -219,7 +223,7 @@
          * Gets the URL parameters (excluding the leading controller and action) specified by the path.
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @param int $length The amount of array elements that will be returned at the set offset. If null, every element will be returned
-         * @param string $val If the length is 1 and $val is set, a Boolean will be returned. $val will be compared to the parameter
+         * @param string $val If the length is 1 and $val is set, a Boolean will be returned. $val will be compared to the parameter as text, so "05" is not "5"
          * @return mixed[]|string|bool Array of parameters, the single parameter (or a Boolean comparison with $val) if length is 1, false if length is 1 and the parameter is missing
          */
         public function getParameters($offset = 0, $length = null, $val = null): mixed {
@@ -234,7 +238,7 @@
 
             //Compare with default value
             if ($length == 1 && !isset($params[0])) return false;
-            if ($length == 1) return isset($val) ? $params[0] == $val : $params[0];
+            if ($length == 1) return isset($val) ? $params[0] === (string) $val : $params[0];
 
             //Slice the resulting array according to the length parameter
             return array_slice($params, 0, $length);
@@ -383,12 +387,14 @@
         }
 
         /**
-         * Checks if the POST field action loosely equals $type; it does not verify that the request came via AJAX
+         * Checks if the POST field action equals $type, compared as text; it does not verify that the request came via AJAX
          * @param string $type Type of the request. Request is sent via Z.js => Z.Request.action()
          * @return bool True if the request is of the specified type
          */
         public function isAction(string $type): bool {
-            return $this->getPost("action") == $type;
+            $action = $this->getPost("action");
+
+            return is_scalar($action) && (string) $action === $type;
         }
 
         /**
@@ -396,7 +402,7 @@
          *
          * Reads the raw input from the request body.
          *
-         * @return ?string The raw body content of the request (Returns null if empty or unavailable, so a body of "0" is null too).
+         * @return ?string The raw body content of the request (Returns null if empty or unavailable).
          */
         public function getBody(): ?string {
             return $this->input->body;
