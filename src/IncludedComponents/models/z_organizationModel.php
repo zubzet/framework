@@ -136,7 +136,7 @@
 
         // Roles and groups an organization may hand to its members, by `is_org_assignable`
         public function getAssignableRoles(): array {
-            $query = $this->dbSelect("*", "z_role")->where([
+            $query = $this->dbSelect(["id", "name"], "z_role")->where([
                 "is_org_assignable" => 1,
                 "active" => 1
             ])->orderAsc("name");
@@ -144,8 +144,8 @@
             return $this->exec($query)->resultToArray();
         }
 
-        // Which assignable roles the members of an organization hold, one row per user and role
-        public function getAssignedRoles(Organization $organization): array {
+        // The members of an organization with the ids of the assignable roles each one holds
+        public function getMembers(Organization $organization): array {
             $query = $this->dbSelect(["user" => "zur.user", "role" => "zur.role"], ["zur" => "z_user_role"])
                 ->innerJoin(["zu" => "z_user"], "zu.id = zur.user")
                 ->innerJoin(["zr" => "z_role"], "zr.id = zur.role")
@@ -157,7 +157,17 @@
                     "zr.active" => 1
                 ]);
 
-            return $this->exec($query)->resultToArray();
+            $heldRoleIds = [];
+            foreach($this->exec($query)->resultToArray() as $assignment) {
+                $heldRoleIds[$assignment["user"]][] = $assignment["role"];
+            }
+
+            return array_map(fn($member) => [
+                "id" => $member->id(),
+                // email() is typed string, an account may have none
+                "email" => $member->getField("email"),
+                "roles" => $heldRoleIds[$member->id()] ?? [],
+            ], $organization->getUsers());
         }
 
     }
