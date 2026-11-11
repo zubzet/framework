@@ -2,11 +2,11 @@
 
 namespace ZubZet\Framework\Storage;
 
-use ZubZet\Framework\Database\DatabaseObject;
+use ZubZet\Framework\Database\DatabaseEntity;
 use ZubZet\Framework\Authentication\HandleTrait;
 use ZubZet\Framework\Authentication\RetrievalTrait;
 
-class File extends DatabaseObject {
+class File extends DatabaseEntity {
 
     use RetrievalTrait;
     use HandleTrait;

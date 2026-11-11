@@ -2,7 +2,7 @@
 
 namespace ZubZet\Framework\Authentication\Permission;
 
-use ZubZet\Framework\Database\DatabaseObject;
+use ZubZet\Framework\Authentication\AuthenticationEntity;
 
 use DateTime;
 use ZubZet\Framework\Authentication\HandleTrait;
@@ -13,7 +13,7 @@ use ZubZet\Framework\Authentication\Totp;
 use ZubZet\Framework\Logger\LogEventType;
 use ZubZet\Framework\Logger\Logger;
 
-class User extends DatabaseObject {
+class User extends AuthenticationEntity {
 
     // Traits
     use Permission;

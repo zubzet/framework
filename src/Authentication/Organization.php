@@ -6,9 +6,8 @@
     use ZubZet\Framework\Authentication\Permission\Permission;
     use ZubZet\Framework\Authentication\Permission\Role;
     use ZubZet\Framework\Authentication\Permission\User;
-    use ZubZet\Framework\Database\DatabaseObject;
 
-    class Organization extends DatabaseObject {
+    class Organization extends AuthenticationEntity {
 
         use Permission;
         use RetrievalTrait;

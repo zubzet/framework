@@ -3,7 +3,7 @@
     namespace Tests\Storage;
 
     use Tests\TestCase;
-    use ZubZet\Framework\Database\DatabaseObject;
+    use ZubZet\Framework\Database\DatabaseEntity;
     use ZubZet\Framework\Storage\File;
     use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
 
@@ -15,8 +15,12 @@
 
         // Construction
 
-        public function testIsADatabaseObject(): void {
-            $this->assertInstanceOf(DatabaseObject::class, $this->file());
+        public function testIsADatabaseEntity(): void {
+            $this->assertInstanceOf(DatabaseEntity::class, $this->file());
+        }
+
+        public function testCarriesNoPermissionState(): void {
+            $this->assertFalse(property_exists(File::class, "permissionChanged"));
         }
 
         public function testHoldsTheRowItWasBuiltFrom(): void {

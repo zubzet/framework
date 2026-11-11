@@ -3,9 +3,8 @@
 namespace ZubZet\Framework\Authentication;
 
 use ZubZet\Framework\Authentication\Permission\User;
-use ZubZet\Framework\Database\DatabaseObject;
 
-class Session extends DatabaseObject {
+class Session extends AuthenticationEntity {
 
     use CanUseSession;
     use HandleTrait;

@@ -3,9 +3,9 @@
     namespace Tests\Database;
 
     use Tests\TestCase;
-    use ZubZet\Framework\Database\DatabaseObject;
+    use ZubZet\Framework\Database\DatabaseEntity;
 
-    class DatabaseObjectTest extends TestCase {
+    class DatabaseEntityTest extends TestCase {
 
         // Construction
 
@@ -80,9 +80,9 @@
         // Helpers
 
         /** @param array<string, mixed> $data */
-        private function object(array $data = []): DatabaseObject {
+        private function object(array $data = []): DatabaseEntity {
             // The protected setField() has no public way in
-            return new class(array_merge(["id" => 1], $data)) extends DatabaseObject {
+            return new class(array_merge(["id" => 1], $data)) extends DatabaseEntity {
                 public function __construct(array $data) {
                     parent::__construct($data);
                     $this->data = $data;

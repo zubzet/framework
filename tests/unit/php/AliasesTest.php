@@ -26,7 +26,7 @@
                 "FormField" => ["FormField", \ZubZet\Framework\Form\Validation\Field::class],
                 "Rest" => ["Rest", \ZubZet\Framework\Support\Rest::class],
                 "User" => ["User", \ZubZet\Framework\Authentication\User::class],
-                "AuthenticationObject" => [\ZubZet\Framework\Authentication\AuthenticationObject::class, \ZubZet\Framework\Database\DatabaseObject::class],
+                "AuthenticationObject" => [\ZubZet\Framework\Authentication\AuthenticationObject::class, \ZubZet\Framework\Authentication\AuthenticationEntity::class],
                 "StaticCache" => [\ZubZet\Framework\Support\StaticCache::class, \ZubZet\Framework\Support\RuntimeCache\RuntimeCache::class],
             ];
         }
