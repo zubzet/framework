@@ -24,6 +24,7 @@
     class_alias(Support\RuntimeCache\RuntimeCache::class, Support\StaticCache::class);
 
     class_alias(Authentication\User::class, "User");
+    class_alias(Authentication\AuthenticationEntity::class, Authentication\AuthenticationObject::class);
 
     // @codeCoverageIgnoreEnd
 

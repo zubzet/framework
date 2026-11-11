@@ -156,7 +156,7 @@ describe('Form Date Validation', () => {
 
         cy.visit("/Form/validationFile");
         cy.contains("TestFile_Small_2.pdf");
-        cy.contains("FormUpload:3");
+        cy.contains("FormUpload:10002");
     });
 
     // Exercises the formUpload subpath's hasErrors → formErrors branch by
