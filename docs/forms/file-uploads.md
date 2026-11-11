@@ -28,12 +28,15 @@ use ZubZet\Framework\Storage\File;
 $file = File::add("my-reference", "report.pdf", "application/pdf", "pdf", 4096);
 $file = File::byId($upload->fileId); // also byIds(), byUuid(), byUuids(), byReference() and all()
 
+$file->update("my-reference", "report-v2.pdf", "application/pdf", "pdf", 8192);
+$file->refresh();             // update() clears the fields, refresh() loads the new ones
+
 $file->replaceWith($newFile); // stores the id of $newFile in z_file.replaced_by
 $file->replacedBy();          // the replacing File, or null
 $file->remove();              // sets active = 0 and detaches the instance
 ```
 
-`add()` only requires the reference, the name, type and extension default to `""` and the size to `0`. The getters are `reference()`, `name()`, `type()`, `extension()`, `size()`, `created()`, `uuid()` and `id()`. The retrievers only find active rows, so `replacedBy()` returns `null` once the replacing file was removed. `replaceWith()` leaves the replaced file active.
+`add()` and `update()` only require the reference, the name, type and extension default to `""` and the size to `0`. The getters are `reference()`, `name()`, `type()`, `extension()`, `size()`, `created()`, `uuid()` and `id()`. The retrievers only find active rows, so `replacedBy()` returns `null` once the replacing file was removed. `replaceWith()` leaves the replaced file active.
 
 
 ## Using Z-Forms

@@ -118,6 +118,38 @@ describe('Storage - File', () => {
         });
     });
 
+    it('should be possible to update a file (update)', () => {
+        const expected = {
+            "id": 515,
+            "reference": "file_update_New",
+            "name": "updated.pdf",
+            "type": "application/pdf",
+            "extension": "pdf",
+            "size": 4096
+        };
+
+        requestJson('/file/update').then((output) => {
+            expect(output).to.deep.equal({
+                "cleared": true,
+                "refreshed": expected,
+                "reloaded": expected
+            });
+        });
+    });
+
+    it('should reset the omitted fields on update (update)', () => {
+        requestJson('/file/updateDefaults').then((output) => {
+            expect(output).to.deep.equal({
+                "id": 516,
+                "reference": "file_update_DefaultsNew",
+                "name": "",
+                "type": "",
+                "extension": "",
+                "size": 0
+            });
+        });
+    });
+
     it('should be possible to remove a file', () => {
         requestJson('/file/remove').then((output) => {
             expect(output).to.deep.equal({
@@ -134,6 +166,7 @@ describe('Storage - File', () => {
                 "id": true,
                 "removeAgain": true,
                 "refresh": true,
+                "update": true,
                 "replaceWith": true,
                 "replaceWithDetached": true,
                 "otherUntouched": null

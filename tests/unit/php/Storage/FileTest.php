@@ -110,6 +110,26 @@
             $this->assertSame([["uploads/report.pdf", "", "", "", 0]], $models->file->added);
         }
 
+        // Updating
+
+        public function testUpdatesAFileAndClearsTheFields(): void {
+            $models = $this->models([]);
+            $file = $this->file(["id" => 6]);
+
+            $file->update("uploads/new.pdf", "new", "application/pdf", "pdf", 4096);
+
+            $this->assertSame([[6, "uploads/new.pdf", "new", "application/pdf", "pdf", 4096]], $models->file->updated);
+            $this->assertSame([], $file->getAll());
+        }
+
+        public function testUpdatesAFileWithOnlyAReference(): void {
+            $models = $this->models([]);
+
+            $this->file(["id" => 6])->update("uploads/new.pdf");
+
+            $this->assertSame([[6, "uploads/new.pdf", "", "", "", 0]], $models->file->updated);
+        }
+
         // Retrieval
 
         public function testFindsAFileByItsReference(): void {
@@ -183,6 +203,7 @@
         private function models(array $rows): object {
             $file = new class {
                 public array $added = [];
+                public array $updated = [];
                 public array $replacements = [];
                 public array $removed = [];
                 public int $nextId = 1;
@@ -190,6 +211,10 @@
                 public function add($reference, $type, $name, $extension, $size): int {
                     $this->added[] = [$reference, $type, $name, $extension, $size];
                     return $this->nextId;
+                }
+
+                public function update(File $file, string $reference, string $name, string $type, string $extension, int $size): void {
+                    $this->updated[] = [$file->id(), $reference, $name, $type, $extension, $size];
                 }
 
                 public function replaceWith(File $file, File $replacement): void {

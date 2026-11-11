@@ -76,6 +76,25 @@
             echo(json_encode($this->getFile(File::byId($file->id()))));
         }
 
+        public function action_update(Request $req, Response $res): void {
+            $file = File::byId(515);
+            $file->update("file_update_New", "updated.pdf", "application/pdf", "pdf", 4096);
+
+            $cleared = $file->getAll() === [];
+            $file->refresh();
+
+            echo(json_encode([
+                "cleared" => $cleared,
+                "refreshed" => $this->getFile($file),
+                "reloaded" => $this->getFile(File::byId(515)),
+            ]));
+        }
+
+        public function action_updateDefaults(Request $req, Response $res): void {
+            File::byId(516)->update("file_update_DefaultsNew");
+            echo(json_encode($this->getFile(File::byId(516))));
+        }
+
         public function action_remove(Request $req, Response $res): void {
             File::byId(503)->remove();
 
@@ -97,6 +116,7 @@
                 "id" => $this->throwsDetached(fn() => $file->id()),
                 "removeAgain" => $this->throwsDetached(fn() => $file->remove()),
                 "refresh" => $this->throwsDetached(fn() => $file->refresh()),
+                "update" => $this->throwsDetached(fn() => $file->update("file_remove_Update")),
                 "replaceWith" => $this->throwsDetached(fn() => $file->replaceWith(File::byId(500))),
                 "replaceWithDetached" => $this->throwsDetached(fn() => File::byId(500)->replaceWith($file)),
                 "otherUntouched" => File::byId(500)->replacedBy()?->id(),
