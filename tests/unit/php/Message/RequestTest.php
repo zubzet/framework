@@ -17,7 +17,6 @@
         private const ERROR_CONTENT_TYPE = "Content-Type must be application/json";
         private const ERROR_CHARSET = "JSON must be UTF-8";
         private const ERROR_TOO_LARGE = "Body too large";
-        private const ERROR_SYNTAX = "Syntax error";
 
         protected function setUp(): void {
             $this->bootFramework(["host" => self::HOST, "rootDirectory" => ""]);
@@ -375,7 +374,7 @@
         public function testRejectsALeadingBomWith400(): void {
             $request = $this->jsonRequest("\xEF\xBB\xBF{\"a\":1}");
 
-            $this->assertMalformed(JSON_ERROR_SYNTAX, self::ERROR_SYNTAX, $request);
+            $this->assertMalformed(JSON_ERROR_SYNTAX, $request);
         }
 
         public function testReturnsATopLevelListAsArray(): void {
@@ -386,32 +385,32 @@
             $request = $this->jsonRequest('{"a":');
 
             $this->assertSame('{"a":', $request->getBody());
-            $this->assertMalformed(JSON_ERROR_SYNTAX, self::ERROR_SYNTAX, $request);
+            $this->assertMalformed(JSON_ERROR_SYNTAX, $request);
         }
 
         public function testRejectsInvalidUtf8With400(): void {
             $request = $this->jsonRequest("{\"a\":\"\xB1\"}");
 
-            $this->assertMalformed(JSON_ERROR_UTF8, "Malformed UTF-8 characters, possibly incorrectly encoded", $request);
+            $this->assertMalformed(JSON_ERROR_UTF8, $request);
         }
 
         public function testRejectsAnUnescapedControlCharacterWith400(): void {
             $request = $this->jsonRequest("{\"a\":\"line\nbreak\"}");
 
-            $this->assertMalformed(JSON_ERROR_CTRL_CHAR, "Control character error, possibly incorrectly encoded", $request);
+            $this->assertMalformed(JSON_ERROR_CTRL_CHAR, $request);
         }
 
         // A body without content reaches the request as null, never as an empty string
         public function testRejectsAnEmptyBodyAsMalformedWith400(): void {
             $request = $this->jsonRequest(null);
 
-            $this->assertMalformed(JSON_ERROR_SYNTAX, self::ERROR_SYNTAX, $request);
+            $this->assertMalformed(JSON_ERROR_SYNTAX, $request);
         }
 
         public function testRejectsNestingBeyondMaxDepthWith400(): void {
             $request = $this->jsonRequest(str_repeat('{"a":', 40) . "1" . str_repeat("}", 40));
 
-            $this->assertMalformed(JSON_ERROR_DEPTH, "Maximum stack depth exceeded", $request);
+            $this->assertMalformed(JSON_ERROR_DEPTH, $request);
         }
 
         public function testAcceptsNestingUpToMaxDepth(): void {
@@ -419,7 +418,7 @@
             $request = $this->jsonRequest("[[1]]");
 
             $this->assertSame([[1]], $request->getJson(maxDepth: 3));
-            $this->assertMalformed(JSON_ERROR_DEPTH, "Maximum stack depth exceeded", $request, maxDepth: 2);
+            $this->assertMalformed(JSON_ERROR_DEPTH, $request, maxDepth: 2);
         }
 
         public function testAcceptsNestingOfThirtyLevelsWithTheDefaultMaxDepth(): void {
@@ -647,10 +646,16 @@
             $this->assertSame($status, $thrown->getCode());
         }
 
-        private function assertMalformed(int $jsonError, string $message, Request $request, int $maxDepth = 32): void {
-            $thrown = $this->assertThrows(JsonException::class, $message, fn() => $request->getJson(maxDepth: $maxDepth));
+        // The message is PHP's own and differs between PHP versions, the code does not
+        private function assertMalformed(int $jsonError, Request $request, int $maxDepth = 32): void {
+            try {
+                $request->getJson(maxDepth: $maxDepth);
+            } catch(JsonException $thrown) {
+                $this->assertSame($jsonError, $thrown->getCode());
+                return;
+            }
 
-            $this->assertSame($jsonError, $thrown->getCode());
+            $this->fail("Expected a JsonException, but nothing was thrown.");
         }
 
         /** @param array<string, mixed> $post */
