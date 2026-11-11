@@ -205,7 +205,7 @@ A `multi-select` field's value arrives at the server as a real PHP array. Three 
 - `->length($min, $max)` — `strlen()` for scalars; **`count()`** for arrays. So `->length(1, 3)` on a multi-select means "between 1 and 3 selections."
 - `->regex($pattern, $exceptions)` — the `$exceptions` strings and then every match of `$pattern` are removed from the value, and the field fails when text remains. So the pattern describes the allowed characters (`/[A-Za-z ]/`), and a full-match pattern like `/^[a-z]+$/` works too. Runs against each item; the field fails as soon as any item fails. A value of `0`, or one that is empty after the exceptions are removed, always fails.
 - `->exists("table", "field")` — applied per item: every picked entry must exist as a row's `field` in `table`. A miss reports the error type `exist` (not `exists`).
-- `->in($allowedValues)` — the value (or each item, for arrays) must appear in the given in-memory allow-list (non-strict `in_array`). No DB query. Use this to guard `select` / `multi-select` fields against tampered POST payloads where the client sent an option that wasn't in the rendered dropdown. Works on plain `select` (single-value) and `multi-select` (per-item).
+- `->in($allowedValues)` — the value (or each item, for arrays) must appear in the given in-memory allow-list. Both sides are compared as text, so a list of integers accepts the posted `"2"`, but not `"02"`. No DB query. Use this to guard `select` / `multi-select` fields against tampered POST payloads where the client sent an option that wasn't in the rendered dropdown. Works on plain `select` (single-value) and `multi-select` (per-item).
 
 ```php
 $formResult = $req->validateForm([
@@ -220,7 +220,7 @@ $formResult = $req->validateForm([
 
 ### **The date rule**
 
-`->date($format = "Y-m-d")` fails with the error type `date` only when `strtotime($value)` is falsy. The `$format` argument is stored with the rule but never applied, so it does not restrict the input. Any string `strtotime()` can parse passes, for example `31.12.2024`, `2024-02-31` or `tomorrow`, while `banana` or `2024-13-45` fail. Because the check is a loose comparison, a value that parses to the Unix timestamp `0` (`1970-01-01 00:00:00 UTC`) fails as well. The rule does not accept array values.
+`->date($format = "Y-m-d")` fails with the error type `date` only when `strtotime($value)` cannot read the value. The `$format` argument is stored with the rule but never applied, so it does not restrict the input. Any string `strtotime()` can parse passes, for example `31.12.2024`, `2024-02-31` or `tomorrow`, while `banana` or `2024-13-45` fail. Because the check is a loose comparison, a value that parses to the Unix timestamp `0` (`1970-01-01 00:00:00 UTC`) fails as well. The rule does not accept array values.
 
 ### **Saving functions**
 

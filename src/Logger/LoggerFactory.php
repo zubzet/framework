@@ -53,8 +53,7 @@
 
             DebugBarBridge::collectLogger($logger);
 
-            $enabled = config("logger_enabled", default: true);
-            if(!$enabled) {
+            if(!configSwitch("logger_enabled", true)) {
                 // If logging is disabled, use a NullHandler to discard all log messages
                 $logger->pushHandler(new NullHandler());
                 return InternalRuntimeCache::set(self::CACHE_KEY, $name, $logger);

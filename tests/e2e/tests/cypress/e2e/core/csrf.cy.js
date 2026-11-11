@@ -119,9 +119,19 @@ describe('CSRF protection', () => {
             send('HEAD', '/CsrfProbe/optInHead', { 'Sec-Fetch-Site': 'same-origin' }).its('status').should('eq', 200);
         });
 
+        // A page, because cy.visit() only loads html and a REST reply is no longer sent as such
         it('passes pages a browser loads itself', () => {
-            cy.visit('/CsrfProbe/plain');
-            cy.contains('success');
+            cy.visit('/');
+            cy.query('dashboard-controller').should('exist');
+        });
+
+        it('passes a REST endpoint a browser opens itself', () => {
+            const browser = { Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document' };
+
+            send('GET', '/CsrfProbe/plain', browser).then((res) => {
+                expect(res.status).to.eq(200);
+                expect(res.body).to.contain('success');
+            });
         });
     });
 

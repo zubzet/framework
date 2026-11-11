@@ -206,10 +206,39 @@
             });
         }
 
+        // "0" is a name like any other, PHP's empty() takes it for no name
+        public function testContextMergeFromAcceptsALoggerNamedZero(): void {
+            logger("0")->contextAdd(["from" => "zero"]);
+
+            logger("target")->contextMergeFrom("0");
+
+            $this->assertSame(["from" => "zero"], logger("target")->context);
+        }
+
         public function testShouldThrowWhenContextMergeFromReferencesALoggerThatHasNotBeenCreated(): void {
             $this->assertThrows(\Exception::class, self::ERROR_UNKNOWN_LOGGER, function() {
                 logger("x")->contextMergeFrom("does-not-exist");
             });
+        }
+
+        // Text is truthy for PHP, so "false" from an environment variable used to leave the logging on
+        /** @dataProvider switchedOff */
+        public function testLogsNothingWhenLoggingIsSwitchedOff(string $value): void {
+            $this->setSettings(["logger_enabled" => $value]);
+
+            $handlers = logger("switched-off")->getHandlers();
+
+            $this->assertCount(1, $handlers);
+            $this->assertInstanceOf(\Monolog\Handler\NullHandler::class, $handlers[0]);
+        }
+
+        public static function switchedOff(): array {
+            return [
+                "false in the config file" => [""],
+                "zero" => ["0"],
+                "false as text" => ["false"],
+                "off as text" => ["off"],
+            ];
         }
 
         // The logger the application gets from the factory, with its handler swapped for

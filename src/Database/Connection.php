@@ -104,7 +104,7 @@
             $this->user = config("dbusername");
             $this->password = config("dbpassword");
             $this->database = config("dbname");
-            $this->persistent = filter_var(config("db_persistent", default: false), FILTER_VALIDATE_BOOLEAN);
+            $this->persistent = configSwitch("db_persistent", false);
         }
 
         private function connect() {

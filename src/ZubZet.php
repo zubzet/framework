@@ -110,7 +110,11 @@
         }
 
         public function replaceRequest(Input $newState) {
+            // The store is there to pass data through internal redirects
+            $store = $this->req?->store ?? [];
+
             $this->req = new Request($newState);
+            $this->req->store = $store;
             $this->requestStack[] = $this->req;
         }
     }

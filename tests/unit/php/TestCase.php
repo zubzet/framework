@@ -88,9 +88,20 @@
          * An input without any data. The with...() methods of the state fill it:
          *
          *     $this->input()->withMethod("POST")->withPost(["name" => "value"])
+         *
+         * REQUEST is put together from GET, POST and COOKIE in the given order,
+         * whatever the php.ini of the machine says, so a test sees the same
+         * REQUEST everywhere.
          */
-        protected function input(): State {
-            $input = new State();
+        protected function input(string $requestOrder = "GPC"): State {
+            $input = new class($requestOrder) extends State {
+
+                public function __construct(private string $fixedRequestOrder) {}
+
+                protected function requestOrder(): string {
+                    return $this->fixedRequestOrder;
+                }
+            };
             $input->body = null;
             $input->SERVER = [];
             $input->GET = [];

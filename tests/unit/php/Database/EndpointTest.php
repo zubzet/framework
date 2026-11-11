@@ -69,8 +69,19 @@
                 "0" => ["0", false],
                 "an empty string" => ["", false],
                 "off" => ["off", false],
-                "garbage" => ["garbage", false],
+                "false as text, as an environment variable sets it" => ["false", false],
             ];
+        }
+
+        // A typo used to switch the encryption off without a word
+        public function testRejectsATlsSettingThatIsNoSwitch(): void {
+            $this->bootFramework(["dbhost" => "database", "db_ssl" => "ture"]);
+
+            $this->assertThrows(
+                \InvalidArgumentException::class,
+                "Config key 'db_ssl' must be a switch (true or false), got: 'ture'",
+                fn() => Endpoint::get(),
+            );
         }
 
         public function testTlsIsOffWithoutTheSetting(): void {

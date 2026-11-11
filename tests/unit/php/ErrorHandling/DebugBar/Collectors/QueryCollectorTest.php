@@ -117,6 +117,9 @@
                 // The config file turns "false" into an empty string
                 "false in the config file" => [""],
                 "zero" => ["0"],
+                // Text is truthy for PHP, so "false" used to hide the queries
+                "false as text, as an environment variable sets it" => ["false"],
+                "off as text" => ["off"],
             ];
         }
 

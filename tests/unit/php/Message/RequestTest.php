@@ -13,9 +13,6 @@
         private const SLUG_URI = "/Core/readable/";
         private const FORM_ACTION = "target-action";
 
-        private const ERROR_METHOD = "Method does not accept a JSON body";
-        private const ERROR_CONTENT_TYPE = "Content-Type must be application/json";
-        private const ERROR_CHARSET = "JSON must be UTF-8";
         private const ERROR_TOO_LARGE = "Body too large";
 
         protected function setUp(): void {
@@ -168,6 +165,12 @@
                 "a bare host" => ["localhost", "localhost"],
                 "a trailing slash without a port" => ["https://example.com/", "example.com"],
                 "an empty host" => ["", ""],
+                // A path used to be glued to the domain, an IPv6 literal was cut at its first colon
+                "a path after the host" => ["https://example.com/app", "example.com"],
+                "a port and a path" => ["https://example.com:8443/app/sub/", "example.com"],
+                "an uppercase scheme" => ["HTTPS://example.com", "example.com"],
+                "an IPv6 literal with a port" => ["http://[::1]:8080", "[::1]"],
+                "a bare IPv6 literal" => ["[2001:db8::1]", "[2001:db8::1]"],
             ];
         }
 
@@ -235,9 +238,79 @@
             $this->assertFalse($request->getParameters(1, 1));
         }
 
+        // The comparison used to be a loose ==, which takes "1e1" for 10 and "0.0" for 0
+        /** @dataProvider parameterComparisons */
+        public function testGetParametersComparesTheParameterAsText(string $parameter, mixed $value, bool $equal): void {
+            $request = $this->requestFor("/Core/action/$parameter");
+
+            $this->assertSame($equal, $request->getParameters(0, 1, $value));
+        }
+
+        public static function parameterComparisons(): array {
+            return [
+                "the same text" => ["edit", "edit", true],
+                "another text" => ["edit", "show", false],
+                "an integer to compare with" => ["5", 5, true],
+                "a zero" => ["0", "0", true],
+                "another case" => ["Edit", "edit", false],
+                "an exponent is no number here" => ["1e1", "10", false],
+                "a decimal is no integer here" => ["0.0", "0", false],
+                "a leading zero" => ["05", "5", false],
+            ];
+        }
+
+        public function testGetParametersReturnsAParameterOfZero(): void {
+            $request = $this->requestFor("/Core/action/0");
+
+            $this->assertSame("0", $request->getParameters(0, 1));
+            $this->assertSame(["0"], $request->getParameters());
+        }
+
+        public function testGetParametersWithANegativeOffsetReachesControllerAndAction(): void {
+            $request = $this->requestFor("/Core/action/a");
+
+            $this->assertSame(["action", "a"], $request->getParameters(-1));
+            $this->assertSame(["Core", "action", "a"], $request->getParameters(-2));
+            $this->assertSame("Core", $request->getParameters(-2, 1));
+        }
+
+        public function testGetParametersSlicesByTheLength(): void {
+            $request = $this->requestFor("/Core/action/a/b/c");
+
+            $this->assertSame(["a", "b"], $request->getParameters(0, 2));
+            $this->assertSame(["b", "c"], $request->getParameters(1));
+            $this->assertSame([], $request->getParameters(3));
+            $this->assertSame([], $request->getParameters(0, 0));
+        }
+
+        // isAction()
+
+        /** @dataProvider actions */
+        public function testIsActionComparesThePostedActionAsText(array $post, string $type, bool $expected): void {
+            $request = $this->request($this->input()->withPost($post));
+
+            $this->assertSame($expected, $request->isAction($type));
+        }
+
+        public static function actions(): array {
+            return [
+                "the posted action" => [["action" => "save"], "save", true],
+                "another action" => [["action" => "save"], "delete", false],
+                "another case" => [["action" => "Save"], "save", false],
+                // A loose == took all of these for equal
+                "no action posted, asked for an empty one" => [[], "", false],
+                "a zero and a double zero" => [["action" => "0"], "00", false],
+                "a zero and a decimal zero" => [["action" => "0"], "0.0", false],
+                "an exponent" => [["action" => "1e1"], "10", false],
+                "a list of actions" => [["action" => ["save"]], "save", false],
+                "a zero" => [["action" => "0"], "0", true],
+            ];
+        }
+
         // getJson()
-        // Anything but a well formed application/json body throws an UnexpectedValueException
-        // carrying the HTTP status as its code, malformed JSON throws a JsonException
+        // Decodes the body whatever the method and the Content-Type are: the CSRF check of the
+        // router guards every request by its headers. A body that is too long throws an
+        // UnexpectedValueException carrying the HTTP status as its code, malformed JSON a JsonException
 
         public function testRoundTripsAJsonObjectNextToTheRawBody(): void {
             $payload = ["hello" => "world", "n" => 42, "nested" => ["ok" => true]];
@@ -247,102 +320,50 @@
             $this->assertSame($payload, $request->getJson());
         }
 
-        public function testAcceptsAUtf8CharsetInAnyCaseAndSpelling(): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: 'Application/JSON; Charset="UTF-8"');
+        /** @dataProvider methods */
+        public function testDecodesTheBodyOfEveryMethod(?string $method): void {
+            $input = $this->input();
+            $input->body = '{"a":1}';
+            if(null !== $method) $input->SERVER["REQUEST_METHOD"] = $method;
 
-            $this->assertSame(["a" => 1], $request->getJson());
+            $this->assertSame(["a" => 1], $this->request($input)->getJson());
         }
 
-        public function testAcceptsAnyNumberOfOtherParametersNextToTheCharset(): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: "application/json; charset=utf-8; foo=bar");
-
-            $this->assertSame(["a" => 1], $request->getJson());
-        }
-
-        public function testAcceptsAContentTypeWithoutACharset(): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: "application/json; foo=bar");
-
-            $this->assertSame(["a" => 1], $request->getJson());
-        }
-
-        /** @dataProvider methodsWithABody */
-        public function testAcceptsTheOtherMethodsThatCarryABody(string $method): void {
-            $this->assertSame(["a" => 1], $this->jsonRequest('{"a":1}', $method)->getJson());
-        }
-
-        public static function methodsWithABody(): array {
+        public static function methods(): array {
             return [
+                "POST" => ["POST"],
                 "PUT" => ["PUT"],
                 "PATCH" => ["PATCH"],
                 "DELETE" => ["DELETE"],
                 "QUERY" => ["QUERY"],
+                "GET" => ["GET"],
                 "a method in lower case" => ["post"],
+                "no method at all" => [null],
             ];
         }
 
-        public function testReadsTheContentTypeFromTheHttpPrefixedVariableToo(): void {
-            $input = $this->input();
-            $input->SERVER["REQUEST_METHOD"] = "POST";
-            $input->SERVER["HTTP_CONTENT_TYPE"] = "application/json";
-            $input->body = '{"a":1}';
+        /** @dataProvider contentTypes */
+        public function testDecodesTheBodyWhateverTheContentTypeIs(string $contentType): void {
+            $request = $this->jsonRequest('{"a":1}', contentType: $contentType);
 
-            $this->assertSame(["a" => 1], $this->request($input)->getJson());
+            $this->assertSame(["a" => 1], $request->getJson());
+        }
+
+        public static function contentTypes(): array {
+            return [
+                "application/json" => ["application/json"],
+                "with a charset" => ['Application/JSON; Charset="UTF-8"'],
+                "another JSON type" => ["application/vnd.api+json"],
+                "text/plain, as a beacon sends it" => ["text/plain"],
+                "a form type" => ["application/x-www-form-urlencoded"],
+                "no content type at all" => [""],
+            ];
         }
 
         public function testKeepsIntegersBeyondPhpIntMaxAsStrings(): void {
             $request = $this->jsonRequest('{"big":123456789012345678901234567890}');
 
             $this->assertSame(["big" => "123456789012345678901234567890"], $request->getJson());
-        }
-
-        /** @dataProvider methodsWithoutABody */
-        public function testRejectsAMethodWithoutABodyWith405(?string $method): void {
-            $input = $this->input();
-            $input->SERVER["CONTENT_TYPE"] = "application/json";
-            $input->body = '{"a":1}';
-            if(null !== $method) $input->SERVER["REQUEST_METHOD"] = $method;
-
-            $this->assertRejected(405, self::ERROR_METHOD, $this->request($input));
-        }
-
-        public static function methodsWithoutABody(): array {
-            return [
-                "GET" => ["GET"],
-                "HEAD" => ["HEAD"],
-                "OPTIONS" => ["OPTIONS"],
-                "no method at all" => [null],
-            ];
-        }
-
-        /** @dataProvider otherContentTypes */
-        public function testRejectsEveryOtherContentTypeWith415(string $contentType): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: $contentType);
-
-            $this->assertRejected(415, self::ERROR_CONTENT_TYPE, $request);
-        }
-
-        public static function otherContentTypes(): array {
-            return [
-                "text/plain" => ["text/plain"],
-                "application/x-www-form-urlencoded" => ["application/x-www-form-urlencoded"],
-                "application/jsonp" => ["application/jsonp"],
-                "application/vnd.api+json" => ["application/vnd.api+json"],
-                "no content type at all" => [""],
-            ];
-        }
-
-        /** @dataProvider otherCharsets */
-        public function testRejectsACharsetOtherThanUtf8With415(string $contentType): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: $contentType);
-
-            $this->assertRejected(415, self::ERROR_CHARSET, $request);
-        }
-
-        public static function otherCharsets(): array {
-            return [
-                "iso-8859-1" => ["application/json; charset=iso-8859-1"],
-                "a name that only starts with utf-8" => ["application/json; charset=utf-8x"],
-            ];
         }
 
         public function testRejectsABodyBeyondMaxBytesWith413(): void {
@@ -400,11 +421,69 @@
             $this->assertMalformed(JSON_ERROR_CTRL_CHAR, $request);
         }
 
-        // A body without content reaches the request as null, never as an empty string
-        public function testRejectsAnEmptyBodyAsMalformedWith400(): void {
-            $request = $this->jsonRequest(null);
+        // No body is no JSON, not malformed JSON: `$req->getJson() ?? []` is how actions read an optional body
+        public function testReturnsNullWithoutABody(): void {
+            $this->assertNull($this->jsonRequest(null)->getJson());
+            $this->assertSame([], $this->jsonRequest(null)->getJson() ?? []);
+        }
 
-            $this->assertMalformed(JSON_ERROR_SYNTAX, $request);
+        // A form or an upload leaves no raw body behind, the action can fall back to the posted fields
+        public function testReturnsNullForAFormPostSoTheActionCanReadThePostedFields(): void {
+            $input = $this->input()->withMethod("POST")->withPost(["text" => "from the form"]);
+            $input->SERVER["CONTENT_TYPE"] = "multipart/form-data; boundary=x";
+            $request = $this->request($input);
+
+            $body = $request->getJson() ?: [];
+
+            $this->assertSame("from the form", $body["text"] ?? $request->getPost("text"));
+        }
+
+        public function testABodyOfOnlyWhitespaceIsMalformed(): void {
+            $this->assertMalformed(JSON_ERROR_SYNTAX, $this->jsonRequest(" "));
+        }
+
+        // The length is only limited when the action asks for it
+        public function testAcceptsABodyOfAnyLengthWithoutALimit(): void {
+            $text = str_repeat("a", 2 * 1_048_576);
+
+            $this->assertSame(["text" => $text], $this->jsonRequest('{"text":"' . $text . '"}')->getJson());
+        }
+
+        // PHP's own limit of 512 levels applies unless the action asks for less
+        public function testAcceptsDeepNestingWithoutALimit(): void {
+            $request = $this->jsonRequest(str_repeat("[", 100) . str_repeat("]", 100));
+
+            $this->assertIsArray($request->getJson());
+        }
+
+        public function testRejectsNestingBeyondTheLimitOfPhp(): void {
+            $request = $this->jsonRequest(str_repeat("[", 600) . str_repeat("]", 600));
+
+            $this->assertMalformed(JSON_ERROR_DEPTH, $request, maxDepth: 512);
+        }
+
+        // A number, a string, a boolean and null are JSON too. They used to end in a TypeError
+        /** @dataProvider scalarBodies */
+        public function testReturnsJsonThatIsNoObjectAndNoListAsItsValue(string $body, mixed $expected): void {
+            $this->assertSame($expected, $this->jsonRequest($body)->getJson());
+        }
+
+        public static function scalarBodies(): array {
+            return [
+                "an integer" => ["42", 42],
+                "a float" => ["1.5", 1.5],
+                "a string" => ['"text"', "text"],
+                "an empty string" => ['""', ""],
+                "null" => ["null", null],
+                "true" => ["true", true],
+                "false" => ["false", false],
+                "an integer beyond PHP_INT_MAX" => ["123456789012345678901234567890", "123456789012345678901234567890"],
+            ];
+        }
+
+        public function testAcceptsAnEmptyObjectAndAnEmptyList(): void {
+            $this->assertSame([], $this->jsonRequest("{}")->getJson());
+            $this->assertSame([], $this->jsonRequest("[]")->getJson());
         }
 
         public function testRejectsNestingBeyondMaxDepthWith400(): void {
@@ -486,6 +565,74 @@
                 "the start page with a query" => ["/?a=b"],
                 "an empty uri" => [""],
             ];
+        }
+
+        // Only a path below the root directory loses it. The parts used to be cut off by their number alone
+        /** @dataProvider pathsOutsideTheRootDirectory */
+        public function testGetUrlPartsKeepsAPathThatIsNotBelowTheRootDirectory(string $rootDirectory, string $uri, array $expected): void {
+            $this->setSettings(["rootDirectory" => $rootDirectory]);
+
+            $this->assertSame($expected, $this->requestFor($uri)->getUrlParts());
+        }
+
+        public static function pathsOutsideTheRootDirectory(): array {
+            return [
+                "another folder" => ["sub", "/other/a/b", ["other", "a", "b"]],
+                "a folder that only starts like the root" => ["sub", "/subway/a", ["subway", "a"]],
+                "another case, the router is case sensitive too" => ["sub", "/SUB/a", ["SUB", "a"]],
+                "only the first of two folders" => ["sub/app", "/sub/other/a", ["sub", "other", "a"]],
+                "a path shorter than the root" => ["sub/app", "/sub", ["sub"]],
+                "the root folder further down" => ["sub", "/a/sub/b", ["a", "sub", "b"]],
+            ];
+        }
+
+        /** @dataProvider pathsBelowTheRootDirectory */
+        public function testGetUrlPartsStripsTheRootDirectoryOfAPathBelowIt(string $rootDirectory, string $uri, array $expected): void {
+            $this->setSettings(["rootDirectory" => $rootDirectory]);
+
+            $this->assertSame($expected, $this->requestFor($uri)->getUrlParts());
+        }
+
+        public static function pathsBelowTheRootDirectory(): array {
+            return [
+                "the root itself" => ["sub", "/sub", []],
+                "the root itself with a slash" => ["sub", "/sub/", []],
+                "the root itself with a query" => ["sub", "/sub/?a=b", []],
+                "a page below the root" => ["sub", "/sub/a/b", ["a", "b"]],
+                "the root folder twice" => ["sub", "/sub/sub/a", ["sub", "a"]],
+                "an encoded letter in the root, decoded like the router does" => ["sub", "/s%75b/a", ["a"]],
+                "two folders" => ["sub/app", "/sub/app/a", ["a"]],
+                "a segment of zero below the root" => ["sub", "/sub/0", ["0"]],
+            ];
+        }
+
+        // "0" is a segment, PHP's empty() takes it for none
+        /** @dataProvider urisWithAZero */
+        public function testGetUrlPartsKeepsASegmentOfZero(string $uri, array $expected): void {
+            $this->assertSame($expected, $this->requestFor($uri)->getUrlParts());
+        }
+
+        public static function urisWithAZero(): array {
+            return [
+                "only a zero" => ["/0", ["0"]],
+                "a zero with a query" => ["/0?a=b", ["0"]],
+                "a zero with a trailing slash" => ["/0/", ["0"]],
+                "two zeros" => ["/0/0", ["0", "0"]],
+                "a zero at the end" => ["/a/0", ["a", "0"]],
+            ];
+        }
+
+        public function testGetUrlPartsKeepsAnEmptySegmentBetweenTwoSlashes(): void {
+            $this->assertSame(["a", "", "b"], $this->requestFor("/a//b")->getUrlParts());
+        }
+
+        public function testGetUrlPartsIgnoresSlashesAtBothEnds(): void {
+            $this->assertSame(["a", "b"], $this->requestFor("//a/b//")->getUrlParts());
+        }
+
+        public function testGetUrlPartsCutsAtTheFirstQuestionMarkOnly(): void {
+            $this->assertSame(["a", "b"], $this->requestFor("/a/b?x=1?y=/c")->getUrlParts());
+            $this->assertSame(["a", "b"], $this->requestFor("/a/b?")->getUrlParts());
         }
 
         public function testGetUrlPartsDoesNotDecodeSegmentsAndKeepsASlashInsideAQuery(): void {

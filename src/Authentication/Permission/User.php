@@ -406,6 +406,8 @@ class User extends AuthenticationObject {
     /**
      * Check if a User is verified
      *
+     * A stored verification date that strtotime() cannot read counts as not verified.
+     *
      * @param string $at "NOW" or any strtotime()-parseable datetime string (e.g. "2024-05-01 12:00:00") to check verification status at; unparsable values yield false (default: "NOW")
      * @return bool Returns true if the user is verified at the specified time, false otherwise
      */
@@ -417,7 +419,10 @@ class User extends AuthenticationObject {
 
         // Parse times
         $verifiedTime = strtotime($verified);
-        $atTime = $at === "NOW" ? time() :strtotime($at);
+        $atTime = $at === "NOW" ? time() : strtotime($at);
+
+        // false would compare as 0, the earliest time there is
+        if(false === $verifiedTime || false === $atTime) return false;
 
         // Compare times
         return $verifiedTime <= $atTime;

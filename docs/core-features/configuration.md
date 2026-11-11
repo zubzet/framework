@@ -34,7 +34,7 @@ host = https://example.com ; production
 
 Here `host` is `https://example.com ; production`.
 
-Values are normalised by `parse_ini_string()`: unquoted `true`, `on` and `yes` become `1`; `false`, `off`, `no`, `none`, `null` and an empty value become an empty string; numbers stay strings. A double-quoted value is not normalised, so `"true"` stays the literal text `true`, which matters for settings compared with the string `true`.
+Values are normalised by `parse_ini_string()`: unquoted `true`, `on` and `yes` become `1`; `false`, `off`, `no`, `none`, `null` and an empty value become an empty string; numbers stay strings. A double-quoted value is not normalised, so `"true"` stays the literal text `true`. For a setting that switches something on or off this makes no difference: the framework reads its own switches with [`configSwitch()`](global-helper-functions.md#configswitch), which takes `true`, `on`, `yes` and `1` as on and `false`, `off`, `no`, `0` and an empty value as off, quoted or not, and rejects everything else. Read your own switches the same way.
 
 A line that starts with `;` or `#` is not a real comment either. It only survives as long as it parses as an ini line: with an `=` in it (`; debug = on`) it silently creates a bogus key (`-----semicolon----- debug`), and with characters such as `(`, `?`, `!`, `&` or `|` the parse fails. Keep notes out of the file or use plain words without these characters.
 
@@ -43,7 +43,7 @@ A syntax error is not reported nicely. `parse_ini_string()` returns `false`, and
 ## Environment variable overrides
 With `allow_env_config = true` in the INI, a setting `key` is overridden by the environment variable `CONFIG_KEY` (`CONFIG_` plus the upper-cased key, so `dbpassword` becomes `CONFIG_DBPASSWORD`; further examples are `CONFIG_DBHOST`, `CONFIG_MAIL_SMTP`, `CONFIG_ASSETVERSION` and `CONFIG_FORGOTPASSWORDTIMESPAN`).
 
-If `allow_env_config` is absent, the variables are not read at all. The check is plain truthiness: any non-empty string other than `0` enables it, including the text `false` from a quoted INI value (`allow_env_config = "false"`), while an unquoted `false` is parsed to an empty string and disables it.
+If `allow_env_config` is absent, the variables are not read at all. It is a switch like any other, so `false`, `off`, `no` and `0` disable it, quoted or not.
 
 Only keys that already exist are overridden. The framework walks over the keys known from its built-in defaults and the INI, so a variable for any other key is silently ignored. This includes `allow_env_config` itself, which has to be set in the INI. Declare a placeholder in `z_settings.ini` for every setting you want to supply through the environment:
 
@@ -53,7 +53,7 @@ dbpassword = env
 
 The value of the placeholder is arbitrary and replaced as soon as `CONFIG_DBPASSWORD` is set, the project stub uses `ENV`. Missing the placeholder is the usual reason why an environment variable seems to have no effect.
 
-The value is taken as a raw string and skips the INI normalisation: in the INI file `false`, `off` and `no` are parsed to an empty string and `true` and `on` to `1`, but an environment variable keeps its text as is. `CONFIG_LOGGER_ENABLED=false` is therefore the string `false`, which PHP treats as truthy, and the logger stays enabled. To switch a flag off, set the variable to `0` or to an empty value (`CONFIG_LOGGER_ENABLED=0`), to switch it on use `1`.
+The value is taken as a raw string and skips the INI normalisation: in the INI file `false`, `off` and `no` are parsed to an empty string and `true` and `on` to `1`, but an environment variable keeps its text as is. The switches of the framework accept both, so `CONFIG_LOGGER_ENABLED=false` switches the logger off just like `logger_enabled = false` in the file. Code of your own that reads a switch with `config()` sees the text `false`, which PHP treats as truthy; read it with [`configSwitch()`](global-helper-functions.md#configswitch) instead.
 
 ## What do you actually put in here?
 - Database connection details

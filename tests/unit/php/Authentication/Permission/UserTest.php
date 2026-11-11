@@ -37,6 +37,23 @@
             $this->assertFalse($this->user(self::VERIFIED)->isVerified("not a time"));
         }
 
+        // A stored value strtotime() cannot read used to compare as 0 and count as verified
+        /** @dataProvider unreadableVerificationDates */
+        public function testIsNotVerifiedWhenTheStoredDateCannotBeRead(string $verified): void {
+            $user = $this->user($verified);
+
+            $this->assertFalse($user->isVerified("NOW"));
+            $this->assertFalse($user->isVerified("2020-01-01 00:00:00"));
+            $this->assertFalse($user->isVerified("2030-01-01 00:00:00"));
+        }
+
+        public static function unreadableVerificationDates(): array {
+            return [
+                "text that is no date" => ["not a date"],
+                "an empty string" => [""],
+            ];
+        }
+
         private function user(?string $verified): User {
             return new User(["id" => 1, "verified" => $verified]);
         }
