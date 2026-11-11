@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The suite takes well under a second, so every supported version
+        # The suite takes seconds, so every supported version
         # runs on every push instead of only the extremes.
         php: [ '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6' ]
 
