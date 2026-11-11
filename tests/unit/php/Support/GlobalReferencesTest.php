@@ -87,6 +87,84 @@
             ];
         }
 
+        // configSwitch()
+
+        /** @dataProvider switchValues */
+        public function testConfigSwitchReadsEverySpellingOfOnAndOff(mixed $value, bool $expected): void {
+            $this->setSettings(["feature" => $value]);
+
+            $this->assertSame($expected, configSwitch("feature", !$expected));
+        }
+
+        public static function switchValues(): array {
+            // The config file is read with parse_ini_string(), which turns an unquoted switch into "1" or ""
+            $ini = fn(string $value) => parse_ini_string("feature = $value")["feature"];
+
+            return [
+                "true in the config file" => [$ini("true"), true],
+                "on in the config file" => [$ini("on"), true],
+                "yes in the config file" => [$ini("yes"), true],
+                "false in the config file" => [$ini("false"), false],
+                "off in the config file" => [$ini("off"), false],
+                "no in the config file" => [$ini("no"), false],
+                "none in the config file" => [$ini("none"), false],
+                "a quoted true" => [$ini('"true"'), true],
+                "a quoted false" => [$ini('"false"'), false],
+                "true from an environment variable" => ["true", true],
+                "TRUE in capitals" => ["TRUE", true],
+                "On" => ["On", true],
+                "yes" => ["yes", true],
+                "1" => ["1", true],
+                "false from an environment variable" => ["false", false],
+                "False" => ["False", false],
+                "off" => ["off", false],
+                "no" => ["no", false],
+                "0" => ["0", false],
+                "an empty value" => ["", false],
+                "surrounding spaces" => [" true ", true],
+                "a boolean true" => [true, true],
+                "a boolean false" => [false, false],
+                "an integer one" => [1, true],
+                "an integer zero" => [0, false],
+            ];
+        }
+
+        public function testConfigSwitchUsesTheDefaultForAMissingKey(): void {
+            $this->assertTrue(configSwitch("feature", true));
+            $this->assertFalse(configSwitch("feature", false));
+        }
+
+        // A typo must not silently switch something off
+        /** @dataProvider valuesThatAreNoSwitch */
+        public function testConfigSwitchRejectsAValueThatIsNoSwitch(string $value): void {
+            $this->setSettings(["feature" => $value]);
+
+            $this->assertThrows(
+                InvalidArgumentException::class,
+                "Config key 'feature' must be a switch (true or false), got: '$value'",
+                fn() => configSwitch("feature", false),
+            );
+        }
+
+        public static function valuesThatAreNoSwitch(): array {
+            return [
+                "a typo" => ["ture"],
+                "another number" => ["2"],
+                "a word" => ["enabled"],
+                "a negative number" => ["-1"],
+            ];
+        }
+
+        public function testConfigSwitchRejectsAListOfValues(): void {
+            $this->setSettings(["feature" => ["true"]]);
+
+            $this->assertThrows(
+                InvalidArgumentException::class,
+                "Config key 'feature' must be a switch (true or false), got: a list",
+                fn() => configSwitch("feature", false),
+            );
+        }
+
         public function testUserResolvesTheHelperFunction(): void {
             // Without a token the user is identified as a guest, without the database
             $this->request();

@@ -10,14 +10,14 @@
         /**
          * Validates form data from the client
          * @param Field[] $fields Array of fields with the validation rules
-         * @param array $data Input for the validation, defaults to getPost() + getFiles() when null or empty. getGet() or getPost() can be used here as parameters
+         * @param array $data Input for the validation, defaults to getPost() + getFiles() when null. getGet() or getPost() can be used here as parameters, an empty array is validated as it is
          * Rules other than required() are skipped for empty values.
          * @return Result A result to work with
          */
         public function validateForm($fields, $data = null) {
             $errors = [];
 
-            if ($data == null) {
+            if (is_null($data)) {
                 $data = array_merge(
                     $this->getPost(),
                     $this->getFiles(),
@@ -79,10 +79,12 @@
                             }
                         } else if ($type == "in") {
                             // Array values: every item must be in the
-                            // configured in-memory allow-list.
+                            // configured in-memory allow-list. Compared as text:
+                            // a form sends strings, and "01" is not "1".
+                            $allowedValues = array_map("strval", $rule["allowedValues"]);
                             $items = is_array($value) ? $value : [$value];
                             foreach ($items as $item) {
-                                if (!in_array($item, $rule["allowedValues"])) {
+                                if (!is_scalar($item) || !in_array((string) $item, $allowedValues, true)) {
                                     $errors[] = ["name" => $name, "type" => "in"];
                                     break;
                                 }
@@ -96,7 +98,8 @@
                                 foreach ($rule["exceptions"] as $exception) {
                                     $tmp_value = str_replace($exception, "", $tmp_value);
                                 }
-                                if (!preg_replace($rule["expression"], "", $tmp_value) != $tmp_value) {
+                                // Passes only when nothing is left over
+                                if ("" !== preg_replace($rule["expression"], "", $tmp_value)) {
                                     $errors[] = ["name" => $name, "type" => "regex"];
                                     break;
                                 }
@@ -111,7 +114,8 @@
                                 $errors[] = ["name" => $name, "type" => "range", "info" => [$rule["min"], $rule["max"]]];
                             }
                         } else if ($type == "date") {
-                            if (strtotime($value) == false) {
+                            // 0 is the Unix epoch, only false is a failure
+                            if (false === strtotime($value)) {
                                 $errors[] = ["name" => $name, "type" => "date"];
                             }
                         } else if ($type == "file") {

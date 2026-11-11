@@ -9,8 +9,10 @@ import { expect } from "chai";
  * - `Z`: what web/Z.js defines, loaded again before every test, so tests
  *   share no state.
  * - `ajax`: stands in for jQuery's `$.ajax()`. `ajax.request` holds the
- *   options of the latest call, `ajax.respond(answer)` answers it the way
- *   the backend does, as JSON.
+ *   options of the latest call, `ajax.respond(answer)` answers it with JSON
+ *   as text, and `ajax.respondParsed(answer)` with the object jQuery makes
+ *   of a reply that is sent as `application/json`. `ajax.respondText(text)`
+ *   answers with any other text.
  */
 const source = readFileSync(new URL("../../../../web/Z.js", import.meta.url), "utf8");
 
@@ -23,6 +25,8 @@ export const mochaHooks = {
         globalThis.ajax = {
             request: null,
             respond: (answer) => done(JSON.stringify(answer)),
+            respondParsed: (answer) => done(answer),
+            respondText: (text) => done(text),
         };
 
         globalThis.$ = {

@@ -46,6 +46,11 @@
         }
 
         function shortenStr($str, $maxlength = 10, $cutDescriptor = "...") {
+            // Nothing to cut
+            if(mb_strlen($str) <= $maxlength) return $str;
+
+            // A limit shorter than the descriptor holds only the start of it
+            $cutDescriptor = mb_substr($cutDescriptor, 0, max(0, $maxlength));
             $maxlength -= mb_strlen($cutDescriptor);
             $result = "";
             foreach(explode(" ", $str) as $part) {

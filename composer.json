@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.0.2",
         "composer-runtime-api": "^2.1",
+        "ext-intl": "*",
         "ext-openssl": "*",
         "cakephp/database": "^4.5",
         "nikic/fast-route": "^1.3",

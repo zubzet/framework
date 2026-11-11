@@ -25,7 +25,7 @@
             $this->host = config("dbhost");
             $port = config("dbport", default: null);
             $this->port = is_numeric($port) ? (int) $port : null;
-            $this->tls = filter_var(config("db_ssl", default: false), FILTER_VALIDATE_BOOLEAN);
+            $this->tls = configSwitch("db_ssl", false);
 
             // The certificate is matched against dbhost as-is, so a
             // "host:port" value could never verify.

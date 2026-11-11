@@ -111,6 +111,21 @@
             $this->assertSame([], $result->errors);
         }
 
+        // An empty row used to be validated against the whole POST instead
+        public function testAnEmptyRowIsValidatedOnItsOwnAndNotAgainstThePost(): void {
+            $result = $this->request($this->input()->withPost([
+                "name" => "top level name",
+                "note" => "top level note",
+                "items" => [[]],
+            ]))->validateCED("items", $this->rules());
+
+            $this->assertTrue($result->hasErrors);
+            $this->assertSame([
+                ["name" => "items", "type" => "required", "subname" => "name", "index" => 0],
+                ["name" => "items", "type" => "required", "subname" => "note", "index" => 0],
+            ], $result->errors);
+        }
+
         /** @return Field[] */
         private function rules(): array {
             return [

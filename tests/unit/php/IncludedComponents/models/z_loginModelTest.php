@@ -9,7 +9,7 @@
     use ZubZet\Framework\ZubZet;
     use z_loginModel;
 
-    require_once dirname(__DIR__, 5) . "/src/IncludedComponents/models/z_loginModel.php";
+    require_once FRAMEWORK_ROOT . "/src/IncludedComponents/models/z_loginModel.php";
 
     class z_loginModelTest extends TestCase {
 

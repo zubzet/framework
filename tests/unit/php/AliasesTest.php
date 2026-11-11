@@ -32,7 +32,7 @@
         }
 
         public function testEveryAliasOfTheSourceIsListed(): void {
-            $source = file_get_contents(__DIR__ . "/../../../src/Aliases.php");
+            $source = file_get_contents(FRAMEWORK_ROOT . "/src/Aliases.php");
 
             // A new class_alias() needs a data set above, or it goes unchecked
             $this->assertSame(count(self::aliases()), preg_match_all('/^\s*class_alias\(/m', $source));
