@@ -4,6 +4,7 @@
      */
 
     use ZubZet\Framework\Database\IsInternalModel;
+    use ZubZet\Framework\Storage\File;
 
     /**
      * The file model handles dynamic files
@@ -37,6 +38,28 @@
             $sql = "SELECT * FROM `z_file` WHERE `id`=? LIMIT 1";
             $this->exec($sql, "i", $fileId);
             return $this->resultToLine();
+        }
+
+        function replaceWith(File $file, File $replacement): void {
+            $query = $this->dbUpdate("z_file", [
+                "replaced_by" => $replacement->id()
+            ])->where([
+                "id" => $file->id(),
+                "active" => 1
+            ]);
+
+            $this->exec($query);
+        }
+
+        function remove(File $file): void {
+            $query = $this->dbUpdate("z_file", [
+                "active" => 0
+            ])->where([
+                "id" => $file->id(),
+                "active" => 1
+            ]);
+
+            $this->exec($query);
         }
 
     }

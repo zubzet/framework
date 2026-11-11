@@ -1,0 +1,2 @@
+ALTER TABLE `z_file`
+    ADD COLUMN IF NOT EXISTS `replaced_by` INT NULL DEFAULT NULL AFTER `size`;
