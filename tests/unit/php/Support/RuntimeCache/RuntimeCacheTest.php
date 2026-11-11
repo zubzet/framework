@@ -84,6 +84,22 @@
             $this->assertSame("value", RuntimeCache::get($this->type, "key"));
         }
 
+        public function testTheFormerClassNameThrowsForAnUnknownType(): void {
+            $this->expectException(\InvalidArgumentException::class);
+            $this->expectExceptionMessage("The type '{$this->type}' does not exist in the cache.");
+
+            \ZubZet\Framework\Support\StaticCache::get($this->type, "key");
+        }
+
+        public function testTheFormerClassNameThrowsForAnUnknownKey(): void {
+            \ZubZet\Framework\Support\StaticCache::set($this->type, "other", "value");
+
+            $this->expectException(\InvalidArgumentException::class);
+            $this->expectExceptionMessage("The key 'key' does not exist in the cache.");
+
+            \ZubZet\Framework\Support\StaticCache::get($this->type, "key");
+        }
+
         public function testAnotherSubclassHasAStoreOfItsOwn(): void {
             $moduleCache = new class extends RuntimeCache {};
 

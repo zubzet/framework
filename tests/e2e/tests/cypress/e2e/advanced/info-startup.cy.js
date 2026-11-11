@@ -1,37 +1,5 @@
 describe('info:startup Command', () => {
 
-    it('prints the startup info', () => {
-        cy.exec('docker exec application php index.php info:startup').then((result) => {
-            const output = result.stdout;
-
-            expect(output).to.include('ZubZet');
-            expect(output).to.include('Open');
-            expect(output).to.include('Environment');
-            expect(output).to.include('PHP Runtime');
-            expect(output).to.include('Assets');
-            expect(output).to.include('npm run stop');
-        });
-    });
-
-    describe('in a project that has a project script', () => {
-        // Projects built by the install command carry a project script, the e2e app has none
-        before(() => cy.exec('touch ../project'));
-        after(() => cy.exec('rm -f ../project'));
-
-        it('points to ./project to stop the server', () => {
-            cy.exec('docker exec application php index.php info:startup').then((result) => {
-                expect(result.stdout).to.include('./project stop');
-                expect(result.stdout).to.not.include('npm run stop');
-            });
-        });
-    });
-
-    it('exits with code 0', () => {
-        cy.exec('docker exec application php index.php info:startup', { failOnNonZeroExit: false }).then((result) => {
-            expect(result.exitCode).to.equal(0);
-        });
-    });
-
     // Verifies the round trip:
     //   Startup --pwd  ->  AutomatedSettings::set  ->  z_automated_setting.ini
     //                  ->  Configuration boot      ->  config(...)

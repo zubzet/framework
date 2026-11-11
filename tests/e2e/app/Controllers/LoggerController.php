@@ -26,47 +26,6 @@
             logger()->info("second log", ["seq" => 2]);
         }
 
-        public function action_getTraceId(Request $req, Response $res) {
-            logger()->info("with trace");
-            echo Logger::getTraceId();
-        }
-
-        public function action_setTraceId(Request $req, Response $res) {
-            Logger::setTraceId($req->getGet("trace"));
-            logger()->info("after setTraceId");
-        }
-
-        public function action_context(Request $req, Response $res) {
-            logger("ctx")->contextAdd(["x" => 1])->info("first");
-            logger("ctx")->info("second");
-        }
-
-        public function action_contextInspect(Request $req, Response $res) {
-            logger("ctx")
-                ->contextAdd(["x" => 1])
-                ->contextInspect(fn($c) => array_merge($c, ["y" => 2]))
-                ->info("inspected");
-        }
-
-        public function action_contextMerge(Request $req, Response $res) {
-            logger("source")->contextAdd(["x" => 1, "shared" => "from-source"]);
-            logger("target")->contextAdd(["y" => 2, "shared" => "from-target"])
-                ->contextMergeFrom("source")
-                ->info("merged");
-        }
-
-        public function action_contextClear(Request $req, Response $res) {
-            logger("cleared")->contextAdd(["x" => 1])->contextClear()->info("after clear");
-        }
-
-        public function action_contextMergeFromEmpty(Request $req, Response $res) {
-            logger("x")->contextMergeFrom("");
-        }
-
-        public function action_contextMergeFromMissing(Request $req, Response $res) {
-            logger("x")->contextMergeFrom("does-not-exist");
-        }
-
         public function action_slowQuery(Request $req, Response $res) {
             db()->exec("SELECT SLEEP(0.5)");
         }

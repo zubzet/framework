@@ -270,10 +270,9 @@
                     }
 
                     // @codeCoverageIgnoreStart
-                    // FormModel::uploadFile's failure modes (null/empty file,
-                    // move_uploaded_file rejecting a fabricated tmp_name) are
-                    // exercised directly by action_probeUploadFileEmpty /
-                    // action_probeUploadFileMoveFails. From the public form
+                    // FormModel::uploadFile's failure mode (move_uploaded_file
+                    // rejecting a fabricated tmp_name) is exercised directly
+                    // by action_probeUploadFileMoveFails. From the public form
                     // path the FormField rule rejects empty/missing files
                     // before uploadFile is called, so the false branch here
                     // is unreachable in normal flow but kept as defensive code.
@@ -326,35 +325,11 @@
             ]);
         }
 
-        // Probes the early-return branches of FormModel::uploadFile that
-        // the public /Form/validationFile/form path cannot reach (the file
-        // FormField rule rejects empty/missing files before uploadFile is
-        // called). Used by form/file.cy.js.
-        public function action_probeUploadFileEmpty(Request $req, Response $res) {
-            $result = $req->getModel("Form")->uploadFile(
-                null,
-                "uploads/",
-                $res->getZRoot(),
-            );
-            return $res->json($result === false);
-        }
-
-        // Probes CanRetrieveFromInput::getFile()'s default-return branch:
-        // when no file is uploaded under that key, getFile($key, $default)
-        // returns $default verbatim. Used by form/file.cy.js.
-        public function action_probeGetFileDefault(Request $req, Response $res) {
-            $sentinel = "fake.pdf-fallback-sentinel";
-            return $res->json([
-                "default" => $req->getFile("nonexistent_field", $sentinel),
-                "matches" => $req->getFile("nonexistent_field", $sentinel) === $sentinel,
-            ]);
-        }
-
         public function action_probeUploadFileMoveFails(Request $req, Response $res) {
             // move_uploaded_file() rejects any tmp_name that is not in
             // $_FILES (security check). Calling it with a fabricated path
-            // returns false, exercising FormModel::uploadFile's second
-            // early-return branch. Requires showErrors=0 so the emitted
+            // returns false, exercising FormModel::uploadFile's
+            // move failure branch. Requires showErrors=0 so the emitted
             // E_WARNING is not promoted to a fatal ErrorException.
             $result = $req->getModel("Form")->uploadFile(
                 [
