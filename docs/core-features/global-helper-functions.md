@@ -105,6 +105,29 @@ configNumeric("db_max_retries", 3);
 
 ---
 
+### `configSwitch()`
+
+Retrieves a [configuration value](configuration.md) that switches something on or off, as a boolean.
+
+**Syntax:** `configSwitch(string $key, bool $default)`
+
+* **$key**: The configuration identifier.
+* **$default**: The value to return if the key is missing.
+
+On is `true`, `on`, `yes` and `1`. Off is `false`, `off`, `no`, `0` and an empty value. The case does not matter, and neither does where the value comes from: an unquoted `true` in the settings file arrives as `1`, a quoted one and an environment variable as the text `true`, and all of them switch the setting on.
+
+**Note:** Use it instead of `config()` for every setting that is a switch. To PHP the text `false` is truthy, so `if(config("feature"))` is on for `CONFIG_FEATURE=false`. Any other value is rejected with an `InvalidArgumentException` instead of being read as off, so a typo like `ture` cannot silently disable whatever the setting controls.
+
+**Example:**
+
+```php
+if(configSwitch("newsletter_enabled", false)) {
+    // ...
+}
+```
+
+---
+
 ### `user()`
 
 Returns the [request user](../api/classes/ZubZet-Framework-Authentication-User.html), built once per request when the framework is constructed, from the bearer token or the `z_login_token` cookie. It is also available as `$req->getRequestingUser()`, `$req->booter->user`, `$opt["user"]` in views and as the global alias `User`, which is not the record class `Authentication\Permission\User` (import that one with `use`).

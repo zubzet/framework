@@ -132,6 +132,7 @@ Defined in `src/Support/GlobalReferences.php`, wrapped with `FunctionConflictRes
 | `response()` | Current `Response` |
 | `config($key=null, $useDefault=true, $default=null)` | Booter setting value, or array of all settings |
 | `configNumeric($key, $default)` | Booter setting as `int`, throwing on a non-numeric value |
+| `configSwitch($key, $default)` | Booter setting as `bool` (`true`/`on`/`yes`/`1`, `false`/`off`/`no`/`0`/empty), throwing on anything else. Never read a switch with `config()`: the text `false` is truthy |
 | `user()` | `User` (currently logged-in) |
 | `db($connection="default")` | `Connection` |
 | `model($name, $dir=null)` | Model instance |
