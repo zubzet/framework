@@ -107,7 +107,14 @@
             $dir = self::$dataDirectory . self::getSessionId() . '/';
             if(!is_dir($dir)) mkdir($dir, 0755, true);
 
-            file_put_contents($dir . uniqid() . '.cov', serialize(self::$coverage));
+            // Requests end at the same time. uniqid() is only the clock, so two of them can get
+            // the same name and write into one file, which then cannot be read anymore.
+            $file = $dir . bin2hex(random_bytes(16));
+
+            // merge() only picks up .cov files, so it never reads one that is still being written
+            file_put_contents("$file.tmp", serialize(self::$coverage));
+            rename("$file.tmp", "$file.cov");
+
             self::$coverage = null;
         }
 
