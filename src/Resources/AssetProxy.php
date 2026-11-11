@@ -50,8 +50,8 @@
             foreach($this->mounts as $mount) {
                 try {
                     $file = $mount->resolve($assetPath);
-                } catch(\RuntimeException $e) {
-                    // Traversal escapes resolve to a 404, not an error page.
+                } catch(\RuntimeException | \ValueError $e) {
+                    // Traversal escapes and null bytes resolve to a 404, not an error page.
                     break;
                 }
                 if(is_null($file)) continue;
