@@ -83,13 +83,13 @@
         // shortenStr
 
         public function testShortenStrProducesTheExpectedOutput(): void {
-            $this->assertSame("hi ", shortenStr("hi", 10));
+            $this->assertSame("hi", shortenStr("hi", 10));
             $this->assertSame("hello w...", shortenStr("hello world", 10));
             $this->assertSame("abcd!", shortenStr("abcdefghij", 5, "!"));
         }
 
-        public function testShortenStrKeepsEveryWordThatFitsWithATrailingSpace(): void {
-            $this->assertSame("a b c ", shortenStr("a b c", 10));
+        public function testShortenStrKeepsEveryWordOfAStringThatFits(): void {
+            $this->assertSame("a b c", shortenStr("a b c", 10));
         }
 
         public function testShortenStrCutsInsideTheWordThatDoesNotFitAnymore(): void {
@@ -102,6 +102,33 @@
 
         public function testShortenStrCountsCharactersAndNotBytes(): void {
             $this->assertSame("äö...", shortenStr("äöüäöü", 5));
+        }
+
+        /** @dataProvider tightLimits */
+        public function testShortenStrNeverReturnsMoreThanTheLimit(string $text, int $limit, string $expected): void {
+            $this->assertSame($expected, shortenStr($text, $limit));
+        }
+
+        public static function tightLimits(): array {
+            return [
+                // The limit used to go negative and cut from the end: "hell..." for a limit of 2
+                "a limit shorter than the cut descriptor" => ["hello", 2, ".."],
+                "a limit as long as the cut descriptor" => ["hello", 3, "..."],
+                "a limit of one more" => ["hello", 4, "h..."],
+                "a limit of zero" => ["hello", 0, ""],
+            ];
+        }
+
+        public function testShortenStrReturnsAStringThatAlreadyFitsUnchanged(): void {
+            $this->assertSame("hello", shortenStr("hello", 5));
+            $this->assertSame("hello world", shortenStr("hello world", 11));
+            $this->assertSame("hello", shortenStr("hello", 100));
+            $this->assertSame("", shortenStr("", 5));
+            $this->assertSame("äöü", shortenStr("äöü", 3));
+        }
+
+        public function testShortenStrCutsAStringThatIsOneCharacterTooLong(): void {
+            $this->assertSame("he...", shortenStr("hello!", 5));
         }
 
         // de_strtolower
