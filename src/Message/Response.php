@@ -319,7 +319,8 @@
 
         public function getCookieDomainScope(): string {
             $cookieScope = "";
-            if("true" == ($this->getBooterSettings("login_scope_allow_subdomains") ?: "false")) {
+            // An unquoted true in the ini file arrives as "1", a quoted one or an environment override as "true"
+            if(filter_var($this->getBooterSettings("login_scope_allow_subdomains"), FILTER_VALIDATE_BOOLEAN)) {
                 $cookieScope = "." . $this->booter->req->getDomain();
             }
             return $cookieScope;
