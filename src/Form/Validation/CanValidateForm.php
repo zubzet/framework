@@ -17,7 +17,7 @@
         public function validateForm($fields, $data = null) {
             $errors = [];
 
-            if (null === $data) {
+            if (is_null($data)) {
                 $data = array_merge(
                     $this->getPost(),
                     $this->getFiles(),
