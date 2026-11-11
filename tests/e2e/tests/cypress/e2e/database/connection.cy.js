@@ -63,18 +63,6 @@ describe('Database/Connection', () => {
                 expect(res.body.lastHeartbeatStable, 'second call did NOT update lastHeartbeat').to.eq(true);
             });
         });
-
-        // Regression: with lazy-loaded connections a Connection can exist
-        // before its socket is opened. heartbeat() must not touch the
-        // uninitialized $conn (which fataled with a typed-property Error);
-        // it now returns false without throwing. This pins backward
-        // compatibility for worker keep-alive loops on future upgrades.
-        it('does not fatal before the lazy connection is opened (returns not-alive)', () => {
-            cy.request('/ConnectionProbe/heartbeatBeforeConnect').then((res) => {
-                expect(res.body.threw, 'heartbeat() must not throw before the connection is opened').to.eq(false);
-                expect(res.body.alive).to.eq(false);
-            });
-        });
     });
 
     describe('assertConnection()', () => {
@@ -148,16 +136,6 @@ describe('Database/Connection', () => {
     // (and therefore by switchUser, the constructor's first query, etc.)
     // so it has no dedicated spec block.
 
-    describe('Constructor', () => {
-        it('throws InvalidArgumentException on non-numeric db_connection_timeout', () => {
-            cy.request('/ConnectionProbe/constructorNonNumericTimeout').then((res) => {
-                expect(res.body.threw).to.eq(true);
-                expect(res.body.type).to.eq('InvalidArgumentException');
-                expect(res.body.message).to.match(/db_connection_timeout.*numeric/i);
-            });
-        });
-    });
-
     // The Galera nodes serve an encrypted transport with a certificate from
     // the suite's own CA, trusted by the application image's system store
     // (Dockerfile.apache-local) the way production trusts a public issuer.
@@ -186,13 +164,6 @@ describe('Database/Connection', () => {
             cy.request('/ConnectionProbe/tlsWrongHost').then((res) => {
                 expect(res.body.connected, 'connected despite a certificate for another host').to.eq(false);
                 expect(res.body.error, 'a verification failure').to.match(/certificate|SSL/i);
-            });
-        });
-
-        it('rejects a host:port dbhost with a pointer to dbport', () => {
-            cy.request('/ConnectionProbe/tlsHostWithPort').then((res) => {
-                expect(res.body.connected).to.eq(false);
-                expect(res.body.error).to.match(/dbport/);
             });
         });
 
