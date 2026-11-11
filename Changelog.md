@@ -4,6 +4,10 @@ This is a simple changelog to keep track of things that have changed. It is not 
 ## ToDos
 These todos should be as temporary as possible:
 
+## v1.2.2
+1. Added - Header-based CSRF protection (`Sec-Fetch-Site` and `Origin`), backported from 1.3.0 and switched off by default: nothing is rejected until a project sets `csrf_allow = same-origin`. New settings `csrf_allow` (default `any` on the 1.2 line), `csrf_trusted_origins` and `csrf_blocked_origins`, new `$req->csrfBlockAdditionalMethod()` to check a `GET` that changes state. The bundled logout and `z/login_as` use it. No migrator step. See [CSRF Protection](docs/core-features/csrf-protection.md)
+1. Removed - The dependency `symfony/filesystem`. Its pinned version `v6.0.19` carries a security advisory that makes current Composer versions refuse the install, and no patched release runs on PHP 8.0. The framework only used it to clean up coverage data and now does that with its own `ZubZet\Framework\Support\Filesystem` (`mkdir`, `copy`, `mirror`, `remove`), backported from 1.3.0. A project that uses `Symfony\Component\Filesystem` itself has to require the package in its own `composer.json`
+
 ## v1.2.1
 1. Added - The agent skill `skills/zubzet/` ships in the package: the architecture, design and style rules for projects on this framework line, written for AI coding agents (Claude Code, Cursor, Codex, ...). A project links it with `ln -s ../../vendor/zubzet/framework/skills/zubzet .claude/skills/zubzet`. See [Installation](docs/setup/installation.md#install-with-an-agent)
 
