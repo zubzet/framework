@@ -19,6 +19,23 @@ $fileId = $upload->fileId;
 On success the file is registered in `z_file`, the properties `ref`, `mime`, `srcName`, `extension`, `size`, `filePath` and `fileId` are filled and `UPLOAD_SUCCESS` (0) is returned. Otherwise the properties stay empty and the code is `UPLOAD_ERROR_TOO_BIG` (1), `UPLOAD_ERROR_WRONG_TYPE` (2), `UPLOAD_ERROR_NOT_MOVED` (3, `move_uploaded_file` failed) or `UPLOAD_ERROR_NO_FILE` (4, `$file` is empty or has no `name`).
 
 
+## File object
+`ZubZet\Framework\Storage\File` represents a `z_file` row, for example the one behind `$upload->fileId`. Only the row is managed, the stored file is never touched.
+
+```php
+use ZubZet\Framework\Storage\File;
+
+$file = File::add("my-reference", "report.pdf", "application/pdf", "pdf", 4096);
+$file = File::byId($upload->fileId); // also byIds(), byUuid(), byUuids(), byReference() and all()
+
+$file->replaceWith($newFile); // stores the id of $newFile in z_file.replaced_by
+$file->replacedBy();          // the replacing File, or null
+$file->remove();              // sets active = 0 and detaches the instance
+```
+
+`add()` only requires the reference, the name, type and extension default to `""` and the size to `0`. The getters are `reference()`, `name()`, `type()`, `extension()`, `size()`, `created()`, `uuid()` and `id()`. The retrievers only find active rows, so `replacedBy()` returns `null` once the replacing file was removed. `replaceWith()` leaves the replaced file active.
+
+
 ## Using Z-Forms
 When using [Z-Forms](auto-form-validation.md), error feedback automatically goes back to the user, and `insertDatabase()` and `updateDatabase()` store the files first: a field without a posted file is skipped (`noSave`), an upload error ends with `error("Upload error: <code>")`, otherwise the column gets the stored file id. For file uploads there is the special rule [`file()`](../api/classes/ZubZet-Framework-Form-Validation-Field.html#method_file).
 ```
