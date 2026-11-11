@@ -221,6 +221,26 @@
             });
         }
 
+        // Text is truthy for PHP, so "false" from an environment variable used to leave the logging on
+        /** @dataProvider switchedOff */
+        public function testLogsNothingWhenLoggingIsSwitchedOff(string $value): void {
+            $this->setSettings(["logger_enabled" => $value]);
+
+            $handlers = logger("switched-off")->getHandlers();
+
+            $this->assertCount(1, $handlers);
+            $this->assertInstanceOf(\Monolog\Handler\NullHandler::class, $handlers[0]);
+        }
+
+        public static function switchedOff(): array {
+            return [
+                "false in the config file" => [""],
+                "zero" => ["0"],
+                "false as text" => ["false"],
+                "off as text" => ["off"],
+            ];
+        }
+
         // The logger the application gets from the factory, with its handler swapped for
         // one that keeps the records. The processors the factory attached stay in place.
         private function captureLogs(string $name): TestHandler {
