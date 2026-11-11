@@ -3,3 +3,4 @@
 -- Adding new seed rows below 10000 will not shift the asserted IDs.
 ALTER TABLE `z_user` AUTO_INCREMENT = 10000;
 ALTER TABLE `z_organization` AUTO_INCREMENT = 10000;
+ALTER TABLE `z_file` AUTO_INCREMENT = 10000;
