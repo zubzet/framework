@@ -40,6 +40,21 @@
             return $this->resultToLine();
         }
 
+        function update(File $file, string $reference, string $name, string $type, string $extension, int $size): void {
+            $query = $this->dbUpdate("z_file", [
+                "reference" => $reference,
+                "name" => $name,
+                "type" => $type,
+                "extension" => $extension,
+                "size" => $size
+            ])->where([
+                "id" => $file->id(),
+                "active" => 1
+            ]);
+
+            $this->exec($query);
+        }
+
         function replaceWith(File $file, File $replacement): void {
             $query = $this->dbUpdate("z_file", [
                 "replaced_by" => $replacement->id()

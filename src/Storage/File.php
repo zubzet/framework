@@ -28,6 +28,11 @@ class File extends DatabaseEntity {
         return static::byId($id);
     }
 
+    public function update(string $reference, string $name = "", string $type = "", string $extension = "", int $size = 0): void {
+        model("z_file")->update($this, $reference, $name, $type, $extension, $size);
+        $this->clearFields();
+    }
+
     public static function byReference(string $reference): ?File {
         return static::byIdentifier("reference", $reference);
     }

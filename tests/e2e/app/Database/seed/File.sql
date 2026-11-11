@@ -25,4 +25,7 @@ INSERT INTO `z_file`(`id`, `uuid`, `reference`, `type`, `name`, `extension`, `si
 
 (512, '01890000-0000-7000-8000-000000000512', 'file_replaceWith_Overwrite', 'text/plain', 'old.txt', 'txt', 23, 513, 1, '2000-01-01 12:00:00'),
 (513, '01890000-0000-7000-8000-000000000513', 'file_replaceWith_Previous', 'text/plain', 'previous.txt', 'txt', 24, NULL, 1, '2000-01-01 12:00:00'),
-(514, '01890000-0000-7000-8000-000000000514', 'file_replaceWith_Next', 'text/plain', 'next.txt', 'txt', 25, NULL, 1, '2000-01-01 12:00:00');
+(514, '01890000-0000-7000-8000-000000000514', 'file_replaceWith_Next', 'text/plain', 'next.txt', 'txt', 25, NULL, 1, '2000-01-01 12:00:00'),
+
+(515, '01890000-0000-7000-8000-000000000515', 'file_update', 'text/plain', 'update.txt', 'txt', 26, NULL, 1, '2000-01-01 12:00:00'),
+(516, '01890000-0000-7000-8000-000000000516', 'file_update_Defaults', 'text/plain', 'defaults.txt', 'txt', 27, NULL, 1, '2000-01-01 12:00:00');
