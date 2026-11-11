@@ -112,11 +112,21 @@
             $this->assertSame("on", $state->SERVER["HTTPS"]);
         }
 
-        public function testHttpSchemeSetsServerHttpsOff(): void {
+        // PHP documents HTTPS as "a non-empty value" for https, so "off" would read as on
+        public function testHttpSchemeLeavesServerHttpsUnset(): void {
             $state = $this->input()->withUrl("http://example.com/");
 
             $this->assertSame("http", $state->SERVER["REQUEST_SCHEME"]);
-            $this->assertSame("off", $state->SERVER["HTTPS"]);
+            $this->assertArrayNotHasKey("HTTPS", $state->SERVER);
+        }
+
+        public function testHttpSchemeRemovesAnHttpsThatWasSetBefore(): void {
+            $state = $this->input()->withUrl("https://example.com/");
+
+            $state->withUrl("http://example.com/");
+
+            $this->assertArrayNotHasKey("HTTPS", $state->SERVER);
+            $this->assertFalse(!empty($state->SERVER["HTTPS"]), "The usual check for https");
         }
 
         // parse_url yields only the path for a string with a leading slash, so
@@ -149,14 +159,118 @@
             $this->assertSame(["x" => "1", "y" => "two"], $state->GET);
         }
 
-        public function testAUrlWithoutAQueryKeepsThePriorQuery(): void {
-            $state = $this->input()->withGet(["a" => "1"]);
+        // RFC 3986: the query belongs to the path it came with, a new path has none
+        public function testAUrlWithAPathAndNoQueryDropsThePriorQuery(): void {
+            $state = $this->input()->withGet(["a" => "1"])->withPost(["p" => "kept"]);
             $state->withUrl("/other");
 
-            $this->assertSame("/other?a=1", $state->SERVER["REQUEST_URI"]);
+            $this->assertSame("/other", $state->SERVER["REQUEST_URI"]);
             $this->assertSame("/other", $state->SERVER["REDIRECT_URL"]);
+            $this->assertSame("", $state->SERVER["QUERY_STRING"]);
+            $this->assertSame([], $state->GET);
+            $this->assertSame(["p" => "kept"], $state->REQUEST);
+        }
+
+        // withPath() is the way to change the path alone, a reroute relies on it
+        public function testWithPathKeepsThePriorQueryThatWithUrlDrops(): void {
+            $state = $this->input()->withUrl("/old?a=1");
+            $state->withPath("/other");
+
+            $this->assertSame("/other?a=1", $state->SERVER["REQUEST_URI"]);
             $this->assertSame("a=1", $state->SERVER["QUERY_STRING"]);
             $this->assertSame(["a" => "1"], $state->GET);
+        }
+
+        /**
+         * The reference resolution examples of RFC 3986, sections 5.4.1 and 5.4.2,
+         * against the base "http://a/b/c/d;p?q". A fragment never reaches a
+         * server and an empty path is the start page, otherwise the targets are
+         * the ones of the RFC.
+         *
+         * @dataProvider rfc3986References
+         */
+        public function testWithUrlResolvesAReferenceLikeRfc3986(string $reference, string $target): void {
+            $state = $this->input()->withUrl("http://a/b/c/d;p?q");
+
+            $state->withUrl($reference);
+
+            $this->assertSame(
+                $target,
+                $state->SERVER["REQUEST_SCHEME"] . "://" . $state->SERVER["HTTP_HOST"] . $state->SERVER["REQUEST_URI"],
+            );
+            $query = explode("?", $target, 2)[1] ?? "";
+            $this->assertSame($query, $state->SERVER["QUERY_STRING"]);
+            $this->assertSame(explode("?", $state->SERVER["REQUEST_URI"], 2)[0], $state->SERVER["REDIRECT_URL"]);
+        }
+
+        public static function rfc3986References(): array {
+            $examples = [
+                // 5.4.1, normal examples
+                "g" => "http://a/b/c/g",
+                "./g" => "http://a/b/c/g",
+                "g/" => "http://a/b/c/g/",
+                "/g" => "http://a/g",
+                "//g" => "http://g/",
+                "?y" => "http://a/b/c/d;p?y",
+                "g?y" => "http://a/b/c/g?y",
+                "#s" => "http://a/b/c/d;p?q",
+                "g#s" => "http://a/b/c/g",
+                "g?y#s" => "http://a/b/c/g?y",
+                ";x" => "http://a/b/c/;x",
+                "g;x" => "http://a/b/c/g;x",
+                "g;x?y#s" => "http://a/b/c/g;x?y",
+                "" => "http://a/b/c/d;p?q",
+                "." => "http://a/b/c/",
+                "./" => "http://a/b/c/",
+                ".." => "http://a/b/",
+                "../" => "http://a/b/",
+                "../g" => "http://a/b/g",
+                "../.." => "http://a/",
+                "../../" => "http://a/",
+                "../../g" => "http://a/g",
+                // 5.4.2, abnormal examples
+                "../../../g" => "http://a/g",
+                "../../../../g" => "http://a/g",
+                "/./g" => "http://a/g",
+                "/../g" => "http://a/g",
+                "g." => "http://a/b/c/g.",
+                ".g" => "http://a/b/c/.g",
+                "g.." => "http://a/b/c/g..",
+                "..g" => "http://a/b/c/..g",
+                "./../g" => "http://a/b/g",
+                "./g/." => "http://a/b/c/g/",
+                "g/./h" => "http://a/b/c/g/h",
+                "g/../h" => "http://a/b/c/h",
+                "g;x=1/./y" => "http://a/b/c/g;x=1/y",
+                "g;x=1/../y" => "http://a/b/c/y",
+                "g?y/./x" => "http://a/b/c/g?y/./x",
+                "g?y/../x" => "http://a/b/c/g?y/../x",
+                "g#s/./x" => "http://a/b/c/g",
+                "g#s/../x" => "http://a/b/c/g",
+                // A whole url
+                "https://other.example/x?z" => "https://other.example/x?z",
+                "https://other.example" => "https://other.example/",
+            ];
+
+            $references = [];
+            foreach($examples as $reference => $target) {
+                $references["'$reference'"] = [(string) $reference, $target];
+            }
+            return $references;
+        }
+
+        public function testARelativePathOnAStateWithoutAUriStartsAtTheRoot(): void {
+            $state = $this->input()->withUrl("a/b");
+
+            $this->assertSame("/a/b", $state->SERVER["REQUEST_URI"]);
+        }
+
+        public function testARelativePathIsResolvedNextToTheCurrentPathNotItsQuery(): void {
+            $state = $this->input()->withUrl("/shop/list?next=/x/y");
+
+            $state->withUrl("detail");
+
+            $this->assertSame("/shop/detail", $state->SERVER["REQUEST_URI"]);
         }
 
         public function testTheQueryOfAUrlIsDecodedIntoGet(): void {
@@ -342,6 +456,39 @@
                 "withReferer" => [fn(State $state) => $state->withReferer("https://example.com/")],
                 "withArgs" => [fn(State $state) => $state->withArgs(["a"])],
             ];
+        }
+
+        // REQUEST is put together like PHP puts $_REQUEST together: from the sources its
+        // request_order names, in that order, so a later one wins
+        /** @dataProvider requestOrders */
+        public function testRequestFollowsTheRequestOrder(string $order, array $expected): void {
+            $state = $this->input($order)
+                ->withGet(["common" => "get", "g" => "g"])
+                ->withPost(["common" => "post", "p" => "p"])
+                ->withCookies(["common" => "cookie", "c" => "c"]);
+
+            $this->assertSame($expected, $state->REQUEST);
+        }
+
+        public static function requestOrders(): array {
+            return [
+                "php.ini-production, without the cookies" => ["GP", ["common" => "post", "g" => "g", "p" => "p"]],
+                "the cookies last" => ["GPC", ["common" => "cookie", "g" => "g", "p" => "p", "c" => "c"]],
+                "the cookies first" => ["CGP", ["common" => "post", "c" => "c", "g" => "g", "p" => "p"]],
+                "the query after the post" => ["PG", ["common" => "get", "p" => "p", "g" => "g"]],
+                "lower case letters" => ["gp", ["common" => "post", "g" => "g", "p" => "p"]],
+                "the letters of variables_order that are no source" => ["EGPCS", ["common" => "cookie", "g" => "g", "p" => "p", "c" => "c"]],
+                "only the query" => ["G", ["common" => "get", "g" => "g"]],
+                "no source at all" => ["", []],
+            ];
+        }
+
+        public function testAForkKeepsTheRequestOrderOfItsParent(): void {
+            $parent = $this->input("GP")->withCookies(["c" => "cookie"]);
+
+            $child = State::fromOverwrite($parent, ["GET" => ["g" => "get"]]);
+
+            $this->assertSame(["g" => "get"], $child->REQUEST);
         }
 
         // updateRequest() merge precedence, observed through withGet, withPost and withCookies
@@ -646,6 +793,291 @@
 
             $this->assertSame("/p?0", $state->SERVER["REQUEST_URI"]);
             $this->assertSame("/p", $state->SERVER["REDIRECT_URL"]);
+        }
+
+        // withGet(), the details
+
+        // strtok() skips a leading "?", so the old query used to become the path: "old=1?a=1"
+        public function testWithGetReplacesTheQueryOfAUriThatHasNoPath(): void {
+            $state = $this->input();
+            $state->SERVER["REQUEST_URI"] = "?old=1";
+
+            $state->withGet(["a" => "1"]);
+
+            $this->assertSame("?a=1", $state->SERVER["REQUEST_URI"]);
+        }
+
+        // strtok() keeps one position for the whole process
+        public function testWithGetLeavesATokenizationOfTheCallerAlone(): void {
+            $state = $this->input();
+            $state->SERVER["REQUEST_URI"] = "/p?x";
+
+            $first = strtok("a b c", " ");
+            $state->withGet(["q" => "1"]);
+            $second = strtok(" ");
+
+            $this->assertSame(["a", "b"], [$first, $second]);
+        }
+
+        // http_build_query() leaves a null value out, so there is no query to announce
+        public function testWithGetWritesNoQuestionMarkWhenTheQueryStringIsEmpty(): void {
+            $state = $this->input();
+            $state->SERVER["REQUEST_URI"] = "/p?old=1";
+
+            $state->withGet(["a" => null]);
+
+            $this->assertSame("", $state->SERVER["QUERY_STRING"]);
+            $this->assertSame("/p", $state->SERVER["REQUEST_URI"]);
+        }
+
+        public function testWithGetKeepsEverythingBeforeTheFirstQuestionMark(): void {
+            $state = $this->input();
+            $state->SERVER["REQUEST_URI"] = "/p?a=1?b=2";
+
+            $state->withGet(["c" => "3"]);
+
+            $this->assertSame("/p?c=3", $state->SERVER["REQUEST_URI"]);
+        }
+
+        // withUrl() against what a web server hands to PHP
+
+        // QUERY_STRING and REQUEST_URI carry the query as it was sent, only GET is decoded
+        /** @dataProvider rawQueries */
+        public function testWithUrlKeepsTheQueryStringAsItWasGiven(string $query, array $get): void {
+            $state = $this->input()->withUrl("/search?$query");
+
+            $this->assertSame($query, $state->SERVER["QUERY_STRING"]);
+            $this->assertSame("/search?$query", $state->SERVER["REQUEST_URI"]);
+            $this->assertSame("/search", $state->SERVER["REDIRECT_URL"]);
+            $this->assertSame($get, $state->GET);
+            $this->assertSame($get, $state->REQUEST);
+        }
+
+        public static function rawQueries(): array {
+            return [
+                "a percent encoded space" => ["q=a%20b", ["q" => "a b"]],
+                "a plus as a space" => ["q=a+b", ["q" => "a b"]],
+                "list brackets" => ["tags[]=x&tags[]=y", ["tags" => ["x", "y"]]],
+                "named brackets" => ["f[a][b]=1", ["f" => ["a" => ["b" => "1"]]]],
+                "a key without a value" => ["flag", ["flag" => ""]],
+                "an empty value" => ["e=", ["e" => ""]],
+                "a repeated key, the last one wins" => ["a=1&a=2", ["a" => "2"]],
+                "a dot in a key becomes an underscore, like in \$_GET" => ["a.b=1", ["a_b" => "1"]],
+                "an encoded ampersand and equals sign" => ["q=a%26b%3Dc", ["q" => "a&b=c"]],
+                "a numeric key" => ["5=five", [5 => "five"]],
+                "a zero" => ["0", [0 => ""]],
+            ];
+        }
+
+        // What PHP itself makes of a query string, so the state and $_GET cannot drift apart
+        /** @dataProvider rawQueries */
+        public function testWithUrlFillsGetLikePhpFillsItsOwn(string $query): void {
+            parse_str($query, $expected);
+
+            $this->assertSame($expected, $this->input()->withUrl("/p?$query")->GET);
+        }
+
+        public function testWithUrlLeavesTheFragmentOut(): void {
+            $state = $this->input()->withUrl("/p?a=1#section");
+
+            $this->assertSame("/p?a=1", $state->SERVER["REQUEST_URI"]);
+            $this->assertSame("a=1", $state->SERVER["QUERY_STRING"]);
+        }
+
+        public function testWithUrlClearsTheQueryForAUrlThatEndsInAQuestionMark(): void {
+            $state = $this->input()->withGet(["a" => "1"]);
+
+            $state->withUrl("/p?");
+
+            $this->assertSame("/p", $state->SERVER["REQUEST_URI"]);
+            $this->assertSame("", $state->SERVER["QUERY_STRING"]);
+            $this->assertSame([], $state->GET);
+        }
+
+        // parse_url() takes ":1" for a port and gives up, the request itself accepts such a path
+        /** @dataProvider pathsThatParseUrlRejects */
+        public function testWithUrlAcceptsAPathThatParseUrlRejects(string $url, string $uri, string $path, array $get): void {
+            $state = $this->input()->withUrl($url);
+
+            $this->assertSame($uri, $state->SERVER["REQUEST_URI"]);
+            $this->assertSame($path, $state->SERVER["REDIRECT_URL"]);
+            $this->assertSame($get, $state->GET);
+        }
+
+        public static function pathsThatParseUrlRejects(): array {
+            return [
+                "a segment ending in a colon and digits" => ["/x:1", "/x:1", "/x:1", []],
+                "the same with a query" => ["/a/b:1?y=2", "/a/b:1?y=2", "/a/b:1", ["y" => "2"]],
+                "the same with a fragment" => ["/a/b:1#top", "/a/b:1", "/a/b:1", []],
+            ];
+        }
+
+        public function testWithUrlRejectsAUrlThatCannotBeRead(): void {
+            $this->assertThrows(
+                InvalidArgumentException::class,
+                "Cannot read the url 'http:///x'.",
+                fn() => $this->input()->withUrl("http:///x"),
+            );
+        }
+
+        // A url with a host names a whole target, "https://example.com" is its start page
+        public function testWithUrlOfAHostWithoutAPathPointsToTheStartPage(): void {
+            $state = $this->input();
+            $state->SERVER["REQUEST_URI"] = "/old/page";
+
+            $state->withUrl("https://example.com");
+
+            $this->assertSame("example.com", $state->SERVER["HTTP_HOST"]);
+            $this->assertSame("/", $state->SERVER["REQUEST_URI"]);
+            $this->assertSame("/", $state->SERVER["REDIRECT_URL"]);
+        }
+
+        public function testWithUrlKeepsTheBracketsAndThePortOfAnIpv6Host(): void {
+            $state = $this->input()->withUrl("http://[::1]:8080/p");
+
+            $this->assertSame("[::1]:8080", $state->SERVER["HTTP_HOST"]);
+            $this->assertSame("/p", $state->SERVER["REQUEST_URI"]);
+        }
+
+        public function testWithUrlKeepsAnEncodedPathEncoded(): void {
+            $state = $this->input()->withUrl("/a%20b/c%2Fd");
+
+            $this->assertSame("/a%20b/c%2Fd", $state->SERVER["REQUEST_URI"]);
+            $this->assertSame("/a%20b/c%2Fd", $state->SERVER["REDIRECT_URL"]);
+        }
+
+        public function testWithUrlLeavesTheLoginOfAUrlOutOfTheHost(): void {
+            $state = $this->input()->withUrl("https://user:secret@h.example/p");
+
+            $this->assertSame("h.example", $state->SERVER["HTTP_HOST"]);
+            $this->assertSame("/p", $state->SERVER["REQUEST_URI"]);
+        }
+
+        // fromOverwrite(), the details
+
+        /** @dataProvider overwritesThatAreNoArrays */
+        public function testFromOverwriteRejectsValuesThatAreNoArray(mixed $values): void {
+            $this->assertThrows(
+                InvalidArgumentException::class,
+                "OverwriteData for 'GET' must be an array.",
+                fn() => State::fromOverwrite($this->input(), ["GET" => $values]),
+            );
+        }
+
+        public static function overwritesThatAreNoArrays(): array {
+            return [
+                "a string" => ["a=1"],
+                "null" => [null],
+                "an object" => [new \stdClass],
+            ];
+        }
+
+        // Every array of the child is its own copy, also the nested ones
+        /** @dataProvider overwritableTypes */
+        public function testAChangeToTheChildNeverReachesTheParent(string $type): void {
+            $parent = $this->input();
+            $parent->{$type} = ["kept" => "parent", "nested" => ["deep" => "parent"]];
+
+            $child = State::fromOverwrite($parent, [$type => ["added" => "child"]]);
+            $child->{$type}["kept"] = "child";
+            $child->{$type}["nested"]["deep"] = "child";
+
+            $this->assertSame(["kept" => "parent", "nested" => ["deep" => "parent"]], $parent->{$type});
+        }
+
+        public static function overwritableTypes(): array {
+            return [
+                "SERVER" => ["SERVER"],
+                "GET" => ["GET"],
+                "POST" => ["POST"],
+                "FILES" => ["FILES"],
+                "REQUEST" => ["REQUEST"],
+                "SESSION" => ["SESSION"],
+                "COOKIE" => ["COOKIE"],
+            ];
+        }
+
+        public function testAForkKeepsTheBodyOfItsParent(): void {
+            $parent = $this->input()->withBody('{"a":1}');
+
+            $child = State::fromOverwrite($parent);
+            $child->withBody("changed");
+
+            $this->assertSame('{"a":1}', $parent->body);
+            $this->assertSame("changed", $child->body);
+        }
+
+        // A copy of a fork must not share the pointer to the parent with the fork
+        public function testACloneOfAForkHasItsOwnPreviousPointer(): void {
+            $child = State::fromOverwrite($this->input());
+
+            $copy = clone $child;
+            $copy->previous = null;
+
+            $this->assertNotNull($child->previous);
+        }
+
+        public function testAnOverwriteOfANestedValueReplacesItAsAWhole(): void {
+            $parent = $this->input();
+            $parent->POST = ["nested" => ["a" => "1", "b" => "2"]];
+
+            $child = State::fromOverwrite($parent, ["POST" => ["nested" => ["b" => "changed"]]]);
+
+            $this->assertSame(["nested" => ["b" => "changed"]], $child->POST);
+        }
+
+        // fromRequest(), the details
+
+        // An application that fills $_POST itself, from a JSON body for example, has values that are no text
+        public function testFromRequestLeavesPostValuesThatAreNoTextAsTheyAre(): void {
+            $post = ["number" => 5, "nothing" => null, "flag" => true, "list" => [1.5, null]];
+
+            // Reading null as text is deprecated since PHP 8.1
+            $complaints = [];
+            set_error_handler(function(int $level, string $message) use (&$complaints) {
+                $complaints[] = $message;
+                return true;
+            });
+
+            try {
+                $state = $this->fromRequestWith(post: $post);
+            } finally {
+                restore_error_handler();
+            }
+
+            $this->assertSame([], $complaints);
+            $this->assertSame($post, $state->POST);
+        }
+
+        public function testFromRequestComparesThePrefixExactly(): void {
+            $state = $this->fromRequestWith(post: [
+                "upper" => "<#DECURI#>a%20b",
+                "short" => "<#decURI#",
+                "spaced" => " " . self::DECODE_PREFIX . "a%20b",
+            ]);
+
+            $this->assertSame([
+                "upper" => "<#DECURI#>a%20b",
+                "short" => "<#decURI#",
+                "spaced" => " " . self::DECODE_PREFIX . "a%20b",
+            ], $state->POST);
+        }
+
+        // The state is a copy: what a test or an action does to it stays out of PHP's own arrays
+        public function testAChangeToTheStateDoesNotReachTheSuperglobals(): void {
+            $saved = [$_GET, $_COOKIE, $_SERVER];
+            [$_GET, $_COOKIE] = [["a" => "1"], ["c" => "1"]];
+
+            try {
+                $state = State::fromRequest();
+                $state->withGet(["a" => "changed"])->withCookies([])->withMethod("DELETE");
+
+                $this->assertSame(["a" => "1"], $_GET);
+                $this->assertSame(["c" => "1"], $_COOKIE);
+                $this->assertSame($saved[2], $_SERVER);
+            } finally {
+                [$_GET, $_COOKIE, $_SERVER] = $saved;
+            }
         }
 
         // The state is built from the superglobals, so they are set for the call and put back
