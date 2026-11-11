@@ -59,6 +59,31 @@
             );
         }
 
+        // PHP rolls such a date over (February 30 becomes March 2) instead of refusing it
+        /** @dataProvider impossibleDates */
+        public function testRejectsADateThatIsNotInTheCalendar(string $file, string $date): void {
+            $this->assertThrows(
+                InvalidArgumentException::class,
+                "Date error: '$file'. $date is not a date in the calendar.",
+                fn() => $this->sort([$file]),
+            );
+        }
+
+        public static function impossibleDates(): array {
+            return [
+                "February 30" => ["2025-02-30_Name.sql", "2025-02-30"],
+                "month 13" => ["2025-13-01_Name.sql", "2025-13-01"],
+                "day 0" => ["2025-10-00_Name.sql", "2025-10-00"],
+                "February 29 outside a leap year" => ["2025-02-29_Name.sql", "2025-02-29"],
+            ];
+        }
+
+        public function testAcceptsFebruary29InALeapYear(): void {
+            $file = $this->sort(["2024-02-29_Name.sql"])[0];
+
+            $this->assertSame("2024-02-29", $file->date->format("Y-m-d"));
+        }
+
         public function testAcceptsTheFirstYearThatIsNotTooFarInThePast(): void {
             $file = $this->sort(["2000-01-01_Name.sql"])[0];
 
