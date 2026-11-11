@@ -201,18 +201,18 @@
         }
 
         /**
-         * Returns the app domain as specified in the configuration (`host=`), with scheme, slashes and port stripped (`https://example.com:8080/` becomes `example.com`)
+         * Returns the app domain as specified in the configuration (`host=`), with scheme, port and path stripped (`https://example.com:8080/app` becomes `example.com`). An IPv6 literal keeps its brackets (`[::1]`).
          * @return string the domain
          */
         public function getDomain(): string {
-            return explode(
-                ":",
-                str_replace(
-                    ["http://", "https://", "/"],
-                    "",
-                    (string) config("host"),
-                ),
-            )[0];
+            // Without the scheme and everything from the first slash on
+            $host = preg_replace('#^https?://#i', "", (string) config("host"));
+            $host = explode("/", $host)[0];
+
+            // The colons inside the brackets of an IPv6 literal are no port separator
+            if(preg_match('#^\[[^\]]*\]#', $host, $literal)) return $literal[0];
+
+            return explode(":", $host)[0];
         }
 
         /**
@@ -412,8 +412,8 @@
          *
          * @param int $maxBytes Longest accepted body in bytes
          * @param int $maxDepth Deepest accepted nesting
-         * @return array The decoded value, objects as associative arrays
-         * @throws \UnexpectedValueException Carrying the HTTP status to answer with as its code
+         * @return array The decoded object or list, objects as associative arrays
+         * @throws \UnexpectedValueException Carrying the HTTP status to answer with as its code, 422 for well formed JSON that is neither an object nor a list
          * @throws \JsonException If the body is not well formed JSON
          */
         public function getJson(int $maxBytes = 1_048_576, int $maxDepth = 32): array {
@@ -439,7 +439,12 @@
             if(strlen($body) > $maxBytes) throw new \UnexpectedValueException("Body too large", 413);
 
             // Syntax errors, a BOM, invalid UTF-8, control characters and too deep nesting throw a JsonException
-            return json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+            $json = json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+
+            // A number, a string, a boolean or null is well formed JSON too
+            if(!is_array($json)) throw new \UnexpectedValueException("JSON must be an object or a list", 422);
+
+            return $json;
         }
 
         /**

@@ -98,6 +98,7 @@ $req->acceptLanguage(); // "de-CH,de;q=0.9,en;q=0.8" -> ["de-CH", "de", "en"]
 | 405 | The method is not POST, PUT, PATCH or DELETE |
 | 415 | The Content-Type is not exactly `application/json`, or names a charset other than utf-8 |
 | 413 | The body is longer than `$maxBytes` (default 1 MiB) |
+| 422 | The body is well formed JSON, but neither an object nor a list (`42`, `"text"`, `true`, `null`) |
 
 A body that is not well formed JSON (a BOM, an empty body, invalid UTF-8 or nesting deeper than `$maxDepth`, default 32) throws a `\JsonException` instead; answer it with 400.
 

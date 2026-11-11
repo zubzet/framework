@@ -168,6 +168,12 @@
                 "a bare host" => ["localhost", "localhost"],
                 "a trailing slash without a port" => ["https://example.com/", "example.com"],
                 "an empty host" => ["", ""],
+                // A path used to be glued to the domain, an IPv6 literal was cut at its first colon
+                "a path after the host" => ["https://example.com/app", "example.com"],
+                "a port and a path" => ["https://example.com:8443/app/sub/", "example.com"],
+                "an uppercase scheme" => ["HTTPS://example.com", "example.com"],
+                "an IPv6 literal with a port" => ["http://[::1]:8080", "[::1]"],
+                "a bare IPv6 literal" => ["[2001:db8::1]", "[2001:db8::1]"],
             ];
         }
 
@@ -405,6 +411,26 @@
             $request = $this->jsonRequest(null);
 
             $this->assertMalformed(JSON_ERROR_SYNTAX, $request);
+        }
+
+        // Well formed JSON that is no object and no list used to end in a TypeError
+        /** @dataProvider scalarBodies */
+        public function testRejectsJsonThatIsNoObjectAndNoListWith422(string $body): void {
+            $this->assertRejected(422, "JSON must be an object or a list", $this->jsonRequest($body));
+        }
+
+        public static function scalarBodies(): array {
+            return [
+                "a number" => ["42"],
+                "a string" => ['"text"'],
+                "null" => ["null"],
+                "true" => ["true"],
+            ];
+        }
+
+        public function testAcceptsAnEmptyObjectAndAnEmptyList(): void {
+            $this->assertSame([], $this->jsonRequest("{}")->getJson());
+            $this->assertSame([], $this->jsonRequest("[]")->getJson());
         }
 
         public function testRejectsNestingBeyondMaxDepthWith400(): void {
