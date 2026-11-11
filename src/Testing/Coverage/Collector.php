@@ -5,7 +5,7 @@
     use SebastianBergmann\CodeCoverage\CodeCoverage;
     use SebastianBergmann\CodeCoverage\Driver\Selector;
     use SebastianBergmann\CodeCoverage\Filter;
-    use Symfony\Component\Filesystem\Filesystem;
+    use ZubZet\Framework\Support\Filesystem;
 
     /**
      * @internal
@@ -113,11 +113,11 @@
         public static function cleanup(): void {
             // Remove all coverage data files for the current session
             $dir = self::$dataDirectory . self::getSessionId() . '/';
-            (new Filesystem())->remove($dir);
+            Filesystem::remove($dir);
 
             // Remove current session file to allow starting a new session
             $sessionLocation = Collector::$sessionLocation;
-            (new Filesystem())->remove($sessionLocation);
+            Filesystem::remove($sessionLocation);
 
             self::$sessionId = "";
         }
