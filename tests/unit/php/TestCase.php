@@ -206,21 +206,30 @@
          */
         protected function callHidden(object|string $target, string $method, mixed ...$arguments): mixed {
             $reflection = new \ReflectionMethod($target, $method);
-            $reflection->setAccessible(true);
+            // Needed before PHP 8.1, deprecated since 8.5
+            if(PHP_VERSION_ID < 80100) $reflection->setAccessible(true);
 
             return $reflection->invoke(is_object($target) ? $target : null, ...$arguments);
         }
 
+        /**
+         * Sets a static property that is not public. Only for state a class
+         * keeps for the whole process and offers no way to reset.
+         *
+         * @param class-string $class
+         */
+        protected function setHiddenStatic(string $class, string $property, mixed $value): void {
+            (new ReflectionClass($class))->setStaticPropertyValue($property, $value);
+        }
+
         // RuntimeCache and the classes extending it share one private store
         private function clearRuntimeCaches(): void {
-            $store = (new ReflectionClass(RuntimeCache::class))->getProperty("cache");
-            $store->setAccessible(true);
-            $store->setValue(null, []);
+            $this->setHiddenStatic(RuntimeCache::class, "cache", []);
         }
 
         // Endpoint::get() keeps the settings it was first asked for
         private function clearEndpoint(): void {
-            (new ReflectionClass(Endpoint::class))->setStaticPropertyValue("instance", null);
+            $this->setHiddenStatic(Endpoint::class, "instance", null);
         }
     }
 

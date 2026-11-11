@@ -2,7 +2,6 @@
 
     namespace Tests\Rendering\Resolver;
 
-    use ReflectionClass;
     use Tests\TestCase;
     use UnderflowException;
     use ZubZet\Framework\Message\Response;
@@ -168,7 +167,7 @@
         }
 
         private function emptyGlobalStack(): void {
-            (new ReflectionClass(Response::class))->setStaticPropertyValue("globalDefaultLayoutStack", []);
+            $this->setHiddenStatic(Response::class, "globalDefaultLayoutStack", []);
         }
     }
 

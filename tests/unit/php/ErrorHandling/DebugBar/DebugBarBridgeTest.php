@@ -2,7 +2,6 @@
 
     namespace Tests\ErrorHandling\DebugBar;
 
-    use ReflectionClass;
     use Tests\TestCase;
     use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
@@ -55,12 +54,8 @@
 
         // The bridge keeps its state in private statics that no method resets
         private function resetBridge(): void {
-            $class = new ReflectionClass(DebugBarBridge::class);
-            foreach(["debugBar", "renderer"] as $property) {
-                $reflection = $class->getProperty($property);
-                $reflection->setAccessible(true);
-                $reflection->setValue(null, null);
-            }
+            $this->setHiddenStatic(DebugBarBridge::class, "debugBar", null);
+            $this->setHiddenStatic(DebugBarBridge::class, "renderer", null);
         }
     }
 
