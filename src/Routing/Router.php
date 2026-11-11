@@ -6,6 +6,7 @@
     use FastRoute\Dispatcher;
     use FastRoute\RouteCollector;
     use ZubZet\Framework\Message\Input\State;
+    use ZubZet\Framework\Security\CSRF;
     use ZubZet\Framework\Console\Application;
     use Symfony\Component\Console\Input\ArgvInput;
 
@@ -20,6 +21,12 @@
         public function execute(?array $customUrlParts = null) {
             if(!is_null($customUrlParts)) {
                 request()->urlParts = $customUrlParts;
+            }
+
+            // Before the route files load, so no app code runs for a forged request
+            if(!CSRF::verify()) {
+                $this->executePath(["error", "403"]);
+                exit;
             }
 
             $dispatcher = $this->getRouteDispatcher();

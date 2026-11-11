@@ -7,6 +7,7 @@
     use ZubZet\Framework\Message\Input\CanRetrieveFromInput;
     use ZubZet\Framework\Form\Validation\CanValidateForm;
     use ZubZet\Framework\Form\Validation\CanValidateMultiForm;
+    use ZubZet\Framework\Security\CSRF;
 
     /**
      * Base class for Response and Request
@@ -266,6 +267,24 @@
             $data = $this->getBody();
             if(is_null($data)) return null;
             return json_decode($data, true, flags: JSON_THROW_ON_ERROR);
+        }
+
+        /**
+         * Runs the CSRF check, additionally covering methods normally exempt as safe
+         * (e.g. "GET"), so this request also gets CSRF-checked for them.
+         * A rejected request is redirected to 403 and the script ends.
+         *
+         * @param string ...$additionalMethods Methods to remove from the safe-method
+         *        exemption for this call, "GET" when none is given
+         */
+        public function csrfBlockAdditionalMethod(string ...$additionalMethods): void {
+            // Protect GET by default, when called without arguments.
+            if(empty($additionalMethods)) $additionalMethods = ["GET"];
+
+            if(CSRF::verify(...$additionalMethods)) return;
+
+            zubzet()->executePath(["error", "403"]);
+            exit;
         }
     }
 ?>
