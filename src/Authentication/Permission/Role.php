@@ -2,12 +2,12 @@
 
 namespace ZubZet\Framework\Authentication\Permission;
 
-use ZubZet\Framework\Authentication\AuthenticationObject;
+use ZubZet\Framework\Database\DatabaseObject;
 use ZubZet\Framework\Authentication\HandleTrait;
 use ZubZet\Framework\Authentication\Organization;
 use ZubZet\Framework\Authentication\RetrievalTrait;
 
-class Role extends AuthenticationObject {
+class Role extends DatabaseObject {
 
     // Traits
     use Permission;
@@ -190,7 +190,7 @@ class Role extends AuthenticationObject {
      */
     public function getPermissions(): array {
         // Refresh permissions if they are null or if there has been a change
-        // anywhere (see AuthenticationObject::$permissionChanged)
+        // anywhere (see DatabaseObject::$permissionChanged)
         if(is_null($this->getField("permissions")) || self::$permissionChanged) $this->refreshPermissions();
 
         return $this->getField("permissions");

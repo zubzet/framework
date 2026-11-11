@@ -1,27 +1,27 @@
 <?php
 
-namespace ZubZet\Framework\Authentication;
+namespace ZubZet\Framework\Database;
 
-class AuthenticationObject {
+class DatabaseObject {
 
     /**
      * Process-wide flag indicating that permission-related data has changed.
      *
      * Declared once on the base class (and never redeclared in the trait or
-     * subclasses) so that User, Role and Group all share a single storage slot.
-     * When true, cached permissions are reloaded on each access, regardless of
-     * which authentication object triggered the change.
+     * subclasses) so that User, Role, Group and Organization all share a single
+     * storage slot. When true, cached permissions are reloaded on each access,
+     * regardless of which database object triggered the change.
      *
      * @var bool
      */
     protected static bool $permissionChanged = false;
 
 
-    /** @var int The ID of the authentication object */
+    /** @var int The ID of the database object */
     private ?int $id = null;
 
 
-    /** @var array|null The data of the authentication object */
+    /** @var array|null The data of the database object */
     protected ?array $data = null;
 
     // Setting the id

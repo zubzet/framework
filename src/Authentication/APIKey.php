@@ -3,8 +3,9 @@
     namespace ZubZet\Framework\Authentication;
 
     use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Database\DatabaseObject;
 
-    class APIKey extends AuthenticationObject {
+    class APIKey extends DatabaseObject {
 
         use CanUseSession;
         use HandleTrait;
