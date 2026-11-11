@@ -405,46 +405,30 @@
         /**
          * Decode the request body as JSON.
          *
-         * Accepts only a POST, PUT, PATCH or DELETE request whose Content-Type is exactly
-         * `application/json` (a `charset` parameter must be utf-8), whose body is at most
-         * $maxBytes long and holds well formed JSON. Large integers come back as strings
-         * instead of lossy floats.
+         * Every well formed JSON value is accepted, whatever the method and the
+         * Content-Type of the request are: an object or a list comes back as an
+         * array, and a number, a string, a boolean or `null` as that value. A
+         * request without a body gives `null`, so an optional body reads as
+         * `$req->getJson() ?? []`. Large integers come back as strings instead
+         * of lossy floats.
          *
-         * @param int $maxBytes Longest accepted body in bytes
-         * @param int $maxDepth Deepest accepted nesting
-         * @return array The decoded object or list, objects as associative arrays
-         * @throws \UnexpectedValueException Carrying the HTTP status to answer with as its code, 422 for well formed JSON that is neither an object nor a list
+         * @param ?int $maxBytes Longest accepted body in bytes, no limit when null
+         * @param int $maxDepth Deepest accepted nesting, 512 is the limit PHP itself applies
+         * @return mixed The decoded value with objects as associative arrays, null without a body
+         * @throws \UnexpectedValueException With the code 413 for a body longer than $maxBytes
          * @throws \JsonException If the body is not well formed JSON
          */
-        public function getJson(int $maxBytes = 1_048_576, int $maxDepth = 32): array {
-            $method = strtoupper($this->input->SERVER['REQUEST_METHOD'] ?? "");
-            if(!in_array($method, ["POST", "PUT", "PATCH", "DELETE", "QUERY"], true)) {
-                throw new \UnexpectedValueException("Method does not accept a JSON body", 405);
-            }
+        public function getJson(?int $maxBytes = null, int $maxDepth = 512): mixed {
+            // No body is no JSON, which is something else than malformed JSON
+            $body = $this->getBody();
+            if(is_null($body)) return null;
 
-            // Strict on purpose: a cross site form can send text/plain and form types, never application/json
-            $header = $this->input->SERVER['CONTENT_TYPE'] ?? $this->input->SERVER['HTTP_CONTENT_TYPE'] ?? "";
-            $header = str_replace([" ", '"'], "", strtolower($header));
-            if("application/json" !== strtok($header, ";")) {
-                throw new \UnexpectedValueException("Content-Type must be application/json", 415);
+            if(!is_null($maxBytes) && strlen($body) > $maxBytes) {
+                throw new \UnexpectedValueException("Body too large", 413);
             }
-
-            // A charset, if given, has to be utf-8: `; charset=utf-8` or `; charset="UTF-8"`
-            if(str_contains($header, "charset=") && !str_contains("$header;", "charset=utf-8;")) {
-                throw new \UnexpectedValueException("JSON must be UTF-8", 415);
-            }
-
-            // post_max_size does not cover a non form body, so the limit is enforced here
-            $body = (string) $this->getBody();
-            if(strlen($body) > $maxBytes) throw new \UnexpectedValueException("Body too large", 413);
 
             // Syntax errors, a BOM, invalid UTF-8, control characters and too deep nesting throw a JsonException
-            $json = json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
-
-            // A number, a string, a boolean or null is well formed JSON too
-            if(!is_array($json)) throw new \UnexpectedValueException("JSON must be an object or a list", 422);
-
-            return $json;
+            return json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
         }
 
         /**

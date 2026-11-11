@@ -13,9 +13,6 @@
         private const SLUG_URI = "/Core/readable/";
         private const FORM_ACTION = "target-action";
 
-        private const ERROR_METHOD = "Method does not accept a JSON body";
-        private const ERROR_CONTENT_TYPE = "Content-Type must be application/json";
-        private const ERROR_CHARSET = "JSON must be UTF-8";
         private const ERROR_TOO_LARGE = "Body too large";
 
         protected function setUp(): void {
@@ -242,8 +239,9 @@
         }
 
         // getJson()
-        // Anything but a well formed application/json body throws an UnexpectedValueException
-        // carrying the HTTP status as its code, malformed JSON throws a JsonException
+        // Decodes the body whatever the method and the Content-Type are: the CSRF check of the
+        // router guards every request by its headers. A body that is too long throws an
+        // UnexpectedValueException carrying the HTTP status as its code, malformed JSON a JsonException
 
         public function testRoundTripsAJsonObjectNextToTheRawBody(): void {
             $payload = ["hello" => "world", "n" => 42, "nested" => ["ok" => true]];
@@ -253,102 +251,50 @@
             $this->assertSame($payload, $request->getJson());
         }
 
-        public function testAcceptsAUtf8CharsetInAnyCaseAndSpelling(): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: 'Application/JSON; Charset="UTF-8"');
+        /** @dataProvider methods */
+        public function testDecodesTheBodyOfEveryMethod(?string $method): void {
+            $input = $this->input();
+            $input->body = '{"a":1}';
+            if(null !== $method) $input->SERVER["REQUEST_METHOD"] = $method;
 
-            $this->assertSame(["a" => 1], $request->getJson());
+            $this->assertSame(["a" => 1], $this->request($input)->getJson());
         }
 
-        public function testAcceptsAnyNumberOfOtherParametersNextToTheCharset(): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: "application/json; charset=utf-8; foo=bar");
-
-            $this->assertSame(["a" => 1], $request->getJson());
-        }
-
-        public function testAcceptsAContentTypeWithoutACharset(): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: "application/json; foo=bar");
-
-            $this->assertSame(["a" => 1], $request->getJson());
-        }
-
-        /** @dataProvider methodsWithABody */
-        public function testAcceptsTheOtherMethodsThatCarryABody(string $method): void {
-            $this->assertSame(["a" => 1], $this->jsonRequest('{"a":1}', $method)->getJson());
-        }
-
-        public static function methodsWithABody(): array {
+        public static function methods(): array {
             return [
+                "POST" => ["POST"],
                 "PUT" => ["PUT"],
                 "PATCH" => ["PATCH"],
                 "DELETE" => ["DELETE"],
                 "QUERY" => ["QUERY"],
+                "GET" => ["GET"],
                 "a method in lower case" => ["post"],
+                "no method at all" => [null],
             ];
         }
 
-        public function testReadsTheContentTypeFromTheHttpPrefixedVariableToo(): void {
-            $input = $this->input();
-            $input->SERVER["REQUEST_METHOD"] = "POST";
-            $input->SERVER["HTTP_CONTENT_TYPE"] = "application/json";
-            $input->body = '{"a":1}';
+        /** @dataProvider contentTypes */
+        public function testDecodesTheBodyWhateverTheContentTypeIs(string $contentType): void {
+            $request = $this->jsonRequest('{"a":1}', contentType: $contentType);
 
-            $this->assertSame(["a" => 1], $this->request($input)->getJson());
+            $this->assertSame(["a" => 1], $request->getJson());
+        }
+
+        public static function contentTypes(): array {
+            return [
+                "application/json" => ["application/json"],
+                "with a charset" => ['Application/JSON; Charset="UTF-8"'],
+                "another JSON type" => ["application/vnd.api+json"],
+                "text/plain, as a beacon sends it" => ["text/plain"],
+                "a form type" => ["application/x-www-form-urlencoded"],
+                "no content type at all" => [""],
+            ];
         }
 
         public function testKeepsIntegersBeyondPhpIntMaxAsStrings(): void {
             $request = $this->jsonRequest('{"big":123456789012345678901234567890}');
 
             $this->assertSame(["big" => "123456789012345678901234567890"], $request->getJson());
-        }
-
-        /** @dataProvider methodsWithoutABody */
-        public function testRejectsAMethodWithoutABodyWith405(?string $method): void {
-            $input = $this->input();
-            $input->SERVER["CONTENT_TYPE"] = "application/json";
-            $input->body = '{"a":1}';
-            if(null !== $method) $input->SERVER["REQUEST_METHOD"] = $method;
-
-            $this->assertRejected(405, self::ERROR_METHOD, $this->request($input));
-        }
-
-        public static function methodsWithoutABody(): array {
-            return [
-                "GET" => ["GET"],
-                "HEAD" => ["HEAD"],
-                "OPTIONS" => ["OPTIONS"],
-                "no method at all" => [null],
-            ];
-        }
-
-        /** @dataProvider otherContentTypes */
-        public function testRejectsEveryOtherContentTypeWith415(string $contentType): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: $contentType);
-
-            $this->assertRejected(415, self::ERROR_CONTENT_TYPE, $request);
-        }
-
-        public static function otherContentTypes(): array {
-            return [
-                "text/plain" => ["text/plain"],
-                "application/x-www-form-urlencoded" => ["application/x-www-form-urlencoded"],
-                "application/jsonp" => ["application/jsonp"],
-                "application/vnd.api+json" => ["application/vnd.api+json"],
-                "no content type at all" => [""],
-            ];
-        }
-
-        /** @dataProvider otherCharsets */
-        public function testRejectsACharsetOtherThanUtf8With415(string $contentType): void {
-            $request = $this->jsonRequest('{"a":1}', contentType: $contentType);
-
-            $this->assertRejected(415, self::ERROR_CHARSET, $request);
-        }
-
-        public static function otherCharsets(): array {
-            return [
-                "iso-8859-1" => ["application/json; charset=iso-8859-1"],
-                "a name that only starts with utf-8" => ["application/json; charset=utf-8x"],
-            ];
         }
 
         public function testRejectsABodyBeyondMaxBytesWith413(): void {
@@ -406,25 +352,63 @@
             $this->assertMalformed(JSON_ERROR_CTRL_CHAR, $request);
         }
 
-        // A body without content reaches the request as null, never as an empty string
-        public function testRejectsAnEmptyBodyAsMalformedWith400(): void {
-            $request = $this->jsonRequest(null);
-
-            $this->assertMalformed(JSON_ERROR_SYNTAX, $request);
+        // No body is no JSON, not malformed JSON: `$req->getJson() ?? []` is how actions read an optional body
+        public function testReturnsNullWithoutABody(): void {
+            $this->assertNull($this->jsonRequest(null)->getJson());
+            $this->assertSame([], $this->jsonRequest(null)->getJson() ?? []);
         }
 
-        // Well formed JSON that is no object and no list used to end in a TypeError
+        // A form or an upload leaves no raw body behind, the action can fall back to the posted fields
+        public function testReturnsNullForAFormPostSoTheActionCanReadThePostedFields(): void {
+            $input = $this->input()->withMethod("POST")->withPost(["text" => "from the form"]);
+            $input->SERVER["CONTENT_TYPE"] = "multipart/form-data; boundary=x";
+            $request = $this->request($input);
+
+            $body = $request->getJson() ?: [];
+
+            $this->assertSame("from the form", $body["text"] ?? $request->getPost("text"));
+        }
+
+        public function testABodyOfOnlyWhitespaceIsMalformed(): void {
+            $this->assertMalformed(JSON_ERROR_SYNTAX, $this->jsonRequest(" "));
+        }
+
+        // The length is only limited when the action asks for it
+        public function testAcceptsABodyOfAnyLengthWithoutALimit(): void {
+            $text = str_repeat("a", 2 * 1_048_576);
+
+            $this->assertSame(["text" => $text], $this->jsonRequest('{"text":"' . $text . '"}')->getJson());
+        }
+
+        // PHP's own limit of 512 levels applies unless the action asks for less
+        public function testAcceptsDeepNestingWithoutALimit(): void {
+            $request = $this->jsonRequest(str_repeat("[", 100) . str_repeat("]", 100));
+
+            $this->assertIsArray($request->getJson());
+        }
+
+        public function testRejectsNestingBeyondTheLimitOfPhp(): void {
+            $request = $this->jsonRequest(str_repeat("[", 600) . str_repeat("]", 600));
+
+            $this->assertMalformed(JSON_ERROR_DEPTH, $request, maxDepth: 512);
+        }
+
+        // A number, a string, a boolean and null are JSON too. They used to end in a TypeError
         /** @dataProvider scalarBodies */
-        public function testRejectsJsonThatIsNoObjectAndNoListWith422(string $body): void {
-            $this->assertRejected(422, "JSON must be an object or a list", $this->jsonRequest($body));
+        public function testReturnsJsonThatIsNoObjectAndNoListAsItsValue(string $body, mixed $expected): void {
+            $this->assertSame($expected, $this->jsonRequest($body)->getJson());
         }
 
         public static function scalarBodies(): array {
             return [
-                "a number" => ["42"],
-                "a string" => ['"text"'],
-                "null" => ["null"],
-                "true" => ["true"],
+                "an integer" => ["42", 42],
+                "a float" => ["1.5", 1.5],
+                "a string" => ['"text"', "text"],
+                "an empty string" => ['""', ""],
+                "null" => ["null", null],
+                "true" => ["true", true],
+                "false" => ["false", false],
+                "an integer beyond PHP_INT_MAX" => ["123456789012345678901234567890", "123456789012345678901234567890"],
             ];
         }
 

@@ -91,25 +91,17 @@ $req->acceptLanguage(); // "de-CH,de;q=0.9,en;q=0.8" -> ["de-CH", "de", "en"]
 `$req->bearerToken()` returns the token of an `Authorization: Bearer <token>` header, or `null` when the header is missing, uses another scheme or does not carry exactly one token (`Bearer `, `Bearer a b`). The framework [authenticates by it](access-control.md#bearer-authentication) before the login cookie.
 
 ### JSON body
-`$req->getBody()` returns the raw request body. `$req->getJson()` decodes it as JSON, objects into associative arrays, and throws otherwise. An `UnexpectedValueException` carries the HTTP status to answer with as its code:
+`$req->getBody()` returns the raw request body. `$req->getJson()` decodes it as JSON, whatever the method and the `Content-Type` of the request are. An object or a list comes back as an array (objects as associative arrays), and a number, a string, a boolean or `null` as that value, because those are JSON too. A request without a body gives `null`, so an optional body reads as `$req->getJson() ?? []`. Integers beyond `PHP_INT_MAX` come back as strings instead of lossy floats.
 
-| Status | Reason |
-|--------|--------|
-| 405 | The method is not POST, PUT, PATCH or DELETE |
-| 415 | The Content-Type is not exactly `application/json`, or names a charset other than utf-8 |
-| 413 | The body is longer than `$maxBytes` (default 1 MiB) |
-| 422 | The body is well formed JSON, but neither an object nor a list (`42`, `"text"`, `true`, `null`) |
+A body that is not well formed JSON (a BOM, invalid UTF-8, nesting deeper than 512 levels) throws a `\JsonException`; answer it with 400.
 
-A body that is not well formed JSON (a BOM, an empty body, invalid UTF-8 or nesting deeper than `$maxDepth`, default 32) throws a `\JsonException` instead; answer it with 400.
+Both limits are optional. `$req->getJson(maxBytes: 65536)` throws an `UnexpectedValueException` with the code 413 for a longer body, and `maxDepth` lowers the accepted nesting. Without `maxBytes` the length is only limited by the web server and PHP's memory limit.
 
-The strict Content-Type is what keeps a cross site form out: a form can send `text/plain` and form types, but never `application/json`. Integers beyond `PHP_INT_MAX` come back as strings instead of lossy floats.
+The method and the `Content-Type` need no check here: a forged cross site request is turned away before the action runs, by the [CSRF check](csrf-protection.md) on the headers of the request.
 
 ```php
 try {
-    $data = $req->getJson();
-} catch(\UnexpectedValueException $e) {
-    http_response_code($e->getCode());
-    return $res->json(["error" => $e->getMessage()]);
+    $data = $req->getJson() ?? [];
 } catch(\JsonException $e) {
     http_response_code(400);
     return $res->json(["error" => $e->getMessage()]);
