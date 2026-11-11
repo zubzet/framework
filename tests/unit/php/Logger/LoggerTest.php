@@ -206,6 +206,15 @@
             });
         }
 
+        // "0" is a name like any other, PHP's empty() takes it for no name
+        public function testContextMergeFromAcceptsALoggerNamedZero(): void {
+            logger("0")->contextAdd(["from" => "zero"]);
+
+            logger("target")->contextMergeFrom("0");
+
+            $this->assertSame(["from" => "zero"], logger("target")->context);
+        }
+
         public function testShouldThrowWhenContextMergeFromReferencesALoggerThatHasNotBeenCreated(): void {
             $this->assertThrows(\Exception::class, self::ERROR_UNKNOWN_LOGGER, function() {
                 logger("x")->contextMergeFrom("does-not-exist");
