@@ -562,10 +562,96 @@
             $this->assertNull($state->body, "No request body means null, not an empty string");
         }
 
+        // REQUEST follows PHP's own $_REQUEST
+
+        // array_merge() renumbers integer keys, so ?1=a used to arrive as REQUEST[0]
+        public function testRequestKeepsNumericKeysAndLetsThePostWin(): void {
+            $state = $this->input()->withGet(["1" => "from get", "7" => "only get"])->withPost(["1" => "from post"]);
+
+            $this->assertSame([1 => "from post", 7 => "only get"], $state->REQUEST);
+        }
+
+        public function testFromOverwriteRefreshesTheRequestOfTheChild(): void {
+            $parent = $this->input()->withGet(["a" => "1"]);
+
+            $child = State::fromOverwrite($parent, ["GET" => ["b" => "2"], "POST" => ["a" => "posted"]]);
+
+            $this->assertSame(["a" => "posted", "b" => "2"], $child->REQUEST);
+            $this->assertSame(["a" => "1"], $parent->REQUEST, "The parent is left intact");
+        }
+
+        public function testFromOverwriteAppliesAnExplicitRequestLast(): void {
+            $child = State::fromOverwrite($this->input(), ["GET" => ["a" => "1"], "REQUEST" => ["a" => "explicit"]]);
+
+            $this->assertSame(["a" => "explicit"], $child->REQUEST);
+        }
+
+        // body and previous are properties too, but no arrays that could be merged into
+        /** @dataProvider propertiesThatAreNoArrays */
+        public function testFromOverwriteRejectsAPropertyThatHoldsNoArray(string $type): void {
+            $this->assertThrows(
+                InvalidArgumentException::class,
+                "OverwriteData includes unknown type: '$type'.",
+                fn() => State::fromOverwrite($this->input(), [$type => ["k" => "v"]]),
+            );
+        }
+
+        public static function propertiesThatAreNoArrays(): array {
+            return [
+                "body" => ["body"],
+                "previous" => ["previous"],
+            ];
+        }
+
+        // The POST is decoded, so the same value in REQUEST has to be decoded too
+        public function testFromRequestDecodesThePostValuesInTheRequestToo(): void {
+            $raw = ["raw" => self::DECODE_PREFIX . "a%20b", "nested" => ["deep" => self::DECODE_PREFIX . "c%26d"]];
+
+            $state = $this->fromRequestWith(post: $raw, get: ["q" => "kept"], request: $raw + ["q" => "kept"]);
+
+            $this->assertSame(["raw" => "a b", "nested" => ["deep" => "c&d"]], $state->POST);
+            $this->assertSame(["raw" => "a b", "nested" => ["deep" => "c&d"], "q" => "kept"], $state->REQUEST);
+        }
+
+        // Only the POST is decoded, a GET value that looks the same stays as sent
+        public function testFromRequestLeavesARequestValueThatIsNotFromThePostAlone(): void {
+            $prefixed = self::DECODE_PREFIX . "a%20b";
+
+            $state = $this->fromRequestWith(post: ["other" => "x"], get: ["q" => $prefixed], request: ["q" => $prefixed, "other" => "x"]);
+
+            $this->assertSame(["q" => $prefixed, "other" => "x"], $state->REQUEST);
+        }
+
+        // withUrl() and withPath(), the details
+
+        public function testWithUrlKeepsThePortInTheHost(): void {
+            $state = $this->input()->withUrl("https://h.example:8443/x");
+
+            $this->assertSame("h.example:8443", $state->SERVER["HTTP_HOST"]);
+        }
+
+        public function testWithUrlReadsTheSchemeRegardlessOfCase(): void {
+            $state = $this->input()->withUrl("HTTPS://h.example/x");
+
+            $this->assertSame("https", $state->SERVER["REQUEST_SCHEME"]);
+            $this->assertSame("on", $state->SERVER["HTTPS"]);
+        }
+
+        // "0" is a query string, PHP's empty() takes it for none
+        public function testWithPathKeepsAQueryStringOfZero(): void {
+            $state = $this->input();
+            $state->SERVER["QUERY_STRING"] = "0";
+
+            $state->withPath("/p");
+
+            $this->assertSame("/p?0", $state->SERVER["REQUEST_URI"]);
+            $this->assertSame("/p", $state->SERVER["REDIRECT_URL"]);
+        }
+
         // The state is built from the superglobals, so they are set for the call and put back
-        private function fromRequestWith(array $post = [], array $get = [], array $cookie = [], array $files = [], array $server = []): State {
+        private function fromRequestWith(array $post = [], array $get = [], array $cookie = [], array $files = [], array $server = [], array $request = []): State {
             $saved = [$_SERVER, $_GET, $_POST, $_FILES, $_REQUEST, $_COOKIE];
-            [$_SERVER, $_GET, $_POST, $_FILES, $_REQUEST, $_COOKIE] = [$server, $get, $post, $files, [], $cookie];
+            [$_SERVER, $_GET, $_POST, $_FILES, $_REQUEST, $_COOKIE] = [$server, $get, $post, $files, $request, $cookie];
 
             try {
                 return State::fromRequest();

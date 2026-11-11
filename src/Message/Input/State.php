@@ -15,6 +15,9 @@
         public array $SESSION;
         public array $COOKIE;
 
+        // The properties fromOverwrite() can merge into, body and previous hold no array
+        private const OVERWRITABLE = ["SERVER", "GET", "POST", "FILES", "REQUEST", "SESSION", "COOKIE"];
+
         public static function fromRequest(): State {
             $input = new self();
 
@@ -23,6 +26,7 @@
             $input->GET = $_GET ?? [];
             $input->FILES = $_FILES ?? [];
             $input->REQUEST = $_REQUEST ?? [];
+            $rawPost = $_POST ?? [];
             $input->SESSION = $_SESSION ?? [];
             $input->COOKIE = $_COOKIE ?? [];
 
@@ -41,6 +45,13 @@
             });
             $input->POST = $_POST ?? [];
 
+            // The request holds the values of the post as they were sent, so they are replaced by the decoded ones
+            foreach($rawPost as $key => $rawValue) {
+                if(!array_key_exists($key, $input->REQUEST)) continue;
+                if($input->REQUEST[$key] !== $rawValue) continue;
+                $input->REQUEST[$key] = $input->POST[$key];
+            }
+
             // Handle POST body
             $body = file_get_contents('php://input');
             $input->body = $body ?: null;
@@ -53,11 +64,19 @@
             $newInput->previous = &$input;
 
             foreach($overwriteData as $type => $values) {
-                if(!property_exists($newInput, $type)) {
+                if(!in_array($type, self::OVERWRITABLE, true)) {
                     throw new \InvalidArgumentException("OverwriteData includes unknown type: '$type'.");
                 }
                 foreach($values as $key => $value) {
                     $newInput->{$type}[$key] = $value;
+                }
+            }
+
+            // The request follows its sources, an explicitly given one is applied on top
+            if(!empty(array_intersect_key($overwriteData, ["GET" => 1, "POST" => 1, "COOKIE" => 1]))) {
+                $newInput->updateRequest();
+                foreach($overwriteData["REQUEST"] ?? [] as $key => $value) {
+                    $newInput->REQUEST[$key] = $value;
                 }
             }
 
@@ -68,12 +87,16 @@
             $url = parse_url($url);
 
             if(isset($url["scheme"])) {
-                $this->SERVER["REQUEST_SCHEME"] = $url["scheme"];
-                $this->SERVER["HTTPS"] = "https" === $url["scheme"] ? "on" : "off";
+                // A scheme is case insensitive
+                $scheme = strtolower($url["scheme"]);
+                $this->SERVER["REQUEST_SCHEME"] = $scheme;
+                $this->SERVER["HTTPS"] = "https" === $scheme ? "on" : "off";
             }
 
             if(isset($url["host"])) {
-                $this->SERVER["HTTP_HOST"] = $url["host"];
+                // Like the Host header, which carries a port that is not the default one
+                $port = isset($url["port"]) ? ":" . $url["port"] : "";
+                $this->SERVER["HTTP_HOST"] = $url["host"] . $port;
             }
 
             if(isset($url["query"])) {
@@ -91,7 +114,7 @@
 
         public function withPath(string $path): State {
             $path = ltrim($path, "/");
-            $hasQuery = !empty($this->SERVER["QUERY_STRING"]);
+            $hasQuery = "" !== (string) ($this->SERVER["QUERY_STRING"] ?? "");
             $query = $hasQuery ? "?" . $this->SERVER["QUERY_STRING"] : "";
             $this->SERVER["REQUEST_URI"] = "/{$path}$query";
             $this->SERVER["REDIRECT_URL"] = "/{$path}";
@@ -181,7 +204,8 @@
         }
 
         private function updateRequest() {
-            $this->REQUEST = array_merge(
+            // Not array_merge(), which renumbers numeric keys
+            $this->REQUEST = array_replace(
                 $this->GET,
                 $this->POST,
                 $this->COOKIE,
