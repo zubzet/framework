@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f93a2059fc348ec89b7cad84ebf3d250",
+    "content-hash": "9d9ffcfc50a29850be848a5196e44436",
     "packages": [
         {
             "name": "cakephp/core",
@@ -721,16 +721,16 @@
         },
         {
             "name": "katanaphp/blade",
-            "version": "0.3.0",
+            "version": "0.4.0-RC1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/katanaphp/blade.git",
-                "reference": "24e50c7b9cead4a3c23b665874358af9b2ac3c6f"
+                "reference": "b646ccd93ec1760c2fca03fd521efa54189e440c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/katanaphp/blade/zipball/24e50c7b9cead4a3c23b665874358af9b2ac3c6f",
-                "reference": "24e50c7b9cead4a3c23b665874358af9b2ac3c6f",
+                "url": "https://api.github.com/repos/katanaphp/blade/zipball/b646ccd93ec1760c2fca03fd521efa54189e440c",
+                "reference": "b646ccd93ec1760c2fca03fd521efa54189e440c",
                 "shasum": ""
             },
             "require": {
@@ -757,7 +757,7 @@
             "description": "Standalone version of Laravel Blade",
             "support": {
                 "issues": "https://github.com/katanaphp/blade/issues",
-                "source": "https://github.com/katanaphp/blade/tree/0.3.0"
+                "source": "https://github.com/katanaphp/blade/tree/0.4.0-RC1"
             },
             "funding": [
                 {
@@ -765,7 +765,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-01T07:23:33+00:00"
+            "time": "2026-11-15T18:27:37+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -3915,7 +3915,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "katanaphp/blade": 5
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
