@@ -472,9 +472,11 @@ describe('Z-Admin - Organization', () => {
             cy.getCookie('z_login_token').should('not.exist');
             statusOf('/z/organization/invitation/zorg_token_accept_ui').should('eq', 404);
 
+            cy.intercept('POST', '/login').as('login');
             cy.query('username').type('zorg_invitee@cypress.test');
             cy.query('password').type('zorg_Password1');
             cy.query('btn-login').click();
+            cy.wait('@login');
             cy.getCookie('z_login_token').should('exist');
         });
 
