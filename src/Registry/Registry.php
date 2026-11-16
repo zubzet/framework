@@ -2,7 +2,7 @@
 
     namespace ZubZet\Framework\Registry;
 
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
     use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
 
     /**
@@ -82,7 +82,7 @@
          */
         public static function find(string $kind, string $name): ?string {
             $cacheKey = "$kind:$name";
-            $memoized = StaticCache::getOrNull("registry_find", $cacheKey);
+            $memoized = InternalRuntimeCache::getOrNull("registry_find", $cacheKey);
             if(!is_null($memoized)) return $memoized;
 
             $definition = Kinds::get($kind);
@@ -95,7 +95,7 @@
                 foreach($definition->extensions as $extension) {
                     if(file_exists($root . $name . $extension)) {
                         DebugBarBridge::collectResolution($kind, $name, $origin, $root . $name . $extension);
-                        return StaticCache::set("registry_find", $cacheKey, $root . $name . $extension);
+                        return InternalRuntimeCache::set("registry_find", $cacheKey, $root . $name . $extension);
                     }
                 }
             }
@@ -109,7 +109,7 @@
                 $hit = RootIndex::for($root, $definition->extensions)->find($name);
                 if(!is_null($hit)) {
                     DebugBarBridge::collectResolution($kind, $name, "$origin (recursive)", $hit);
-                    return StaticCache::set("registry_find", $cacheKey, $hit);
+                    return InternalRuntimeCache::set("registry_find", $cacheKey, $hit);
                 }
             }
             return null;

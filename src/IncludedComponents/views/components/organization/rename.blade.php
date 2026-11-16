@@ -1,4 +1,6 @@
-@props(["name"])
+@php
+    use ZubZet\Framework\Authentication\Organization;
+@endphp
 
 @auth
     @if(user()->checkPermission("z.organization.rename") && !is_null(user()->orgId))
@@ -18,7 +20,7 @@
                     type: "text",
                     text: <?= json_encode(__("organization.rename.name")) ?>,
                     required: true,
-                    value: <?= json_encode($name ?? "", JSON_HEX_TAG | JSON_HEX_AMP) ?>,
+                    value: <?= json_encode(Organization::byId(user()->orgId)->getField("name") ?? "", JSON_HEX_TAG | JSON_HEX_AMP) ?>,
                 });
 
                 $(form.buttonSubmit).html('<i class="fa fa-fw fa-save"></i> ' + <?= json_encode(e(__("organization.rename.save"))) ?>);

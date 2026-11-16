@@ -116,7 +116,7 @@ The experimental `<x-zubzet::island>`, `<x-zubzet::modal>`, `<x-zubzet::action>`
 
 A model constructor reads its settings with `config()`, a model gets other models with `$this->getModel()` or `model()`, and a model knows who is acting through `user()`. None of these need to be passed in as arguments.
 
-**The fallback of `config()` is a named argument**: `config("page_size", default: 25)`. The second positional parameter is `$useDefault`, so `config("page_size", 25)` ignores the 25 silently. `configNumeric("key", 25)` exists for numbers and throws on a non-numeric value.
+**The fallback of `config()` is a named argument**: `config("page_size", default: 25)`. The second positional parameter is `$useDefault`, so `config("page_size", 25)` ignores the 25 silently. `configNumeric("key", 25)` exists for numbers and throws on a non-numeric value, `configSwitch("key", false)` for on/off settings: it reads `true`, `on`, `yes`, `1` and `false`, `off`, `no`, `0`, empty, and throws on anything else.
 
 ```php
 public function __construct($z_db, z_framework $booter) {

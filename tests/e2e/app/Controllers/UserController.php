@@ -186,30 +186,6 @@ class UserController extends z_controller {
         ]));
     }
 
-    public function action_isVerifiedOnNull(Request $req, Response $res): void {
-        $user = User::byId(122);
-        $isVerifiedNow = $user->isVerified("NOW");
-        $isVerifiedPast = $user->isVerified("2020-01-01 00:00:00");
-
-        echo(json_encode([
-            "isVerifiedNow" => $isVerifiedNow,
-            "isVerifiedPast" => $isVerifiedPast,
-        ]));
-    }
-
-    public function action_isVerifiedNotNull(Request $req, Response $res) {
-        $user = User::byId(123);
-        $isVerifiedNow = $user->isVerified("NOW");
-        $isVerifiedPast = $user->isVerified("2020-01-01 00:00:00");
-        $isVerifiedFuture = $user->isVerified("2030-01-01 00:00:00");
-
-        echo(json_encode([
-            "isVerifiedNow" => $isVerifiedNow,
-            "isVerifiedPast" => $isVerifiedPast,
-            "isVerifiedFuture" => $isVerifiedFuture,
-        ]));
-    }
-
     public function action_refresh(Request $req, Response $res) {
         $user = User::byId(124);
         $user->updateEmail("user_refresh-updated@update.cypress.test");

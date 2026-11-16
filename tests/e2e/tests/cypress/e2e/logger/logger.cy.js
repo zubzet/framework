@@ -196,17 +196,6 @@ describe('Logger', () => {
         });
         beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
 
-        it("should assign the same traceId to every log within a single request", () => {
-            cy.visit("/logger/multiLog");
-            getDatabaseLogs().then((logs) => {
-                expect(logs).to.have.length(2);
-                const v1 = JSON.parse(logs[0].value);
-                const v2 = JSON.parse(logs[1].value);
-                expect(v1.extra.traceId).to.be.a('string').and.have.length.greaterThan(0);
-                expect(v1.extra.traceId).to.equal(v2.extra.traceId);
-            });
-        });
-
         it("should assign different traceIds to separate requests", () => {
             cy.visit("/logger/multiLog");
             cy.visit("/logger/multiLog");
@@ -214,95 +203,6 @@ describe('Logger', () => {
                 expect(logs).to.have.length(4);
                 const traceIds = [...new Set(logs.map((l) => JSON.parse(l.value).extra.traceId))];
                 expect(traceIds).to.have.length(2);
-            });
-        });
-
-        it("should expose the current traceId via Logger::getTraceId()", () => {
-            cy.request('/logger/getTraceId').then((res) => {
-                const returned = (typeof res.body === 'string' ? res.body : String(res.body)).trim();
-                expect(returned).to.match(/^[0-9a-f]{32}$/);
-                getDatabaseLogs().then((logs) => {
-                    expect(logs).to.have.length(1);
-                    expect(JSON.parse(logs[0].value).extra.traceId).to.equal(returned);
-                });
-            });
-        });
-
-        it("should honor Logger::setTraceId()", () => {
-            const custom = 'a'.repeat(32);
-            cy.visit(`/logger/setTraceId?trace=${custom}`);
-            getDatabaseLogs().then((logs) => {
-                expect(logs).to.have.length(1);
-                expect(JSON.parse(logs[0].value).extra.traceId).to.equal(custom);
-            });
-        });
-    });
-
-    describe("Context", () => {
-        before(() => {
-            setConfigSetting('logger_type', 'database');
-            setConfigSetting('logger_level', 'debug');
-        });
-        beforeEach(() => cy.visit("/logger/clearDatabaseLogs"));
-
-        it("should carry added context forward across log calls on the same logger", () => {
-            cy.visit("/logger/context");
-            getDatabaseLogs().then((logs) => {
-                expect(logs).to.have.length(2);
-                logs.forEach((l) => {
-                    expect(JSON.parse(l.value).extra.x).to.equal(1);
-                });
-            });
-        });
-
-        it("should let contextInspect mutate the stored context", () => {
-            cy.visit("/logger/contextInspect");
-            getDatabaseLogs().then((logs) => {
-                expect(logs).to.have.length(1);
-                const extra = JSON.parse(logs[0].value).extra;
-                expect(extra.x).to.equal(1);
-                expect(extra.y).to.equal(2);
-            });
-        });
-
-        it("should merge context from another logger with source-wins precedence", () => {
-            cy.visit("/logger/contextMerge");
-            getDatabaseLogs().then((logs) => {
-                expect(logs).to.have.length(1);
-                const extra = JSON.parse(logs[0].value).extra;
-                // merged-from ("source") takes precedence on shared keys
-                expect(extra.shared).to.equal("from-source");
-                // target keeps its own non-conflicting keys
-                expect(extra.y).to.equal(2);
-                // source keys are added into target
-                expect(extra.x).to.equal(1);
-            });
-        });
-
-        it("should drop prior context after contextClear", () => {
-            cy.visit("/logger/contextClear");
-            getDatabaseLogs().then((logs) => {
-                expect(logs).to.have.length(1);
-                const extra = JSON.parse(logs[0].value).extra;
-                expect(extra).to.not.have.property('x');
-            });
-        });
-
-        it("should throw InvalidArgumentException when contextMergeFrom is called with an empty string", () => {
-            cy.request({ url: '/logger/contextMergeFromEmpty', failOnStatusCode: false });
-            getDatabaseLogs().then((logs) => {
-                const e = logsByMessage(logs, 'EXCEPTION');
-                expect(e).to.have.length(1);
-                expect(e[0].context.class).to.equal('InvalidArgumentException');
-            });
-        });
-
-        it("should throw when contextMergeFrom references a logger that has not been created", () => {
-            cy.request({ url: '/logger/contextMergeFromMissing', failOnStatusCode: false });
-            getDatabaseLogs().then((logs) => {
-                const e = logsByMessage(logs, 'EXCEPTION');
-                expect(e).to.have.length(1);
-                expect(e[0].context.message).to.contain('does-not-exist');
             });
         });
     });

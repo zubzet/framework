@@ -6,7 +6,7 @@
             zubzet()->assetProxy->serve($args['assetPath']);
         });
 
-        if(config("health_endpoint_enabled", default: true)) {
+        if(configSwitch("health_endpoint_enabled", true)) {
             Route::get('/health', [ZubZetController::class, 'health']);
         }
 

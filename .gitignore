@@ -10,6 +10,7 @@ sql.log
 !**/uploads/.htaccess
 .claude
 .coverage
+.phpunit.result.cache
 
 # E2E migration fixtures temporarily copied into framework during test runs
 src/IncludedComponents/database/Migration/2025-01-01_Ex_Ex.sql

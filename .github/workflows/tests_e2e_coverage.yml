@@ -1,10 +1,15 @@
-name: E2E coverage report
+name: Coverage report
 
 on:
+  # Called by the tests workflow on develop, which publishes the number
+  workflow_call:
+    outputs:
+      summary:
+        description: The line coverage as JSON
+        value: ${{ jobs.coverage.outputs.summary }}
   workflow_dispatch:
-  # Fallback trigger so the workflow can be started from a fork PR before
-  # this file lands on the base repo's default branch. Adding the `coverage`
-  # label to the PR runs the workflow; remove + re-add to re-run.
+  # A pull request from a fork cannot be started manually. Adding the
+  # `coverage` label to it runs the workflow; remove + re-add to re-run.
   pull_request:
     types: [labeled]
 
@@ -14,11 +19,13 @@ concurrency:
 
 jobs:
   coverage:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'coverage')
+    if: github.event_name != 'pull_request' || github.event.label.name == 'coverage'
     runs-on: ubuntu-latest
-    timeout-minutes: 120  # xdebug coverage is ~5x slower than a normal e2e run
+    timeout-minutes: 45  # a run takes about 17 minutes
     permissions:
       contents: read
+    outputs:
+      summary: ${{ steps.summary.outputs.summary }}
 
     env:
       COMPOSE_DOCKER_CLI_BUILD: "1"
@@ -30,7 +37,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -38,7 +45,7 @@ jobs:
           bun-version: latest
 
       - name: Cache Cypress binary
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/Cypress
           key: cypress-${{ runner.os }}-${{ hashFiles('tests/e2e/package-lock.json') }}
@@ -52,12 +59,12 @@ jobs:
         run: echo "HOST_UID=$(id -u)" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Build with the xdebug-enabled PHP 8.5 base so the coverage driver
       # is available inside the application container.
       - name: Docker build (8.5-xdebug)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./tests/e2e/packaging/docker
           file: ./tests/e2e/packaging/docker/Dockerfile.apache-local
@@ -117,13 +124,43 @@ jobs:
         continue-on-error: true
         run: bun run tests
 
+      # The PHP unit tests run in the same container, so their coverage
+      # names the source files by the same paths and can be merged in.
+      # Installed after the E2E run to leave that one as it is. The container
+      # points Composer to the vendor folder of the application, so the
+      # framework is told to use its own.
+      - name: Install the development dependencies of the framework
+        run: docker exec -e COMPOSER_VENDOR_DIR=vendor -w /var/www/framework application composer update --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHP unit tests with coverage
+        run: docker exec -w /var/www/framework application vendor/bin/phpunit --coverage-php /tmp/unit.cov
+
       - name: Stop coverage and generate report
         if: always()
-        run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop
+        # With pipefail a failed report is not hidden behind `tee`
+        shell: bash
+        run: docker exec application php -d memory_limit=4G index.php testing:coverage:stop --merge /tmp/unit.cov | tee coverage-summary
+
+      - name: Summarize the coverage
+        id: summary
+        # With pipefail a summary without the line fails instead of
+        # handing on an empty number
+        shell: bash
+        run: |
+          summary=$(sed -E 's/\x1b\[[0-9;]*m//g' coverage-summary | grep 'Lines:' | jq -R -c '
+            capture("(?<percent>[0-9.]+)% \\((?<covered>[0-9]+)/(?<total>[0-9]+)\\)")
+            | {
+              lines_percent: (.percent | tonumber),
+              lines_covered: (.covered | tonumber),
+              lines_total: (.total | tonumber),
+              php_version: "8.5"
+            }
+          ')
+          echo "summary=$summary" >> "$GITHUB_OUTPUT"
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report-${{ github.run_attempt }}
           if-no-files-found: warn
@@ -131,7 +168,7 @@ jobs:
 
       - name: Upload Cypress screenshots
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cypress-screenshots-${{ github.run_attempt }}
           if-no-files-found: ignore

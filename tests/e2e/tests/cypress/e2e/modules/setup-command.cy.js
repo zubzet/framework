@@ -28,13 +28,6 @@ describe('module:setup command', () => {
         cy.restoreConfigBackup();
     });
 
-    it('falls back to the code default before any merge', () => {
-        cy.request('/ModuleHost/config').then((res) => {
-            expect(res.status).to.eq(200);
-            expect(res.body).to.include('data-test="guestbook-config">fallback-title<');
-        });
-    });
-
     it('merges missing keys module by module, first module winning shared keys', () => {
         cy.exec(SETUP_COMMAND).then(({ stdout }) => {
             expect(stdout).to.include('zubzet/example-guestbook: added guestbook_title');

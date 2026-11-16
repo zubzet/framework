@@ -2,7 +2,7 @@
 
     namespace ZubZet\Framework\Registry;
 
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
 
     /**
      * Lazy recursive filename index of one root directory. This is the slow
@@ -31,9 +31,9 @@
             $root = rtrim($root, "/");
             $key = $root . "|" . implode(",", $extensions);
 
-            $index = StaticCache::getOrNull("registry_index", $key);
+            $index = InternalRuntimeCache::getOrNull("registry_index", $key);
             if(is_null($index)) {
-                $index = StaticCache::set("registry_index", $key, new self($root, $extensions));
+                $index = InternalRuntimeCache::set("registry_index", $key, new self($root, $extensions));
             }
             return $index;
         }

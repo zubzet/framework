@@ -79,7 +79,8 @@
          * setting and a plain-HTTP one is not locked out.
          */
         public function cookieSecure(): bool {
-            return str_starts_with((string) config("host"), "https://");
+            // A scheme is case insensitive
+            return 0 === stripos((string) config("host"), "https://");
         }
 
         // One attribute set for the framework's own cookies, scoped like the login cookie
@@ -132,12 +133,45 @@
         }
 
         /**
-         * Echoes the payload as pretty-printed JSON with an added `meta` block (no Content-Type header is sent)
+         * Echoes the payload as pretty-printed JSON with an added `meta` block. The Content-Type is `application/json` for a client that asks for JSON and `text/plain` for any other, see restContentType()
          * @param array $payload Data payload
          * @param bool $die Whether to exit after echoing, true by default
          */
         public function generateRest(array $payload, bool $die = true): void {
+            $this->sendRestContentType();
             $this->getNewRest($payload)->execute($die);
+        }
+
+        /**
+         * The Content-Type of a REST reply. PHP's default text/html would let
+         * markup inside a value run in a browser that opens the endpoint, so
+         * it is never that.
+         *
+         * A client that names application/json in its Accept header gets it.
+         * Any other client gets text/plain: jQuery parses a reply sent as
+         * application/json itself, and code that calls JSON.parse() on the
+         * answer of a plain $.post() would then be handed an object.
+         */
+        private function restContentType(): string {
+            $accept = strtolower((string) (request()->input->SERVER["HTTP_ACCEPT"] ?? ""));
+            if(str_contains($accept, "application/json")) return "application/json";
+
+            return "text/plain; charset=utf-8";
+        }
+
+        private function sendRestContentType(): void {
+            // Output that has already started cannot get a header anymore
+            if(headers_sent()) return;
+
+            // An application that has set a Content-Type itself keeps it
+            foreach(headers_list() as $header) {
+                if(0 === stripos($header, "Content-Type:")) return;
+            }
+
+            header("Content-Type: " . $this->restContentType());
+            // The reply differs by the Accept header, and a browser must not guess another type from the content
+            header("Vary: Accept", false);
+            header("X-Content-Type-Options: nosniff");
         }
 
         /**
@@ -155,7 +189,7 @@
         }
 
         /**
-         * Generates a Rest error object: logs a REST_ERROR warning, echoes `{"error":{"code","message"}}` as pretty-printed JSON (no HTTP status or Content-Type header is sent) and exits
+         * Generates a Rest error object: logs a REST_ERROR warning, echoes `{"error":{"code","message"}}` as pretty-printed JSON with the Content-Type of generateRest() (no HTTP status is sent) and exits
          * @param string $code Code
          * @param string $message Error message
          */
@@ -165,6 +199,7 @@
                 "message" => $message
             ]);
 
+            $this->sendRestContentType();
             $this->getNewRest([$code => $message])->ShowError($code, $message);
         }
 
@@ -319,7 +354,7 @@
 
         public function getCookieDomainScope(): string {
             $cookieScope = "";
-            if("true" == ($this->getBooterSettings("login_scope_allow_subdomains") ?: "false")) {
+            if(configSwitch("login_scope_allow_subdomains", false)) {
                 $cookieScope = "." . $this->booter->req->getDomain();
             }
             return $cookieScope;

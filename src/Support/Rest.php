@@ -51,11 +51,13 @@
         }
 
         /**
-         * Echoes the payload as pretty-printed JSON (no Content-Type header is sent)
+         * Echoes the payload as pretty-printed JSON. The Content-Type is the business of the caller, see Response::generateRest().
          * @param bool $die Whether to call exit after echoing
+         * Text that is no UTF-8 goes out with the broken bytes replaced by U+FFFD.
+         * @throws \JsonException If the payload cannot be encoded otherwise (NAN, INF), nothing is echoed then
          */
         public function execute($die = true) {
-            $this->json = json_encode($this->data, JSON_PRETTY_PRINT);
+            $this->json = json_encode($this->data, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
             echo $this->json;
             if($die) exit;
         }

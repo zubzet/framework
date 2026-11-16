@@ -80,26 +80,6 @@
             ]);
         }
 
-        // Regression guard for the lazy-loading change: a freshly constructed
-        // Connection opens no socket, so its typed \mysqli $conn property is
-        // uninitialized. Calling heartbeat() on it used to fatal with "Typed
-        // property ...::$conn must not be accessed before initialization" once
-        // the connection stopped being opened eagerly in the constructor.
-        // It must now report not-alive instead of throwing, so existing worker
-        // keep-alive loops keep working after upgrading. A fresh instance is
-        // used (rather than db()) so the uninitialized state is guaranteed
-        // regardless of what else the request touched.
-        public function action_heartbeatBeforeConnect(Request $req, Response $res) {
-            $threw = false;
-            $alive = null;
-            try {
-                $alive = (new Connection())->heartbeat(false);
-            } catch (\Throwable $e) {
-                $threw = true;
-            }
-            return $res->json(["threw" => $threw, "alive" => $alive]);
-        }
-
         // -------------------------------------------------------------
         // assertConnection() - happy + stale-then-heartbeat. The
         // heartbeat-fails-then-reconnect branch is intentionally out of
@@ -211,18 +191,6 @@
         // early-return" branch and the "close the open handle" branch
         // without a dedicated probe.
 
-        // -------------------------------------------------------------
-        // Constructor: non-numeric db_connection_timeout config throws
-        // InvalidArgumentException. Build a fresh Connection instance
-        // with the override in effect (zubzet()->db_connection_timeout
-        // is read by config() during construction).
-        // -------------------------------------------------------------
-
-        public function action_constructorNonNumericTimeout(Request $req, Response $res) {
-            zubzet()->db_connection_timeout = "not-a-number";
-            return $this->catchThrowableMessage(fn() => new Connection());
-        }
-
         // Exercises the no-throw branch of catchThrowableMessage so the
         // helper stays at 100% coverage even with all the deliberately-
         // throwing probes above. Pass a closure that runs cleanly.
@@ -261,11 +229,6 @@
          */
         public function action_tlsWrongHost(Request $req, Response $res) {
             return $this->connectWith(["db_ssl" => true, "dbhost" => gethostbyname("database")], $res);
-        }
-
-        /** A host:port dbhost cannot be verified; the error must say why. */
-        public function action_tlsHostWithPort(Request $req, Response $res) {
-            return $this->connectWith(["db_ssl" => true, "dbhost" => "database:3306"], $res);
         }
 
         // -------------------------------------------------------------

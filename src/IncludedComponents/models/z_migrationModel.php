@@ -222,6 +222,11 @@
                 throw new InvalidArgumentException("Syntax error: '$filename'. Invalid date format. Expected format: YYYY-MM-DD.");
             }
 
+            // PHP rolls an impossible date over instead of refusing it: 02-30 becomes 03-02
+            if($dateObj->format('Y-m-d') !== $dateString) {
+                throw new InvalidArgumentException("Date error: '$filename'. $dateString is not a date in the calendar.");
+            }
+
             if((int)$dateObj->format('Y') < 2000) {
                 throw new InvalidArgumentException("History error: The year " . $dateObj->format('Y') . " is too far in the past.");
             }

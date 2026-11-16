@@ -101,37 +101,6 @@
             ]);
         }
 
-        // Probes Request::getUrlParts(). The docker test env pins
-        // CONFIG_ROOTDIRECTORY="" so the strip loop never runs from the
-        // INI side; the *_strip probes below mutate zubzet()->rootDirectory
-        // at request time via HasDynamicAttributes (same idiom as
-        // action_currentUrl's hostOverride in CoreController). Three
-        // separate actions instead of a single overrideable one so the
-        // request controller stays straightforward.
-
-        public function action_urlPartsProbe(Request $req, Response $res) {
-            return $res->json($req->getUrlParts());
-        }
-
-        public function action_urlPartsProbe_strip1(Request $req, Response $res) {
-            zubzet()->rootDirectory = "Routing";
-            unset($req->urlParts);
-            return $res->json($req->getUrlParts());
-        }
-
-        public function action_urlPartsProbe_strip2(Request $req, Response $res) {
-            zubzet()->rootDirectory = "Routing/urlPartsProbe_strip2";
-            unset($req->urlParts);
-            return $res->json($req->getUrlParts());
-        }
-
-        // Surrounding slashes, as in "rootDirectory = sub/", still strip one segment
-        public function action_urlPartsProbe_stripSlashes(Request $req, Response $res) {
-            zubzet()->rootDirectory = "/Routing/";
-            unset($req->urlParts);
-            return $res->json($req->getUrlParts());
-        }
-
         // Dispatches ?uri= as if the app ran below ?root=, for the prefix
         // edge cases of core/root-directory.cy.js that no vhost can reach
         public function action_dispatchBelowRoot(Request $req, Response $res) {

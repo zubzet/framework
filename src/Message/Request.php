@@ -52,14 +52,18 @@
             $path = explode("?", $path, 2)[0];
             $path = trim($path, '/');
 
-            $urlParts = empty($path) ? [] : explode("/", $path);
+            // Not empty(): "0" is a segment
+            $urlParts = "" === $path ? [] : explode("/", $path);
             // Surrounding slashes are no segments, "sub/" strips one
             $rootDirectory = trim((string) config("rootDirectory"), '\/');
-            if("" !== $rootDirectory) {
-                $rootDirectoryLength = count(explode("/", $rootDirectory));
-                for($i = 0; $i < $rootDirectoryLength; $i++) {
-                    array_shift($urlParts);
-                }
+            $rootParts = "" === $rootDirectory ? [] : explode("/", $rootDirectory);
+
+            // The root directory is only cut off a path that really starts with it: with the root "sub",
+            // "/sub/users" gives ["users"] and "/other/users" keeps both parts. The comparison decodes
+            // the parts ("/s%75b/users" starts with "sub" too), because the Router decides the same way.
+            $leadingParts = array_map("rawurldecode", array_slice($urlParts, 0, count($rootParts)));
+            if([] !== $rootParts && $leadingParts === $rootParts) {
+                $urlParts = array_slice($urlParts, count($rootParts));
                 // A doubled slash after the root (root . "/x") is no segment, as in the Router
                 while("" === ($urlParts[0] ?? null)) array_shift($urlParts);
             }
@@ -201,25 +205,25 @@
         }
 
         /**
-         * Returns the app domain as specified in the configuration (`host=`), with scheme, slashes and port stripped (`https://example.com:8080/` becomes `example.com`)
+         * Returns the app domain as specified in the configuration (`host=`), with scheme, port and path stripped (`https://example.com:8080/app` becomes `example.com`). An IPv6 literal keeps its brackets (`[::1]`).
          * @return string the domain
          */
         public function getDomain(): string {
-            return explode(
-                ":",
-                str_replace(
-                    ["http://", "https://", "/"],
-                    "",
-                    (string) config("host"),
-                ),
-            )[0];
+            // Without the scheme and everything from the first slash on
+            $host = preg_replace('#^https?://#i', "", (string) config("host"));
+            $host = explode("/", $host)[0];
+
+            // The colons inside the brackets of an IPv6 literal are no port separator
+            if(preg_match('#^\[[^\]]*\]#', $host, $literal)) return $literal[0];
+
+            return explode(":", $host)[0];
         }
 
         /**
          * Gets the URL parameters (excluding the leading controller and action) specified by the path.
          * @param int $offset The offset from which to start. Can be -1 if action_fallback is used
          * @param int $length The amount of array elements that will be returned at the set offset. If null, every element will be returned
-         * @param string $val If the length is 1 and $val is set, a Boolean will be returned. $val will be compared to the parameter
+         * @param string $val If the length is 1 and $val is set, a Boolean will be returned. $val will be compared to the parameter as text, so "05" is not "5"
          * @return mixed[]|string|bool Array of parameters, the single parameter (or a Boolean comparison with $val) if length is 1, false if length is 1 and the parameter is missing
          */
         public function getParameters($offset = 0, $length = null, $val = null): mixed {
@@ -234,7 +238,7 @@
 
             //Compare with default value
             if ($length == 1 && !isset($params[0])) return false;
-            if ($length == 1) return isset($val) ? $params[0] == $val : $params[0];
+            if ($length == 1) return isset($val) ? $params[0] === (string) $val : $params[0];
 
             //Slice the resulting array according to the length parameter
             return array_slice($params, 0, $length);
@@ -383,12 +387,14 @@
         }
 
         /**
-         * Checks if the POST field action loosely equals $type; it does not verify that the request came via AJAX
+         * Checks if the POST field action equals $type, compared as text; it does not verify that the request came via AJAX
          * @param string $type Type of the request. Request is sent via Z.js => Z.Request.action()
          * @return bool True if the request is of the specified type
          */
         public function isAction(string $type): bool {
-            return $this->getPost("action") == $type;
+            $action = $this->getPost("action");
+
+            return is_scalar($action) && (string) $action === $type;
         }
 
         /**
@@ -396,7 +402,7 @@
          *
          * Reads the raw input from the request body.
          *
-         * @return ?string The raw body content of the request (Returns null if empty or unavailable, so a body of "0" is null too).
+         * @return ?string The raw body content of the request (Returns null if empty or unavailable).
          */
         public function getBody(): ?string {
             return $this->input->body;
@@ -405,38 +411,27 @@
         /**
          * Decode the request body as JSON.
          *
-         * Accepts only a POST, PUT, PATCH or DELETE request whose Content-Type is exactly
-         * `application/json` (a `charset` parameter must be utf-8), whose body is at most
-         * $maxBytes long and holds well formed JSON. Large integers come back as strings
-         * instead of lossy floats.
+         * Every well formed JSON value is accepted, whatever the method and the
+         * Content-Type of the request are: an object or a list comes back as an
+         * array, and a number, a string, a boolean or `null` as that value. A
+         * request without a body gives `null`, so an optional body reads as
+         * `$req->getJson() ?? []`. Large integers come back as strings instead
+         * of lossy floats.
          *
-         * @param int $maxBytes Longest accepted body in bytes
-         * @param int $maxDepth Deepest accepted nesting
-         * @return array The decoded value, objects as associative arrays
-         * @throws \UnexpectedValueException Carrying the HTTP status to answer with as its code
+         * @param ?int $maxBytes Longest accepted body in bytes, no limit when null
+         * @param int $maxDepth Deepest accepted nesting, 512 is the limit PHP itself applies
+         * @return mixed The decoded value with objects as associative arrays, null without a body
+         * @throws \UnexpectedValueException With the code 413 for a body longer than $maxBytes
          * @throws \JsonException If the body is not well formed JSON
          */
-        public function getJson(int $maxBytes = 1_048_576, int $maxDepth = 32): array {
-            $method = strtoupper($this->input->SERVER['REQUEST_METHOD'] ?? "");
-            if(!in_array($method, ["POST", "PUT", "PATCH", "DELETE", "QUERY"], true)) {
-                throw new \UnexpectedValueException("Method does not accept a JSON body", 405);
-            }
+        public function getJson(?int $maxBytes = null, int $maxDepth = 512): mixed {
+            // No body is no JSON, which is something else than malformed JSON
+            $body = $this->getBody();
+            if(is_null($body)) return null;
 
-            // Strict on purpose: a cross site form can send text/plain and form types, never application/json
-            $header = $this->input->SERVER['CONTENT_TYPE'] ?? $this->input->SERVER['HTTP_CONTENT_TYPE'] ?? "";
-            $header = str_replace([" ", '"'], "", strtolower($header));
-            if("application/json" !== strtok($header, ";")) {
-                throw new \UnexpectedValueException("Content-Type must be application/json", 415);
+            if(!is_null($maxBytes) && strlen($body) > $maxBytes) {
+                throw new \UnexpectedValueException("Body too large", 413);
             }
-
-            // A charset, if given, has to be utf-8: `; charset=utf-8` or `; charset="UTF-8"`
-            if(str_contains($header, "charset=") && !str_contains("$header;", "charset=utf-8;")) {
-                throw new \UnexpectedValueException("JSON must be UTF-8", 415);
-            }
-
-            // post_max_size does not cover a non form body, so the limit is enforced here
-            $body = (string) $this->getBody();
-            if(strlen($body) > $maxBytes) throw new \UnexpectedValueException("Body too large", 413);
 
             // Syntax errors, a BOM, invalid UTF-8, control characters and too deep nesting throw a JsonException
             return json_decode($body, true, $maxDepth, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);

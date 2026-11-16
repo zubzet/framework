@@ -16,7 +16,7 @@
         }
 
         public function contextMergeFrom(string $logger = self::APP): Logger {
-            if(empty($logger)) throw new \InvalidArgumentException("Logger name cannot be empty.");
+            if("" === $logger) throw new \InvalidArgumentException("Logger name cannot be empty.");
 
             $loggerInstance = LoggerFactory::getLogger($logger);
             if(is_null($loggerInstance)) throw new \Exception("Logger with name '$logger' not found in cache.");

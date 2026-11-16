@@ -50,6 +50,16 @@ Z = {
    */
   Request: {
     /**
+     * The answer of the backend as an object. jQuery parses a reply that is sent as `application/json` itself, any other reply arrives as text.
+     * @param {object|string} data What jQuery handed over
+     * @returns {object} The parsed answer
+     * @throws {SyntaxError} For text that is no JSON
+     */
+    parseAnswer(data) {
+      if (data !== null && typeof data === "object") return data;
+      return JSON.parse(data);
+    },
+    /**
      * Triggers a subaction on the current action from which this view was launched
      * @param {string} action Name of the subaction. Can be checked in the backend with $req->isAction("blub")
      * @param {object} data Data POSTed to the server. The object is mutated (action is added)
@@ -62,7 +72,7 @@ Z = {
       }).done((data) => {
         var dat = null;
         try {
-          dat = JSON.parse(data);
+          dat = Z.Request.parseAnswer(data);
 
           if(dat.twoFactorRenew == true) return Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
         } catch (e) {
@@ -80,7 +90,7 @@ Z = {
      * @param {object} data Data to send to the client. It will be passed as post data
      * @param {function} [handler=null] Called with the parsed response on success, or the raw response when `parse` is false or parsing fails. Effectively required: without it the call throws a TypeError after the response arrives.
      * @param {boolean} [async=true] Whether the request is asynchronous (false blocks until it finishes)
-     * @param {boolean} [parse=true] Whether a string response is JSON-parsed (and the two-factor renewal handled) before it reaches the handler
+     * @param {boolean} [parse=true] Whether the response is JSON-parsed (and the two-factor renewal handled) before it reaches the handler
      * @param {object} [additionalParameters={}] Extra jQuery.ajax options merged into the request
      */
     root(action, subaction, data, handler = null, async = true, parse = true, additionalParameters = {}) {
@@ -94,10 +104,8 @@ Z = {
         if(parse) {
           var dat = null;
           try {
-            if(typeof data !== 'object') {
-              dat = JSON.parse(data);
-              if(dat.twoFactorRenew == true) return Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
-            }
+            dat = Z.Request.parseAnswer(data);
+            if(dat.twoFactorRenew == true) return Z.Presets.RefreshTwoFactor(() => alert(Z.Lang.two_factor_renewed));
           } catch (e) {
             console.error("Please show this to a developer: ", data);
           }
@@ -1103,7 +1111,7 @@ class ZForm {
       if(this.debug) console.log(data);
       
       try {
-        json = JSON.parse(data);
+        json = Z.Request.parseAnswer(data);
       } catch (e) {
         json = {result: "error"};
       }

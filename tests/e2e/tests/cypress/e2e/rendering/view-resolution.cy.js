@@ -1,6 +1,6 @@
 // View-name resolution through the Katana engine's finder chain, driven by
-// RenderProbeController. Covers what the framework normalizes (extensions),
-// what Katana resolves natively (dot notation), userspace-overrides-framework
+// RenderProbeController. Covers what Katana resolves natively (dot notation;
+// the framework's extension normalization is unit tested), userspace-overrides-framework
 // precedence, and cross-root composition (app view + framework layout +
 // framework component) that the old single-root renderer could not span.
 //
@@ -8,23 +8,14 @@
 
 describe('View resolution', () => {
 
-    describe('view-name equivalence (same app view, four references)', () => {
-        // core/render prints <h2 data-test="data">$opt["data"]</h2>; each action
-        // passes a distinct marker so we know the right file was rendered.
-        const cases = [
-            { url: '/RenderProbe/extNone',  ref: 'bare "core/render"',       marker: 'ExtNone' },
-            { url: '/RenderProbe/extBlade', ref: '"core/render.blade.php"',  marker: 'ExtBlade' },
-            { url: '/RenderProbe/extPhp',   ref: 'legacy "core/render.php"', marker: 'ExtPhp' },
-            { url: '/RenderProbe/dotted',   ref: 'dotted "core.render"',     marker: 'Dotted' },
-        ];
-
-        cases.forEach(({ url, ref, marker }) => {
-            it(`resolves ${ref} to app/Views/core/render.blade.php`, () => {
-                cy.request(url).then((res) => {
-                    expect(res.status).to.eq(200);
-                    expect(res.body).to.include('data-test="title">Render<');
-                    expect(res.body).to.include(`data-test="data">${marker}<`);
-                });
+    describe('view-name equivalence', () => {
+        // core/render prints <h2 data-test="data">$opt["data"]</h2>; the action
+        // passes a marker so we know the right file was rendered.
+        it('resolves dotted "core.render" to app/Views/core/render.blade.php', () => {
+            cy.request('/RenderProbe/dotted').then((res) => {
+                expect(res.status).to.eq(200);
+                expect(res.body).to.include('data-test="title">Render<');
+                expect(res.body).to.include('data-test="data">Dotted<');
             });
         });
     });
