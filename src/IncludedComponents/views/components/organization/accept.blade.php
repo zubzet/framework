@@ -1,35 +1,34 @@
 @props(["token"])
 
-@auth
-    <div {{ $attributes->class("z-organization-accept") }}>
-        <button class="btn btn-primary z-organization-accept-button" data-token="{{ $token }}" data-test="btn-accept-organization-invitation">
-            <i class="fa fa-fw fa-check text-white"></i> {{ __("organization.accept") }}
-        </button>
-        <div class="small text-danger mt-2 d-none z-organization-accept-error" data-test="organization-accept-error"></div>
-    </div>
+<div {{ $attributes->class("z-organization-accept") }}>
+    <div id="z-organization-accept-form" data-test="organization-accept-form"></div>
+</div>
 
-    @once
-        <script>
-            $(() => {
-                $(document).on("click", ".z-organization-accept-button", function() {
-                    var button = $(this);
-                    var error = button.closest(".z-organization-accept").find(".z-organization-accept-error");
+<script>
+    $(() => {
+        var form = Z.Forms.create({
+            dom: "z-organization-accept-form",
+            name: "z-organization-accept",
+            customEndpoint: Z.Request.rootPath + "_zubzet/organization/invitations/" + <?= json_encode($token) ?> + "/accept",
+            saveHook: () => {
+                location.href = Z.Request.rootPath + "login";
+            },
+        });
 
-                    button.prop("disabled", true);
-                    error.addClass("d-none");
+        form.createField({
+            name: "password",
+            type: "password",
+            text: <?= json_encode(__("account.change_password.new")) ?>,
+            required: true,
+        });
 
-                    // attr() rather than data(), which would turn an all digit token into a number
-                    Z.Request.root("_zubzet/organization/invitations/" + button.attr("data-token") + "/accept", null, {}, (res) => {
-                        if("success" != res.result) {
-                            button.prop("disabled", false);
-                            // The backend answers with a code, Z.Lang holds its text
-                            return error.text(Z.Lang["error_" + res.message] || Z.Lang.error_invalid_token).removeClass("d-none");
-                        }
+        form.createField({
+            name: "password_repeat",
+            type: "password",
+            text: <?= json_encode(__("account.change_password.repeat")) ?>,
+            required: true,
+        });
 
-                        location.href = Z.Request.rootPath;
-                    });
-                });
-            });
-        </script>
-    @endonce
-@endauth
+        $(form.buttonSubmit).html('<i class="fa fa-fw fa-check text-white"></i> ' + <?= json_encode(e(__("organization.accept"))) ?>);
+    });
+</script>

@@ -1,7 +1,9 @@
 <?php
 
+    use ZubZet\Framework\Translation\Translation;
     use ZubZet\Framework\Authentication\Organization;
     use ZubZet\Framework\Authentication\Permission\User;
+    use ZubZet\Framework\Authentication\PasswordHash\Password;
 
     class ZOrganizationController {
 
@@ -56,31 +58,59 @@
             $req->checkPermission("z.organization.invite");
 
             $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+            if(is_null($organization)) return $res->error("invalid_organization");
 
+            // Only roles released to organizations, an empty selection invites without a role
+            $assignableRoleIds = array_column(model("z_organization")->getAssignableRoles(), "id");
             $formResult = $req->validateForm([
                 (new FormField("email"))->required()->filter(FILTER_VALIDATE_EMAIL),
+                (new FormField("roleId"))->filter(FILTER_VALIDATE_INT)->in($assignableRoleIds),
             ]);
 
             if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 
             $email = $req->getPost("email");
+            $roleId = $req->getPost("roleId");
 
-            // Only an active account outside any organization can be invited, accepting would fail otherwise
-            $invitee = User::byEmail($email);
-            if(is_null($organization) || is_null($invitee) || !is_null($invitee->organization())) {
+            // An address with an account, deactivated included, gets a message that does not reveal the account
+            if(!db()->checkIfUnique("z_user", "email", $email)) {
                 $formResult->addCustomError("email", "user_unavailable");
             } else if(model("z_organization")->hasOpenInvite($organization, $email)) {
-                // One open invite per address
+                // One open invite per address and organization
                 $formResult->addCustomError("email", "already_invited");
             }
 
             if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 
-            $token = model("z_organization")->createInvite($organization, $email);
+            $token = model("z_organization")->createInvite($organization, $email, empty($roleId) ? null : (int) $roleId);
+            $link = config("root") . "z/organization/invitation/" . $token;
 
-            return $res->success([
-                "invite_link" => config("root") . "z/organization/invitation/" . $token,
-            ]);
+            // Mailing needs its own permission, without it the inviter always gets the link
+            if(!filter_var($req->getPost("send_email"), FILTER_VALIDATE_BOOLEAN) || !$req->checkPermission("z.organization.invite.email", true)) {
+                return $res->success(["invite_link" => $link]);
+            }
+
+            // The mail alone proves the address, so the inviter does not get the link
+            $locale = Translation::locale();
+            $sent = $res->sendEmail(
+                $email,
+                __("email.organization_invite.subject", ["{organization}" => $organization->getField("name")], locale: $locale),
+                "email_organization_invite.php",
+                $locale,
+                [
+                    "invite_link" => $link,
+                    "organization" => $organization->getField("name"),
+                    "locale" => $locale,
+                ],
+                "mail",
+            );
+
+            if(!$sent) {
+                model("z_organization")->deactivateInvite($organization, model("z_organization")->getInviteByToken($token)["id"]);
+                return $res->error("mail_failed");
+            }
+
+            return $res->success();
         }
 
         public function revoke(Request $req, Response $res) {
@@ -98,28 +128,44 @@
         }
 
         public function accept(Request $req, Response $res) {
-            if(!user()->isLoggedIn) return $res->reroute(["login", "index"]);
-
             $token = $req->getRouteParameter("token");
-            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
 
             $invite = empty($token) ? null : model("z_organization")->getInviteByToken($token);
-            $invitedOrganization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
-            $user = User::byId(user()->userId);
+            $organization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
 
-            // Unknown, expired, meant for another address or its organization is gone
-            $error = null;
-            if(is_null($invitedOrganization) || 0 !== strcasecmp($invite["email"], $user->email())) {
-                $error = "invalid_token";
-            } else if(!is_null($organization)) {
-                $error = "already_in_organization";
+            // Unknown, expired, its organization is gone or the address has an account by now
+            if(is_null($organization) || !db()->checkIfUnique("z_user", "email", $invite["email"])) {
+                return $res->error("invalid_token");
             }
 
-            // The accept button shows the message
-            if(!is_null($error)) return $res->error($error);
+            $formResult = $req->validateForm([
+                (new FormField("password"))->required()->length(Password::MIN_LENGTH_BYTES, Password::MAX_LENGTH_BYTES),
+                (new FormField("password_repeat"))->required(),
+            ]);
 
-            $user->updateOrganization($invitedOrganization);
-            model("z_organization")->deactivateInvite($invitedOrganization, $invite["id"]);
+            if($formResult->hasErrors) return $res->formErrors($formResult->errors);
+
+            $password = $req->getPost("password");
+
+            // An array passes the length rule by its item count
+            if(!is_string($password)) return $res->error("Invalid input");
+
+            if($password !== $req->getPost("password_repeat")) {
+                $formResult->addCustomError("password_repeat", "password_mismatch");
+                return $res->formErrors($formResult->errors);
+            }
+
+            // The invitation vouches for the address, so the account starts verified
+            $user = User::add($invite["email"], $password, new DateTime());
+            $user->updateOrganization($organization);
+
+            // Only while the role is still released to organizations
+            $assignableRoleIds = array_column(model("z_organization")->getAssignableRoles(), "id");
+            if(!is_null($invite["roleId"]) && in_array($invite["roleId"], $assignableRoleIds)) {
+                model("z_user")->changeRoleStateByUserIdAndRoleId($user->id(), $invite["roleId"]);
+            }
+
+            model("z_organization")->deactivateInvite($organization, $invite["id"]);
 
             return $res->success();
         }

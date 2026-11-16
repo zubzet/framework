@@ -13,6 +13,17 @@ describe('Z-Admin - Organization', () => {
             .its('status');
     }
 
+    function clearMailbox() {
+        cy.request({ method: 'DELETE', url: 'http://localhost:3300/api/v1/messages', failOnStatusCode: false });
+    }
+
+    function latestMail() {
+        return cy.request('http://localhost:3300/api/messages').then((res) => {
+            const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+            return body.results[0];
+        });
+    }
+
     // A fading modal swallows keystrokes and clicks while it animates
     function openModal(name) {
         cy.query(`organization-${name}-modal`).invoke('removeClass', 'fade');
@@ -153,10 +164,11 @@ describe('Z-Admin - Organization', () => {
     describe('Invite', () => {
         beforeEach(() => cy.loginAs('zorg_manager'));
 
-        const invite = (email) => post('/_zubzet/organization/invites', {
+        const invite = (email, fields = {}) => post('/_zubzet/organization/invites', {
             isFormData: 1,
             formAction: 'z-organization-invite',
             email: email,
+            ...fields,
         });
 
         it('creates an invitation link through the form', () => {
@@ -165,11 +177,39 @@ describe('Z-Admin - Organization', () => {
 
             openModal('invite');
             cy.form('email').type('zorg_invitable@cypress.test');
+            cy.form('roleId').select('zorg_Assignable_Role');
             cy.get('#z-organization-invite-form .btn-primary').click();
             cy.wait('@invite');
 
+            // The invitation link ends with the 32 character token
             cy.query('organization-invite-link').invoke('val').should('match', /\/z\/organization\/invitation\/[0-9a-f]{32}$/);
+            cy.query('organization-invite-sent').should('not.be.visible');
             cy.form('email').should('have.value', '');
+        });
+
+        it('sends the invitation by email without showing the link', () => {
+            clearMailbox();
+            cy.visit('/z/organization');
+            cy.intercept('POST', '/_zubzet/organization/invites').as('invite');
+
+            openModal('invite');
+            cy.form('email').type('zorg_mailed@cypress.test');
+            cy.form('send_email').check();
+            cy.get('#z-organization-invite-form .btn-primary').click();
+            cy.wait('@invite');
+
+            cy.query('organization-invite-sent').should('be.visible');
+            cy.query('organization-invite-result').should('not.be.visible');
+
+            latestMail().then((mail) => {
+                expect(mail.to[0]).to.eq('zorg_mailed@cypress.test');
+                expect(mail.subject).to.eq('Invitation to zorg_Main');
+
+                cy.request(`http://localhost:3300/api/messages/${mail.id}/html`).then((res) => {
+                    // The mailed link carries the 32 character token
+                    expect(res.body).to.match(/\/z\/organization\/invitation\/[0-9a-f]{32}/);
+                });
+            });
         });
 
         it('explains in words why an address cannot be invited', () => {
@@ -177,7 +217,7 @@ describe('Z-Admin - Organization', () => {
             cy.intercept('POST', '/_zubzet/organization/invites').as('invite');
 
             openModal('invite');
-            cy.form('email').type('zorg_nobody@cypress.test');
+            cy.form('email').type('zorg_member@cypress.test');
             cy.get('#z-organization-invite-form .btn-primary').click();
             cy.wait('@invite');
 
@@ -194,12 +234,12 @@ describe('Z-Admin - Organization', () => {
             });
         });
 
-        it('only invites active accounts outside any organization', () => {
+        it('only invites addresses without an account', () => {
             [
-                'zorg_nobody@cypress.test',
                 'zorg_member@cypress.test',
                 'zorg_other_member@cypress.test',
                 'zorg_deactivated@cypress.test',
+                'zorg_account_exists@cypress.test',
             ].forEach((email) => {
                 invite(email).then((out) => {
                     expect(out.formErrors).to.deep.include({ name: 'email', type: 'user_unavailable' });
@@ -219,12 +259,45 @@ describe('Z-Admin - Organization', () => {
             invite('zorg_reinvite@cypress.test').its('result').should('eq', 'success');
         });
 
+        it('only hands out roles released to organizations', () => {
+            invite('zorg_role_plain@cypress.test', { roleId: '262' }).then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'roleId', type: 'in' });
+            });
+
+            invite('zorg_role_unknown@cypress.test', { roleId: '999999' }).then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'roleId', type: 'in' });
+            });
+
+            invite('zorg_role_released@cypress.test', { roleId: '260' }).its('result').should('eq', 'success');
+            invite('zorg_role_none@cypress.test', { roleId: '' }).its('result').should('eq', 'success');
+        });
+
+        it('returns the link only when no email is sent', () => {
+            // The invitation link ends with the 32 character token
+            invite('zorg_link_only@cypress.test', { send_email: '0' }).its('invite_link')
+                .should('match', /\/z\/organization\/invitation\/[0-9a-f]{32}$/);
+
+            invite('zorg_link_mailed@cypress.test', { send_email: '1' }).then((out) => {
+                expect(out.result).to.eq('success');
+                expect(out).to.not.have.property('invite_link');
+            });
+        });
+
+        it('only mails with z.organization.invite.email', () => {
+            cy.loginAs('zorg_inviter');
+            cy.visit('/z/organization');
+
+            cy.get('#z-organization-invite-form [name="send_email"]').should('not.exist');
+
+            // The invitation link ends with the 32 character token
+            invite('zorg_inviter_mailed@cypress.test', { send_email: '1' }).its('invite_link')
+                .should('match', /\/z\/organization\/invitation\/[0-9a-f]{32}$/);
+        });
+
         it('needs an organization to invite into', () => {
             cy.loginAs('zorg_orgless');
 
-            invite('zorg_invitable@cypress.test').then((out) => {
-                expect(out.formErrors).to.deep.include({ name: 'email', type: 'user_unavailable' });
-            });
+            invite('zorg_invitable@cypress.test').should('deep.include', { result: 'error', message: 'invalid_organization' });
         });
 
         it('refuses a user without z.organization.invite', () => {
@@ -337,95 +410,120 @@ describe('Z-Admin - Organization', () => {
     });
 
     describe('Invitation', () => {
-        it('asks an anonymous visitor to log in', () => {
-            cy.request('/z/organization/invitation/zorg_token_open').its('body').should('include', '<title>Login');
+        it('shows the invitation to a visitor without login', () => {
+            cy.visit('/z/organization/invitation/zorg_token_open');
+
+            cy.query('invitation-organization').should('contain', 'zorg_Main');
+            cy.query('invitation-email').should('contain', 'zorg_open@cypress.test');
+            cy.query('organization-accept-form').should('be.visible');
+            cy.get('#navbar').should('not.exist');
         });
 
-        it('answers unknown, foreign and unusable invitations with a 404', () => {
-            cy.loginAs('zorg_stranger');
-
+        it('answers unknown and unusable invitations with a 404', () => {
             [
                 '',
                 'unknown',
-                'zorg_token_accept_request',
                 'zorg_token_expired',
                 'zorg_token_removed_org',
                 'zorg_token_revoked',
+                'zorg_token_account_exists',
             ].forEach((token) => {
                 statusOf(`/z/organization/invitation/${token}`).should('eq', 404);
             });
         });
 
-        it('answers with a 404 when the user already belongs to an organization', () => {
-            cy.loginAs('zorg_member');
-            statusOf('/z/organization/invitation/zorg_token_already_member').should('eq', 404);
-        });
-
-        it('shows the own invitation outside the admin layout', () => {
+        it('shows a logged in visitor the same page', () => {
             cy.loginAs('zorg_stranger');
             cy.visit('/z/organization/invitation/zorg_token_open');
 
             cy.query('invitation-organization').should('contain', 'zorg_Main');
-            cy.query('invitation-email').should('contain', 'zorg_stranger@cypress.test');
-            cy.get('#navbar').should('not.exist');
+            cy.query('invitation-email').should('contain', 'zorg_open@cypress.test');
         });
     });
 
     describe('Accept', () => {
-        const accept = (token) => post(`/_zubzet/organization/invitations/${token}/accept`);
+        const accept = (token, fields = { password: 'zorg_Password1', password_repeat: 'zorg_Password1' }) => post(
+            `/_zubzet/organization/invitations/${token}/accept`,
+            { isFormData: 1, formAction: 'z-organization-accept', ...fields },
+        );
 
-        it('joins the organization through the button', () => {
-            cy.loginAs('zorg_invitee');
+        // The admin page of an account, found through the id the user list shows in front of its address
+        const accountOf = (email) => {
+            cy.loginAs('admin');
+
+            return cy.request('/z/edit_user').its('body').then((list) => {
+                // The id in front of the address, e.g. [814]</code></small> zorg_x@cypress.test
+                const id = list.match(new RegExp(`\\[(\\d+)\\]</code>\\s*</small>\\s*${email}`))[1];
+                return cy.request(`/z/edit_user/${id}`).its('body');
+            });
+        };
+
+        it('creates the account through the form and leads to the login', () => {
             cy.visit('/z/organization/invitation/zorg_token_accept_ui');
             cy.intercept('POST', '/_zubzet/organization/invitations/zorg_token_accept_ui/accept').as('accept');
 
-            cy.query('btn-accept-organization-invitation').click();
+            cy.form('password').type('zorg_Password1');
+            cy.form('password_repeat').type('zorg_Password1');
+            cy.get('#z-organization-accept-form .btn-primary').click();
             cy.wait('@accept');
 
-            cy.location('pathname').should('eq', '/');
+            // The login page, with or without a trailing slash
+            cy.location('pathname').should('match', /\/login\/?$/);
+            cy.getCookie('z_login_token').should('not.exist');
             statusOf('/z/organization/invitation/zorg_token_accept_ui').should('eq', 404);
+
+            cy.query('username').type('zorg_invitee@cypress.test');
+            cy.query('password').type('zorg_Password1');
+            cy.query('btn-login').click();
+            cy.getCookie('z_login_token').should('exist');
         });
 
-        it('adds the organization and its group', () => {
-            cy.loginAs('zorg_invitee_request');
+        it('validates the password', () => {
+            accept('zorg_token_validate', { password: '', password_repeat: '' }).then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'password', type: 'required' });
+                expect(out.formErrors).to.deep.include({ name: 'password_repeat', type: 'required' });
+            });
+
+            accept('zorg_token_validate', { password: 'ab', password_repeat: 'ab' }).then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'password', type: 'length', info: [3, 1024] });
+            });
+
+            accept('zorg_token_validate', { password: 'zorg_Password1', password_repeat: 'zorg_Password2' }).then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'password_repeat', type: 'password_mismatch' });
+            });
+        });
+
+        it('adds the organization and its group, once', () => {
             accept('zorg_token_accept_request').its('result').should('eq', 'success');
+            accept('zorg_token_accept_request').should('deep.include', { result: 'error', message: 'invalid_token' });
 
             cy.loginAs('zorg_manager');
             cy.visit('/z/organization');
-            cy.query('organization-member-804').should('contain', 'zorg_invitee_request@cypress.test');
+            cy.get('.z-organization-members').should('contain', 'zorg_invitee_request@cypress.test');
 
-            cy.loginAs('admin');
-            cy.request('/z/edit_user/804').its('body').should('include', '"role":"263"');
+            accountOf('zorg_invitee_request@cypress.test').should('include', '"role":"263"');
         });
 
-        it('accepts an invitation only once', () => {
-            cy.loginAs('zorg_invitee_request');
-            accept('zorg_token_accept_request').should('deep.include', { result: 'error', message: 'invalid_token' });
+        it('adds the role of the invitation', () => {
+            accept('zorg_token_accept_role').its('result').should('eq', 'success');
+
+            accountOf('zorg_invitee_role@cypress.test').should('include', '"role":"260"').and('include', '"role":"263"');
         });
 
-        it('refuses unknown invitations and those of someone else', () => {
-            cy.loginAs('zorg_stranger');
+        it('leaves out a role that is no longer released', () => {
+            accept('zorg_token_unreleased_role').its('result').should('eq', 'success');
 
-            accept('unknown').should('deep.include', { result: 'error', message: 'invalid_token' });
-            accept('zorg_token_already_invited').should('deep.include', { result: 'error', message: 'invalid_token' });
+            accountOf('zorg_unreleased@cypress.test').should('include', '"role":"263"').and('not.include', '"role":"262"');
         });
 
-        it('refuses a user who already belongs to an organization', () => {
-            cy.loginAs('zorg_member');
-            accept('zorg_token_already_member').should('deep.include', { result: 'error', message: 'already_in_organization' });
+        it('refuses unknown, expired and revoked invitations', () => {
+            ['unknown', 'zorg_token_expired', 'zorg_token_removed_org', 'zorg_token_revoked'].forEach((token) => {
+                accept(token).should('deep.include', { result: 'error', message: 'invalid_token' });
+            });
         });
 
-        it('explains a refused accept in words', () => {
-            cy.loginAs('zorg_stranger');
-            cy.visit('/z/organization/invitation/zorg_token_open');
-            cy.intercept('POST', '/_zubzet/organization/invitations/zorg_token_open/accept', JSON.stringify({
-                result: 'error',
-                message: 'already_in_organization',
-            }));
-
-            cy.query('btn-accept-organization-invitation').click();
-
-            cy.query('organization-accept-error').should('be.visible').and('have.text', 'You are already a member of an organization.');
+        it('refuses an address that has an account by now', () => {
+            accept('zorg_token_account_exists').should('deep.include', { result: 'error', message: 'invalid_token' });
         });
     });
 });

@@ -63,12 +63,13 @@
             $this->exec($query);
         }
 
-        public function createInvite(Organization $organization, string $email): string {
+        public function createInvite(Organization $organization, string $email, ?int $roleId = null): string {
             $token = bin2hex(random_bytes(16));
 
             $query = $this->dbInsert("z_organization_invite", [
                 "organizationId" => $organization->id(),
                 "email" => $email,
+                "roleId" => $roleId,
                 "token" => $token
             ]);
 

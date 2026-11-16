@@ -106,7 +106,7 @@
                 $(() => {
                     // A created invitation belongs in the open invitations list
                     $("#z-organization-invite-modal").on("hidden.bs.modal", function() {
-                        if(!$(this).find(".z-organization-invite-result").hasClass("d-none")) location.reload();
+                        if($(this).find(".z-organization-invite-result, .z-organization-invite-sent").not(".d-none").length) location.reload();
                     });
                 });
             </script>
