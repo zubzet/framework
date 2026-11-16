@@ -22,7 +22,7 @@
         "components/jquery": "3.7.*",
         "components/bootstrap": "4.6.*",
         "components/font-awesome": "6.5.*",
-        "katanaphp/blade": "^0.3.0"
+        "katanaphp/blade": "^0.4.0@RC"
     },
     "require-dev": {
         "phpunit/php-code-coverage": "9.*",
