@@ -131,6 +131,12 @@ nav:
         - Asset Proxy: core-features/asset-proxy
         - Maintenance: core-features/maintenance
         - Health Endpoint: core-features/health-endpoint
+    - Support:
+        - Overview: support
+        - Filesystem: support/filesystem
+        - Runtime Cache: support/runtime-cache
+        - Checkpoints: support/checkpoints
+        - Dynamic Attributes: support/dynamic-attributes
     - Admin Dashboard:
         - Genral Usage: z-admin/usage
         - Login as another User: z-admin/login-as-another-user

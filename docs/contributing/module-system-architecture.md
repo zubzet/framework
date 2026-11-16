@@ -77,13 +77,13 @@ so a stale ini entry can affect ordering but never discovery. Flat ini config wa
 ordering key because that is where this framework already keeps such decisions; no
 `Configuration.php` change was needed, the flat parser accepts arbitrary keys. Metapackages
 (`getInstallPath()` returning null) are skipped. Both `packages()` and `roots()` are memoized in
-`StaticCache` for the request.
+`InternalRuntimeCache` for the request.
 
 ### RootIndex
 
 `src/Registry/RootIndex.php` is the lazy recursive filename index of one root: a
 `RecursiveIteratorIterator` sweep producing `bare name => sorted relative paths`, memoized per
-`(root, extensions)` in `StaticCache`. It is the abstraction the `@TODO` in `z_migrationModel`
+`(root, extensions)` in `InternalRuntimeCache`. It is the abstraction the `@TODO` in `z_migrationModel`
 asked for, and it exists only on the slow path (see below). Recursive lookup overall was a
 small-code big-impact choice: a few lines here let users organize controllers and models in
 subdirectories, while the flat-first fast path keeps every existing lookup byte-identical and
@@ -112,7 +112,7 @@ Names containing a path separator (model dot notation arrives as `reports/FooMod
 paths: they address one exact location per root and never fall back to the index. Recursion is a
 convenience for bare names, not an alternate addressing scheme.
 
-`find()` results are memoized per request in `StaticCache` under `(kind, name)`. This is a
+`find()` results are memoized per request in `InternalRuntimeCache` under `(kind, name)`. This is a
 correctness feature, not an optimization: the Router reroutes to `executePath(["error", ...])` on
 failures, and one class name must map to exactly one file for the whole request, including those
 re-entries. Otherwise an error-path re-resolution could pick a *different* same-named file and

@@ -4,7 +4,7 @@
 
     use ZubZet\Framework\Logger\Logger;
     use ZubZet\Framework\Logger\LogEventType;
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
     use ZubZet\Framework\Logger\LoggerFactory;
     use ZubZet\Framework\ErrorHandling\WhoopsHandler;
     use ZubZet\Framework\ErrorHandling\BehaviorOption;
@@ -110,7 +110,7 @@
                     // Logger failure must not mask the original $e.
                 }
 
-                $whoopsHandler = StaticCache::getOrNull("handler", "whoops");
+                $whoopsHandler = InternalRuntimeCache::getOrNull("handler", "whoops");
                 if(!is_null($whoopsHandler)) {
                     $whoopsHandler->run->handleException($e);
                     return;

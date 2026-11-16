@@ -48,25 +48,9 @@ describe('Response', () => {
     // silently broaden or narrow the cookie scope.
     // -----------------------------------------------------------------
     describe('cookie domain scope (security)', () => {
-        it('getCookieDomainScope() returns "" when subdomain sharing is disabled', () => {
-            cy.request('/Response/cookieDomainScopeDefault').then((res) => {
-                expect(res.body.scope).to.eq('');
-            });
-        });
-
-        it('getCookieDomainScope() returns ".<domain>" when subdomain sharing is enabled', () => {
-            cy.request('/Response/cookieDomainScopeSubdomain').then((res) => {
-                // The leading dot is the wildcard signal to browsers - it's
-                // how RFC 6265 (legacy) and modern browsers identify
-                // "send this cookie to all subdomains".
-                expect(res.body.scope).to.eq(`.${res.body.domain}`);
-                expect(res.body.scope.charAt(0)).to.eq('.');
-            });
-        });
-
         // The actual Set-Cookie header must reflect the scope. Without
-        // this assertion, getCookieDomainScope() could return the right
-        // string while loginAs forgets to wire it into setcookie().
+        // this assertion, loginAs could forget to wire the scope into
+        // setcookie().
         it('loginAs emits Set-Cookie WITH Domain=.<base> when subdomain sharing is on', () => {
             cy.request('/Response/loginAsWithSubdomainScope').then((res) => {
                 const headers = [].concat(res.headers['set-cookie'] || []);

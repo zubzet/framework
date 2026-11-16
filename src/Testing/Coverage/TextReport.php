@@ -20,16 +20,20 @@
         private const COLOR_RESET = "\x1b[0m";
 
         public function process(CodeCoverage $coverage): string {
-            // Generate summary first to determine color coding for files
-            $summary = (new Text(
+            // Render branch structure with color-coded coverage percentages
+            return $this->summary($coverage) . $this->renderDirectory($coverage->getReport());
+        }
+
+        /**
+         * The totals of classes, methods and lines, without the file tree.
+         */
+        public function summary(CodeCoverage $coverage): string {
+            return (new Text(
                 lowUpperBound: 50,
                 highLowerBound: 90,
                 showUncoveredFiles: true,
                 showOnlySummary: true,
             ))->process($coverage, true);
-
-            // Render branch structure with color-coded coverage percentages
-            return $summary . $this->renderDirectory($coverage->getReport());
         }
 
         private function renderDirectory(Directory $dir, string $indent = ''): string {

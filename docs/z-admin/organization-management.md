@@ -41,14 +41,14 @@ In the *Members* section every member gets a multi select of the released roles.
 
 ## Components
 
-The page is built from Blade components in the `zubzet::` namespace, so an application can place them on its own pages. Each one checks its permission and renders nothing without it. They post to the framework's `_zubzet/organization/*` endpoints.
+The page is built from Blade components in the `zubzet::` namespace, so an application can place them on its own pages. Each one checks its permission, renders nothing without it and loads the data of the current user's organization itself. They post to the framework's `_zubzet/organization/*` endpoints.
 
 | Component | Props | Permission |
 | --------- | ----- | ---------- |
-| `<x-zubzet::organization.rename :name="$name"/>` | `name`: the current name | `z.organization.rename` |
+| `<x-zubzet::organization.rename/>` | - | `z.organization.rename` |
 | `<x-zubzet::organization.invite/>` | - | `z.organization.invite` |
-| `<x-zubzet::organization.invites :invites="$invites"/>` | `invites`: invitation rows with an `expires_at` timestamp | `z.organization.invite` |
-| `<x-zubzet::organization.members :members="$members" :food="$roleFood"/>` | `members`: `id`, `email` and the held `roles` ids per member; `food`: the released roles as `value`/`text` pairs | `z.organization.roles` |
+| `<x-zubzet::organization.invites/>` | - | `z.organization.invite` |
+| `<x-zubzet::organization.members/>` | - | `z.organization.roles` |
 | `<x-zubzet::organization.accept :token="$token"/>` | `token`: the invitation token | logged in |
 
 The error messages come from `Z.Lang` in `Z.js`. Like its other texts, they can be overwritten in the layout after the layout essentials are embedded:

@@ -17,11 +17,6 @@ tests/cypress/screenshots/*
 
 # Fixtures temporarily copied into the app during e2e runs (cleaned up by tests,
 # but listed here so an interrupted run never lets them slip into a commit).
-app/Database/migrations/Syntax.sql
-app/Database/migrations/2025-10-10.sql
-app/Database/migrations/12-10-2004_Wrong_Date.sql
-app/Database/migrations/1990-10-10_Test_Name.sql
-app/Database/migrations/5000-10-10_Test_Name.sql
 app/Database/migrations/2005-01-01_1_Syn_File.sql
 app/Database/migrations/2005-01-01_2_Syn_File.sql
 app/Database/migrations/2005-01-05_1_Syn_File.sql

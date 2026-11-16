@@ -4,7 +4,7 @@
 
     use ZubZet\Framework\Authentication\Permission\User;
 
-    class APIKey extends AuthenticationObject {
+    class APIKey extends AuthenticationEntity {
 
         use CanUseSession;
         use HandleTrait;

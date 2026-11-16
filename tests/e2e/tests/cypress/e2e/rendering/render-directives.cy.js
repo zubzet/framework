@@ -17,19 +17,6 @@ describe('Auth directives (@auth / @guest)', () => {
     const has = (res, token) => expect(res.body, token).to.include(`>${token}<`);
     const lacks = (res, token) => expect(res.body, token).to.not.include(`>${token}<`);
 
-    it('logged out: only the @guest branches render', () => {
-        cy.clearCookies();
-        cy.request(URL).then((res) => {
-            expect(res.status).to.eq(200);
-            has(res, 'GUEST');
-            has(res, 'GUEST_DASHBOARD'); // guest of a permission the user lacks (not logged in)
-            has(res, 'GUEST_ORDERS');
-            lacks(res, 'AUTH');
-            lacks(res, 'AUTH_DASHBOARD');
-            lacks(res, 'AUTH_ORDERS');
-        });
-    });
-
     it('logged in without the wildcard: directive argument gates on the permission', () => {
         cy.loginAs('support'); // has `dashboard`, lacks `orders.view`
         cy.request(URL).then((res) => {

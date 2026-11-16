@@ -107,6 +107,36 @@
             }
         });
 
+        FunctionConflictResolution::requireAndThen("configSwitch", function() {
+            /**
+             * Fetches a configuration value that switches something on or off.
+             *
+             * On is `true`, `on`, `yes` and `1`, off is `false`, `off`, `no`,
+             * `0` and an empty value, in any case and whether the config file
+             * holds them quoted or not. Anything else is rejected instead of
+             * read as off, where a typo would silently disable whatever the
+             * setting controls.
+             *
+             * @param string $key Setting key
+             * @param bool $default Value used when the key is missing
+             * @throws \InvalidArgumentException When the configured value is no switch
+             * @return bool Whether the setting is switched on
+             */
+            function configSwitch(string $key, bool $default): bool {
+                $value = config($key, default: $default);
+                if(is_bool($value)) return $value;
+
+                // null for everything that is neither on nor off
+                $switch = is_scalar($value) ? filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) : null;
+                if(is_null($switch)) {
+                    $shown = is_scalar($value) ? "'$value'" : "a list";
+                    throw new \InvalidArgumentException("Config key '$key' must be a switch (true or false), got: $shown");
+                }
+
+                return $switch;
+            }
+        });
+
         FunctionConflictResolution::requireAndThen("user", function() {
             /**
              * Proxy to the requesting user's object, also for guests (check isLoggedIn)

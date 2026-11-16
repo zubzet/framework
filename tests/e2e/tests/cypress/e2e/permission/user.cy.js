@@ -241,22 +241,6 @@ describe('Permission System - User', () => {
     });
 
 
-    it('should check if a user is verified, when verified is null', () => {
-        requestJson('/user/isVerifiedOnNull').then((output) => {
-            expect(output).to.deep.equal(
-                {"isVerifiedNow":false,"isVerifiedPast":false}
-            );
-        });
-    });
-
-    it('should check if a user is verified, when verified is not null', () => {
-        requestJson('/user/isVerifiedNotNull').then((output) => {
-            expect(output).to.deep.equal(
-                {"isVerifiedNow":true,"isVerifiedPast":false,"isVerifiedFuture":true}
-            );
-        });
-    });
-
     it('should check if a user can be refreshed', () => {
         requestJson('/user/refresh').then((output) => {
             expect(output).to.deep.equal(

@@ -2,7 +2,7 @@
 ## URL Parameters
 When using virtual links, parameters as “subfolders” is a great way of transfering values, that are also very readable. See the following link schema as an example of what is meant by parametres within the virtual link: `controller/action/param0/param1/param2/...`
 ### Read the parameters using code
-To [read the virtual url parameters](../api/classes/ZubZet-Framework-Message-Request.html#method_getParameters) use `$req->getParameters`. It works using an offset and a length: length 1 returns the single segment (`false` when absent) or, with a value to compare against, a boolean from a loose `==`; any other length returns an array slice, `null` all remaining segments. `getReadableParameter()` splits an SEO segment such as `title-64` at the last dash into `text` and `id` (without a dash the whole segment is the `id`, without a segment both are empty strings), and `getUrlParts()` returns all raw segments below the root directory, not URL-decoded (a double slash gives an empty one). `getParameters()` always skips the first two segments (controller and action), so for routes of another shape use [`getRouteParameter()`](routing.md#route-parameters). `getCurrentURL()` returns `host` plus the raw `REQUEST_URI` with query string, `getRoot()` the `root` setting (host plus root directory, also `Z.Request.rootHost`) and `getRootFolder()` the `rootFolder` path such as `/`; `getDomain()` returns `host` without scheme, port and path, and `isCli()` is `true` for console runs.
+To [read the virtual url parameters](../api/classes/ZubZet-Framework-Message-Request.html#method_getParameters) use `$req->getParameters`. It works using an offset and a length: length 1 returns the single segment (`false` when absent) or, with a value to compare against, a boolean from a comparison as text (`05` is not `5`); any other length returns an array slice, `null` all remaining segments. `getReadableParameter()` splits an SEO segment such as `title-64` at the last dash into `text` and `id` (without a dash the whole segment is the `id`, without a segment both are empty strings), and `getUrlParts()` returns all raw segments below the root directory, not URL-decoded (a double slash gives an empty one); a path that does not lie below the root directory keeps all its segments. `getParameters()` always skips the first two segments (controller and action), so for routes of another shape use [`getRouteParameter()`](routing.md#route-parameters). `getCurrentURL()` returns `host` plus the raw `REQUEST_URI` with query string, `getRoot()` the `root` setting (host plus root directory, also `Z.Request.rootHost`) and `getRootFolder()` the `rootFolder` path such as `/`; `getDomain()` returns `host` without scheme, port and path, and `isCli()` is `true` for console runs.
 ### Examples
 Example URL:<br>
 `www.yourwebsite.com/{controller}/{action}/a/b/c`
@@ -76,7 +76,7 @@ $res->setCookie("name", "value", [
 `$req->getFile` uses `$_FILE` like `$req->getPost` uses `$_POST`. `getFiles()` and `getCookies()` are the key-less forms of `getFile()` and `getCookie()`, and `getFile($key, $default)` returns `$default` for a missing key like the other getters.
 
 ### Body and raw input
-`$req->getBody()` returns the raw request body, or `null` when it is empty or exactly `"0"`. `$req->getJson()` decodes it into associative arrays, see [JSON body](#json-body). `$req->store` is a public array that the framework never fills and `reroute()` replaces the `Request`, so it is empty afterwards. `SERVER`, `SESSION`, `REQUEST` and `body` have no getters, read them from `$req->input`; there is no `getMethod()`, `getHeader()`, `isPost()` or `isAjax()`, use `$req->input->SERVER["REQUEST_METHOD"]` or the `HTTP_*` keys. `$req->ip()` returns the first set of `HTTP_CLIENT_IP`, `HTTP_X_FORWARDED_FOR` and `REMOTE_ADDR` (then the `getenv()` variants), `referer()` and `userAgent()` the header or `null`, and `getExecutionTime()` the seconds since `REQUEST_TIME_FLOAT` (`null` if missing).
+`$req->getBody()` returns the raw request body, or `null` when it is empty. `$req->getJson()` decodes it into associative arrays, see [JSON body](#json-body). `$req->store` is a public array that the framework never fills. `reroute()` replaces the `Request` and hands the store on to the new one, so an action can pass data to the action it reroutes to. `SERVER`, `SESSION`, `REQUEST` and `body` have no getters, read them from `$req->input`; `REQUEST` holds what PHP's `request_order` setting names (GET and POST with `php.ini-production`, so no cookies), like `$_REQUEST`; there is no `getMethod()`, `getHeader()`, `isPost()` or `isAjax()`, use `$req->input->SERVER["REQUEST_METHOD"]` or the `HTTP_*` keys. `$req->ip()` returns the first set of `HTTP_CLIENT_IP`, `HTTP_X_FORWARDED_FOR` and `REMOTE_ADDR` (then the `getenv()` variants), `referer()` and `userAgent()` the header or `null`, and `getExecutionTime()` the seconds since `REQUEST_TIME_FLOAT` (`null` if missing).
 
 ### Accept-Language
 `$req->acceptLanguage()` returns the locales of the request's `Accept-Language` header, best first. Entries are ordered by their `q` value, malformed entries and `q=0` are dropped, and each tag is brought into its canonical case, so `en-us` and `EN-US` are one entry. The header is client controlled, so only the first 50 entries are read.
@@ -91,24 +91,17 @@ $req->acceptLanguage(); // "de-CH,de;q=0.9,en;q=0.8" -> ["de-CH", "de", "en"]
 `$req->bearerToken()` returns the token of an `Authorization: Bearer <token>` header, or `null` when the header is missing, uses another scheme or does not carry exactly one token (`Bearer `, `Bearer a b`). The framework [authenticates by it](access-control.md#bearer-authentication) before the login cookie.
 
 ### JSON body
-`$req->getBody()` returns the raw request body. `$req->getJson()` decodes it as JSON, objects into associative arrays, and throws otherwise. An `UnexpectedValueException` carries the HTTP status to answer with as its code:
+`$req->getBody()` returns the raw request body. `$req->getJson()` decodes it as JSON, whatever the method and the `Content-Type` of the request are. An object or a list comes back as an array (objects as associative arrays), and a number, a string, a boolean or `null` as that value, because those are JSON too. A request without a body gives `null`, so an optional body reads as `$req->getJson() ?? []`. Integers beyond `PHP_INT_MAX` come back as strings instead of lossy floats.
 
-| Status | Reason |
-|--------|--------|
-| 405 | The method is not POST, PUT, PATCH or DELETE |
-| 415 | The Content-Type is not exactly `application/json`, or names a charset other than utf-8 |
-| 413 | The body is longer than `$maxBytes` (default 1 MiB) |
+A body that is not well formed JSON (a BOM, invalid UTF-8, nesting deeper than 512 levels) throws a `\JsonException`; answer it with 400.
 
-A body that is not well formed JSON (a BOM, an empty body, invalid UTF-8 or nesting deeper than `$maxDepth`, default 32) throws a `\JsonException` instead; answer it with 400.
+Both limits are optional. `$req->getJson(maxBytes: 65536)` throws an `UnexpectedValueException` with the code 413 for a longer body, and `maxDepth` lowers the accepted nesting. Without `maxBytes` the length is only limited by the web server and PHP's memory limit.
 
-The strict Content-Type is what keeps a cross site form out: a form can send `text/plain` and form types, but never `application/json`. Integers beyond `PHP_INT_MAX` come back as strings instead of lossy floats.
+The method and the `Content-Type` need no check here: a forged cross site request is turned away before the action runs, by the [CSRF check](csrf-protection.md) on the headers of the request.
 
 ```php
 try {
-    $data = $req->getJson();
-} catch(\UnexpectedValueException $e) {
-    http_response_code($e->getCode());
-    return $res->json(["error" => $e->getMessage()]);
+    $data = $req->getJson() ?? [];
 } catch(\JsonException $e) {
     http_response_code(400);
     return $res->json(["error" => $e->getMessage()]);

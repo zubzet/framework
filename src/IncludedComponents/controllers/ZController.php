@@ -239,38 +239,8 @@
                 ], "layout/min_layout.php");
             }
 
-            $invites = [];
-            if(!is_null($organization) && $req->checkPermission("z.organization.invite", true)) {
-                $invites = model("z_organization")->getInvitesByOrganization($organization);
-            }
-
-            $members = [];
-            $roleFood = [];
-            if(!is_null($organization) && $req->checkPermission("z.organization.roles", true)) {
-                foreach(model("z_organization")->getAssignableRoles() as $role) {
-                    $roleFood[] = ["value" => $role["id"], "text" => $role["name"]];
-                }
-
-                $heldRoleIds = [];
-                foreach(model("z_organization")->getAssignedRoles($organization) as $assignment) {
-                    $heldRoleIds[$assignment["user"]][] = $assignment["role"];
-                }
-
-                foreach($organization->getUsers() as $member) {
-                    $members[] = [
-                        "id" => $member->id(),
-                        // email() is typed string, an account may have none
-                        "email" => $member->getField("email"),
-                        "roles" => $heldRoleIds[$member->id()] ?? [],
-                    ];
-                }
-            }
-
             return $res->render("administration/organization.php", [
-                "organizationName" => $organization?->getField("name"),
-                "invites" => $invites,
-                "members" => $members,
-                "roleFood" => $roleFood,
+                "organization" => $organization,
             ]);
         }
 

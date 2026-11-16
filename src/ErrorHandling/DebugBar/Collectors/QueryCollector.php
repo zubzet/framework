@@ -14,7 +14,7 @@
 
         public function addQuery(string $sql, float $durationSeconds = 0.0, int $rowCount = 0, array $values = [], ?Model $model = null): void {
             // Optionally skip collecting internal queries based on configuration
-            $hideInternals = config("debugbar_hide_internal_queries", default: true);
+            $hideInternals = configSwitch("debugbar_hide_internal_queries", true);
             $isInternal = $model?->isInternalModel ?? false;
             if($hideInternals && $isInternal) return;
 

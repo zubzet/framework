@@ -104,7 +104,7 @@
             $this->user = config("dbusername");
             $this->password = config("dbpassword");
             $this->database = config("dbname");
-            $this->persistent = filter_var(config("db_persistent", default: false), FILTER_VALIDATE_BOOLEAN);
+            $this->persistent = configSwitch("db_persistent", false);
         }
 
         private function connect() {
@@ -297,7 +297,7 @@
                 // The slow-query log itself runs an INSERT through this same Connection,
                 // which clobbers every #[IncludeInCheckpoint] property. Reentrancy into the
                 // logger is prevented by DatabaseLogger's own guard.
-                $checkpoint = $this->checkpointCurrentState(attributeClass: IncludeInCheckpoint::class);
+                $checkpoint = $this->checkpointCurrentState();
                 try {
                     logger(Logger::ZUBZET)->warning(LogEventType::SLOW_QUERY, [
                         'duration_ms' => round($queryDuration, 2),

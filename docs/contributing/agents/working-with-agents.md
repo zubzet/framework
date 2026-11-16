@@ -14,7 +14,7 @@ This page is for AI coding agents (Claude Code, Cursor, Codex, Aider, etc.) and 
 | `mkdocs.yml` | Docs site nav and theme config |
 | `composer.json` | PHP 8.0–8.6 support, autoload, dependencies |
 
-There is no top-level `package.json` and no PHPUnit suite — testing is end-to-end only, run from `tests/e2e/`.
+Testing has two layers. What needs the running application (web server, database, browser, console process) is tested end-to-end from `tests/e2e/`. Logic that needs none of that has unit tests in `tests/unit/`: PHPUnit for `src/` (`composer test`) and Mocha and Chai for `web/Z.js`, the same pair Cypress specs are written in (`npm install` once, then `npm test` in `tests/unit/js/`). A new Z.js test is a `*.test.js` file anywhere under `tests/unit/js/`. Like a Cypress spec it imports nothing: `describe`, `it`, `expect`, a fresh `Z` per test and the `$.ajax()` stand-in `ajax` are globals, provided by `tests/unit/js/support/setup.js`. In CI the e2e job only starts after the unit tests passed.
 
 `src/` subdirectories at a glance:
 
@@ -96,7 +96,7 @@ calls on `Registry`: `paths($kind)` (ordered roots), `files($kind)` (every file 
 then framework. Asset-proxy mounts follow the same order (modules before the framework layers);
 the application's webroot needs no mount because the web server serves it before PHP runs.
 
-`find()` memoizes per request in `StaticCache` and probes each root flat first; the recursive
+`find()` memoizes per request in `InternalRuntimeCache` and probes each root flat first; the recursive
 per-root index (`RootIndex`) only runs for bare names after a flat miss, shallowest match first.
 Do not add new `file_exists`/`glob` lookups at call sites: route them through the Registry.
 
@@ -132,6 +132,7 @@ Defined in `src/Support/GlobalReferences.php`, wrapped with `FunctionConflictRes
 | `response()` | Current `Response` |
 | `config($key=null, $useDefault=true, $default=null)` | Booter setting value, or array of all settings |
 | `configNumeric($key, $default)` | Booter setting as `int`, throwing on a non-numeric value |
+| `configSwitch($key, $default)` | Booter setting as `bool` (`true`/`on`/`yes`/`1`, `false`/`off`/`no`/`0`/empty), throwing on anything else. Never read a switch with `config()`: the text `false` is truthy |
 | `user()` | `User` (currently logged-in) |
 | `db($connection="default")` | `Connection` |
 | `model($name, $dir=null)` | Model instance |
@@ -329,7 +330,10 @@ The `z_migration` table (with `z_migration_lock`) prevents re-execution under no
 ## Common pitfalls
 
 - **Port confusion.** App is at `:8080`, not `:4000`. The `host` setting in INI is informational, not the listening port.
-- **No PHPUnit / unit tests.** All testing is Cypress e2e in `tests/e2e/`.
+- **Logic belongs in a unit test, not behind a probe controller.** `tests/unit/php/` (PHPUnit, namespace `Tests\`, one test class per class in `src/`, same path) and `tests/unit/js/` are for everything whose result is a return value, an exception or the state of an object. A Cypress spec in `tests/e2e/` is for what needs the web server, the database, the browser, a real process or more than one request. Do not add a controller to the e2e app that only calls a framework function and prints the result.
+- **`Tests\TestCase` provides the framework to a unit test.** `bootFramework([...])` gives `zubzet()`, `config()` and the other global helpers an instance that holds exactly the given settings, without a config file, a database or a request. `input()` is an empty input state to fill with its `with...()` methods (its `REQUEST` is put together as `GPC` whatever the machine's `request_order` says, `input("GP")` picks another order), `request()` and `response()` make one current, `currentUser()` sets a user that needs no database, `temporaryDirectory()` and `inDirectory()` cover files, `assertThrows()` checks the exact class and message. Everything is reset after each test. A test class never writes its own boot. The constant `FRAMEWORK_ROOT` (from `tests/unit/php/bootstrap.php`) is the folder of the framework, for a test that has to name one of its files, instead of counting `../`.
+- **`exit` ends PHPUnit silently.** Code that reaches `exit` or `die` (most of `Response::success()`, `error()`, `reroute()`) stops the whole run with exit code 0 and no summary: the remaining tests never run and CI stays green. Such code stays in e2e. `header()` does nothing on the CLI, so sent headers and status codes cannot be asserted in a unit test either. Code that calls `header()` or `setcookie()` still needs `@runTestsInSeparateProcesses`, because PHP refuses both once PHPUnit has printed anything.
+- **Real HTTP requests in a unit test.** `Tests\Message\Input\StateHttpTest` starts PHP's built-in web server on a free port with fixed `php.ini` settings and compares what `State::fromRequest()` holds with PHP's own `$_GET`, `$_POST`, `$_COOKIE`, `$_FILES`, `$_REQUEST` and body. Use it for anything that depends on what a client really sends (bodies, uploads, headers, `request_order`); a superglobal filled by hand only proves what the test assumed.
 - **Multiple PHP versions in CI.** The floor is PHP 8.0, the ceiling the newest line. Known breakers: `#[\Override]` does not exist before 8.3; implicit nullable parameters (`string $x = null`) are deprecated since 8.4, write `?string $x = null`; `finfo_close()` is deprecated on the newest line; by-ref model constructors were removed in 1.2.
 - **`config()` is unavailable before bootstrap.** Anything called from `MaintenanceHandler::gate()` must already have configuration loaded; anything earlier must read INI directly.
 - **A red CI run is classified first**: a flake, a rebase side effect, or a real regression. Reproduce on the base branch before blaming your change. Local green is not CI green: CI runs PHP 8.0 and 8.6 on fresh volumes. Flakiness is never acceptable: a test that fails sometimes is fixed (deterministic app state, retrying assertions, proper waits), never re-run until green.

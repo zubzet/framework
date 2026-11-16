@@ -1,9 +1,11 @@
-@props(["invites"])
+@php
+    use ZubZet\Framework\Authentication\Organization;
+@endphp
 
 @auth
     @if(user()->checkPermission("z.organization.invite") && !is_null(user()->orgId))
         <ul {{ $attributes->class("list-group z-organization-invites") }}>
-            @forelse($invites as $invite)
+            @forelse(model("z_organization")->getInvitesByOrganization(Organization::byId(user()->orgId)) as $invite)
                 <li class="list-group-item" data-test="organization-invite-{{ $invite['id'] }}">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="mr-3">

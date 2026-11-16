@@ -5,7 +5,7 @@
     use SebastianBergmann\CodeCoverage\CodeCoverage;
     use SebastianBergmann\CodeCoverage\Driver\Selector;
     use SebastianBergmann\CodeCoverage\Filter;
-    use Symfony\Component\Filesystem\Filesystem;
+    use ZubZet\Framework\Support\Filesystem;
 
     /**
      * @internal
@@ -89,7 +89,13 @@
                 $filter
             );
 
-            self::$coverage->start(uniqid('request_'));
+            // Every request is a new process. Without the cache each one
+            // parses all the files it loaded again to find their executable lines.
+            self::$coverage->cacheStaticAnalysis(self::$dataDirectory . 'cache');
+
+            // One id for all requests. The library keeps a list of ids per
+            // line, and merging gets slower with every id that is added to it.
+            self::$coverage->start('request');
         }
 
         /** Stops collection and serializes the coverage data to disk. */
@@ -101,7 +107,14 @@
             $dir = self::$dataDirectory . self::getSessionId() . '/';
             if(!is_dir($dir)) mkdir($dir, 0755, true);
 
-            file_put_contents($dir . uniqid() . '.cov', serialize(self::$coverage));
+            // Requests end at the same time. uniqid() is only the clock, so two of them can get
+            // the same name and write into one file, which then cannot be read anymore.
+            $file = $dir . bin2hex(random_bytes(16));
+
+            // merge() only picks up .cov files, so it never reads one that is still being written
+            file_put_contents("$file.tmp", serialize(self::$coverage));
+            rename("$file.tmp", "$file.cov");
+
             self::$coverage = null;
         }
 
@@ -127,12 +140,14 @@
 
         public static function cleanup(): void {
             // Remove all coverage data files for the current session
-            $dir = self::$dataDirectory . self::getSessionId() . '/';
-            (new Filesystem())->remove($dir);
+            // Without a session id the path would be the data directory itself, which also holds the report
+            $sessionId = self::isActive() ? self::getSessionId() : self::$sessionId;
+            if(!empty($sessionId)) {
+                Filesystem::remove(self::$dataDirectory . $sessionId);
+            }
 
             // Remove current session file to allow starting a new session
-            $sessionLocation = Collector::$sessionLocation;
-            (new Filesystem())->remove($sessionLocation);
+            Filesystem::remove(self::$sessionLocation);
 
             self::$sessionId = "";
         }

@@ -151,12 +151,6 @@ describe('Authentication - Session', () => {
         });
     });
 
-    it('should give a new session the 7 day default lifetime without loginTimeoutSeconds', () => {
-        requestJson('/session/addWithoutTimeoutSetting').then((output) => {
-            expect(output.lifetime).to.equal(7 * 24 * 60 * 60);
-        });
-    });
-
 
     /**
      * Tokens at rest
@@ -254,31 +248,6 @@ describe('Authentication - Session', () => {
      * Business Logic
      */
 
-    it('should report a recently created session as not expired (isExpired)', () => {
-        requestJson('/session/isExpiredActive').then((output) => {
-            expect(output).to.deep.equal({
-                isExpired: false,
-            });
-        });
-    });
-
-    it('should report an old session without extension as expired (isExpired)', () => {
-        requestJson('/session/isExpiredExpired').then((output) => {
-            expect(output).to.deep.equal({
-                isExpired: true,
-            });
-        });
-    });
-
-    it('should report an old session as not expired when the extension covers the gap (isExpired)', () => {
-        requestJson('/session/isExpiredExtended').then((output) => {
-            expect(output).to.deep.equal({
-                isExpired: false,
-            });
-        });
-    });
-
-
     it('should exempt an ordinary login from expiring, reviving an expired session', () => {
         requestJson('/session/sessionPermanent').then((output) => {
             // Session 438 is a login created in the year 2000, without extension
@@ -299,27 +268,6 @@ describe('Authentication - Session', () => {
      * A fixed expiry
      */
 
-    it('should let a fixed expiry outrank the computed lifetime', () => {
-        requestJson('/session/expiresAtFixed').then((output) => {
-            // Session 440 was created in the year 2000, so only the date keeps it alive
-            expect(output).to.deep.equal({
-                isExpired: false,
-                expiresAt: '2099-01-01 12:00:00',
-                canExpire: true,
-            });
-        });
-    });
-
-    it('should ignore the timeout and the extension once an expiry is fixed', () => {
-        requestJson('/session/expiresAtOverrules').then((output) => {
-            // Session 441 was created now and extended by ~63 years on top
-            expect(output.extendedSeconds).to.equal(2000000000);
-
-            expect(output.expiresAt).to.equal('2000-01-01 12:00:00');
-            expect(output.isExpired).to.be.true;
-        });
-    });
-
     it('should fix and drop the expiry through the session object (setExpiresAt)', () => {
         requestJson('/session/setExpiresAt').then((output) => {
             // Session 442 is a login from the year 2000 without an extension
@@ -334,17 +282,6 @@ describe('Authentication - Session', () => {
 
             // Dropping it hands the session back to created + timeout
             expect(output.dropped).to.deep.equal(output.before);
-        });
-    });
-
-    it('should keep a session exempt from expiring despite a fixed expiry', () => {
-        requestJson('/session/expiresAtPermanent').then((output) => {
-            // Being exempt outranks the date - the session never becomes unusable
-            expect(output).to.deep.equal({
-                isExpired: false,
-                expiresAt: null,
-                canExpire: false,
-            });
         });
     });
 

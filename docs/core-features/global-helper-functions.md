@@ -105,6 +105,29 @@ configNumeric("db_max_retries", 3);
 
 ---
 
+### `configSwitch()`
+
+Retrieves a [configuration value](configuration.md) that switches something on or off, as a boolean.
+
+**Syntax:** `configSwitch(string $key, bool $default)`
+
+* **$key**: The configuration identifier.
+* **$default**: The value to return if the key is missing.
+
+On is `true`, `on`, `yes` and `1`. Off is `false`, `off`, `no`, `0` and an empty value. The case does not matter, and neither does where the value comes from: an unquoted `true` in the settings file arrives as `1`, a quoted one and an environment variable as the text `true`, and all of them switch the setting on.
+
+**Note:** Use it instead of `config()` for every setting that is a switch. To PHP the text `false` is truthy, so `if(config("feature"))` is on for `CONFIG_FEATURE=false`. Any other value is rejected with an `InvalidArgumentException` instead of being read as off, so a typo like `ture` cannot silently disable whatever the setting controls.
+
+**Example:**
+
+```php
+if(configSwitch("newsletter_enabled", false)) {
+    // ...
+}
+```
+
+---
+
 ### `user()`
 
 Returns the [request user](../api/classes/ZubZet-Framework-Authentication-User.html), built once per request when the framework is constructed, from the bearer token or the `z_login_token` cookie. It is also available as `$req->getRequestingUser()`, `$req->booter->user`, `$opt["user"]` in views and as the global alias `User`, which is not the record class `Authentication\Permission\User` (import that one with `use`).
@@ -258,7 +281,7 @@ Escapes a string for safe HTML output. It strips tags (everything between `<` an
 
 Use it whenever a value ends up in HTML outside of a template echo, for example in attributes built in PHP.
 
-`shortenStr($str, $maxlength = 10)` cuts at word boundaries and appends `...`, but returns a string that fits with a trailing space; `getCaller($depth = 1)` only works for `0` and `1`; `var_swap(&$x, &$y)` swaps two variables. `makeSlug()` drops every character outside `A-Za-z0-9-_` and space without transliterating, so `Größe` becomes `gre`; `emptyToNull(&$value)` also nulls `0`, `'0'`, `false`, `[]` and the string `null`. The global constants `TIMESPAN_DAY_n` hold n days in seconds (`TIMESPAN_DAY_1` is 86400) for n = 1, 2, 3, 7, 10, 14, 20, 21, 30, 60, 90, 180, 182 and 365; the `FILE_SIZE_*` constants are listed in [File Uploads](../forms/file-uploads.md).
+`shortenStr($str, $maxlength = 10)` returns a string that fits unchanged; a longer one is cut to `$maxlength` characters including the appended `...`, word by word and inside the word that no longer fits; `getCaller($depth = 1)` only works for `0` and `1`; `var_swap(&$x, &$y)` swaps two variables. `makeSlug()` drops every character outside `A-Za-z0-9-_` and space without transliterating, so `Größe` becomes `gre`; `emptyToNull(&$value)` also nulls `0`, `'0'`, `false`, `[]` and the string `null`. The global constants `TIMESPAN_DAY_n` hold n days in seconds (`TIMESPAN_DAY_1` is 86400) for n = 1, 2, 3, 7, 10, 14, 20, 21, 30, 60, 90, 180, 182 and 365; the `FILE_SIZE_*` constants are listed in [File Uploads](../forms/file-uploads.md).
 
 **Example:**
 

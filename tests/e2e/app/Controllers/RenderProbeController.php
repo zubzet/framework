@@ -4,8 +4,8 @@
      * Drives the Katana render engine's resolution + $opt contract through the
      * real render path (Rendering\CanRenderView -> Rendering\Katana\Engine).
      * Covered by:
-     *   core/view-resolution.cy.js - extension/dot equivalence, override, cross-root
-     *   core/opt-contract.cy.js    - $opt shape, title, generateResourceLink
+     *   core/view-resolution.cy.js - dot notation, override, cross-root
+     *   core/opt-contract.cy.js    - $opt shape (caller data top-level and in $opt)
      *   core/view-fallback.cy.js   - missing view/layout -> 500 page
      *
      * Most actions render into the framework's chrome-free layout/empty so the
@@ -22,33 +22,10 @@
             ], "layout/empty");
         }
 
-        // No caller title -> $opt["title"] falls back to config("pageName").
-        public function action_optDefaultTitle(Request $req, Response $res) {
-            return $res->render("renderprobe/opt", [
-                "a" => "alpha",
-            ], "layout/empty");
-        }
-
-        public function action_resourceLink(Request $req, Response $res) {
-            return $res->render("renderprobe/resource", [], "layout/empty");
-        }
-
         // -- View-name resolution ----------------------------------------------
 
-        // The same app view addressed four ways: bare, ".blade.php", ".php" and
-        // dotted. All must resolve to app/Views/core/render.blade.php.
-        public function action_extNone(Request $req, Response $res) {
-            return $res->render("core/render", ["data" => "ExtNone"], "layout/empty");
-        }
-
-        public function action_extBlade(Request $req, Response $res) {
-            return $res->render("core/render.blade.php", ["data" => "ExtBlade"], "layout/empty");
-        }
-
-        public function action_extPhp(Request $req, Response $res) {
-            return $res->render("core/render.php", ["data" => "ExtPhp"], "layout/empty");
-        }
-
+        // The app view addressed with dot notation: must resolve to
+        // app/Views/core/render.blade.php.
         public function action_dotted(Request $req, Response $res) {
             return $res->render("core.render", ["data" => "Dotted"], "layout/empty");
         }

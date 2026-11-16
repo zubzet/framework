@@ -2,7 +2,6 @@
 
     namespace ZubZet\Framework\Resources;
 
-    use League\MimeTypeDetection\FinfoMimeTypeDetector;
     use ZubZet\Framework\Registry\Registry;
 
     class AssetProxy {
@@ -51,8 +50,8 @@
             foreach($this->mounts as $mount) {
                 try {
                     $file = $mount->resolve($assetPath);
-                } catch(\RuntimeException $e) {
-                    // Traversal escapes resolve to a 404, not an error page.
+                } catch(\RuntimeException | \ValueError $e) {
+                    // Traversal escapes and null bytes resolve to a 404, not an error page.
                     break;
                 }
                 if(is_null($file)) continue;
@@ -73,8 +72,7 @@
                     return;
                 }
 
-                $mime = (new FinfoMimeTypeDetector())->detectMimeTypeFromPath($file) ?? "application/octet-stream";
-                header("Content-Type: $mime");
+                header("Content-Type: " . MimeType::fromPath($file));
                 readfile($file);
                 return;
             }

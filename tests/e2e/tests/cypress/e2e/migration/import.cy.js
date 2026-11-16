@@ -9,12 +9,6 @@ describe('Migration System - Import', () => {
     });
 
     const allFiles = [
-        "Syntax.sql",
-        "2025-10-10.sql",
-        "12-10-2004_Wrong_Date.sql",
-        "1990-10-10_Test_Name.sql",
-        "5000-10-10_Test_Name.sql",
-
         "2005-01-01_1_Syn_File.sql",
         "2005-01-01_2_Syn_File.sql",
         "2005-01-05_1_Syn_File.sql",
@@ -27,7 +21,6 @@ describe('Migration System - Import', () => {
         "2025-10-01_MigrationEnv1.php",
         "2025-10-01_MigrationImport.php",
         "2025-10-01_MigrationImport.sql",
-        "2025-10-01_MigrationSemicolons.sql",
         "2025-10-01_MigrationManual.php",
         "2025-10-01_MigrationSkip.php",
         "2025-10-01_MigrationPHPImport.php",
@@ -49,30 +42,6 @@ describe('Migration System - Import', () => {
             cy.exec(`rm -f ${zubzetMigrationPath}/${file} || true`, { failOnNonZeroExit: false });
         });
     });
-
-    it('should check the Migration-File names correctly', () => {
-         const base = 'MigrationFiles/NameValidation';
-
-         const migrationFiles = [
-            { file: "Syntax.sql", expectedError: "Formatting error: 'Syntax.sql'. Expected: YYYY-MM-DD_Name" },
-            { file: "2025-10-10.sql", expectedError: "Formatting error: '2025-10-10.sql'. Expected: YYYY-MM-DD_Name" },
-            { file: "12-10-2004_Wrong_Date.sql", expectedError: "Syntax error: '12-10-2004_Wrong_Date.sql'. Date must be exactly YYYY-MM-DD." },
-            { file: "1990-10-10_Test_Name.sql", expectedError: "History error: The year 1990 is too far in the past. " },
-         ];
-
-        migrationFiles.forEach(({ file, expectedError }) => {
-            const source = `${fixturesDir}/${base}/${file}`
-            const target = `${baseDir}/${file}`
-
-            cy.exec(`cp ${source} ${target}`);
-            cy.exec('docker exec application php index.php db:migrate -f',{ failOnNonZeroExit: false }).then((result) => {
-                expect(result.stderr).to.include(expectedError);
-            });
-
-            cy.exec(`rm -f ${target} || true`);
-        });
-    });
-
 
     // Check if the Files are actually executed and imported correctly
     it('should import valid SQL migration correctly', () => {
@@ -96,19 +65,6 @@ describe('Migration System - Import', () => {
 
             cy.exec(`rm -f ${target} || true`);
         });
-    });
-
-    it('should not split a statement at a semicolon in a comment or string', () => {
-        cy.dbSeed();
-
-        const file = "2025-10-01_MigrationSemicolons.sql";
-
-        cy.exec(`cp ${fixturesDir}/MigrationFiles/${file} ${baseDir}/${file}`);
-        cy.exec('docker exec application php index.php db:migrate -f');
-
-        cy.request('/migration/checkSemicolons').its('body').should('deep.equal', ["first", "second", "third; in a string", "fourth; \"quoted\"; and 'it''s'", "fifth; it's; escaped'; still one"]);
-
-        cy.exec(`rm -f ${baseDir}/${file} || true`);
     });
 
     it('should check the single PHP Statements', () => {

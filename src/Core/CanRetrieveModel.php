@@ -4,7 +4,7 @@
 
     use ZubZet\Framework\Core\Model;
     use ZubZet\Framework\Registry\Registry;
-    use ZubZet\Framework\Support\StaticCache;
+    use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
 
     trait CanRetrieveModel {
 
@@ -48,8 +48,8 @@
             // different roots can never alias to the wrong instance.
             $cacheKey = $path;
 
-            if(StaticCache::has("model", $cacheKey)) {
-                return StaticCache::get("model", $cacheKey);
+            if(InternalRuntimeCache::has("model", $cacheKey)) {
+                return InternalRuntimeCache::get("model", $cacheKey);
             }
 
             // Only use the last part of the model name as the class Name
@@ -64,7 +64,7 @@
             }
 
             $modelInstance = new $model(db(), zubzet());
-            return StaticCache::set("model", $cacheKey, $modelInstance);
+            return InternalRuntimeCache::set("model", $cacheKey, $modelInstance);
         }
 
     }

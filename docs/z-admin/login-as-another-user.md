@@ -30,7 +30,7 @@ Both values are read back through [`Session::byUser()`](../core-features/access-
 |---|---|
 | `Expires` | `time() + loginTimeoutSeconds` (7 days when the setting is unset) |
 | `Path` | `/` |
-| `Domain` | `.<domain>` when `login_scope_allow_subdomains` is the string `true`, otherwise none (host-only). A second `z_login_token` delete header (on login and logout) is then sent for the domain in `login_scope_allow_subdomains_delete_domainscope_name` (to clean up cookies from before the switch) whenever that key exists, even empty, and an empty value deletes the host-only cookie just set |
+| `Domain` | `.<domain>` when `login_scope_allow_subdomains` is switched on, otherwise none (host-only). A second `z_login_token` delete header (on login and logout) is then sent for the domain in `login_scope_allow_subdomains_delete_domainscope_name` (to clean up cookies from before the switch) whenever that key exists, even empty, and an empty value deletes the host-only cookie just set |
 | `Secure` | set when the `host` setting starts with `https://` |
 | `HttpOnly` | never set, because Z.js and the session watcher read the cookie in JavaScript |
 | `SameSite` | `Lax` |

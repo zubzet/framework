@@ -2,7 +2,7 @@
 
     namespace ZubZet\Framework\Support\Checkpoint;
 
-    /** Marks a property for CanCheckpoint snapshots that filter by this attribute; checkpointCurrentState() only filters when IncludeInCheckpoint::class is passed as $attributeClass. */
+    /** Marks a property for CanCheckpoint snapshots; checkpointCurrentState() takes the properties carrying it unless told otherwise. */
     #[\Attribute(\Attribute::TARGET_PROPERTY)]
     class IncludeInCheckpoint {}
 

@@ -1,9 +1,9 @@
 <?php
 
-    use OTPHP\TOTP;
     use ZubZet\Framework\Authentication\LoginToken;
     use ZubZet\Framework\Authentication\Permission\User;
     use ZubZet\Framework\Authentication\Session;
+    use ZubZet\Framework\Authentication\Totp;
 
     // Probe routes for tests/cypress/e2e/account/two-factor*.cy.js
     class TwoFactorProbeController extends z_controller {
@@ -23,7 +23,7 @@
 
             echo json_encode([
                 "found" => !is_null($secret),
-                "code" => is_null($secret) ? null : TOTP::create($secret)->at(time() + $offset),
+                "code" => is_null($secret) ? null : Totp::create($secret)->at(time() + $offset),
             ]);
         }
 
@@ -32,7 +32,7 @@
             $secret = (string) $req->getParameters(0, 1);
 
             echo json_encode([
-                "code" => TOTP::create($secret)->now(),
+                "code" => Totp::create($secret)->now(),
             ]);
         }
 

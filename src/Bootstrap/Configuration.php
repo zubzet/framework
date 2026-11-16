@@ -45,7 +45,7 @@
             }
 
             //Overwrite using environment vars
-            if($this->allow_env_config ?? false) {
+            if(configSwitch("allow_env_config", false)) {
                 foreach($this->getAllAttributes() as $key => $setting) {
                     $envName = "CONFIG_".strtoupper($key);
                     if(false !== getenv($envName)) {

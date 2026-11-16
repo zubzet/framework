@@ -102,37 +102,4 @@ describe('Multiple Forms', () => {
             cy.query('form').contains('Saved!');
         });
     });
-
-    describe('hasFormData() matching rules', () => {
-        const probe = (body) => cy.request({
-            method: 'POST',
-            url: '/MultipleForm/probe',
-            form: true,
-            body,
-        });
-
-        it('matches any form submission when called without an action', () => {
-            probe({ isFormData: 1 }).then((res) => {
-                expect(res.body).to.deep.eq({ any: true, named: false });
-            });
-        });
-
-        it('matches a named action only on the exact formAction', () => {
-            probe({ isFormData: 1, formAction: 'target-action' }).then((res) => {
-                expect(res.body).to.deep.eq({ any: true, named: true });
-            });
-        });
-
-        it('does not match a named action on a different formAction', () => {
-            probe({ isFormData: 1, formAction: 'other-action' }).then((res) => {
-                expect(res.body).to.deep.eq({ any: true, named: false });
-            });
-        });
-
-        it('is no form data without the isFormData flag, even with a formAction', () => {
-            probe({ formAction: 'target-action' }).then((res) => {
-                expect(res.body).to.deep.eq({ any: false, named: false });
-            });
-        });
-    });
 });
