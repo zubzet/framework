@@ -215,8 +215,8 @@
                 return $res->formErrors($formResult->errors);
             }
 
-            // The invitation vouches for the address, so the account starts verified
-            $user = User::add($invite["email"], $password, new DateTime());
+            // Like a signup, the account stays unverified until its owner confirms the address
+            $user = User::add($invite["email"], $password);
             $user->updateOrganization($organization);
 
             // Only while the role is still released to organizations
@@ -226,6 +226,11 @@
             }
 
             model("z_organization")->deactivateInvite($organization, $invite["id"]);
+
+            $token = model("z_user")->createVerifyToken($user->id());
+            $res->sendEmailToUser($user->id(), config("pageName", default: "") . " - Sign Up", "email_verify.php", [
+                "url" => config("root") . "login/verify/" . $token,
+            ]);
 
             return $res->success();
         }

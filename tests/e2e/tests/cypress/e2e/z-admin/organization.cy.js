@@ -729,7 +729,7 @@ describe('Z-Admin - Organization', () => {
             });
         };
 
-        it('creates the account through the form and leads to the login', () => {
+        it('creates an unverified account through the form and leads to the login', () => {
             cy.visit('/z/organization/invitation/zorg_token_accept_ui');
             cy.intercept('POST', '/_zubzet/organization/invitations/zorg_token_accept_ui/accept').as('accept');
 
@@ -743,12 +743,12 @@ describe('Z-Admin - Organization', () => {
             cy.getCookie('z_login_token').should('not.exist');
             statusOf('/z/organization/invitation/zorg_token_accept_ui').should('eq', 404);
 
-            cy.intercept('POST', '/login').as('login');
+            // Like a signup, the login waits for the confirmed address
             cy.query('username').type('zorg_invitee@cypress.test');
             cy.query('password').type('zorg_Password1');
             cy.query('btn-login').click();
-            cy.wait('@login');
-            cy.getCookie('z_login_token').should('exist');
+            cy.contains('not activated yet');
+            cy.getCookie('z_login_token').should('not.exist');
         });
 
         it('validates the password', () => {

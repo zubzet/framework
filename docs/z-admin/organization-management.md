@@ -25,7 +25,7 @@ An invitation brings a person without an account into the organization. The acco
 - An invitation is valid for **7 days**. Expired invitations are no longer listed and no longer block a new one.
 - Revoking an invitation makes its link stop working right away.
 
-The link leads to `/z/organization/invitation/{token}` and needs no login. The page shows the organization, the address and when the invitation was created, and asks for a password. Accepting creates the account with that address, already verified, and makes it a member. The account also joins the organization's [linked group](../core-features/access-control.md#organization-data-access), like on any `$user->updateOrganization()`. The new member is not logged in but sent to the login page.
+The link leads to `/z/organization/invitation/{token}` and needs no login. The page shows the organization, the address and when the invitation was created, and asks for a password. Accepting creates the account with that address and makes it a member. Like on a signup, the account stays unverified and gets a verification mail, it can log in once the address is confirmed. The account also joins the organization's [linked group](../core-features/access-control.md#organization-data-access), like on any `$user->updateOrganization()`. The new member is not logged in but sent to the login page.
 
 Unknown, expired and revoked links answer with a 404, and so does a link whose address got an account in the meantime.
 
