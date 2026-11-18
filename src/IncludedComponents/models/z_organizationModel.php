@@ -75,7 +75,7 @@
             $this->exec($query);
         }
 
-        public function createInvite(Organization $organization, string $email, ?int $roleId = null): string {
+        public function createInvite(Organization $organization, string $email, ?int $roleId = null): array {
             $token = bin2hex(random_bytes(16));
 
             $query = $this->dbInsert("z_organization_invite", [
@@ -86,7 +86,7 @@
             ]);
 
             $this->exec($query);
-            return $token;
+            return $this->getInviteByToken($token);
         }
 
         public function getInvite(Organization $organization, int $id): ?array {
@@ -139,17 +139,11 @@
             $maxCapacity = $organization->maxCapacity();
             if(is_null($maxCapacity)) return false;
 
-            $members = $this->exec($this->dbSelect("id", "z_user")->where([
-                "organizationId" => $organization->id(),
-                "active" => 1
-            ]))->countResults();
-
-            $invites = $this->exec($this->dbSelect("id", "z_organization_invite")->where([
-                "organizationId" => $organization->id(),
-                "id !=" => $exceptInviteId,
-                "active" => 1,
-                "created >=" => date("Y-m-d H:i:s", time() - self::INVITE_LIFETIME)
-            ]))->countResults();
+            $members = count($organization->getUsers());
+            $invites = count(array_filter(
+                $this->getInvitesByOrganization($organization),
+                fn($invite) => $invite["id"] != $exceptInviteId,
+            ));
 
             return $members + $invites >= $maxCapacity;
         }
@@ -213,9 +207,11 @@
                 "organizationId" => $organization->id()
             ])->orderAsc("id");
 
-            if(!$showInactive) $query->where([
-                "active" => 1
-            ]);
+            if(!$showInactive) {
+                $query->where([
+                    "active" => 1
+                ]);
+            }
 
             return array_map(fn($member) => [
                 "id" => (int) $member["id"],

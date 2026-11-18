@@ -19,6 +19,7 @@
 
         <script>
             $(() => {
+                const canSendEmail = <?= json_encode(user()->checkPermission("z.organization.invite.email")) ?>;
                 var root = $(".z-organization-invite");
 
                 var form = Z.Forms.create({
@@ -54,13 +55,13 @@
                     food: <?= json_encode(model("z_organization")->getAssignableRoles(), JSON_HEX_TAG | JSON_HEX_AMP) ?>.map((role) => ({value: role.id, text: role.name})),
                 });
 
-                @if(user()->checkPermission("z.organization.invite.email"))
+                if(canSendEmail) {
                     form.createField({
                         name: "send_email",
                         type: "checkbox",
                         text: <?= json_encode(__("organization.invite.send_email")) ?>,
                     });
-                @endif
+                }
 
                 $(form.buttonSubmit).html('<i class="fa fa-fw fa-user-plus"></i> ' + <?= json_encode(e(__("organization.invite.create"))) ?>);
 

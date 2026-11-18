@@ -76,12 +76,20 @@
 
             if(is_null($organization)) return $res->error("invalid_member");
 
-            // Only members of the own organization, a deleted one is removed by the model
+            // Only members of the own organization
             $memberId = (int) $req->getRouteParameter("id");
             $member = User::byId($memberId);
             $isActiveMember = $member?->organization()?->id() === $organization->id();
-            if(!$isActiveMember && !model("z_organization")->removeDeletedMember($organization, $memberId)) {
-                return $res->error("invalid_member");
+
+            if(!$isActiveMember) {
+                // A deleted member is invisible to User::byId(), the model detaches it
+                if(!model("z_organization")->removeDeletedMember($organization, $memberId)) return $res->error("invalid_member");
+
+                // The organization's group, which updateOrganization() would take away
+                $group = $organization->getGroup();
+                if(!is_null($group)) {
+                    model("z_user")->changeRoleStateByUserIdAndRoleId($memberId, $group->id(), false);
+                }
             }
 
             // The roles the organization handed out leave with the member
@@ -91,9 +99,6 @@
 
             if($isActiveMember) {
                 $member->updateOrganization(null);
-            } else if(!is_null($organization->getGroup())) {
-                // The organization's group, which updateOrganization() would take away
-                model("z_user")->changeRoleStateByUserIdAndRoleId($memberId, $organization->getGroup()->id(), false);
             }
 
             return $res->success();
@@ -115,7 +120,6 @@
             if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 
             $email = $req->getPost("email");
-            $roleId = $req->getPost("roleId");
 
             // An address with an account, deactivated included, gets a message that does not reveal the account
             if(!db()->checkIfUnique("z_user", "email", $email)) {
@@ -130,31 +134,32 @@
 
             if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 
-            $token = model("z_organization")->createInvite($organization, $email, empty($roleId) ? null : (int) $roleId);
-            $link = config("root") . "z/organization/invitation/" . $token;
+            $invite = model("z_organization")->createInvite($organization, $email, $formResult->getValue("roleId"));
+            $link = config("root") . "z/organization/invitation/" . $invite["token"];
 
             // Mailing needs its own permission, without it the inviter always gets the link
-            if(!filter_var($req->getPost("send_email"), FILTER_VALIDATE_BOOLEAN) || !$req->checkPermission("z.organization.invite.email", true)) {
-                return $res->success(["invite_link" => $link]);
-            }
+            $sendEmail = filter_var($req->getPost("send_email"), FILTER_VALIDATE_BOOLEAN)
+                && $req->checkPermission("z.organization.invite.email", true);
+            if(!$sendEmail) return $res->success(["invite_link" => $link]);
 
             // The mail alone proves the address, so the inviter does not get the link
+            $organizationName = $organization->getField("name");
             $locale = Translation::locale();
             $sent = $res->sendEmail(
                 $email,
-                __("email.organization_invite.subject", ["{organization}" => $organization->getField("name")], locale: $locale),
+                __("email.organization_invite.subject", ["{organization}" => $organizationName], locale: $locale),
                 "email_organization_invite.php",
                 $locale,
                 [
                     "invite_link" => $link,
-                    "organization" => $organization->getField("name"),
+                    "organization" => $organizationName,
                     "locale" => $locale,
                 ],
                 "mail",
             );
 
             if(!$sent) {
-                model("z_organization")->deactivateInvite($organization, model("z_organization")->getInviteByToken($token)["id"]);
+                model("z_organization")->deactivateInvite($organization, $invite["id"]);
                 return $res->error("mail_failed");
             }
 

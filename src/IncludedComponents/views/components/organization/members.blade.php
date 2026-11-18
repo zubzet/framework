@@ -12,7 +12,7 @@
             @forelse($members as $member)
                 <li class="list-group-item" data-test="organization-member-{{ $member['id'] }}">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-truncate mr-3 {{ $member['deleted'] ? 'text-muted' : '' }}">{{ $member["email"] ?? __("organization.members.no_email") }}</span>
+                        <span @class(["text-truncate", "mr-3", "text-muted" => $member["deleted"]])>{{ $member["email"] ?? __("organization.members.no_email") }}</span>
                         <div class="flex-shrink-0">
                             @if($member["deleted"])
                                 <span class="badge badge-secondary" data-test="organization-member-deleted">{{ __("organization.members.deleted") }}</span>
