@@ -154,7 +154,12 @@
             "roles": "Rollen",
             "roles_placeholder": "Rolle hinzufügen …",
             "save": "Rollen speichern",
-            "empty": "Keine Mitglieder."
+            "empty": "Keine Mitglieder.",
+            "remove": "Entfernen",
+            "delete": "Löschen",
+            "deleted": "Gelöscht",
+            "remove_confirm": "Dieses Mitglied aus der Organisation entfernen? Das Konto bleibt bestehen, die von der Organisation vergebenen Rollen werden entzogen.",
+            "delete_confirm": "Dieses Mitglied löschen? Das Konto wird deaktiviert und kann sich nicht mehr anmelden."
         },
         "rename": {
             "name": "Name",

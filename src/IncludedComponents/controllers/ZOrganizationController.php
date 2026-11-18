@@ -54,6 +54,51 @@
             return $res->success();
         }
 
+        public function delete(Request $req, Response $res) {
+            $req->checkPermission("z.organization.delete");
+
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+
+            // Only active members of the own organization
+            $member = User::byId((int) $req->getRouteParameter("id"));
+            if(is_null($organization) || is_null($member) || $member->organization()?->id() !== $organization->id()) {
+                return $res->error("invalid_member");
+            }
+
+            $member->remove();
+            return $res->success();
+        }
+
+        public function remove(Request $req, Response $res) {
+            $req->checkPermission("z.organization.remove");
+
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+
+            if(is_null($organization)) return $res->error("invalid_member");
+
+            // Only members of the own organization, a deleted one is removed by the model
+            $memberId = (int) $req->getRouteParameter("id");
+            $member = User::byId($memberId);
+            $isActiveMember = $member?->organization()?->id() === $organization->id();
+            if(!$isActiveMember && !model("z_organization")->removeDeletedMember($organization, $memberId)) {
+                return $res->error("invalid_member");
+            }
+
+            // The roles the organization handed out leave with the member
+            foreach(model("z_organization")->getAssignableRoles() as $role) {
+                model("z_user")->changeRoleStateByUserIdAndRoleId($memberId, $role["id"], false);
+            }
+
+            if($isActiveMember) {
+                $member->updateOrganization(null);
+            } else if(!is_null($organization->getGroup())) {
+                // The organization's group, which updateOrganization() would take away
+                model("z_user")->changeRoleStateByUserIdAndRoleId($memberId, $organization->getGroup()->id(), false);
+            }
+
+            return $res->success();
+        }
+
         public function invite(Request $req, Response $res) {
             $req->checkPermission("z.organization.invite");
 
@@ -78,6 +123,9 @@
             } else if(model("z_organization")->hasOpenInvite($organization, $email)) {
                 // One open invite per address and organization
                 $formResult->addCustomError("email", "already_invited");
+            } else if(model("z_organization")->isFull($organization)) {
+                // Members and open invitations already fill the capacity
+                $formResult->addCustomError("email", "organization_full");
             }
 
             if($formResult->hasErrors) return $res->formErrors($formResult->errors);
@@ -152,6 +200,11 @@
 
             if($password !== $req->getPost("password_repeat")) {
                 $formResult->addCustomError("password_repeat", "password_mismatch");
+                return $res->formErrors($formResult->errors);
+            }
+
+            if(model("z_organization")->isFull($organization, $invite["id"])) {
+                $formResult->addCustomError("password", "organization_full");
                 return $res->formErrors($formResult->errors);
             }
 

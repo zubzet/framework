@@ -316,7 +316,8 @@
 
             $formResult = $req->validateForm([
                 (new FormField("name"))->required()->length(3, 249),
-            ], ["name" => $name]);
+                (new FormField("max_capacity"))->filter(FILTER_VALIDATE_INT)->range(1, 1000000),
+            ], ["name" => $name, "max_capacity" => $req->getPost("max_capacity")]);
 
             if(is_array($name)) $formResult->addCustomError("name", "filter");
 
@@ -332,7 +333,7 @@
                 return $res->formErrors($formResult->errors);
             }
 
-            Organization::add($name, $createGroup, $groupName);
+            Organization::add($name, $createGroup, $groupName, $formResult->getValue("max_capacity"));
 
             return $res->success();
         }
@@ -366,7 +367,8 @@
 
                 $formResult = $req->validateForm([
                     (new FormField("name"))->required()->length(3, 249),
-                ], ["name" => $name]);
+                    (new FormField("max_capacity"))->filter(FILTER_VALIDATE_INT)->range(1, 1000000),
+                ], ["name" => $name, "max_capacity" => $req->getPost("max_capacity")]);
 
                 if(is_array($name)) $formResult->addCustomError("name", "filter");
 
@@ -387,11 +389,13 @@
 
                 if($renameGroup) $group->update($name . "_Group");
                 $organization->updateName($name);
+                $organization->updateMaxCapacity($formResult->getValue("max_capacity"));
                 return $res->success();
             }
 
             return $res->render("administration/organizations.php", [
                 "name" => $organization->getField("name"),
+                "maxCapacity" => $organization->maxCapacity(),
                 "group" => $organization->getGroup(),
                 "users" => $organization->getUsers(),
             ]);

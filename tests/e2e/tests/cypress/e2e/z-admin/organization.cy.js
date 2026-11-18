@@ -91,6 +91,9 @@ describe('Z-Admin - Organization', () => {
             cy.get('#z-organization-invite-form').should('exist');
             cy.get('.z-organization-members').should('exist');
             cy.get('.z-organization-invites').should('exist');
+
+            // Without a maximum only the members are counted
+            cy.query('organization-members-count').should('not.contain', '/');
         });
     });
 
@@ -406,6 +409,273 @@ describe('Z-Admin - Organization', () => {
                 isFormData: 1,
                 formAction: 'z-organization-member-801',
             }).should('eq', 403);
+        });
+    });
+
+    describe('Capacity', () => {
+        const invite = (email) => post('/_zubzet/organization/invites', {
+            isFormData: 1,
+            formAction: 'z-organization-invite',
+            email: email,
+        });
+
+        const accept = (token) => post(`/_zubzet/organization/invitations/${token}/accept`, {
+            isFormData: 1,
+            formAction: 'z-organization-accept',
+            password: 'zorg_Password1',
+            password_repeat: 'zorg_Password1',
+        });
+
+        const saveOrganization = (id, name, maxCapacity) => post(`/z/organizations/${id}`, {
+            isFormData: 1,
+            formAction: 'form',
+            name: name,
+            max_capacity: maxCapacity,
+        });
+
+        it('refuses an invitation while members and open invitations fill the seats', () => {
+            cy.loginAs('zorg_capacity_manager');
+
+            invite('zorg_over_capacity@cypress.test').then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'email', type: 'organization_full' });
+            });
+        });
+
+        it('shows the members next to the maximum number of users', () => {
+            cy.loginAs('zorg_capacity_manager');
+            cy.visit('/z/organization');
+
+            cy.query('organization-members-count').should('have.text', '3 / 4');
+        });
+
+        it('explains in words that the organization is full', () => {
+            cy.loginAs('zorg_capacity_manager');
+            cy.visit('/z/organization');
+            cy.intercept('POST', '/_zubzet/organization/invites').as('invite');
+
+            openModal('invite');
+            cy.form('email').type('zorg_over_capacity@cypress.test');
+            cy.get('#z-organization-invite-form .btn-primary').click();
+            cy.wait('@invite');
+
+            cy.contains('This organization has reached its maximum number of users.').should('be.visible');
+        });
+
+        it('frees a seat with a revoked invitation and does not count deleted members', () => {
+            cy.loginAs('zorg_capacity_manager');
+
+            post('/_zubzet/organization/invites/814/revoke').its('result').should('eq', 'success');
+            invite('zorg_seat_a@cypress.test').its('result').should('eq', 'success');
+
+            invite('zorg_seat_b@cypress.test').then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'email', type: 'organization_full' });
+            });
+        });
+
+        it('frees a seat by deleting a member', () => {
+            cy.loginAs('zorg_capacity_manager');
+
+            post('/_zubzet/organization/members/822/delete').its('result').should('eq', 'success');
+            invite('zorg_seat_c@cypress.test').its('result').should('eq', 'success');
+        });
+
+        it('has no limit without a maximum', () => {
+            cy.loginAs('zorg_manager');
+
+            invite('zorg_unlimited@cypress.test').its('result').should('eq', 'success');
+        });
+
+        it('refuses to accept an invitation while the members fill the seats', () => {
+            accept('zorg_token_accept_full').then((out) => {
+                expect(out.formErrors).to.deep.include({ name: 'password', type: 'organization_full' });
+            });
+        });
+
+        it('does not count the invitation being accepted', () => {
+            accept('zorg_token_accept_self').its('result').should('eq', 'success');
+        });
+
+        it('lets the admin raise the capacity', () => {
+            cy.loginAs('admin');
+
+            saveOrganization(805, 'zorg_AcceptFull', '2').its('result').should('eq', 'success');
+            accept('zorg_token_accept_full').its('result').should('eq', 'success');
+        });
+
+        it('lets the admin set and clear the capacity', () => {
+            cy.loginAs('admin');
+
+            saveOrganization(807, 'zorg_AdminCapacity', '5').its('result').should('eq', 'success');
+            cy.visit('/z/organizations/807');
+            cy.form('max_capacity').should('have.value', '5');
+
+            saveOrganization(807, 'zorg_AdminCapacity', '').its('result').should('eq', 'success');
+            cy.visit('/z/organizations/807');
+            cy.form('max_capacity').should('have.value', '');
+        });
+
+        it('sets the capacity when the admin creates an organization', () => {
+            cy.loginAs('admin');
+
+            post('/z/add_organization', { isFormData: 1, formAction: 'form', name: 'zorg_AdminCreated', max_capacity: '7' })
+                .its('result').should('eq', 'success');
+
+            cy.request('/z/organizations').its('body').then((list) => {
+                // The id in front of the name, e.g. [10002]</code></small> zorg_AdminCreated
+                const id = list.match(/\[(\d+)\]<\/code>\s*<\/small>\s*zorg_AdminCreated/)[1];
+                cy.request(`/z/organizations/${id}`).its('body').should('include', 'value: 7,');
+            });
+        });
+
+        it('validates the capacity', () => {
+            cy.loginAs('admin');
+
+            ['abc', '0', '-3'].forEach((value) => {
+                post('/z/add_organization', { isFormData: 1, formAction: 'form', name: 'zorg_Invalid', max_capacity: value }).then((out) => {
+                    expect(out.formErrors).to.deep.include({ name: 'max_capacity', type: 'range', info: [1, 1000000] });
+                });
+            });
+        });
+
+        it('does not limit the admin assigning a user', () => {
+            cy.loginAs('admin');
+
+            post('/z/edit_user/826', {
+                isFormData: 1,
+                formAction: 'form',
+                email: 'zorg_unassigned@cypress.test',
+                organization: '804',
+            }).its('result').should('eq', 'success');
+
+            cy.request('/z/edit_user/826').its('body').should('include', 'value: 804,');
+        });
+    });
+
+    describe('Deleting and removing members', () => {
+        beforeEach(() => cy.loginAs('zorg_members_manager'));
+
+        const deleteMember = (id) => post(`/_zubzet/organization/members/${id}/delete`);
+        const removeMember = (id) => post(`/_zubzet/organization/members/${id}/remove`);
+
+        it('lists deleted members marked and only removable', () => {
+            cy.visit('/z/organization');
+
+            cy.query('organization-member-833').should('contain', 'zorg_members_deleted@cypress.test');
+            cy.query('organization-member-833').find('[data-test="organization-member-deleted"]').should('contain', 'Deleted');
+            cy.query('organization-member-833').find('[data-test="btn-remove-organization-member"]').should('exist');
+            cy.query('organization-member-833').find('[data-test="btn-delete-organization-member"]').should('not.exist');
+            cy.query('organization-member-833').find('[data-test="btn-edit-organization-member-roles"]').should('not.exist');
+            cy.get('#z-organization-member-833-form').should('not.exist');
+
+            cy.query('organization-member-831').find('[data-test="organization-member-deleted"]').should('not.exist');
+            cy.query('organization-member-831').find('[data-test="btn-remove-organization-member"]').should('exist');
+            cy.query('organization-member-831').find('[data-test="btn-delete-organization-member"]').should('exist');
+        });
+
+        it('keeps the member when the confirmation is declined', () => {
+            cy.visit('/z/organization');
+            cy.intercept('POST', '/_zubzet/organization/members/835/delete').as('delete');
+            cy.on('window:confirm', () => false);
+
+            cy.query('organization-member-835').find('[data-test="btn-delete-organization-member"]').click();
+
+            cy.get('@delete.all').should('have.length', 0);
+            cy.query('organization-member-835').find('[data-test="organization-member-deleted"]').should('not.exist');
+        });
+
+        it('deletes a member through its button', () => {
+            cy.visit('/z/organization');
+            cy.intercept('POST', '/_zubzet/organization/members/831/delete').as('delete');
+            cy.on('window:confirm', () => true);
+
+            cy.query('organization-member-831').find('[data-test="btn-delete-organization-member"]').click();
+            cy.wait('@delete');
+
+            // The member stays listed, marked as deleted
+            cy.query('organization-member-831').find('[data-test="organization-member-deleted"]').should('exist');
+            cy.query('organization-member-831').find('[data-test="btn-delete-organization-member"]').should('not.exist');
+        });
+
+        it('stops the session of a deleted member', () => {
+            cy.loginAs('zorg_deletable');
+            cy.visit('/z/organization');
+
+            cy.query('username').should('exist');
+            cy.get('#z-organization-rename-form').should('not.exist');
+        });
+
+        it('removes a member through its button', () => {
+            cy.visit('/z/organization');
+            cy.intercept('POST', '/_zubzet/organization/members/832/remove').as('remove');
+            cy.on('window:confirm', () => true);
+
+            cy.query('organization-member-832').find('[data-test="btn-remove-organization-member"]').click();
+            cy.wait('@remove');
+
+            cy.query('organization-member-832').should('not.exist');
+
+            // The account stays without organization, group and assignable role, but keeps its plain role
+            cy.loginAs('admin');
+            cy.request('/z/edit_user/832').its('body')
+                .should('match', /name: "organization",[\s\S]*?value: "",/)
+                .and('include', '"role":"262"')
+                .and('not.include', '"role":"260"')
+                .and('not.include', '"role":"264"');
+        });
+
+        it('only deletes and removes members of the own organization', () => {
+            deleteMember(806).should('deep.include', { result: 'error', message: 'invalid_member' });
+            removeMember(806).should('deep.include', { result: 'error', message: 'invalid_member' });
+            deleteMember(999999).should('deep.include', { result: 'error', message: 'invalid_member' });
+            removeMember(999999).should('deep.include', { result: 'error', message: 'invalid_member' });
+        });
+
+        it('does not delete a deleted member again', () => {
+            deleteMember(833).should('deep.include', { result: 'error', message: 'invalid_member' });
+            deleteMember(831).should('deep.include', { result: 'error', message: 'invalid_member' });
+        });
+
+        it('does not remove a member twice', () => {
+            removeMember(832).should('deep.include', { result: 'error', message: 'invalid_member' });
+        });
+
+        it('removes a deleted member from the list', () => {
+            removeMember(833).its('result').should('eq', 'success');
+            removeMember(833).should('deep.include', { result: 'error', message: 'invalid_member' });
+
+            cy.visit('/z/organization');
+            cy.query('organization-member-833').should('not.exist');
+        });
+
+        it('deletes a member through the endpoint', () => {
+            deleteMember(835).its('result').should('eq', 'success');
+
+            cy.visit('/z/organization');
+            cy.query('organization-member-835').find('[data-test="organization-member-deleted"]').should('exist');
+        });
+
+        it('shows the buttons only with their permissions', () => {
+            cy.loginAs('zorg_manager');
+            cy.visit('/z/organization');
+
+            cy.query('organization-member-801').should('exist');
+            cy.query('btn-remove-organization-member').should('not.exist');
+            cy.query('btn-delete-organization-member').should('not.exist');
+        });
+
+        it('refuses a user without the permission', () => {
+            cy.loginAs('zorg_member');
+            statusOf('/_zubzet/organization/members/800/delete', {}).should('eq', 403);
+            statusOf('/_zubzet/organization/members/800/remove', {}).should('eq', 403);
+
+            // Holds the other permissions of the organization, but not these
+            cy.loginAs('zorg_manager');
+            statusOf('/_zubzet/organization/members/801/delete', {}).should('eq', 403);
+            statusOf('/_zubzet/organization/members/801/remove', {}).should('eq', 403);
+
+            // May delete, but not remove
+            cy.loginAs('zorg_capacity_manager');
+            statusOf('/_zubzet/organization/members/821/remove', {}).should('eq', 403);
         });
     });
 

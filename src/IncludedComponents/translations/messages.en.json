@@ -154,7 +154,12 @@
             "roles": "Roles",
             "roles_placeholder": "Add a role...",
             "save": "Save roles",
-            "empty": "No members."
+            "empty": "No members.",
+            "remove": "Remove",
+            "delete": "Delete",
+            "deleted": "Deleted",
+            "remove_confirm": "Remove this member from the organization? The account stays, the roles given by the organization are taken away.",
+            "delete_confirm": "Delete this member? The account is deactivated and can no longer log in."
         },
         "rename": {
             "name": "Name",

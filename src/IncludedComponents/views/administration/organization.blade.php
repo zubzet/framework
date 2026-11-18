@@ -32,7 +32,7 @@
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="font-weight-bold"><i class="fa fa-fw fa-users"></i> {{ __("admin.organization.members") }}</span>
-                            <span class="badge badge-pill badge-secondary">{{ count($organization->getUsers()) }}</span>
+                            <span class="badge badge-pill badge-secondary" data-test="organization-members-count">{{ count($organization->getUsers()) }}{{ is_null($organization->maxCapacity()) ? "" : " / " . $organization->maxCapacity() }}</span>
                         </div>
                         <x-zubzet::organization.members class="list-group-flush"/>
                         <div class="card-footer small text-muted">
