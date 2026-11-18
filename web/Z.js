@@ -147,6 +147,7 @@ Z = {
     error_invalid_email: "This email is not allowed!",
     error_user_unavailable: "This user cannot be invited right now.",
     error_already_invited: "This address already has an open invitation.",
+    error_invalid_token: "This invitation is invalid or has expired.",
     error_organization_full: "This organization has reached its maximum number of users.",
     error_too_many_login_tries: "Too many login tries. Try again later.",
     error_login: "Username or password is wrong",

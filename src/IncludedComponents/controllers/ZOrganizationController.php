@@ -61,9 +61,8 @@
 
             // Only active members of the own organization
             $member = User::byId((int) $req->getRouteParameter("id"));
-            if(is_null($organization) || is_null($member) || $member->organization()?->id() !== $organization->id()) {
-                return $res->error("invalid_member");
-            }
+            $isOwnMember = !is_null($organization) && $member?->organization()?->id() === $organization->id();
+            if(!$isOwnMember) return $res->error("invalid_member");
 
             $member->remove();
             return $res->success();
@@ -83,7 +82,8 @@
 
             if(!$isActiveMember) {
                 // A deleted member is invisible to User::byId(), the model detaches it
-                if(!model("z_organization")->removeDeletedMember($organization, $memberId)) return $res->error("invalid_member");
+                $wasDetached = model("z_organization")->removeDeletedMember($organization, $memberId);
+                if(!$wasDetached) return $res->error("invalid_member");
 
                 // The organization's group, which updateOrganization() would take away
                 $group = $organization->getGroup();
@@ -121,18 +121,20 @@
 
             $email = $req->getPost("email");
 
-            // An address with an account, deactivated included, gets a message that does not reveal the account
-            if(!db()->checkIfUnique("z_user", "email", $email)) {
-                $formResult->addCustomError("email", "user_unavailable");
-            } else if(model("z_organization")->hasOpenInvite($organization, $email)) {
+            $error = match(true) {
+                // An address with an account, deactivated included, gets a message that does not reveal the account
+                !db()->checkIfUnique("z_user", "email", $email) => "user_unavailable",
                 // One open invite per address and organization
-                $formResult->addCustomError("email", "already_invited");
-            } else if(model("z_organization")->isFull($organization)) {
+                model("z_organization")->hasOpenInvite($organization, $email) => "already_invited",
                 // Members and open invitations already fill the capacity
-                $formResult->addCustomError("email", "organization_full");
-            }
+                model("z_organization")->isFull($organization) => "organization_full",
+                default => null,
+            };
 
-            if($formResult->hasErrors) return $res->formErrors($formResult->errors);
+            if(!is_null($error)) {
+                $formResult->addCustomError("email", $error);
+                return $res->formErrors($formResult->errors);
+            }
 
             $invite = model("z_organization")->createInvite($organization, $email, $formResult->getValue("roleId"));
             $link = config("root") . "z/organization/invitation/" . $invite["token"];
@@ -186,15 +188,15 @@
             $invite = empty($token) ? null : model("z_organization")->getInviteByToken($token);
             $organization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
 
-            // Unknown, expired, its organization is gone or the address has an account by now
-            if(is_null($organization) || !db()->checkIfUnique("z_user", "email", $invite["email"])) {
-                return $res->error("invalid_token");
-            }
-
             $formResult = $req->validateForm([
                 (new FormField("password"))->required()->length(Password::MIN_LENGTH_BYTES, Password::MAX_LENGTH_BYTES),
                 (new FormField("password_repeat"))->required(),
             ]);
+
+            // Unknown, expired, its organization is gone or the address has an account by now
+            if(is_null($organization) || !db()->checkIfUnique("z_user", "email", $invite["email"])) {
+                $formResult->addCustomError("password", "invalid_token");
+            }
 
             if($formResult->hasErrors) return $res->formErrors($formResult->errors);
 

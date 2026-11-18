@@ -445,7 +445,8 @@ describe('Z-Admin - Organization', () => {
             cy.loginAs('zorg_capacity_manager');
             cy.visit('/z/organization');
 
-            cy.query('organization-members-count').should('have.text', '3 / 4');
+            // Matches the line breaks and indentation Blade leaves around the numbers
+            cy.query('organization-members-count').invoke('text').invoke('replace', /\s+/g, ' ').invoke('trim').should('eq', '3 / 4');
         });
 
         it('explains in words that the organization is full', () => {
@@ -767,7 +768,7 @@ describe('Z-Admin - Organization', () => {
 
         it('adds the organization and its group, once', () => {
             accept('zorg_token_accept_request').its('result').should('eq', 'success');
-            accept('zorg_token_accept_request').should('deep.include', { result: 'error', message: 'invalid_token' });
+            accept('zorg_token_accept_request').its('formErrors').should('deep.include', { name: 'password', type: 'invalid_token' });
 
             cy.loginAs('zorg_manager');
             cy.visit('/z/organization');
@@ -790,12 +791,12 @@ describe('Z-Admin - Organization', () => {
 
         it('refuses unknown, expired and revoked invitations', () => {
             ['unknown', 'zorg_token_expired', 'zorg_token_removed_org', 'zorg_token_revoked'].forEach((token) => {
-                accept(token).should('deep.include', { result: 'error', message: 'invalid_token' });
+                accept(token).its('formErrors').should('deep.include', { name: 'password', type: 'invalid_token' });
             });
         });
 
         it('refuses an address that has an account by now', () => {
-            accept('zorg_token_account_exists').should('deep.include', { result: 'error', message: 'invalid_token' });
+            accept('zorg_token_account_exists').its('formErrors').should('deep.include', { name: 'password', type: 'invalid_token' });
         });
     });
 });

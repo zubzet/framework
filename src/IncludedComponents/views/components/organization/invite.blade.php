@@ -29,6 +29,7 @@
                     saveHook: (res) => {
                         // The link stays until the next invite, the field is free for it
                         emailField.value = "";
+                        roleField.value = "";
                         root.find(".z-organization-invite-sent, .z-organization-invite-result").addClass("d-none");
 
                         // A mailed invitation has no link for the inviter
@@ -47,7 +48,7 @@
                     required: true,
                 });
 
-                form.createField({
+                var roleField = form.createField({
                     name: "roleId",
                     type: "select",
                     text: <?= json_encode(__("organization.invite.role")) ?>,

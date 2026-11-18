@@ -5,7 +5,7 @@ Members of an [organization](../core-features/access-control.md#organization-obj
 | Section | Permission | Function |
 | ------- | ---------- | -------- |
 | Name | `z.organization.rename` | Rename the organization |
-| Invite a member | `z.organization.invite` | Invite a person by link or email |
+| Invite a member | `z.organization.invite` | Invite a person by link, with `z.organization.invite.email` also by email |
 | Members | `z.organization.roles` | Give members roles and take them away again, with `z.organization.remove` and `z.organization.delete` also remove or delete them |
 | Open invitations | `z.organization.invite` | List and revoke invitations that are not accepted yet |
 
@@ -63,3 +63,4 @@ The error messages come from `Z.Lang` in `Z.js`. Like its other texts, they can 
 | `error_user_unavailable` | This user cannot be invited right now. |
 | `error_already_invited` | This address already has an open invitation. |
 | `error_organization_full` | This organization has reached its maximum number of users. |
+| `error_invalid_token` | This invitation is invalid or has expired. |
