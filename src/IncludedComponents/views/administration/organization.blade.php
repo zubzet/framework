@@ -32,7 +32,12 @@
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <span class="font-weight-bold"><i class="fa fa-fw fa-users"></i> {{ __("admin.organization.members") }}</span>
-                            <span class="badge badge-pill badge-secondary">{{ count($organization->getUsers()) }}</span>
+                            <span class="badge badge-pill badge-secondary" data-test="organization-members-count">
+                                {{ count($organization->getUsers()) }}
+                                @unless(is_null($organization->maxCapacity()))
+                                    / {{ $organization->maxCapacity() }}
+                                @endunless
+                            </span>
                         </div>
                         <x-zubzet::organization.members class="list-group-flush"/>
                         <div class="card-footer small text-muted">
@@ -106,7 +111,7 @@
                 $(() => {
                     // A created invitation belongs in the open invitations list
                     $("#z-organization-invite-modal").on("hidden.bs.modal", function() {
-                        if(!$(this).find(".z-organization-invite-result").hasClass("d-none")) location.reload();
+                        if($(this).find(".z-organization-invite-result, .z-organization-invite-sent").not(".d-none").length) location.reload();
                     });
                 });
             </script>
