@@ -106,14 +106,30 @@
                 if($result !== true) throw new EndOfRequest;
             }
 
-            // Execute the main callback (route handling)
-            $callback();
+            // Execute the main callback (route handling), then the after middlewares
+            self::runWithAfterMiddlewares($callback, function() use ($toExecuteAfterMiddlewares) {
+                foreach($toExecuteAfterMiddlewares as $toExecuteAfterMiddleware) {
+                    [$class, $method] = $toExecuteAfterMiddleware->getAction();
+                    self::callControllerAction($class, $method, arguments: $toExecuteAfterMiddleware->arguments);
+                }
+            });
+        }
 
-            // Execute after middlewares
-            foreach($toExecuteAfterMiddlewares as $toExecuteAfterMiddleware) {
-                [$class, $method] = $toExecuteAfterMiddleware->getAction();
-                self::callControllerAction($class, $method, arguments: $toExecuteAfterMiddleware->arguments);
+        /**
+         * Runs the action and then its after middlewares. An action that ended the request (render, success, a failed permission check) still gets them, the end is passed on afterwards.
+         * @param callable $action The route or controller action
+         * @param callable $afterMiddlewares Runs every after middleware of the action
+         */
+        private static function runWithAfterMiddlewares(callable $action, callable $afterMiddlewares): void {
+            $end = null;
+            try {
+                $action();
+            } catch(EndOfRequest $caught) {
+                $end = $caught;
             }
+
+            $afterMiddlewares();
+            if(!is_null($end)) throw $end;
         }
 
         /**
@@ -172,18 +188,23 @@
                 }
 
                 // Execute the main action, which can be either a callable or a controller action.
-                if(is_callable($action->getAction())) {
-                    self::performCallableAction($action->getAction(), $args);
-                } else {
+                $mainAction = function() use ($action, $args) {
+                    if(is_callable($action->getAction())) {
+                        self::performCallableAction($action->getAction(), $args);
+                        return;
+                    }
+
                     [$controllerClass, $actionMethod] = $action->getAction();
                     self::callControllerAction($controllerClass, $actionMethod, $args, $action->arguments);
-                }
+                };
 
                 // After the main action, execute after middlewares.
-                foreach($effectiveAfterMiddlewares as $afterMiddlewareState) {
-                    [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState->getAction();
-                    self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args, $afterMiddlewareState->arguments);
-                }
+                self::runWithAfterMiddlewares($mainAction, function() use ($effectiveAfterMiddlewares, $args) {
+                    foreach($effectiveAfterMiddlewares as $afterMiddlewareState) {
+                        [$afterMiddlewareClass, $afterMiddlewareMethod] = $afterMiddlewareState->getAction();
+                        self::callControllerAction($afterMiddlewareClass, $afterMiddlewareMethod, $args, $afterMiddlewareState->arguments);
+                    }
+                });
             };
 
             // Register the route with FastRoute.
