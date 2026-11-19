@@ -41,6 +41,26 @@
             }
         }
 
+        /**
+         * Checks whole files, for issues a single line does not show
+         * @param callable $finder Gets the content and the path of a file, returns the lines with an issue
+         */
+        public function matchFileByFile(callable $finder, string|array $warning) {
+            if(!is_array($warning)) $warning = [$warning];
+
+            foreach($this->matchedFiles as $file) {
+                if(!str_ends_with($file, ".php")) continue;
+
+                $content = file_get_contents($file);
+                if(false === $content) continue;
+
+                $this->linesChecked += substr_count($content, "\n") + 1;
+                foreach($finder($content, $file) as $line) {
+                    $this->issues[] = new Issue($file, $line, $warning);
+                }
+            }
+        }
+
         public function warn() {
             $this->out->writeln("Made <info>" . $this->linesChecked . "</info> checks.");
 
