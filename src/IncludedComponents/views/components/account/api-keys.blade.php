@@ -30,11 +30,11 @@
                                 {{ $apiKey->name() ?? __("account.api_keys.fallback_name") }}
                             </div>
                             <small class="text-muted d-block">
-                                {{ __("account.api_keys.created", ["{date}" => date("d.m.Y H:i", strtotime($apiKey->created())), "{ip}" => $apiKey->ipCreation() ?? __("account.unknown_address")]) }}
+                                {{ __("account.api_keys.created", ["{date}" => date("d.m.Y H:i", strtotime($apiKey->created())), "{ip}" => $apiKey->ipCreation() ?: __("account.unknown_address")]) }}
                                 @if(is_null($apiKey->lastUsed()))
                                     {{ __("account.never_used") }}
                                 @else
-                                    {{ __("account.last_seen", ["{date}" => date("d.m.Y H:i", strtotime($apiKey->lastUsed())), "{ip}" => $apiKey->ipLast() ?? __("account.unknown_address")]) }}
+                                    {{ __("account.last_seen", ["{date}" => date("d.m.Y H:i", strtotime($apiKey->lastUsed())), "{ip}" => $apiKey->ipLast() ?: __("account.unknown_address")]) }}
                                 @endif
                             </small>
                             <small class="text-muted d-block">
