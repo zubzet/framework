@@ -732,10 +732,10 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     $organization->uuid(): string
     ```
 
-* Returns the organization's name.
+* Returns the organization's name, `null` for an organization that was created without one.
 
     ```php
-    $organization->name(): string
+    $organization->name(): ?string
     ```
 
 * Returns the maximum number of users, or `null` for no limit.
@@ -1060,13 +1060,13 @@ takes effect immediately without ending the session.
 
 A session remembers when it last passed a [two factor](two-factor-authentication.md) check, in `z_logintoken.last_two_factor`, and how many wrong codes it may still send, in `remaining_two_factor_tries`.
 
-* Returns whether the session has to pass two factor again. `false` for an account without two factor, `true` while the session never passed a check or once the last one is older than `$freshnessSeconds` (defaults to `two_factor_freshness_seconds`, 900). A session whose user is gone always has to. This is what [`$req->requireFreshTwoFactor()`](two-factor-authentication.md#guarding-an-action) asks.
+* Returns whether the session has to pass two factor again. `false` for an account without two factor, `true` while the session never passed a check or once the last one is older than `$freshnessSeconds` (defaults to `two_factor_freshness_seconds`, 90). A session whose user is gone always has to. This is what [`$req->requireFreshTwoFactor()`](two-factor-authentication.md#guarding-an-action) asks.
 
     ```php
     $session->requireRenew(?int $freshnessSeconds = null): bool
     ```
 
-* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (`two_factor_tries` to begin with, 5 by default).
+* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (`two_factor_tries` to begin with, 3 by default).
 
     ```php
     $session->lastTwoFactor(): ?string
@@ -1144,7 +1144,7 @@ A session remembers when it last passed a [two factor](two-factor-authentication
     $session->reason(): ?string
     ```
 
-* Returns the address the session was created from, or `null` if none could be determined.
+* Returns the address the session was created from, empty (`""` or `null`) if none could be determined.
 
     ```php
     $session->ipCreation(): ?string

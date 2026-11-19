@@ -116,6 +116,8 @@
             }
 
             $user = $req->getModel("z_user")->getUserById($userId);
+            if(empty($user)) return zubzet()->executePath(["error", "404"]);
+
             $email = $user["email"];
 
             // Plain roles and the groups the user already holds, offered and accepted alike
@@ -145,8 +147,8 @@
                     $formResult->addCustomError("email", "filter");
                 }
 
-                if($formResult->hasErrors || $subformResult->hasErrors) {
-                    return $res->formErrors($formResult->errors, $subformResult->errors);
+                if($formResult->hasErrors || $subformResult->hasErrors || $subPermissionForm->hasErrors) {
+                    return $res->formErrors($formResult->errors, $subformResult->errors, $subPermissionForm->errors);
                 }
 
                 $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
@@ -225,8 +227,7 @@
 
                 return $res->render("administration/organization_invitation", [
                     "invite" => $invite,
-                    // name() is typed string, an organization may have none
-                    "organizationName" => $invitedOrganization->getField("name"),
+                    "organizationName" => $invitedOrganization->name(),
                 ], "layout/min_layout.php");
             }
 
@@ -379,8 +380,8 @@
                 // Only a group created by create_group follows the rename
                 $group = $organization->getGroup();
                 $renameGroup = !is_null($group)
-                    && $group->name() === $organization->getField("name") . "_Group"
-                    && $name !== $organization->getField("name");
+                    && $group->name() === $organization->name() . "_Group"
+                    && $name !== $organization->name();
 
                 if($renameGroup && !db()->checkIfUnique("z_role", "name", $name . "_Group", "id", $group->id())) {
                     $formResult->addCustomError("name", "unique");
@@ -394,7 +395,7 @@
             }
 
             return $res->render("administration/organizations.php", [
-                "name" => $organization->getField("name"),
+                "name" => $organization->name(),
                 "maxCapacity" => $organization->maxCapacity(),
                 "group" => $organization->getGroup(),
                 "users" => $organization->getUsers(),

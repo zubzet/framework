@@ -80,15 +80,15 @@ describe('Two factor login', () => {
             });
         });
 
-        it('expires the challenge ten minutes out', () => {
+        it('expires the challenge one minute out', () => {
             login(WITH_TWO_FACTOR).then(() => {
                 probe('/TwoFactorProbe/challenge/852').then((challenge) => {
                     expect(challenge.found).to.be.true;
                     expect(challenge.active).to.be.true;
 
                     // Measured server side, the browser does not share php's clock
-                    expect(challenge.expiresInSeconds).to.be.greaterThan(540);
-                    expect(challenge.expiresInSeconds).to.be.at.most(600);
+                    expect(challenge.expiresInSeconds).to.be.greaterThan(50);
+                    expect(challenge.expiresInSeconds).to.be.at.most(60);
                 });
             });
         });

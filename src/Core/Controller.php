@@ -37,19 +37,19 @@
          * Makes food edible for CED fields
          * @param array $table Table
          * @param array $fields Fields of the array to get to the client
-         * @param callable|null $escape Optional callable($value, $field) returning the escaped value; without it values are output unescaped
+         * @param callable|null $escape Optional callable($value, $field) returning the escaped value, output as is between double quotes; without it values are encoded as JS strings
          * @return string JS array literal (not valid JSON, trailing commas) with one object per row; every row needs an 'id' (output as 'dbId')
          */
         public function makeCEDFood($table, $fields, $escape = null) {
+            // Values come from users, they must neither end the string nor close the script tag
+            $encode = fn($value) => json_encode((string) $value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
+
             $str = "[";
             foreach ($table as $row) {
-                $str .= '{"dbId": "' . $row["id"].'"';
+                $str .= '{"dbId": ' . $encode($row["id"]);
                 foreach ($fields as $field) {
-                    if($escape === null) {
-                        $str .= ',"'.$field.'":"'.$row[$field].'"';
-                    } else {
-                        $str .= ',"'.$field.'":"' . $escape($row[$field], $field) . '"';
-                    }
+                    $value = is_null($escape) ? $encode($row[$field]) : '"' . $escape($row[$field], $field) . '"';
+                    $str .= ',' . $encode($field) . ':' . $value;
                 }
                 $str .= "},";
             }
