@@ -22,6 +22,13 @@
         });
 
         form.createField({
+            name: "max_capacity",
+            type: "number",
+            text: "Maximum users",
+            hint: "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+        });
+
+        form.createField({
             name: "create_group",
             type: "checkbox",
             text: "Create a permission group",

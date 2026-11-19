@@ -13,6 +13,8 @@
         Route::group('/organization', function() {
             Route::post('/rename', [ZOrganizationController::class, 'rename']);
             Route::post('/members/{id:\d+}/roles', [ZOrganizationController::class, 'roles']);
+            Route::post('/members/{id:\d+}/delete', [ZOrganizationController::class, 'delete']);
+            Route::post('/members/{id:\d+}/remove', [ZOrganizationController::class, 'remove']);
             Route::post('/invites', [ZOrganizationController::class, 'invite']);
             Route::post('/invites/{id:\d+}/revoke', [ZOrganizationController::class, 'revoke']);
             Route::post('/invitations/{token}/accept', [ZOrganizationController::class, 'accept']);

@@ -210,27 +210,18 @@
         }
 
         public function action_organization(Request $req, Response $res) {
-            if(!user()->isLoggedIn) return $res->reroute(["login", "index"]);
-
             $action = $req->getParameters(0, 1);
             $target = $req->getParameters(1, 1);
-            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
 
+            // The invitation is for someone without an account, so no login
             if("invitation" === $action) {
                 $invite = empty($target) ? null : model("z_organization")->getInviteByToken($target);
                 $invitedOrganization = is_null($invite) ? null : Organization::byId($invite["organizationId"]);
-                $user = User::byId(user()->userId);
 
-                // Unknown, expired, meant for another address or its organization is gone
-                $error = null;
-                if(is_null($invitedOrganization) || 0 !== strcasecmp($invite["email"], $user->email())) {
-                    $error = "invalid_token";
-                } else if(!is_null($organization)) {
-                    $error = "already_in_organization";
+                // Unknown, expired, its organization is gone or the address has an account by now
+                if(is_null($invitedOrganization) || !db()->checkIfUnique("z_user", "email", $invite["email"])) {
+                    return zubzet()->executePath(["error", "404"]);
                 }
-
-                // The page answers like an unknown address
-                if(!is_null($error)) return zubzet()->executePath(["error", "404"]);
 
                 return $res->render("administration/organization_invitation", [
                     "invite" => $invite,
@@ -238,6 +229,10 @@
                     "organizationName" => $invitedOrganization->getField("name"),
                 ], "layout/min_layout.php");
             }
+
+            if(!user()->isLoggedIn) return $res->reroute(["login", "index"]);
+
+            $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
 
             return $res->render("administration/organization.php", [
                 "organization" => $organization,
@@ -321,7 +316,8 @@
 
             $formResult = $req->validateForm([
                 (new FormField("name"))->required()->length(3, 249),
-            ], ["name" => $name]);
+                (new FormField("max_capacity"))->filter(FILTER_VALIDATE_INT)->range(1, 1000000),
+            ], ["name" => $name, "max_capacity" => $req->getPost("max_capacity")]);
 
             if(is_array($name)) $formResult->addCustomError("name", "filter");
 
@@ -337,7 +333,7 @@
                 return $res->formErrors($formResult->errors);
             }
 
-            Organization::add($name, $createGroup, $groupName);
+            Organization::add($name, $createGroup, $groupName, $formResult->getValue("max_capacity"));
 
             return $res->success();
         }
@@ -371,7 +367,8 @@
 
                 $formResult = $req->validateForm([
                     (new FormField("name"))->required()->length(3, 249),
-                ], ["name" => $name]);
+                    (new FormField("max_capacity"))->filter(FILTER_VALIDATE_INT)->range(1, 1000000),
+                ], ["name" => $name, "max_capacity" => $req->getPost("max_capacity")]);
 
                 if(is_array($name)) $formResult->addCustomError("name", "filter");
 
@@ -392,11 +389,13 @@
 
                 if($renameGroup) $group->update($name . "_Group");
                 $organization->updateName($name);
+                $organization->updateMaxCapacity($formResult->getValue("max_capacity"));
                 return $res->success();
             }
 
             return $res->render("administration/organizations.php", [
                 "name" => $organization->getField("name"),
+                "maxCapacity" => $organization->maxCapacity(),
                 "group" => $organization->getGroup(),
                 "users" => $organization->getUsers(),
             ]);

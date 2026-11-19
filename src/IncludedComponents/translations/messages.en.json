@@ -111,12 +111,12 @@
             "invites_hint": "Invitations waiting to be accepted. Revoke one if it was sent by mistake.",
             "rename_title": "Rename organization",
             "invite_title": "Invite a member",
-            "invite_hint": "Enter an email address to create an invitation link and share it with that person. The link stays valid for 7 days.",
+            "invite_hint": "Enter the email address of a person without an account. They set their password through an invitation link, which you share or send by email. The link stays valid for 7 days.",
             "close": "Close"
         },
         "organization_invitation": {
             "title": "Invitation",
-            "hint": "You have been invited to join this organization. Accepting makes your account a member of it.",
+            "hint": "You have been invited to join this organization. Choose a password to create your account and become a member.",
             "invited_as": "Invited as",
             "invited_on": "Invited on"
         },
@@ -137,7 +137,10 @@
         "accept": "Accept invitation",
         "invite": {
             "email": "Email",
+            "role": "Role",
+            "send_email": "Send email",
             "create": "Create invitation",
+            "sent": "The invitation was sent by email.",
             "copy": "Copy",
             "copied": "Copied"
         },
@@ -151,7 +154,12 @@
             "roles": "Roles",
             "roles_placeholder": "Add a role...",
             "save": "Save roles",
-            "empty": "No members."
+            "empty": "No members.",
+            "remove": "Remove",
+            "delete": "Delete",
+            "deleted": "Deleted",
+            "remove_confirm": "Remove this member from the organization? The account stays, the roles given by the organization are taken away.",
+            "delete_confirm": "Delete this member? The account is deactivated and can no longer log in."
         },
         "rename": {
             "name": "Name",
@@ -164,6 +172,13 @@
             "title": "Reset your password",
             "text": "Someone asked to reset the password of your account. If that was you, choose a new password with the link below. If not, you can ignore this email.",
             "link": "Click this link to reset your password!",
+            "open": "Or open:"
+        },
+        "organization_invite": {
+            "subject": "Invitation to {organization}",
+            "title": "You have been invited",
+            "text": "You have been invited to join {organization}. Choose a password with the link below to create your account.",
+            "link": "Click this link to accept the invitation!",
             "open": "Or open:"
         }
     },
