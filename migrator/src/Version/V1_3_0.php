@@ -46,9 +46,9 @@
             $newSettings = new SettingsIni($this, "new-settings");
             $newSettings->addProperty("health_endpoint_enabled", "true");
             $newSettings->addProperty("encryption_key", "");
-            $newSettings->addProperty("two_factor_challenge_seconds", "600");
-            $newSettings->addProperty("two_factor_freshness_seconds", "900");
-            $newSettings->addProperty("two_factor_tries", "5");
+            $newSettings->addProperty("two_factor_challenge_seconds", "60");
+            $newSettings->addProperty("two_factor_freshness_seconds", "90");
+            $newSettings->addProperty("two_factor_tries", "3");
             $newSettings->addProperty("session_last_used_throttle_seconds", "60");
             $newSettings->addProperty("db_max_retries", "3");
             $newSettings->addProperty("db_wait_attempts", "10");

@@ -19,7 +19,7 @@ describe('Two factor gate', () => {
     const age = (prefix, seconds = null) =>
         cy.request(`/TwoFactorProbe/ageSession/${token(prefix)}` + (seconds === null ? '' : `?seconds=${seconds}`));
 
-    const resetSession = (prefix, tries = 5) =>
+    const resetSession = (prefix, tries = 3) =>
         cy.request(`/TwoFactorProbe/resetSession/${token(prefix)}?tries=${tries}`);
 
     // A spent budget signs the session out, so every case puts them back first
@@ -275,13 +275,13 @@ describe('Two factor gate', () => {
 
         it('spends a try on a wrong code and gives the budget back on a right one', () => {
             login('0854a');
-            resetSession('0854a', 5);
+            resetSession('0854a', 3);
 
             refresh({ code: '000000' });
-            sessionState('0854a').then((state) => expect(state.remainingTries).to.eq(4));
+            sessionState('0854a').then((state) => expect(state.remainingTries).to.eq(2));
 
             code(854).then((value) => refresh({ code: value }));
-            sessionState('0854a').then((state) => expect(state.remainingTries).to.eq(5));
+            sessionState('0854a').then((state) => expect(state.remainingTries).to.eq(3));
         });
 
         it('signs the session out once the last try is gone', () => {
@@ -305,7 +305,7 @@ describe('Two factor gate', () => {
                 expect(out).to.include({ result: 'error', message: 'Wrong code' });
             });
 
-            sessionState('0854c').then((state) => expect(state.remainingTries).to.eq(4));
+            sessionState('0854c').then((state) => expect(state.remainingTries).to.eq(2));
         });
 
         it('lets an api key become fresh through a typed code', () => {

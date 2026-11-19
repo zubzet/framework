@@ -31,7 +31,7 @@ describe('Two factor', () => {
     const setState = (userId, secret = '', confirmed = 1) =>
         cy.request(`/TwoFactorProbe/setState/${userId}?secret=${secret}&confirmed=${confirmed}`);
 
-    const resetSession = (prefix, tries = 5) =>
+    const resetSession = (prefix, tries = 3) =>
         cy.request(`/TwoFactorProbe/resetSession/${token(prefix)}?tries=${tries}`);
 
     // ---------------------------------------------------------------------
@@ -165,7 +165,7 @@ describe('Two factor', () => {
                 });
             });
 
-            sessionState('0850a').then((state) => expect(state.remainingTries).to.eq(5));
+            sessionState('0850a').then((state) => expect(state.remainingTries).to.eq(3));
         });
 
         it('counts turning it on as a passed check', () => {
@@ -267,10 +267,10 @@ describe('Two factor', () => {
             login('0857a');
 
             post('disable-two-factor', { code: '000000' });
-            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(4));
+            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(2));
 
             post('disable-two-factor', { code: '000000' });
-            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(3));
+            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(1));
         });
 
         it('signs the session out once the last try is gone', () => {

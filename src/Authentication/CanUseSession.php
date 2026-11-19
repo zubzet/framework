@@ -210,7 +210,7 @@
             $lastTwoFactor = $this->lastTwoFactor();
             if(is_null($lastTwoFactor)) return true;
 
-            $freshness = is_null($freshnessSeconds) ? configNumeric("two_factor_freshness_seconds", 900) : $freshnessSeconds;
+            $freshness = is_null($freshnessSeconds) ? configNumeric("two_factor_freshness_seconds", 90) : $freshnessSeconds;
 
             return strtotime($lastTwoFactor) <= time() - $freshness;
         }
