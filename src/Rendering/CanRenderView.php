@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\Rendering;
 
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\ErrorHandling\DebugBar\DebugBarBridge;
     use ZubZet\Framework\Rendering\Katana\Engine;
@@ -21,6 +22,16 @@
          * @param string|array $options Rendering options, e.g., or a string for layout
          */
         public function render($document, $opt = [], $options = []) {
+            $this->echoView($document, $opt, $options);
+
+            // The view is the response, nothing of the action may run after it
+            throw new EndOfRequest;
+        }
+
+        /**
+         * Echoes a view like render() without ending the request, for output that is captured (mails)
+         */
+        private function echoView($document, $opt = [], $options = []): void {
             // Legacy as $options used to be $layout
             if(!is_array($options)) {
                 $options = ["layout" => $options];

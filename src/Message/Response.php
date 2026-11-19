@@ -249,7 +249,7 @@
 
             //Render the email template
             ob_start();
-            $this->render($document, $options, $layout);
+            $this->echoView($document, $options, $layout);
             $content = ob_get_clean();
             if (ob_get_contents()) ob_end_clean();
 
