@@ -147,8 +147,8 @@
                     $formResult->addCustomError("email", "filter");
                 }
 
-                if($formResult->hasErrors || $subformResult->hasErrors) {
-                    return $res->formErrors($formResult->errors, $subformResult->errors);
+                if($formResult->hasErrors || $subformResult->hasErrors || $subPermissionForm->hasErrors) {
+                    return $res->formErrors($formResult->errors, $subformResult->errors, $subPermissionForm->errors);
                 }
 
                 $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
