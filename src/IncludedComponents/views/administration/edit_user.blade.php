@@ -6,7 +6,12 @@
         $(function() {
             var form = Z.Forms.create({dom: "form"});
 
-            var inputEmail = form.createField({name: "email", type: "email", text: <?= json_encode(__("admin.edit_user.email")) ?>, value: "<?php echo $opt["email"]; ?>"});
+            var inputEmail = form.createField({
+                name: "email",
+                type: "email",
+                text: <?= json_encode(__("admin.edit_user.email")) ?>,
+                value: @json($opt["email"] ?? "")
+            });
 
             form.createField({
                 name: "organization",
