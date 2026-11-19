@@ -1144,7 +1144,7 @@ A session remembers when it last passed a [two factor](two-factor-authentication
     $session->reason(): ?string
     ```
 
-* Returns the address the session was created from, or `null` if none could be determined.
+* Returns the address the session was created from, empty (`""` or `null`) if none could be determined.
 
     ```php
     $session->ipCreation(): ?string

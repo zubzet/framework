@@ -294,7 +294,7 @@
         }
 
         /**
-         * The address the session was created from, or null when it was not known
+         * The address the session was created from, empty ("" or null) when it was not known
          */
         public function ipCreation(): ?string {
             return $this->getField("ip_creation");
