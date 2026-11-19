@@ -1,7 +1,7 @@
 @extends($layout)
 
 @section("content")
-    @if(is_null(user()->orgId))
+    @if(is_null($organization))
         <h2>{{ __("admin.organization.title") }}</h2>
         <p>{{ __("admin.organization.no_organization") }}</p>
     @else
@@ -9,7 +9,7 @@
             <div class="mr-3">
                 <small class="text-muted text-uppercase">{{ __("admin.organization.title") }}</small>
                 <h2 class="mb-0 z-organization-name mt-2">
-                    {{ $organization->getField("name") }}
+                    {{ $organization->name() }}
                 </h2>
             </div>
             <div class="mt-2">

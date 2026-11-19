@@ -732,10 +732,10 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     $organization->uuid(): string
     ```
 
-* Returns the organization's name.
+* Returns the organization's name, `null` for an organization that was created without one.
 
     ```php
-    $organization->name(): string
+    $organization->name(): ?string
     ```
 
 * Returns the maximum number of users, or `null` for no limit.

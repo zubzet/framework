@@ -106,7 +106,8 @@
             $this->setField("max_capacity", $maxCapacity);
         }
 
-        public function name(): string {
+        // Null for an organization that was created without a name
+        public function name(): ?string {
             return $this->getField("name");
         }
 
