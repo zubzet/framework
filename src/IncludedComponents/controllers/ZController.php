@@ -116,6 +116,8 @@
             }
 
             $user = $req->getModel("z_user")->getUserById($userId);
+            if(empty($user)) return zubzet()->executePath(["error", "404"]);
+
             $email = $user["email"];
 
             // Plain roles and the groups the user already holds, offered and accepted alike
