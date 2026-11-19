@@ -2,6 +2,8 @@
 
     namespace ZubZet\Framework\Support;
 
+    use ZubZet\Framework\Message\EndOfRequest;
+
     /**
      * The rest class is used to provide raw JSON API data to the client
      */
@@ -61,7 +63,7 @@
             $this->json = json_encode($this->data, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
             if($beforeEcho) $beforeEcho();
             echo $this->json;
-            if($die) exit;
+            if($die) throw new EndOfRequest;
         }
 
     }

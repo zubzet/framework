@@ -206,7 +206,10 @@
             $code = $req->getParameters(0, 1);
             $DBResetCode = $req->getModel("z_login", $req->getZRoot())->getResetCode($code, $req->getBooterSettings("forgotPasswordTimeSpan"));
 
-            if (!$DBResetCode) die("ERROR: This code is not or no longer valid!");
+            if (!$DBResetCode) {
+                echo "ERROR: This code is not or no longer valid!";
+                throw new \ZubZet\Framework\Message\EndOfRequest;
+            }
 
             if ($req->getPost("password", false) !== false) {
                 

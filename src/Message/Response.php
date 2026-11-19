@@ -50,7 +50,7 @@
                 }
                 zubzet()->reroute($parts);
             }
-            if($final) exit;
+            if($final) throw new EndOfRequest;
         }
 
         /**
@@ -61,7 +61,7 @@
         public function rerouteUrl($url = "", $root = null) {
             if ($root === null) $root = $this->booter->rootFolder;
             header("location: ".$root.$url);
-            exit;
+            throw new EndOfRequest;
         }
 
         /**
