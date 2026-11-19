@@ -6,6 +6,7 @@
     use Symfony\Component\Console\Input\InputArgument;
     use Symfony\Component\Console\Input\InputInterface;
     use Symfony\Component\Console\Output\OutputInterface;
+    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\Registry\Registry;
 
     final class RunCommand extends Command {
@@ -66,11 +67,16 @@
             }
 
             // Execute the action
-            zubzet()->executePath([
-                $controller,
-                $action,
-                ...$parameters,
-            ]);
+            // An action that ends its response early is a normal run, Symfony must not see it as a failure
+            try {
+                zubzet()->executePath([
+                    $controller,
+                    $action,
+                    ...$parameters,
+                ]);
+            } catch(EndOfRequest) {
+                return 0;
+            }
 
             return 0;
         }

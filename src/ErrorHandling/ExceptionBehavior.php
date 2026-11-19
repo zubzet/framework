@@ -3,6 +3,7 @@
     namespace ZubZet\Framework\ErrorHandling;
 
     use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Support\RuntimeCache\InternalRuntimeCache;
     use ZubZet\Framework\Logger\LoggerFactory;
@@ -97,6 +98,9 @@
          */
         private static function registerExceptionHandler(): void {
             set_exception_handler(function(\Throwable $e) {
+                // A response ended outside of Router::execute() (shutdown function, index.php) is a clean end, not an error
+                if($e instanceof EndOfRequest) return;
+
                 LoggerFactory::$uncaughtException = true;
                 try {
                     logger(Logger::ZUBZET)->error(LogEventType::EXCEPTION, [

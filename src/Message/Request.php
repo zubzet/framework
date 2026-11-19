@@ -293,13 +293,13 @@
                 if($this->isCli()) return true;
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             $hasPermission = $includeSuperUser
@@ -309,7 +309,7 @@
             if(!$hasPermission) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             return true;
@@ -324,7 +324,7 @@
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             // byId() skips removed organizations, so their former members are denied
@@ -333,7 +333,7 @@
             if(!$hasOrganization) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             return true;
@@ -360,7 +360,7 @@
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             $session = Session::byToken(user()->getSessionToken());
@@ -368,7 +368,7 @@
             if(is_null($session) || $session->requireRenew($freshnessSeconds)) {
                 if($boolResult) return false;
                 response()->error("Two factor required", ["twoFactorRenew" => true]);
-                exit;
+                throw new EndOfRequest;
             }
 
             return true;
@@ -452,7 +452,7 @@
             if(CSRF::verify(...$additionalMethods)) return;
 
             zubzet()->executePath(["error", "403"]);
-            exit;
+            throw new EndOfRequest;
         }
     }
 ?>

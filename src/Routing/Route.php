@@ -5,6 +5,7 @@
     use FastRoute\RouteCollector;
     use Request;
     use Response;
+    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\ZubZet;
 
     class Route {
@@ -102,7 +103,7 @@
             foreach($toExecuteMiddlewares as $toExecuteMiddleware) {
                 [$class, $method] = $toExecuteMiddleware->getAction();
                 $result = self::callControllerAction($class, $method, arguments: $toExecuteMiddleware->arguments);
-                if($result !== true) exit;
+                if($result !== true) throw new EndOfRequest;
             }
 
             // Execute the main callback (route handling)
