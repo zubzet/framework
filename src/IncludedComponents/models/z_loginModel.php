@@ -32,7 +32,12 @@
                     LIMIT 1";
             $hash = LoginToken::hash($token);
 
-            return $this->exec($sql, "s", $hash)->resultToLine();
+            $session = $this->exec($sql, "s", $hash)->resultToLine();
+
+            // The column compares case-insensitively, a token only counts when it matches exactly
+            if(empty($session) || !hash_equals($session["token"], $hash)) return null;
+
+            return $session;
         }
 
         /**
