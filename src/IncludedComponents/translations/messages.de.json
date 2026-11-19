@@ -111,12 +111,12 @@
             "invites_hint": "Einladungen, die noch nicht angenommen wurden. Widerrufen Sie eine, falls sie versehentlich verschickt wurde.",
             "rename_title": "Organisation umbenennen",
             "invite_title": "Mitglied einladen",
-            "invite_hint": "Geben Sie eine E-Mail-Adresse ein, um einen Einladungslink zu erstellen, und teilen Sie ihn mit dieser Person. Der Link ist 7 Tage gültig.",
+            "invite_hint": "Geben Sie die E-Mail-Adresse einer Person ohne Konto ein. Sie legt ihr Passwort über einen Einladungslink fest, den Sie weitergeben oder per E-Mail versenden. Der Link ist 7 Tage gültig.",
             "close": "Schließen"
         },
         "organization_invitation": {
             "title": "Einladung",
-            "hint": "Sie wurden eingeladen, dieser Organisation beizutreten. Wenn Sie annehmen, wird Ihr Konto Mitglied.",
+            "hint": "Sie wurden eingeladen, dieser Organisation beizutreten. Wählen Sie ein Passwort, um Ihr Konto zu erstellen und Mitglied zu werden.",
             "invited_as": "Eingeladen als",
             "invited_on": "Eingeladen am"
         },
@@ -137,7 +137,10 @@
         "accept": "Einladung annehmen",
         "invite": {
             "email": "E-Mail",
+            "role": "Rolle",
+            "send_email": "E-Mail senden",
             "create": "Einladung erstellen",
+            "sent": "Die Einladung wurde per E-Mail versendet.",
             "copy": "Kopieren",
             "copied": "Kopiert"
         },
@@ -151,7 +154,12 @@
             "roles": "Rollen",
             "roles_placeholder": "Rolle hinzufügen …",
             "save": "Rollen speichern",
-            "empty": "Keine Mitglieder."
+            "empty": "Keine Mitglieder.",
+            "remove": "Entfernen",
+            "delete": "Löschen",
+            "deleted": "Gelöscht",
+            "remove_confirm": "Dieses Mitglied aus der Organisation entfernen? Das Konto bleibt bestehen, die von der Organisation vergebenen Rollen werden entzogen.",
+            "delete_confirm": "Dieses Mitglied löschen? Das Konto wird deaktiviert und kann sich nicht mehr anmelden."
         },
         "rename": {
             "name": "Name",
@@ -164,6 +172,13 @@
             "title": "Passwort zurücksetzen",
             "text": "Für Ihr Konto wurde das Zurücksetzen des Passworts angefordert. Wenn Sie das waren, wählen Sie über den Link unten ein neues Passwort. Wenn nicht, können Sie diese E-Mail ignorieren.",
             "link": "Klicken Sie auf diesen Link, um Ihr Passwort zurückzusetzen!",
+            "open": "Oder öffnen Sie:"
+        },
+        "organization_invite": {
+            "subject": "Einladung zu {organization}",
+            "title": "Sie wurden eingeladen",
+            "text": "Sie wurden eingeladen, {organization} beizutreten. Wählen Sie über den Link unten ein Passwort, um Ihr Konto zu erstellen.",
+            "link": "Klicken Sie auf diesen Link, um die Einladung anzunehmen!",
             "open": "Oder öffnen Sie:"
         }
     },

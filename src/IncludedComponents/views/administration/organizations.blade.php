@@ -13,6 +13,14 @@
                 value: <?= json_encode($opt["name"], JSON_HEX_TAG | JSON_HEX_AMP); ?>,
             });
 
+            form.createField({
+                name: "max_capacity",
+                type: "number",
+                text: "Maximum users",
+                hint: "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+                value: <?= json_encode($opt["maxCapacity"]); ?>,
+            });
+
             <?php if($opt["user"]->checkPermission("admin.organizations.delete")) { ?>
                 form.createActionButton("Delete organization", "btn-danger", function() {
                     if(!confirm("Do you really want to delete this organization?")) return;

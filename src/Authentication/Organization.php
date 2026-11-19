@@ -30,13 +30,13 @@
             $this->setField("permissions", null);
         }
 
-        public static function add(?string $name, bool $createGroup = false, ?string $groupName = null): Organization {
+        public static function add(?string $name, bool $createGroup = false, ?string $groupName = null, ?int $maxCapacity = null): Organization {
             $group = null;
             if($createGroup) {
                 $group = Group::add($groupName ?? $name . "_Group");
             }
 
-            $organizationData = model("z_organization")->create($name, $group);
+            $organizationData = model("z_organization")->create($name, $group, $maxCapacity);
             return new Organization($organizationData);
         }
 
@@ -100,8 +100,18 @@
             $this->setField("name", $name);
         }
 
+        public function updateMaxCapacity(?int $maxCapacity): void {
+            model("z_organization")->updateMaxCapacity($this, $maxCapacity);
+
+            $this->setField("max_capacity", $maxCapacity);
+        }
+
         public function name(): string {
             return $this->getField("name");
+        }
+
+        public function maxCapacity(): ?int {
+            return $this->getField("max_capacity");
         }
 
         public function hasMember(User $user): bool {

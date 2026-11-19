@@ -49,8 +49,11 @@ Members manage their own organization with:
 
 - [z.organization.manage](organization-management.md): the sidebar entry and dashboard card
 - [z.organization.invite](organization-management.md#invitations)
+- [z.organization.invite.email](organization-management.md#invitations)
 - [z.organization.roles](organization-management.md#releasing-roles-to-organizations)
 - [z.organization.rename](organization-management.md)
+- [z.organization.remove](organization-management.md#releasing-roles-to-organizations)
+- [z.organization.delete](organization-management.md#releasing-roles-to-organizations)
 
 Profile is the exception: it only ever shows the requesting account, so every login reaches it without a permission.
 
@@ -66,12 +69,12 @@ After you set a role, you can either add more roles or save the user by clicking
 ## Two factor
 An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.list` and `admin.user.edit`.
 ## Organizations
-Add Organization creates an [organization](../core-features/access-control.md). Ticking **Create a permission group** also creates a [group](../core-features/permission-system.md) named after the organization (`{name}_Group`) and links it to the organization. Organization names may repeat, group names may not, so the checkbox reports an error when a group of that name already exists.
+Add Organization creates an [organization](../core-features/access-control.md). An optional **Maximum users** caps the active members plus open invitations, empty means unlimited, see [Organization Management](organization-management.md#invitations). Ticking **Create a permission group** also creates a [group](../core-features/permission-system.md) named after the organization (`{name}_Group`) and links it to the organization. Organization names may repeat, group names may not, so the checkbox reports an error when a group of that name already exists.
 
-Organizations lists every active organization; opening one shows a form to rename it, the linked group, the users assigned to it, and a button to delete it. Renaming also renames the linked group when it is named `{organization name}_Group`, as created by the checkbox above, and fails with a uniqueness error when a group of the new name already exists. Deleting is a soft delete, the organization is set to inactive, its members are detached and the linked group is deactivated. The Delete button requires `admin.organizations.delete`.
+Organizations lists every active organization; opening one shows a form to rename it and change its maximum users, the linked group, the users assigned to it, and a button to delete it. Renaming also renames the linked group when it is named `{organization name}_Group`, as created by the checkbox above, and fails with a uniqueness error when a group of the new name already exists. Deleting is a soft delete, the organization is set to inactive, its members are detached and the linked group is deactivated. The Delete button requires `admin.organizations.delete`.
 
 ## Assigning organizations
-Both Add User and Edit User carry an Organization select. Picking an entry assigns the user to that organization, the empty entry (`---`) unassigns them. The assignment goes through `User::updateOrganization()`, so the group of the previous organization is removed from the user and the group of the new one is added. An Edit User request without the `organization` field leaves the organization unchanged.
+Both Add User and Edit User carry an Organization select, which ignores the maximum users of the organization. Picking an entry assigns the user to that organization, the empty entry (`---`) unassigns them. The assignment goes through `User::updateOrganization()`, so the group of the previous organization is removed from the user and the group of the new one is added. An Edit User request without the `organization` field leaves the organization unchanged.
 
 ## Database browser
 `/z/database` lists every table of the database with approximate row counts, `/z/database/{table}` shows its rows 20 per page (`/page/{n}`, five page numbers around the current one, a page beyond the last shows no rows), newest first by the last primary key column (the first column without one), and `/z/database/{table}/csv` (the Export button) exports up to 10000 rows. The CSV export does not neutralise spreadsheet formulas. It is a read-only viewer and exporter (no insert, edit, delete, filter or search) and needs the permission `admin.database`.

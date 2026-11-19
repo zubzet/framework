@@ -694,10 +694,10 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 ### Creating an Organization
 
 * Creates a new organization with the given name (which may be `null`).
-  When `$createGroup` is `true`, a permission `Group` named `$groupName`, by default `"{$name}_Group"`, is created and linked to the organization (`z_organization.groupId`, `NULL` without a group). The linked group is then available via `$organization->getGroup()` and is used by `User::updateOrganization()` to sync group membership.
+  When `$createGroup` is `true`, a permission `Group` named `$groupName`, by default `"{$name}_Group"`, is created and linked to the organization (`z_organization.groupId`, `NULL` without a group). The linked group is then available via `$organization->getGroup()` and is used by `User::updateOrganization()` to sync group membership. `$maxCapacity` sets the maximum number of users, `null` for no limit.
 
     ```php
-    Organization::add(?string $name, bool $createGroup = false, ?string $groupName = null): Organization
+    Organization::add(?string $name, bool $createGroup = false, ?string $groupName = null, ?int $maxCapacity = null): Organization
     ```
 
 ---
@@ -708,6 +708,12 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 
     ```php
     $organization->updateName(string $name);
+    ```
+
+* Sets the maximum number of users (`z_organization.max_capacity`), or `null` for no limit. The framework counts active members plus open invitations of the [self-management](../z-admin/organization-management.md#invitations) against it, assigning a user with `updateOrganization()` is not limited.
+
+    ```php
+    $organization->updateMaxCapacity(?int $maxCapacity);
     ```
 
 * Soft deletes the organization (`active = 0`). Its active members are detached first (`organizationId` is set to `NULL` and the membership in the linked group is removed) and the linked group is deactivated, so `$user->organization()` returns `null` for them.
@@ -730,6 +736,12 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
 
     ```php
     $organization->name(): string
+    ```
+
+* Returns the maximum number of users, or `null` for no limit.
+
+    ```php
+    $organization->maxCapacity(): ?int
     ```
 
 * Returns all active users assigned to this organization.
