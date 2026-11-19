@@ -55,11 +55,19 @@
             ];
         }
 
-        public function testIpReturnsAForwardedChainUnsplit(): void {
+        public function testIpReturnsTheClientOfAForwardedChain(): void {
             $input = $this->input();
             $input->SERVER = ["HTTP_X_FORWARDED_FOR" => "198.51.100.30, 10.0.0.1"];
 
-            $this->assertSame("198.51.100.30, 10.0.0.1", $this->request($input)->ip());
+            $this->assertSame("198.51.100.30", $this->request($input)->ip());
+        }
+
+        // The result is stored in VARCHAR(45) columns, a header must not be able to exceed them
+        public function testIpFallsBackToRemoteAddrWhenTheHeaderIsNoAddress(): void {
+            $input = $this->input();
+            $input->SERVER = ["HTTP_X_FORWARDED_FOR" => str_repeat("a", 200), "REMOTE_ADDR" => "172.18.0.1"];
+
+            $this->assertSame("172.18.0.1", $this->request($input)->ip());
         }
 
         public function testIpIsAnEmptyStringWithoutAnyAddress(): void {

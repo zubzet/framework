@@ -14,7 +14,7 @@ The framework ships three mail views, each a `.blade.php` file that a view of th
 
 - `email_verify` is sent when someone signs up or asks for a new verification link. It expects the option `url`. The subject is `<pageName> - Sign Up` and the `pageName` setting must exist in the [booter settings](../core-features/configuration.md): the framework reads it with `getBooterSettings("pageName", "")`, whose second argument is `$useDefault`, and the empty string counts as false, so a missing key throws an `InvalidArgumentException` instead of falling back to an empty prefix.
 - `email_password_reset` is sent by the forgot-password flow. It expects the option `reset_link`.
-- `email_too_many_logins` expects the options `date` and `ip`. `$req->ip()` can be spoofed with a request header and the view prints it unescaped, validate it first. The framework no longer sends it itself, see [Send the login warning yourself](../setup/upgrade/1.2.0-to-1.3.0.md#6-send-the-login-warning-yourself-if-you-relied-on-it).
+- `email_too_many_logins` expects the options `date` and `ip`. `$req->ip()` can be spoofed with a request header, but is always an IP address or an empty string. The framework no longer sends it itself, see [Send the login warning yourself](../setup/upgrade/1.2.0-to-1.3.0.md#6-send-the-login-warning-yourself-if-you-relied-on-it).
 
 A mail view you add yourself should not reuse these names unless it is meant to replace the bundled one. All three are written in Blade and extend `$layout`.
 
