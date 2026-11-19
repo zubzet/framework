@@ -292,7 +292,7 @@ describe('Two factor', () => {
 
         it('leaves the budget alone on a correct code', () => {
             login('0857a');
-            resetSession('0857a', 3);
+            resetSession('0857a', 2);
 
             code(857).then((value) => {
                 post('disable-two-factor', { code: value }).then((out) => {
@@ -300,7 +300,7 @@ describe('Two factor', () => {
                 });
             });
 
-            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(3));
+            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(2));
         });
     });
 
