@@ -138,8 +138,7 @@
          * @param bool $die Whether to exit after echoing, true by default
          */
         public function generateRest(array $payload, bool $die = true): void {
-            $this->sendRestContentType();
-            $this->getNewRest($payload)->execute($die);
+            $this->getNewRest($payload)->execute($die, fn() => $this->sendRestContentType());
         }
 
         /**
