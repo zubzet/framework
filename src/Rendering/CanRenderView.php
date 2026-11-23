@@ -15,7 +15,7 @@
         use ViewPath;
 
         /**
-         * Shows a document to the user by echoing it (nothing is returned); a view that fails to render with a BladeException, e.g. a missing one, renders the 500 view instead
+         * Shows a document to the user by echoing it (nothing is returned); a view that fails to render with a BladeException, e.g. a missing one, is rethrown unless showErrors is 0, which logs it and renders the 500 view with status 500 instead
          * @param string $document Path to the view
          * @param array $opt Associative array with values to replace in the view; response, request, user, root, host, absRoot and title are added to it as $opt in the view
          * @param string|array $options Rendering options, e.g., or a string for layout
@@ -57,7 +57,19 @@
                 // Render using Katana
                 echo (string) Engine::render($viewName, $layoutName, $data);
             } catch(BladeException $e) {
-                // Render the 500 page when a view is not found
+                // Like a controller exception: shown when errors are shown, otherwise logged as the 500 page
+                if(0 != zubzet()->showErrors) throw $e;
+
+                try {
+                    logger(Logger::ZUBZET)->error(LogEventType::EXCEPTION, [
+                        "class" => get_class($e),
+                        "message" => $e->getMessage(),
+                        "file" => $e->getFile(),
+                        "line" => $e->getLine(),
+                    ]);
+                } catch(\Throwable) {}
+
+                http_response_code(500);
                 echo (string) Engine::render("500", "layout/min_layout", $data);
             }
         }

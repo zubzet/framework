@@ -5,6 +5,9 @@
     use Blade\View;
     use Blade\Blade;
     use Blade\Config;
+    use Blade\FileSystemViewFinder;
+    use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Registry\Registry;
 
     /**
@@ -40,7 +43,24 @@
             }
 
             foreach($viewPaths as $viewPath) {
-                $config->addViewPath($viewPath);
+                // An un-migrated <name>.php is logged, as the next root's view of that name takes over
+                $config->addViewFinder(new class($viewPath) extends FileSystemViewFinder {
+                    private static array $warned = [];
+
+                    public function viewExists(string $name): bool {
+                        if(parent::viewExists($name)) return true;
+
+                        $legacy = substr($this->getFilePath($name), 0, -strlen(".blade.php")) . ".php";
+                        if(is_file($legacy) && !isset(self::$warned[$legacy])) {
+                            self::$warned[$legacy] = true;
+                            logger(Logger::ZUBZET)->warning(LogEventType::WARNING, [
+                                "message" => "The legacy view '$legacy' is not migrated to Blade, run the 1.3.0 migrator.",
+                            ]);
+                        }
+
+                        return false;
+                    }
+                });
             }
 
             // Framework directives bound to the request (@auth / @guest, more later).
@@ -66,6 +86,10 @@
          * On-disk directory for compiled views, namespaced per project and per installed engine
          * reference. The engine segment forces a clean cache on upgrade (Katana keys a compiled
          * view on path + mtime, not engine version). Seam for a future generalized framework cache.
+         *
+         * Compiled views are PHP that gets executed, and the temp dir is shared with every other
+         * user of the machine. The directory is therefore per system user, only accessible to them,
+         * and refused when someone else created it first.
          */
         private static function cachePath(): string {
             try {
@@ -74,8 +98,25 @@
                 $engine = "";
             }
             $projectKey = sha1(zubzet()->z_framework_root);
-            $path = sys_get_temp_dir() . "/zubzet_cache/project_$projectKey/views/engine_$engine";
-            if(!is_dir($path)) @mkdir($path, 0777, true);
+
+            // Without the posix extension (Windows) the temp dir is per user already
+            $user = function_exists("posix_geteuid") ? posix_geteuid() : null;
+
+            $path = sys_get_temp_dir() . "/zubzet_cache_$user/project_$projectKey/views/engine_$engine";
+            if(!is_dir($path)) @mkdir($path, 0700, true);
+
+            if(is_null($user)) return $path;
+
+            // Checked on every level below the temp dir, the owner of a parent could swap the rest
+            $levels = [$path, dirname($path), dirname($path, 2), dirname($path, 3)];
+            foreach($levels as $level) {
+                $isOwn = !is_link($level) && $user === fileowner($level);
+                $isPrivate = 0 === (fileperms($level) & 0022);
+                if($isOwn && $isPrivate) continue;
+
+                throw new \RuntimeException("The view cache directory '$level' is not exclusively owned by the user running the application, remove it.");
+            }
+
             return $path;
         }
     }

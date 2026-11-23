@@ -23,11 +23,11 @@
                             {{ $session->device() ?? __("account.sessions.unknown_device") }}
                         </small>
                         <small class="text-muted d-block">
-                            {{ __("account.sessions.started", ["{date}" => date("d.m.Y H:i", strtotime($session->created())), "{ip}" => $session->ipCreation() ?? __("account.unknown_address")]) }}
+                            {{ __("account.sessions.started", ["{date}" => date("d.m.Y H:i", strtotime($session->created())), "{ip}" => $session->ipCreation() ?: __("account.unknown_address")]) }}
                             @if(is_null($session->lastUsed()))
                                 {{ __("account.never_used") }}
                             @else
-                                {{ __("account.last_seen", ["{date}" => date("d.m.Y H:i", strtotime($session->lastUsed())), "{ip}" => $session->ipLast() ?? __("account.unknown_address")]) }}
+                                {{ __("account.last_seen", ["{date}" => date("d.m.Y H:i", strtotime($session->lastUsed())), "{ip}" => $session->ipLast() ?: __("account.unknown_address")]) }}
                             @endif
                         </small>
                         <small class="text-muted d-block">

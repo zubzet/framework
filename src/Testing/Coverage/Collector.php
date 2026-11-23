@@ -20,27 +20,14 @@
         private static ?CodeCoverage $coverage = null;
 
         public static function initialize(): void {
-            if(Collector::isActive()) {
-                if(!self::hasCoverageLibrary()) {
-                    throw new \RuntimeException(
-                        "Coverage session is active (" . self::$sessionLocation . " exists), " .
-                        "but the phpunit/php-code-coverage library is not installed. " .
-                        "It is a development dependency of ZubZet: install it with " .
-                        "composer require --dev \"phpunit/php-code-coverage:9.*\", " .
-                        "or remove " . self::$sessionLocation . " to disable coverage."
-                    );
-                }
-
-                if(!self::hasDriver()) {
-                    throw new \RuntimeException(
-                        "Coverage session is active (" . self::$sessionLocation . " exists), " .
-                        "but no PHP code coverage driver is loaded. " .
-                        "Install and enable Xdebug or PCOV, or remove " . self::$sessionLocation . " to disable coverage."
-                    );
-                }
-
+            // A leftover session file without the library or a usable driver mode just means no coverage
+            if(Collector::isActive() && self::hasCoverageLibrary() && self::hasDriver()) {
                 $coverageFramework = filter_var(getenv('DEBUG_ZUBZET_COVERAGE_FRAMEWORK') ?: 'false', FILTER_VALIDATE_BOOLEAN);
-                Collector::start($coverageFramework);
+                try {
+                    Collector::start($coverageFramework);
+                } catch(\SebastianBergmann\CodeCoverage\Exception) {
+                    return;
+                }
 
                 register_shutdown_function(function() {
                     Collector::stop();

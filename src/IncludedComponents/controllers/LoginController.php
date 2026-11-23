@@ -15,13 +15,6 @@
      */
     class LoginController extends z_controller {
 
-        // True once the account used up its login tries in the current window.
-        // Both the password and the two factor step run through this, so wrong
-        // codes count the same as wrong passwords.
-        private function blockedByLoginLimit(User $user): bool {
-            return !$user->checkLoginTries();
-        }
-
         /**
          * The index action
          *
@@ -54,7 +47,7 @@
                 return $res->error("Your account is not activated yet. Check your mails or click <a href='$link'>here</a> to resend the activation.");
             }
 
-            if($this->blockedByLoginLimit($user)) {
+            if(!$user->checkLoginTries()) {
                 return $res->error("Too many login tries. Try again later.");
             }
 
@@ -76,42 +69,6 @@
             // Correct. verifyPassword() has already self-healed the stored hash if
             // it was stale, so all that is left is to start the session.
             $res->loginAs($user->id());
-            return $res->success();
-        }
-
-
-        /**
-         * Redeems a two factor challenge and starts the session behind it.
-         * Reached over its own route, so the modal can post from any page.
-         * @param Request $req The request object
-         * @param Response $res The response object
-         */
-        public function twoFactorLogin(Request $req, Response $res) {
-            $challenge = $req->getPost("challenge");
-            if(empty($challenge) || !is_string($challenge)) return $res->error("Missing challenge");
-
-            $challengeObj = model("z_login")->getTwoFactorChallenge($challenge);
-            if(is_null($challengeObj)) return $res->error("Invalid challenge");
-
-            $code = $req->getPost("code");
-            if(empty($code) || !is_string($code)) return $res->error("Missing code");
-
-            $user = User::byId($challengeObj["userId"]);
-            if(is_null($user)) return $res->error("Invalid challenge");
-
-            if($this->blockedByLoginLimit($user)) {
-                return $res->error("Too many login tries. Try again later.");
-            }
-
-            if(!$user->verifyTwoFactorCode($code)) {
-                model("z_login")->newLoginTry($user->id());
-                return $res->error("Invalid code");
-            }
-
-            model("z_login")->invalidateTwoFactorChallenge($challengeObj["id"]);
-
-            $res->loginAs($user->id(), recordTwoFactor: true);
-
             return $res->success();
         }
 

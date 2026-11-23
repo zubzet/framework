@@ -45,22 +45,26 @@
         }
 
         // -- Not-found fallback -------------------------------------------------
+        // Each action switches to showErrors = 0 first, any other mode shows the BladeException instead.
 
         // A missing view is caught in CanRenderView and re-rendered as the
         // framework 500 page in the guaranteed framework layout/min_layout.
         public function action_missingView(Request $req, Response $res) {
+            zubzet()->setExceptionBehavior(0);
             return $res->render("renderprobe/this-view-does-not-exist-xyz", ["data" => "x"]);
         }
 
         // A present view whose layout is missing: the @extends($layout) fails, and
         // because the 500 fallback ignores the caller's layout, it still renders.
         public function action_validViewMissingLayout(Request $req, Response $res) {
+            zubzet()->setExceptionBehavior(0);
             return $res->render("core/render", ["data" => "x"], "layout/this-layout-does-not-exist-xyz");
         }
 
         // The double fault: BOTH the view and its layout are missing. The
         // guaranteed-layout fallback still renders the 500 page.
         public function action_missingViewAndLayout(Request $req, Response $res) {
+            zubzet()->setExceptionBehavior(0);
             return $res->render(
                 "renderprobe/this-view-does-not-exist-xyz",
                 ["data" => "x"],

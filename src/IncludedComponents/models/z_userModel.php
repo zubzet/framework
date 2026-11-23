@@ -369,12 +369,12 @@
          * Stores a fresh two factor secret, left unconfirmed until a code proves the
          * authenticator received it. Null drops two factor off the account.
          * @param User $user The user to enroll
-         * @param ?string $secret The base32 secret, or null to remove it
+         * @param ?string $secret The base32 secret, stored encrypted, or null to remove it
          * @internal
          */
         public function setTwoFactorSecret(User $user, ?string $secret): void {
             $query = $this->dbUpdate("z_user", [
-                "two_factor_secret" => $secret,
+                "two_factor_secret" => is_null($secret) ? null : encryptSecret($secret),
                 "two_factor_confirmed_at" => null,
             ])->where([
                 "id" => $user->id(),

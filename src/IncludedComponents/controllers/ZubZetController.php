@@ -50,7 +50,14 @@
                 return $res->formErrors($formResult->errors);
             }
 
+            // Wrong current passwords count against the same limit as wrong logins
+            if(!$account->checkLoginTries()) {
+                $formResult->addCustomError("password_current", "too_many_login_tries");
+                return $res->formErrors($formResult->errors);
+            }
+
             if(!$account->verifyPassword($currentPassword)) {
+                $account->recordLoginTry();
                 $formResult->addCustomError("password_current", "password_wrong");
                 return $res->formErrors($formResult->errors);
             }
@@ -91,7 +98,7 @@
             };
 
             // An unknown uuid and somebody else's are both not owned, so neither can be probed
-            if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
+            if(!user()->isLoggedIn || is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
 
             // The name is client input and the column takes 255 characters
             $name = $req->getPost("name", "");
@@ -112,7 +119,7 @@
                 default => null,
             };
 
-            if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
+            if(!user()->isLoggedIn || is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
 
             // Revoking a key or login is as final as clearing them
             $req->requireFreshTwoFactor();
@@ -128,6 +135,12 @@
 
             // A new key outlives the session that asks for it, so a stale one may not mint it
             $req->requireFreshTwoFactor();
+
+            // A key minting keys would turn one leaked short-lived key into a permanent one
+            if(Session::byToken(user()->getSessionToken()) instanceof APIKey) return $res->error("An api key cannot create api keys");
+
+            // A key records no exec user, so one minted while logged in as someone else would hide who made it
+            if(user()->execUserId !== user()->userId) return $res->error("A login as another user cannot create api keys");
 
             // The name is client input and the column takes 255 characters
             $name = $req->getPost("name", "");
@@ -160,6 +173,20 @@
             // An active two factor is replaced by disabling it first, so a stolen
             // session cannot quietly swap the secret for one it holds itself
             if($account->hasTwoFactor()) return $res->error("Two factor is already active");
+
+            // A hijacked session may not enrol its own authenticator; an account without a password has nothing to ask
+            if(!empty($account->getField("password"))) {
+                $password = $req->getPost("password_current", "");
+                if(!is_string($password)) return $res->error("Invalid input");
+
+                // Wrong current passwords count against the same limit as wrong logins
+                if(!$account->checkLoginTries()) return $res->error("Too many login tries. Try again later.");
+
+                if(!$account->verifyPassword($password)) {
+                    $account->recordLoginTry();
+                    return $res->error("Wrong password");
+                }
+            }
 
             $totp = $account->startTwoFactor();
 
@@ -237,6 +264,37 @@
             $res->unsetCookie("z_login_token", domainScope: $res->getCookieDomainScope());
 
             return true;
+        }
+
+        // Redeems the login's challenge here, so an overridden LoginController cannot skip it
+        public function twoFactorLogin(Request $req, Response $res) {
+            $challenge = $req->getPost("challenge");
+            if(empty($challenge) || !is_string($challenge)) return $res->error("Missing challenge");
+
+            $challengeObj = model("z_login")->getTwoFactorChallenge($challenge);
+            if(is_null($challengeObj)) return $res->error("Invalid challenge");
+
+            $code = $req->getPost("code");
+            if(empty($code) || !is_string($code)) return $res->error("Missing code");
+
+            $user = User::byId($challengeObj["userId"]);
+            if(is_null($user)) return $res->error("Invalid challenge");
+
+            // Wrong codes count the same as wrong passwords
+            if(!$user->checkLoginTries()) {
+                return $res->error("Too many login tries. Try again later.");
+            }
+
+            if(!$user->verifyTwoFactorCode($code)) {
+                model("z_login")->newLoginTry($user->id());
+                return $res->error("Invalid code");
+            }
+
+            model("z_login")->invalidateTwoFactorChallenge($challengeObj["id"]);
+
+            $res->loginAs($user->id(), recordTwoFactor: true);
+
+            return $res->success();
         }
 
         /**

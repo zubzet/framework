@@ -43,8 +43,8 @@
 
             $noChangesMade = is_null($modifiedData);
 
-            $sourceData = json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            $modifiedData = json_encode($modifiedData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            $sourceData = json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $modifiedData = json_encode($modifiedData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
             $noChangesMade = $noChangesMade || $modifiedData === $sourceData;
             if($noChangesMade) {

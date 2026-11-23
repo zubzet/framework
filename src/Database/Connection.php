@@ -261,8 +261,8 @@
          * @throws \Exception If preparing or executing the statement fails and recovery is exhausted
          */
         public function exec($query) {
-            // Make sure a connection was made
-            $this->assertConnection();
+            // Keep an open connection alive; a first connect happens inside the recovery loop
+            if(isset($this->conn)) $this->assertConnection();
 
             $bindArgs = func_get_args();
             array_shift($bindArgs);
@@ -327,7 +327,7 @@
          */
         private function execWithRecovery(string $query, array $bindArgs): void {
             $attempt = 0;
-            $reconnect = false;
+            $reconnect = !isset($this->conn);
 
             while(true) {
                 $failure = $this->attemptStatement($query, $bindArgs, $reconnect);

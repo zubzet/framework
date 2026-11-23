@@ -52,9 +52,20 @@
                         {{ __("account.two_factor.inactive_hint") }}
                     </small>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary flex-shrink-0 z-two-factor-start" data-test="btn-start-two-factor">
-                    {{ __("account.two_factor.set_up") }}
-                </button>
+                <div class="d-flex flex-shrink-0">
+                    @if(!empty($account->getField("password")))
+                        <input
+                            type="password"
+                            class="form-control form-control-sm mr-2 z-two-factor-password"
+                            data-test="two-factor-password"
+                            autocomplete="current-password"
+                            placeholder="{{ __("account.change_password.current") }}"
+                        >
+                    @endif
+                    <button class="btn btn-sm btn-outline-secondary z-two-factor-start" data-test="btn-start-two-factor">
+                        {{ __("account.two_factor.set_up") }}
+                    </button>
+                </div>
             </div>
         @endif
 
@@ -114,7 +125,9 @@
                 button.prop("disabled", true);
                 error.addClass("d-none");
 
-                Z.Request.root("_zubzet/profile/start-two-factor", null, {}, (res) => {
+                Z.Request.root("_zubzet/profile/start-two-factor", null, {
+                    password_current: root.find(".z-two-factor-password").val()
+                }, (res) => {
                     // Stays disabled once it worked, a second run would stack another qr code
                     if("success" != res.result) {
                         button.prop("disabled", false);

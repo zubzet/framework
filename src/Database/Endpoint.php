@@ -15,7 +15,7 @@
         public ?int $port;
         public bool $tls;
 
-        /** The endpoint is read from the configuration once per request. */
+        /** The endpoint is read from the configuration once per process, a changed setting needs a worker reload. */
         public static function get(): self {
             if(is_null(self::$instance)) self::$instance = new self();
             return self::$instance;

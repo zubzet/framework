@@ -49,9 +49,9 @@ classes before surfacing them, sharing the `db_max_retries` budget (default
   backoff.
 - **Connection loss** (`1047`, `2002`, `2003`, `2006`, `2013`: a node died,
   the mesh moved the endpoint, or a Galera node refuses service while
-  desynced as an SST/IST donor): reconnect through the configured endpoint,
-  re-prepare, re-run, with attempt-scaled backoff (400 ms steps, capped at
-  2 s) spanning a realistic failover window. Documented caveat: if a write
+  desynced as an SST/IST donor, also on the first connect of a request):
+  reconnect through the configured endpoint, re-prepare, re-run, with
+  attempt-scaled backoff (400 ms steps, capped at 2 s) spanning a realistic failover window. Documented caveat: if a write
   was applied but its acknowledgment was lost, the re-run applies it again;
   every `exec()` is auto-committed, so the exposure is one statement. For
   `1047` the refusing node never executed the statement, so that re-run is
@@ -67,7 +67,7 @@ classes before surfacing them, sharing the `db_max_retries` budget (default
   `preparing()` and `executing()`, pick the error prefix from the phase the
   attempt died in.
 
-Transport settings live in `src/Database/Endpoint.php`, a request-wide
+Transport settings live in `src/Database/Endpoint.php`, a process-wide
 singleton (`Endpoint::get()`) shared by the runtime connection and the
 migrations' Doctrine DBAL connection (the DBAL parameter mapping stays in
 the DbalConnection trait): `dbhost`, `dbport` and `db_ssl`. mysqli matches the **whole** `dbhost` string against the
@@ -91,8 +91,10 @@ Operational contract, learned the hard way: a MySQL client waiting for the
 server greeting has **no read timeout**, so the database endpoint (mesh,
 haproxy) must close sessions to dead backends quickly; the e2e proxy config
 (`tests/e2e/packaging/docker/haproxy-database.cfg`) shows the fail-fast
-settings. Caller-managed raw-SQL transactions are not retried at statement
-level and stay the caller's responsibility; `executeMultiQuery()` has no
+settings. Caller-managed raw-SQL transactions are retried like any other
+statement: only the failing statement is re-run, so after a deadlock or a
+lost connection a later `COMMIT` can succeed with half the work, and a
+transaction has to handle that itself; `executeMultiQuery()` has no
 retries on purpose.
 
 **The e2e suite runs on a real three-node Galera cluster** (MariaDB 11.8,

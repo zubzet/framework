@@ -74,7 +74,8 @@
 
         /**
          * Gets the IP of a request
-         * @return ?string The IP of the client, client-supplied headers (spoofable) are trusted first. Empty string if none is found
+         * @return ?string The IP of the client, client-supplied headers (spoofable) are trusted first. Of a forwarded chain
+         * ("client, proxy, ...") only the client is returned. A value that is no IP address falls back to REMOTE_ADDR. Empty string if none is found
          */
         public function ip(): ?string {
             $ip = $this->input->SERVER['HTTP_CLIENT_IP']
@@ -87,7 +88,12 @@
                 ?? getenv('HTTP_FORWARDED')
                 ?? getenv('REMOTE_ADDR')
                 ?? null;
-            return $ip;
+
+            // The headers are client-supplied and unbounded, callers store the result in an IP column
+            $ip = trim(explode(",", (string) $ip)[0]);
+            if(false !== filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
+
+            return (string) filter_var($this->input->SERVER['REMOTE_ADDR'] ?? "", FILTER_VALIDATE_IP);
         }
 
         /**
