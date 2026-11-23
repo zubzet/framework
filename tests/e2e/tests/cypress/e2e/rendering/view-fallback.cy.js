@@ -12,7 +12,7 @@ describe('View not-found fallback', () => {
     // wrapped in the guaranteed layout/min_layout (its <title> is the default
     // pageName "QA Suite").
     const expectFiveHundred = (res) => {
-        expect(res.status).to.eq(200);
+        expect(res.status).to.eq(500);
         expect(res.body).to.include('Oops! This page seems to be broken');
         expect(res.body).to.include('Sorry, we messed up!');
         expect(res.body).to.include('Take me back to my Website');
