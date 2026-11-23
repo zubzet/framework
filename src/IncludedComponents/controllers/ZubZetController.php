@@ -50,7 +50,14 @@
                 return $res->formErrors($formResult->errors);
             }
 
+            // Wrong current passwords count against the same limit as wrong logins
+            if(!$account->checkLoginTries()) {
+                $formResult->addCustomError("password_current", "too_many_login_tries");
+                return $res->formErrors($formResult->errors);
+            }
+
             if(!$account->verifyPassword($currentPassword)) {
+                $account->recordLoginTry();
                 $formResult->addCustomError("password_current", "password_wrong");
                 return $res->formErrors($formResult->errors);
             }

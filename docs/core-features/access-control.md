@@ -249,7 +249,7 @@ The account side of [two factor authentication](two-factor-authentication.md). T
 
 ### Login Tries
 
-Failed logins are counted per account to rate-limit password guessing.
+Failed logins and wrong current passwords on a password change are counted per account to rate-limit password guessing.
 
 * Returns `false` when the user has more failed tries than `maxLoginTriesPerTimespan` within the last `maxLoginTriesTimespan`. The event is logged as `ACCOUNT_LOGIN_RATE_LIMITED`. `maxLoginTriesTimespan` is a relative time string such as `3 minutes`. When it is unset, the window start becomes `1970-01-01`, so every recorded try of the account counts, however old. When `maxLoginTriesPerTimespan` is unset, it is `null` and the comparison only passes for zero tries, so the account is blocked as soon as a single try is recorded in the window.
 
