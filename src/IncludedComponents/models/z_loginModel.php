@@ -365,6 +365,9 @@
          * @internal Replaced by the User API (@see User::updatePassword()) for external use
          */
         public function updatePassword(User $user, string $password): void {
+            // Hashed first, as a rejected password must not cost the user their sessions
+            $hash = Password::hash($password);
+
             $user->clearSessions();
 
             $sql = "UPDATE `z_user`
@@ -377,7 +380,7 @@
 
             $this->exec(
                 $sql, "ssi",
-                Password::hash($password),
+                $hash,
                 Password::NATIVE,
                 $user->id(),
             );
