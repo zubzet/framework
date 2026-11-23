@@ -66,6 +66,10 @@
          * On-disk directory for compiled views, namespaced per project and per installed engine
          * reference. The engine segment forces a clean cache on upgrade (Katana keys a compiled
          * view on path + mtime, not engine version). Seam for a future generalized framework cache.
+         *
+         * Compiled views are PHP that gets executed, and the temp dir is shared with every other
+         * user of the machine. The directory is therefore per system user, only accessible to them,
+         * and refused when someone else created it first.
          */
         private static function cachePath(): string {
             try {
@@ -74,8 +78,25 @@
                 $engine = "";
             }
             $projectKey = sha1(zubzet()->z_framework_root);
-            $path = sys_get_temp_dir() . "/zubzet_cache/project_$projectKey/views/engine_$engine";
-            if(!is_dir($path)) @mkdir($path, 0777, true);
+
+            // Without the posix extension (Windows) the temp dir is per user already
+            $user = function_exists("posix_geteuid") ? posix_geteuid() : null;
+
+            $path = sys_get_temp_dir() . "/zubzet_cache_$user/project_$projectKey/views/engine_$engine";
+            if(!is_dir($path)) @mkdir($path, 0700, true);
+
+            if(is_null($user)) return $path;
+
+            // Checked on every level below the temp dir, the owner of a parent could swap the rest
+            $levels = [$path, dirname($path), dirname($path, 2), dirname($path, 3)];
+            foreach($levels as $level) {
+                $isOwn = !is_link($level) && $user === fileowner($level);
+                $isPrivate = 0 === (fileperms($level) & 0022);
+                if($isOwn && $isPrivate) continue;
+
+                throw new \RuntimeException("The view cache directory '$level' is not exclusively owned by the user running the application, remove it.");
+            }
+
             return $path;
         }
     }
