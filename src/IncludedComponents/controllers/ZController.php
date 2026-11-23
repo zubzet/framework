@@ -142,7 +142,7 @@
                 ]);
 
                 $subPermissionForm = $req->validateCED("permissions", [
-                    (new FormField("name"))->required()->length(3, 100),
+                    (new FormField("name"))->required()->length(3, 255),
                 ]);
 
                 $newEmail = $req->getPost("email");
@@ -281,7 +281,7 @@
                     (new FormField("is_org_assignable"))->required()->in(["0", "1"]),
                 ]);
                 $subformResult = $req->validateCED("permissions", [
-                    (new FormField("name"))->required()->length(3, 100),
+                    (new FormField("name"))->required()->length(3, 255),
                 ]);
 
                 if($subformResult->hasErrors || $formResult->hasErrors) {
