@@ -67,7 +67,7 @@ Be advised, each role gives special permissions, some give the user special powe
 After you set a role, you can either add more roles or save the user by clicking ‘submit’ at the bottom of the page. The user should now be able to use their role.
 
 ## Two factor
-An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.list` and `admin.user.edit`.
+An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.list`, `admin.user.edit` and, for an admin with two factor, a recent check of their own.
 ## Organizations
 Add Organization creates an [organization](../core-features/access-control.md). An optional **Maximum users** caps the active members plus open invitations, empty means unlimited, see [Organization Management](organization-management.md#invitations). Ticking **Create a permission group** also creates a [group](../core-features/permission-system.md) named after the organization (`{name}_Group`) and links it to the organization. Organization names may repeat, group names may not, so the checkbox reports an error when a group of that name already exists.
 

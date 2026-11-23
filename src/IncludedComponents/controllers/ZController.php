@@ -105,6 +105,9 @@
 
                 if(!$account->hasTwoFactor()) return $res->error("Two factor is not active");
 
+                // Taking another account's second factor away needs a recent check of the admin's own
+                $req->requireFreshTwoFactor();
+
                 $account->disableTwoFactor();
 
                 logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
