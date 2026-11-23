@@ -67,7 +67,7 @@ classes before surfacing them, sharing the `db_max_retries` budget (default
   `preparing()` and `executing()`, pick the error prefix from the phase the
   attempt died in.
 
-Transport settings live in `src/Database/Endpoint.php`, a request-wide
+Transport settings live in `src/Database/Endpoint.php`, a process-wide
 singleton (`Endpoint::get()`) shared by the runtime connection and the
 migrations' Doctrine DBAL connection (the DBAL parameter mapping stays in
 the DbalConnection trait): `dbhost`, `dbport` and `db_ssl`. mysqli matches the **whole** `dbhost` string against the
