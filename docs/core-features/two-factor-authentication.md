@@ -10,7 +10,7 @@ Users turn it on and off themselves on their [profile page](../z-admin/profile.m
 
 Turning two factor on takes two steps, so a secret that never reached the authenticator cannot lock anyone out:
 
-1. `$user->startTwoFactor()` stores a fresh secret and returns it together with a provisioning URI, the two shapes an authenticator takes it in. The profile page shows the URI as a QR code. The account does not count as protected yet.
+1. `$user->startTwoFactor()` stores a fresh secret and returns it together with a provisioning URI, the two shapes an authenticator takes it in. The profile page asks for the current password first, when the account has one, and shows the URI as a QR code. The account does not count as protected yet.
 2. `$user->confirmTwoFactor($code)` turns two factor on once a code from the authenticator matches the stored secret.
 
 Turning it off again takes a current code as well. An admin with `admin.user.edit` can turn it off for an account on the user page of the [Z-Admin panel](../z-admin/usage.md), which is the way back in for an owner who lost their authenticator.

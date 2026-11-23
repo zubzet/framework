@@ -174,6 +174,20 @@
             // session cannot quietly swap the secret for one it holds itself
             if($account->hasTwoFactor()) return $res->error("Two factor is already active");
 
+            // A hijacked session may not enrol its own authenticator; an account without a password has nothing to ask
+            if(!empty($account->getField("password"))) {
+                $password = $req->getPost("password_current", "");
+                if(!is_string($password)) return $res->error("Invalid input");
+
+                // Wrong current passwords count against the same limit as wrong logins
+                if(!$account->checkLoginTries()) return $res->error("Too many login tries. Try again later.");
+
+                if(!$account->verifyPassword($password)) {
+                    $account->recordLoginTry();
+                    return $res->error("Wrong password");
+                }
+            }
+
             $totp = $account->startTwoFactor();
 
             // The single moment the secret is readable to its owner
