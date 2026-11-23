@@ -49,9 +49,9 @@ classes before surfacing them, sharing the `db_max_retries` budget (default
   backoff.
 - **Connection loss** (`1047`, `2002`, `2003`, `2006`, `2013`: a node died,
   the mesh moved the endpoint, or a Galera node refuses service while
-  desynced as an SST/IST donor): reconnect through the configured endpoint,
-  re-prepare, re-run, with attempt-scaled backoff (400 ms steps, capped at
-  2 s) spanning a realistic failover window. Documented caveat: if a write
+  desynced as an SST/IST donor, also on the first connect of a request):
+  reconnect through the configured endpoint, re-prepare, re-run, with
+  attempt-scaled backoff (400 ms steps, capped at 2 s) spanning a realistic failover window. Documented caveat: if a write
   was applied but its acknowledgment was lost, the re-run applies it again;
   every `exec()` is auto-committed, so the exposure is one statement. For
   `1047` the refusing node never executed the statement, so that re-run is
