@@ -266,6 +266,37 @@
             return true;
         }
 
+        // Redeems the login's challenge here, so an overridden LoginController cannot skip it
+        public function twoFactorLogin(Request $req, Response $res) {
+            $challenge = $req->getPost("challenge");
+            if(empty($challenge) || !is_string($challenge)) return $res->error("Missing challenge");
+
+            $challengeObj = model("z_login")->getTwoFactorChallenge($challenge);
+            if(is_null($challengeObj)) return $res->error("Invalid challenge");
+
+            $code = $req->getPost("code");
+            if(empty($code) || !is_string($code)) return $res->error("Missing code");
+
+            $user = User::byId($challengeObj["userId"]);
+            if(is_null($user)) return $res->error("Invalid challenge");
+
+            // Wrong codes count the same as wrong passwords
+            if(!$user->checkLoginTries()) {
+                return $res->error("Too many login tries. Try again later.");
+            }
+
+            if(!$user->verifyTwoFactorCode($code)) {
+                model("z_login")->newLoginTry($user->id());
+                return $res->error("Invalid code");
+            }
+
+            model("z_login")->invalidateTwoFactorChallenge($challengeObj["id"]);
+
+            $res->loginAs($user->id(), recordTwoFactor: true);
+
+            return $res->success();
+        }
+
         /**
          * Asks a login that already exists for a fresh code and stamps the moment
          * on the session it arrived with. No challenge is involved - the password
