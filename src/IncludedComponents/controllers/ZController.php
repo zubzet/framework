@@ -194,6 +194,9 @@
             $req->csrfBlockAdditionalMethod("GET", "HEAD");
             $req->checkPermission("admin.su");
 
+            // The impersonated session is checked against its own user, so the switch is the admin's last check
+            $req->requireFreshTwoFactor();
+
             $userId = $req->getParameters(0, 1);
             if(empty($userId) && $userId !== '0') return;
 

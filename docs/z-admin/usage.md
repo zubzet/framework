@@ -41,7 +41,7 @@ To be able to use all functions, the following permissions are needed:
 - admin.organizations.delete (the `delete` action on an organization)
 - admin.maintenance
 - [admin.database](#database-browser)
-- [admin.su](login-as-another-user.md) (`/z/login_as/{userId}`, also used by the *Login as* button of the edit form)
+- [admin.su](login-as-another-user.md) (`/z/login_as/{userId}`, also used by the *Login as* button of the edit form; for an admin with two factor only after a recent check of their own)
 
 `admin.panel` guards the dashboard at `/z` and nothing else. Every other action checks its own permission from the list above, so a user without `admin.panel` still reaches `/z/roles`, `/z/edit_user` and the rest by their direct URL, as long as they hold the permission of that action. The checks run against the effective user, so while [logged in as another user](login-as-another-user.md) that user needs the permission itself. The sidebar and the dashboard cards (icon only, in the sections Application, Users and Roles, and Other) only show the entries the user may open, except that Edit User is shown for `admin.user.edit` although its list needs `admin.user.list`.
 
