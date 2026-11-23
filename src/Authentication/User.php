@@ -91,7 +91,12 @@
 
             if (!is_null($this->userId)) {
                 $user = model("z_user")->getUserById($this->userId);
-                if ($user !== false && 1 === $user["active"]) {
+                // An impersonation ends once the user who started it is deactivated
+                $exec = $this->execUserId === $this->userId
+                    ? $user
+                    : model("z_user")->getUserById($this->execUserId);
+
+                if ($user !== false && 1 === $user["active"] && 1 === ($exec["active"] ?? null)) {
                     $this->orgId = $user["organizationId"];
                     $this->isLoggedIn = true;
                     $this->fields = $user;

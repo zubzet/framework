@@ -976,9 +976,9 @@ request then uses the cookie, if there is one. `$req->bearerToken()` returns the
 header, or `null`.
 
 A valid session does not log a deactivated user in. Whichever way the token arrived, a session or an
-api key, the request is anonymous (`$user->isLoggedIn` is `false`) as soon as the user's `active` is
-`0`, for example after [`$user->remove()`](#removing-a-user). The check runs on every request, so it
-takes effect immediately without ending the session.
+api key, the request is anonymous (`$user->isLoggedIn` is `false`) as soon as the user's `active`, or
+that of the admin impersonating them, is `0`, for example after [`$user->remove()`](#removing-a-user).
+The check runs on every request, so it takes effect immediately without ending the session.
 
 ---
 
