@@ -27,7 +27,7 @@ Every login is listed with its name, the device, where it started and was last s
 
 ## API Keys
 
-A key is created by a login, never by another key, with a name and a lifetime between 1 day and 1 year, or without an expiry. Its token is shown once, right after creating it, and cannot be read again. Keys are listed with the same details as sessions and can be renamed and revoked the same way.
+A key is created by a login, never by another key or a [login as another user](login-as-another-user.md), with a name and a lifetime between 1 day and 1 year, or without an expiry. Its token is shown once, right after creating it, and cannot be read again. Keys are listed with the same details as sessions and can be renamed and revoked the same way.
 
 ---
 

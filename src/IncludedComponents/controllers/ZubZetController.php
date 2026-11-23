@@ -132,6 +132,9 @@
             // A key minting keys would turn one leaked short-lived key into a permanent one
             if(Session::byToken(user()->getSessionToken()) instanceof APIKey) return $res->error("An api key cannot create api keys");
 
+            // A key records no exec user, so one minted while logged in as someone else would hide who made it
+            if(user()->execUserId !== user()->userId) return $res->error("A login as another user cannot create api keys");
+
             // The name is client input and the column takes 255 characters
             $name = $req->getPost("name", "");
             $name = is_string($name) ? mb_substr(trim($name), 0, 255) : "";
