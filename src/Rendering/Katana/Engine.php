@@ -5,6 +5,9 @@
     use Blade\View;
     use Blade\Blade;
     use Blade\Config;
+    use Blade\FileSystemViewFinder;
+    use ZubZet\Framework\Logger\Logger;
+    use ZubZet\Framework\Logger\LogEventType;
     use ZubZet\Framework\Registry\Registry;
 
     /**
@@ -40,7 +43,24 @@
             }
 
             foreach($viewPaths as $viewPath) {
-                $config->addViewPath($viewPath);
+                // An un-migrated <name>.php is logged, as the next root's view of that name takes over
+                $config->addViewFinder(new class($viewPath) extends FileSystemViewFinder {
+                    private static array $warned = [];
+
+                    public function viewExists(string $name): bool {
+                        if(parent::viewExists($name)) return true;
+
+                        $legacy = substr($this->getFilePath($name), 0, -strlen(".blade.php")) . ".php";
+                        if(is_file($legacy) && !isset(self::$warned[$legacy])) {
+                            self::$warned[$legacy] = true;
+                            logger(Logger::ZUBZET)->warning(LogEventType::WARNING, [
+                                "message" => "The legacy view '$legacy' is not migrated to Blade, run the 1.3.0 migrator.",
+                            ]);
+                        }
+
+                        return false;
+                    }
+                });
             }
 
             // Framework directives bound to the request (@auth / @guest, more later).
