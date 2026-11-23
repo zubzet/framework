@@ -129,6 +129,9 @@
             // A new key outlives the session that asks for it, so a stale one may not mint it
             $req->requireFreshTwoFactor();
 
+            // A key minting keys would turn one leaked short-lived key into a permanent one
+            if(Session::byToken(user()->getSessionToken()) instanceof APIKey) return $res->error("An api key cannot create api keys");
+
             // The name is client input and the column takes 255 characters
             $name = $req->getPost("name", "");
             $name = is_string($name) ? mb_substr(trim($name), 0, 255) : "";

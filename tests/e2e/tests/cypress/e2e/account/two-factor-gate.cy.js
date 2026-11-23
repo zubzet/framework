@@ -212,10 +212,10 @@ describe('Two factor gate', () => {
             });
         });
 
-        it('lets a key create a key while the account carries no two factor', () => {
+        it('turns a key away from creating a key while the account carries no two factor', () => {
             login('0855b');
 
-            profile('create-api-key', { lifetime: '7' }).then((out) => expect(out.result).to.eq('success'));
+            profile('create-api-key', { lifetime: '7' }).then((out) => expect(out.result).to.eq('error'));
         });
     });
 
