@@ -98,7 +98,7 @@
             };
 
             // An unknown uuid and somebody else's are both not owned, so neither can be probed
-            if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
+            if(!user()->isLoggedIn || is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
 
             // The name is client input and the column takes 255 characters
             $name = $req->getPost("name", "");
@@ -119,7 +119,7 @@
                 default => null,
             };
 
-            if(is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
+            if(!user()->isLoggedIn || is_null($token) || $token->userId() !== user()->userId) return $res->error("Unknown token");
 
             // Revoking a key or login is as final as clearing them
             $req->requireFreshTwoFactor();
