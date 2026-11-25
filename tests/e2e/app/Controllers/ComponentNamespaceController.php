@@ -12,6 +12,18 @@
             return $res->render("renderprobe/namespace", [], "layout/empty");
         }
 
+        // Components that read the framework's standard $opt without being handed it.
+        // Covered by rendering/component-opt.cy.js.
+        public function action_standardOpt(Request $req, Response $res) {
+            return $res->render("renderprobe/standard-opt", ["callerValue" => "CALLER_VALUE"], "layout/empty");
+        }
+
+        // Hands the whole $opt to an app component, which the framework refuses.
+        // Covered by rendering/component-opt.cy.js.
+        public function action_reservedOpt(Request $req, Response $res) {
+            return $res->render("renderprobe/reserved-opt", [], "layout/empty");
+        }
+
     }
 
 ?>
