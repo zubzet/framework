@@ -133,8 +133,24 @@ A view, a REST reply, a redirect and a failed check each finish the response. No
 | `$res->rerouteUrl()`, `$res->logout()` | always |
 | `$res->reroute($path, $alias, true)` | with `$final` set; without it only when the rerouted action ends the request |
 | `$req->checkPermission()`, `requireOrganization()`, `requireFreshTwoFactor()`, `csrfBlockAdditionalMethod()` | when the check fails (not when it is asked to return a boolean) |
+| `$res->stop()`, `$req->stop()`, `stop()` | always |
 
 `$res->json()` and `$res->sendEmail()` do not end the request.
+
+To end a request yourself, call `stop()` instead of `exit` or `die`. It is available as `$res->stop()`, `$req->stop()` and as the global helper `stop()`, all three do the same. What the action printed and the headers it set are the response:
+
+```php
+public function action_export(Request $req, Response $res) {
+    $req->checkPermission("reports.export");
+
+    header("Content-Type: text/csv");
+    echo $this->csv();
+
+    $res->stop();
+}
+```
+
+A real `exit` still works, but it skips the `finally` blocks and afterMiddlewares, and it ends a unit test that calls the action.
 
 An action can hold several of these calls, for example one view per permission, as long as only one of them runs:
 
