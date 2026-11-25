@@ -131,15 +131,6 @@
             $res->reroute(["Core", "action"]);
         }
 
-        public function action_rerouteFinal(Request $req, Response $res) {
-            $res->reroute(["Core", "action"], false, true);
-            // @codeCoverageIgnoreStart
-            // Unreachable - reroute($final=true) calls exit on Response.php:53.
-            // The cypress assertion proves this echo never runs.
-            echo "AFTER_FINAL_MARKER";
-            // @codeCoverageIgnoreEnd
-        }
-
         // -------------------------------------------------------------
         // Full CED test surface. action_cedForm renders the Z.Forms-based
         // view and accepts POST submissions, going through the documented

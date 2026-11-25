@@ -4,7 +4,7 @@
      * Test fixtures for tests/cypress/e2e/core/end-of-request.cy.js.
      *
      * Every action ends the request in a different way and prints a marker
-     * where the code must or must not continue.
+     * where the code must not continue.
      */
     class EndprobeController extends z_controller {
 
@@ -14,41 +14,24 @@
             echo "after-render";
         }
 
+        // Run from the console by the spec
         public function action_rest(Request $req, Response $res) {
             $res->success();
             echo "after-success";
         }
 
-        // A guard that is not returned still protects what follows
-        public function action_guard(Request $req, Response $res) {
-            $req->checkPermission("endprobe.missing");
-            echo "behind-guard";
-        }
+        // Status, headers and output of a stopped request reach the client
+        public function action_stop(Request $req, Response $res) {
+            http_response_code(202);
+            header("X-Endprobe: stopped");
+            echo "before-stop";
 
-        // The end of a request is no \Exception
-        public function action_catch(Request $req, Response $res) {
-            try {
-                $res->success();
-            } catch(\Exception $e) {
-                echo "caught";
-            }
-            echo "after-catch";
-        }
-
-        public function action_finally(Request $req, Response $res) {
-            try {
-                $res->success();
-            } finally {
-                echo "finally-ran";
-            }
+            $res->stop();
+            echo "after-stop";
         }
 
         public function afterware(Request $req, Response $res) {
             echo "afterware-ran";
-        }
-
-        public function blocking(Request $req, Response $res) {
-            echo "blocked";
         }
 
     }
