@@ -3,6 +3,7 @@
     namespace Tests\Message;
 
     use Tests\TestCase;
+    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\Message\Request;
     use ZubZet\Framework\Message\Response;
 
@@ -110,6 +111,50 @@
                 "formErrors" => ["formErrors", [$formErrors], ["result" => "formErrors", "formErrors" => $formErrors]],
                 "generateRest" => ["generateRest", [["rows" => [1, 2]]], ["rows" => [1, 2]]],
             ];
+        }
+
+        // stop()
+
+        public function testStopOfTheResponseEndsTheRequestAndKeepsWhatWasPrinted(): void {
+            $response = $this->response();
+
+            $printed = $this->endedRequest(function() use ($response) {
+                echo "printed";
+                $response->stop();
+            });
+
+            $this->assertSame("printed", $printed);
+        }
+
+        public function testStopOfTheRequestEndsTheRequestToo(): void {
+            $request = $this->request();
+
+            $this->assertSame("", $this->endedRequest(fn() => $request->stop()));
+        }
+
+        public function testTheGlobalStopEndsTheRequestToo(): void {
+            $this->response();
+
+            $this->assertSame("", $this->endedRequest(fn() => stop()));
+        }
+
+        public function testStopThrowsTheEndOfRequestTheRouterCatches(): void {
+            $this->assertThrows(EndOfRequest::class, "", fn() => $this->response()->stop());
+        }
+
+        public function testACatchOfExceptionDoesNotSeeAStop(): void {
+            $response = $this->response();
+            $caught = false;
+
+            $this->endedRequest(function() use ($response, &$caught) {
+                try {
+                    $response->stop();
+                } catch(\Exception) {
+                    $caught = true;
+                }
+            });
+
+            $this->assertFalse($caught);
         }
 
         public function testARedirectEndsTheRequestWithoutPrintingAnything(): void {
