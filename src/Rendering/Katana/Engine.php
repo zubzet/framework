@@ -31,7 +31,7 @@
          */
         public static bool $prioritizeFrameworkViews = false;
 
-        public static function render(string $view, string $layout, array $data): View {
+        public static function render(string $view, string $layout, array $data, array $standardOpt = []): View {
             $config = new Config(self::cachePath());
 
             // Ordered view roots: userspace first, then modules, framework last.
@@ -75,6 +75,9 @@
                 zubzet()->z_framework_root . "IncludedComponents/views/components",
                 "zubzet",
             );
+
+            // Components get the framework's standard $opt and may not be handed another one.
+            $blade->componentRenderer = new ComponentRenderer($blade, $standardOpt);
 
             // The migrated view does @extends($layout); hand it the layout's view name.
             $data["layout"] = $layout;

@@ -51,11 +51,15 @@
             // Expand legacy $opt with framework variables, functions, and objects
             // likely subject to deprecation in the future as the expansions overwrite
             // the provided opt parameters.
-            $data = array_merge($opt, self::legacyOptExpansion($opt));
+            $standardOpt = self::standardOpt($opt);
+            $data = array_merge(
+                $opt,
+                ["opt" => array_merge($opt, $standardOpt)],
+            );
 
             try {
                 // Render using Katana
-                echo (string) Engine::render($viewName, $layoutName, $data);
+                echo (string) Engine::render($viewName, $layoutName, $data, $standardOpt);
             } catch(BladeException $e) {
                 // Like a controller exception: shown when errors are shown, otherwise logged as the 500 page
                 if(0 != zubzet()->showErrors) throw $e;
@@ -70,11 +74,13 @@
                 } catch(\Throwable) {}
 
                 http_response_code(500);
-                echo (string) Engine::render("500", "layout/min_layout", $data);
+                echo (string) Engine::render("500", "layout/min_layout", $data, $standardOpt);
             }
         }
 
-        private static function legacyOptExpansion(array $opt): array {
+        // The framework's own part of $opt. Views get it merged over what the caller
+        // passed, components get exactly this as their $opt.
+        private static function standardOpt(array $opt): array {
             // Classes
             $expansion["response"] = response();
             $expansion["request"] = request();
@@ -97,8 +103,7 @@
                 echo nl2br(htmlspecialchars($val));
             };
 
-            // All variables used to be found in $opt
-            return ["opt" => array_merge($opt, $expansion)];
+            return $expansion;
         }
 
     }
