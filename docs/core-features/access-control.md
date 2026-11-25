@@ -409,6 +409,13 @@ Permission checks always resolve the **complete permission set**. The permission
     $user->getGroups(): array
     ```
 
+* Returns whether the user holds the given role or group, including those inherited from the organization, read from the cached `getRoles()` and `getGroups()`, so a group passed to `hasRole()` is never found.
+
+    ```php
+    $user->hasRole(Role $role): bool
+    $user->hasGroup(Group $group): bool
+    ```
+
 * Returns the organization the user belongs to, or `null` if none is assigned.
   The result is cached on the instance - including the `null` case - until `clearFields()` or a write operation invalidates it.
 

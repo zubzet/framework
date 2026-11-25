@@ -453,6 +453,20 @@ class User extends AuthenticationEntity {
         return $this->getField("groups");
     }
 
+    public function hasRole(Role $role): bool {
+        foreach($this->getRoles() as $userRole) {
+            if($userRole->id() === $role->id()) return true;
+        }
+        return false;
+    }
+
+    public function hasGroup(Group $group): bool {
+        foreach($this->getGroups() as $userGroup) {
+            if($userGroup->id() === $group->id()) return true;
+        }
+        return false;
+    }
+
     /**
      * Get the user's permissions
      *
