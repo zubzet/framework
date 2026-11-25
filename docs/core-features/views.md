@@ -184,6 +184,8 @@ Components are reusable pieces of UI you drop in with an `<x-...>` tag. Create o
 ```
 Attributes on the tag (`type="warning"`) become variables inside the component (`$type`), and the content between the open and close tags is available as `{{ $slot }}`. `@props` declares the inputs a component expects and their defaults. A component in your project's `components` directory overrides a framework component of the same name.
 
+A component does not see the variables of the view around it, so pass each value it needs as its own attribute (`:position="$position"`). The exception is `$opt`: every component, nested ones too, has it with the framework helpers (`$opt["root"]`, `$opt["host"]`, etc.), but without what the controller passed to `render`. The attribute name `opt` is therefore reserved: handing `$opt` to your own component (`<x-alert :opt="$opt"/>`) fails the render.
+
 ### Framework components
 The framework ships its own components under the `zubzet` namespace. The two you see in every layout are the page essentials:
 ```blade
