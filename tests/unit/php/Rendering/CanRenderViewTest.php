@@ -24,34 +24,35 @@
 
         // $opt contract: data shape
 
-        public function testInjectsTheFrameworkExpansionsIntoOpt(): void {
+        public function testProvidesTheFrameworkValues(): void {
             $user = $this->currentUser();
 
-            $expansion = $this->expand([]);
+            $opt = $this->expand([]);
 
-            $this->assertSame(["opt"], array_keys($expansion));
-            $this->assertSame("/", $expansion["opt"]["root"]);
-            $this->assertSame(self::HOST, $expansion["opt"]["host"]);
-            $this->assertSame(self::HOST . "/", $expansion["opt"]["absRoot"]);
-            $this->assertSame($user, $expansion["opt"]["user"]);
-            $this->assertSame(request(), $expansion["opt"]["request"]);
-            $this->assertSame(response(), $expansion["opt"]["response"]);
-            $this->assertInstanceOf(Closure::class, $expansion["opt"]["generateResourceLink"]);
+            $this->assertSame("/", $opt["root"]);
+            $this->assertSame(self::HOST, $opt["host"]);
+            $this->assertSame(self::HOST . "/", $opt["absRoot"]);
+            $this->assertSame($user, $opt["user"]);
+            $this->assertSame(request(), $opt["request"]);
+            $this->assertSame(response(), $opt["response"]);
+            $this->assertInstanceOf(Closure::class, $opt["generateResourceLink"]);
         }
 
-        public function testKeepsTheCallerDataInOpt(): void {
-            $opt = $this->expand(["a" => "alpha", "list" => [1, 2]])["opt"];
+        public function testHoldsOnlyTheFrameworkKeysWhateverTheCallerPasses(): void {
+            $opt = $this->expand(["a" => "alpha", "list" => [1, 2]]);
 
-            $this->assertSame("alpha", $opt["a"]);
-            $this->assertSame([1, 2], $opt["list"]);
+            $this->assertSame(
+                ["response", "request", "user", "root", "host", "absRoot", "title", "generateResourceLink", "echo"],
+                array_keys($opt),
+            );
         }
 
         public function testLeavesTheUserOutWhenThereIsNone(): void {
-            $this->assertNull($this->expand([])["opt"]["user"]);
+            $this->assertNull($this->expand([])["user"]);
         }
 
-        public function testTheFrameworkExpansionsOverwriteCallerKeysOfTheSameName(): void {
-            $opt = $this->expand(["root" => "caller", "host" => "caller", "absRoot" => "caller"])["opt"];
+        public function testCallerKeysOfTheSameNameDoNotReplaceTheFrameworkValues(): void {
+            $opt = $this->expand(["root" => "caller", "host" => "caller", "absRoot" => "caller"]);
 
             $this->assertSame("/", $opt["root"]);
             $this->assertSame(self::HOST, $opt["host"]);
@@ -61,7 +62,7 @@
         public function testAbsRootAppendsTheRootFolderToTheHost(): void {
             $this->setSettings(["rootFolder" => "/sub/", "host" => "https://example.org"]);
 
-            $opt = $this->expand([])["opt"];
+            $opt = $this->expand([]);
 
             $this->assertSame("/sub/", $opt["root"]);
             $this->assertSame("https://example.org", $opt["host"]);
@@ -69,7 +70,7 @@
         }
 
         public function testEchoEscapesHtmlAndKeepsLineBreaks(): void {
-            $echo = $this->expand([])["opt"]["echo"];
+            $echo = $this->expand([])["echo"];
 
             ob_start();
             $echo("<b>one</b>\ntwo & \"three\"");
@@ -81,21 +82,21 @@
         // Title
 
         public function testPreservesACallerSuppliedTitle(): void {
-            $this->assertSame("Custom Title Marker", $this->expand(["title" => "Custom Title Marker"])["opt"]["title"]);
+            $this->assertSame("Custom Title Marker", $this->expand(["title" => "Custom Title Marker"])["title"]);
         }
 
         public function testFallsBackToConfigPageNameWhenTheCallerPassesNone(): void {
-            $this->assertSame("QA Suite", $this->expand(["a" => "alpha"])["opt"]["title"]);
+            $this->assertSame("QA Suite", $this->expand(["a" => "alpha"])["title"]);
         }
 
         public function testFallsBackToConfigPageNameWhenTheCallerTitleIsNull(): void {
-            $this->assertSame("QA Suite", $this->expand(["title" => null])["opt"]["title"]);
+            $this->assertSame("QA Suite", $this->expand(["title" => null])["title"]);
         }
 
         public function testFallsBackToTheFrameworkNameWhenNoPageNameIsConfigured(): void {
             $this->removeSetting("pageName");
 
-            $this->assertSame("ZubZet", $this->expand([])["opt"]["title"]);
+            $this->assertSame("ZubZet", $this->expand([])["title"]);
         }
 
         // generateResourceLink
@@ -132,12 +133,12 @@
         }
 
         private function expand(array $opt): array {
-            return $this->callHidden(Response::class, "legacyOptExpansion", $opt);
+            return $this->callHidden(Response::class, "standardOpt", $opt);
         }
 
         // The closure echoes the link
         private function resourceLink(string $url, ?bool $root = null): string {
-            $generate = $this->expand([])["opt"]["generateResourceLink"];
+            $generate = $this->expand([])["generateResourceLink"];
 
             // Without a toggle the closure's own default applies
             $arguments = null === $root ? [$url] : [$url, $root];
