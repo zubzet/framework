@@ -3,7 +3,6 @@
     namespace Tests\Message;
 
     use Tests\TestCase;
-    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\Message\Request;
     use ZubZet\Framework\Message\Response;
 
@@ -89,6 +88,37 @@
             $this->assertTrue($cleanedUp);
         }
 
+        // The provider names the method: a test in its own process cannot be handed a closure
+        /** @dataProvider endingReplies */
+        public function testEveryRestReplyEndsTheRequest(string $method, array $arguments, array $expected): void {
+            $this->request();
+            $response = $this->response();
+
+            $answer = $this->answerOf(fn() => $response->$method(...$arguments));
+
+            foreach($expected as $key => $value) {
+                $this->assertSame($value, $answer[$key]);
+            }
+        }
+
+        public static function endingReplies(): array {
+            $formErrors = [["name" => "email", "type" => "required"]];
+
+            return [
+                "success" => ["success", [["id" => 5]], ["result" => "success", "id" => 5]],
+                "error" => ["error", ["No", ["field" => "name"]], ["result" => "error", "message" => "No", "field" => "name"]],
+                "formErrors" => ["formErrors", [$formErrors], ["result" => "formErrors", "formErrors" => $formErrors]],
+                "generateRest" => ["generateRest", [["rows" => [1, 2]]], ["rows" => [1, 2]]],
+            ];
+        }
+
+        public function testARedirectEndsTheRequestWithoutPrintingAnything(): void {
+            $this->request();
+            $this->setSettings(["rootFolder" => "/"]);
+
+            $this->assertSame("", $this->endedRequest(fn() => $this->response()->rerouteUrl("reports/list")));
+        }
+
         public function testAReplyThatIsToldNotToEndDoesNotThrow(): void {
             $this->request();
             $reached = false;
@@ -102,19 +132,6 @@
             }
 
             $this->assertTrue($reached);
-        }
-
-        // Runs what ends the request and returns the decoded reply it printed
-        private function answerOf(callable $action): array {
-            ob_start();
-            try {
-                $action();
-                $this->fail("Expected the request to end, but the action returned.");
-            } catch(EndOfRequest) {
-                return json_decode(ob_get_contents(), true);
-            } finally {
-                ob_end_clean();
-            }
         }
     }
 
