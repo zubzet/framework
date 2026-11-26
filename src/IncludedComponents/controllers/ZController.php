@@ -265,7 +265,7 @@
             }
 
             $req->checkPermission("admin.roles.edit");
-            $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0];
+            $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0] ?? null;
 
             if(!$role) return $res->error("Role not found");
 
@@ -425,7 +425,11 @@
             if("page" == $task) $page = max(1, (int) $req->getParameters(2, 1));
             if("csv" == $task) $page = null;
 
-            $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
+            try {
+                $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
+            } catch(\InvalidArgumentException $e) {
+                return zubzet()->executePath(["error", "404"]);
+            }
 
             if("csv" == $task) {
                 return $req->getModel("z_adminDashboard")->exportToCsv($table);

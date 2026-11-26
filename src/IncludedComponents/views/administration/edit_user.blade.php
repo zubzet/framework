@@ -16,7 +16,7 @@
             form.createField({
                 name: "organization",
                 type: "select",
-                text: "Organization",
+                text: <?= json_encode(__("admin.edit_user.organization")) ?>,
                 food: <?= $opt["organizations"]; ?>,
                 value: <?=  json_encode($opt["organizationId"] ?? "", JSON_HEX_TAG | JSON_HEX_AMP); ?>,
             });
@@ -35,7 +35,7 @@
 
             form.createActionButton(<?= json_encode(__("admin.edit_user.login_as")) ?>, "btn-secondary", function() {
                 // A reason is optional; cancelling the prompt still logs in
-                var reason = window.prompt("Why are you logging in as this user? (optional)");
+                var reason = window.prompt(<?= json_encode(__("admin.edit_user.login_as_reason")) ?>);
 
                 var url = "<?php echo $opt["root"] . "z/login_as/" . $opt["userId"] ?>";
                 if(reason !== null && reason.trim() !== "") {

@@ -43,7 +43,7 @@ describe('Form Number Validation', () => {
         cy.get('[name="field_number_unique"]').click().type("20");
         cy.get('button').click();
 
-        cy.get('[name="field_number_range"]').parent().contains("The number is too large to too small.");
+        cy.get('[name="field_number_range"]').parent().contains("The number is too large or too small.");
     });
 
     it('Input Failure Type', () => {
