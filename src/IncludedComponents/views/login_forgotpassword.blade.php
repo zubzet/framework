@@ -15,6 +15,8 @@
 			<form onSubmit="return false;">
 
 				<h2>Forgot password</h2>
+				<div id="login-error-label" class="login-error"></div>
+
 				<div class="input-group mb-2">
 					<div class="input-group-prepend">
 						<span class="input-group-text"><i class="fa fa-user"></i></span>
