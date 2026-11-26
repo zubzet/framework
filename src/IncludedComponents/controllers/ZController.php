@@ -105,6 +105,9 @@
 
                 if(!$account->hasTwoFactor()) return $res->error("Two factor is not active");
 
+                // Taking another account's second factor away needs a recent check of the admin's own
+                $req->requireFreshTwoFactor();
+
                 $account->disableTwoFactor();
 
                 logger(Logger::ZUBZET)->info(LogEventType::ACCOUNT_UPDATED, [
@@ -116,6 +119,8 @@
             }
 
             $user = $req->getModel("z_user")->getUserById($userId);
+            if(empty($user)) return zubzet()->executePath(["error", "404"]);
+
             $email = $user["email"];
 
             // Plain roles and the groups the user already holds, offered and accepted alike
@@ -137,7 +142,7 @@
                 ]);
 
                 $subPermissionForm = $req->validateCED("permissions", [
-                    (new FormField("name"))->required()->length(3, 100),
+                    (new FormField("name"))->required()->length(3, 255),
                 ]);
 
                 $newEmail = $req->getPost("email");
@@ -145,8 +150,8 @@
                     $formResult->addCustomError("email", "filter");
                 }
 
-                if($formResult->hasErrors || $subformResult->hasErrors) {
-                    return $res->formErrors($formResult->errors, $subformResult->errors);
+                if($formResult->hasErrors || $subformResult->hasErrors || $subPermissionForm->hasErrors) {
+                    return $res->formErrors($formResult->errors, $subformResult->errors, $subPermissionForm->errors);
                 }
 
                 $res->doCED("z_user_role", $subformResult, ["user" => $userId]);
@@ -189,6 +194,9 @@
             $req->csrfBlockAdditionalMethod("GET", "HEAD");
             $req->checkPermission("admin.su");
 
+            // The impersonated session is checked against its own user, so the switch is the admin's last check
+            $req->requireFreshTwoFactor();
+
             $userId = $req->getParameters(0, 1);
             if(empty($userId) && $userId !== '0') return;
 
@@ -225,8 +233,7 @@
 
                 return $res->render("administration/organization_invitation", [
                     "invite" => $invite,
-                    // name() is typed string, an organization may have none
-                    "organizationName" => $invitedOrganization->getField("name"),
+                    "organizationName" => $invitedOrganization->name(),
                 ], "layout/min_layout.php");
             }
 
@@ -258,7 +265,7 @@
             }
 
             $req->checkPermission("admin.roles.edit");
-            $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0];
+            $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0] ?? null;
 
             if(!$role) return $res->error("Role not found");
 
@@ -274,7 +281,7 @@
                     (new FormField("is_org_assignable"))->required()->in(["0", "1"]),
                 ]);
                 $subformResult = $req->validateCED("permissions", [
-                    (new FormField("name"))->required()->length(3, 100),
+                    (new FormField("name"))->required()->length(3, 255),
                 ]);
 
                 if($subformResult->hasErrors || $formResult->hasErrors) {
@@ -379,8 +386,8 @@
                 // Only a group created by create_group follows the rename
                 $group = $organization->getGroup();
                 $renameGroup = !is_null($group)
-                    && $group->name() === $organization->getField("name") . "_Group"
-                    && $name !== $organization->getField("name");
+                    && $group->name() === $organization->name() . "_Group"
+                    && $name !== $organization->name();
 
                 if($renameGroup && !db()->checkIfUnique("z_role", "name", $name . "_Group", "id", $group->id())) {
                     $formResult->addCustomError("name", "unique");
@@ -394,7 +401,7 @@
             }
 
             return $res->render("administration/organizations.php", [
-                "name" => $organization->getField("name"),
+                "name" => $organization->name(),
                 "maxCapacity" => $organization->maxCapacity(),
                 "group" => $organization->getGroup(),
                 "users" => $organization->getUsers(),
@@ -418,7 +425,11 @@
             if("page" == $task) $page = max(1, (int) $req->getParameters(2, 1));
             if("csv" == $task) $page = null;
 
-            $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
+            try {
+                $table = $req->getModel("z_adminDashboard")->getRowStatus($table, $page);
+            } catch(\InvalidArgumentException $e) {
+                return zubzet()->executePath(["error", "404"]);
+            }
 
             if("csv" == $task) {
                 return $req->getModel("z_adminDashboard")->exportToCsv($table);

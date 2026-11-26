@@ -2,11 +2,14 @@
 
     namespace ZubZet\Tooling\Version;
 
+    use ZubZet\Tooling\AutomatedChanges\V1_3_0\CodeAfterRender;
+    use ZubZet\Tooling\AutomatedChanges\V1_3_0\EndOfRequestCatch;
     use ZubZet\Tooling\Modifiers\ComposerModifier;
     use ZubZet\Tooling\Modifiers\FileContent;
     use ZubZet\Tooling\Modifiers\Folder;
     use ZubZet\Tooling\Modifiers\IncludedFile;
     use ZubZet\Tooling\Modifiers\JsonModifier;
+    use ZubZet\Tooling\Modifiers\MatchingModifier;
     use ZubZet\Tooling\Modifiers\RemoveFile;
     use ZubZet\Tooling\Modifiers\SettingsIni;
     use ZubZet\Tooling\Modifiers\ViewMigration;
@@ -15,7 +18,7 @@
 
     class V1_3_0 extends BaseVersion implements VersionInterface {
 
-        public string $stability = ReleaseState::Alpha;
+        public string $stability = ReleaseState::Stable;
 
         public function upgrade(): bool {
             // The 1.3.0 migrations need MariaDB 11.7 or newer
@@ -42,13 +45,75 @@
             $views->from(["./app/Views"]);
             $views->migrate();
 
+            // The framework ends a request by throwing EndOfRequest (an \Error) instead of calling exit
+            // A controller is where a request ends, so every catch of Throwable or Error in one is affected,
+            // elsewhere only those whose own try block visibly ends the request
+            $everyTry = fn(string $file): bool => str_ends_with($file, "Controller.php");
+            $endOfRequestMessage = [
+                "ZubZet 1.3.0 ends a request by throwing ZubZet\\Framework\\Message\\EndOfRequest instead of calling exit.",
+                "A catch of \\Throwable or \\Error also catches that end (\$res->render(), success(), \$req->checkPermission(), ...) and the action keeps running.",
+                "Catch \\Exception instead, or add this in front: catch(\\ZubZet\\Framework\\Message\\EndOfRequest \$end) { throw \$end; }",
+            ];
+
+            $endOfRequestDetection = new MatchingModifier($this, "end-of-request-catch-detection");
+            $endOfRequestDetection->from(["./app"]);
+            $endOfRequestDetection->matchFileByFile(
+                fn(string $content, string $file) => EndOfRequestCatch::lines($content, $everyTry($file)),
+                $endOfRequestMessage,
+            );
+
+            $endOfRequestFiles = array_values(array_unique(array_map(
+                fn($issue) => $issue->file,
+                $endOfRequestDetection->getIssues(),
+            )));
+
+            // Narrowing the catch to \Exception is offered as an automated change
+            foreach($endOfRequestFiles as $file) {
+                $narrowed = EndOfRequestCatch::withException(file_get_contents($file), $everyTry($file));
+                if($narrowed === file_get_contents($file)) continue;
+
+                $fileContent = new FileContent($this, "end-of-request-catch-" . basename($file));
+                $fileContent->find(basename($file), dirname($file));
+                $fileContent->shouldChangeIfIncludes("catch");
+                $fileContent->automateChange(fn(string $content): string => EndOfRequestCatch::withException($content, $everyTry($file)));
+                $fileContent->demandChange($endOfRequestMessage);
+            }
+
+            // What the automated change cannot narrow (a catch of nothing but \Error) is left to review
+            $endOfRequestCatch = new MatchingModifier($this, "end-of-request-catch");
+            $endOfRequestCatch->from(["./app"]);
+            $endOfRequestCatch->matchFileByFile(
+                fn(string $content, string $file) => EndOfRequestCatch::lines(
+                    EndOfRequestCatch::withException($content, $everyTry($file)),
+                    $everyTry($file),
+                ),
+                $endOfRequestMessage,
+            );
+            $endOfRequestCatch->warn();
+
+            // render() ends the request now, whatever an action did after it no longer runs
+            $codeAfterRender = new MatchingModifier($this, "code-after-render");
+            $codeAfterRender->from(["./app"]);
+            $codeAfterRender->matchFileByFile(
+                [CodeAfterRender::class, "lines"],
+                [
+                    "ZubZet 1.3.0 ends the request in \$res->render() and view(), like \$res->success() does.",
+                    "Something still depends on this call: code after it no longer runs, a loop stops after the first view,",
+                    "and output captured with ob_start() is not handed back.",
+                    "An action may hold several render() calls, e.g. one per permission, as long as only one of them runs",
+                    "and nothing is expected to happen after it. Put views together with Blade (@include, components).",
+                ]
+            );
+            $codeAfterRender->warn();
+
             // New settings with their framework defaults, environment variables only override settings that exist in the ini
             $newSettings = new SettingsIni($this, "new-settings");
             $newSettings->addProperty("health_endpoint_enabled", "true");
+            $newSettings->addProperty("signup_disabled", "false");
             $newSettings->addProperty("encryption_key", "");
-            $newSettings->addProperty("two_factor_challenge_seconds", "600");
-            $newSettings->addProperty("two_factor_freshness_seconds", "900");
-            $newSettings->addProperty("two_factor_tries", "5");
+            $newSettings->addProperty("two_factor_challenge_seconds", "60");
+            $newSettings->addProperty("two_factor_freshness_seconds", "90");
+            $newSettings->addProperty("two_factor_tries", "3");
             $newSettings->addProperty("session_last_used_throttle_seconds", "60");
             $newSettings->addProperty("db_max_retries", "3");
             $newSettings->addProperty("db_wait_attempts", "10");

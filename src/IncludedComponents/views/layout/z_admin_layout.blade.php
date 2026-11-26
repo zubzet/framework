@@ -111,7 +111,7 @@
                         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
                             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
                             <?= e(__("admin.nav.application")) ?>
-                        </h1>
+                        </h2>
                         <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.database")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-database" href="<?= $opt["root"]; ?>z/database">
@@ -130,7 +130,7 @@
                         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
                             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
                             <?= e(__("admin.nav.users_and_roles")) ?>
-                        </h1>
+                        </h2>
                         <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("admin.user.edit")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-edit-user" href="<?= $opt["root"]; ?>z/edit_user">
@@ -159,13 +159,13 @@
                             <?php if($opt["user"]->checkPermission("admin.organizations.list")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-organizations" href="<?= $opt["root"]; ?>z/organizations">
                                     <i class="fa fa-fw fa-building"></i>
-                                    Organizations
+                                    <?= e(__("admin.nav.organizations")) ?>
                                 </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.organizations.create")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-add-organization" href="<?= $opt["root"]; ?>z/add_organization">
                                     <i class="fa fa-fw fa-plus-circle"></i>
-                                    Add Organization
+                                    <?= e(__("admin.nav.add_organization")) ?>
                                 </a>
                             <?php } ?>
                         </div>
@@ -173,7 +173,7 @@
                         <h2 class="mt-4 mb-2 pl-1 font-weight-bold h5">
                             <i class="fa fa-fw fa-arrow-circle-o-right"></i>
                             <?= e(__("admin.nav.other")) ?>
-                        </h1>
+                        </h2>
                         <div class="list-group mb-1">
                             <?php if($opt["user"]->checkPermission("z.organization.manage")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-organization" href="<?= $opt["root"]; ?>z/organization">

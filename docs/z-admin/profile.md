@@ -17,7 +17,7 @@ A new password ends every login of the account, the current browser included, so
 
 ## Two Factor
 
-*Set up* shows a QR code for the authenticator and the key to type in by hand. Two factor stays off until a code from the authenticator confirms that the secret arrived. Turning it off again asks for a current code. After `two_factor_tries` (defaults to 5) wrong codes the session is signed out. Clearing sessions, revoking a session or key and creating a key ask for a [recent check](../core-features/two-factor-authentication.md#guarding-an-action) first.
+*Set up* asks for the current password, when the account has one, and shows a QR code for the authenticator and the key to type in by hand. Two factor stays off until a code from the authenticator confirms that the secret arrived. Turning it off again asks for a current code. After `two_factor_tries` (defaults to 3) wrong codes the session is signed out. Clearing sessions, revoking a session or key and creating a key ask for a [recent check](../core-features/two-factor-authentication.md#guarding-an-action) first.
 
 An owner who lost their authenticator cannot turn it off themselves. An admin with `admin.user.edit` can, with *Disable two factor* on the account's page under *Edit User*.
 
@@ -27,7 +27,7 @@ Every login is listed with its name, the device, where it started and was last s
 
 ## API Keys
 
-A key is created with a name and a lifetime between 1 day and 1 year, or without an expiry. Its token is shown once, right after creating it, and cannot be read again. Keys are listed with the same details as sessions and can be renamed and revoked the same way.
+A key is created by a login, never by another key or a [login as another user](login-as-another-user.md), with a name and a lifetime between 1 day and 1 year, or without an expiry. Its token is shown once, right after creating it, and cannot be read again. Keys are listed with the same details as sessions and can be renamed and revoked the same way.
 
 ---
 

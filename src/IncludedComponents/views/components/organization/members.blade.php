@@ -3,9 +3,14 @@
 @endphp
 
 @auth
-    @if(user()->checkPermission("z.organization.roles") && !is_null(user()->orgId))
+    @php
+        // Null as well when the organization of the user no longer exists
+        $organization = is_null(user()->orgId) ? null : Organization::byId(user()->orgId);
+    @endphp
+
+    @if(user()->checkPermission("z.organization.roles") && !is_null($organization))
         @php
-            $members = model("z_organization")->getMembers(Organization::byId(user()->orgId), showInactive: true);
+            $members = model("z_organization")->getMembers($organization, showInactive: true);
         @endphp
 
         <ul {{ $attributes->class("list-group z-organization-members") }}>

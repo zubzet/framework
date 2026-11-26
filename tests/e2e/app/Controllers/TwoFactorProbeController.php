@@ -19,7 +19,8 @@
                 $userId
             )->resultToLine();
 
-            $secret = $row["two_factor_secret"] ?? null;
+            // The column holds what encryptSecret() made of the secret
+            $secret = isset($row["two_factor_secret"]) ? decryptSecret($row["two_factor_secret"]) : null;
 
             echo json_encode([
                 "found" => !is_null($secret),
@@ -49,7 +50,7 @@
             echo json_encode([
                 "found" => !empty($row),
                 "hasSecret" => !empty($row) && !is_null($row["two_factor_secret"]),
-                "secret" => $row["two_factor_secret"] ?? null,
+                "secret" => isset($row["two_factor_secret"]) ? decryptSecret($row["two_factor_secret"]) : null,
                 "confirmedAt" => $row["two_factor_confirmed_at"] ?? null,
                 "hasTwoFactor" => !empty($row) && !is_null($row["two_factor_confirmed_at"]),
             ]);
@@ -130,7 +131,7 @@
                  SET `two_factor_secret` = ?, `two_factor_confirmed_at` = IF(?, CURRENT_TIMESTAMP(), NULL)
                  WHERE `id` = ?",
                 "sii",
-                $secret,
+                encryptSecret($secret),
                 (int) $confirmed,
                 $userId
             );

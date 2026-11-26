@@ -14,9 +14,9 @@
     </p>
     <p>
         Date: 
-        <?= $opt["date"] ?>
+        {{ $opt["date"] }}
     </p>
     <p>
-        IP Address: <?= $opt["ip"]; ?>
+        IP Address: {{ $opt["ip"] }}
     </p>
 @endsection

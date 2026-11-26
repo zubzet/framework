@@ -50,18 +50,6 @@
             echo json_encode($req->getParameters());
         }
 
-        public function action_parameters(Request $req, Response $res) {
-            print_r($req->getParameters());
-        }
-
-        public function action_parameters1(Request $req, Response $res) {
-            print_r($req->getParameters(0, 1, "TestParameter") ? "Ja" : "Nein");
-        }
-
-        public function action_parameters2(Request $req, Response $res) {
-            print_r($req->getParameters(0, 2));
-        }
-
         public function action_model(Request $req, Response $res) {
             echo($req->getModel("Core")->getData());
         }
@@ -294,20 +282,6 @@
 
         // Probes for Request::checkPermission, covered by:
         //   core/permissions.cy.js         - !isLoggedIn + boolResult branch
-
-        // permissionCheck runs both checkPermission shapes back-to-back:
-        //   1) boolResult=true   - emits "allowed" / "denied" without exiting.
-        //   2) default behavior  - !isLoggedIn redirects, no-permission 403s,
-        //                          allowed lets the trailing echo run.
-        // Body inspection in the test reveals which branch fired:
-        //   - not logged in:  "denied\n" + login page HTML (no "passed" echo)
-        //   - logged in OK:   "allowed\ncore.permissions passed"
-        public function action_permissionCheck(Request $req, Response $res): void {
-            echo $req->checkPermission("core.permissions", boolResult: true) ? "allowed" : "denied";
-            echo "\n";
-            $req->checkPermission("core.permissions");
-            echo "core.permissions passed";
-        }
     }
 
 ?>

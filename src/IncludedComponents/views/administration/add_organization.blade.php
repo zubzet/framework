@@ -2,7 +2,7 @@
 
 @section("content")
     <h2>
-        Add Organization
+        <?= e(__("admin.add_organization.title")) ?>
     </h2>
 
     <div id="create-organization-form"></div>
@@ -17,22 +17,22 @@
             name: "name",
             type: "text",
             required: true,
-            text: "Name",
-            placeholder: "Example Company",
+            text: <?= json_encode(__("admin.add_organization.name")) ?>,
+            placeholder: <?= json_encode(__("admin.add_organization.name_placeholder")) ?>,
         });
 
         form.createField({
             name: "max_capacity",
             type: "number",
-            text: "Maximum users",
-            hint: "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+            text: <?= json_encode(__("admin.add_organization.max_capacity")) ?>,
+            hint: <?= json_encode(__("admin.add_organization.max_capacity_hint")) ?>,
         });
 
         form.createField({
             name: "create_group",
             type: "checkbox",
-            text: "Create a permission group",
-            hint: "Creates a group named after the organization, suffixed with _Group. Every user assigned to the organization becomes a member of it.",
+            text: <?= json_encode(__("admin.add_organization.create_group")) ?>,
+            hint: <?= json_encode(__("admin.add_organization.create_group_hint")) ?>,
         });
     </script>
 @endsection

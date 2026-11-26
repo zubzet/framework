@@ -9,7 +9,7 @@
         "error_required": "Please fill in this field",
         "error_unique": "This already exists!",
         "error_exist": "This does not exist!",
-        "error_range": "The number is too large to too small. It must be between [0] and [1].",
+        "error_range": "The number is too large or too small. It must be between [0] and [1].",
         "error_file_to_big": "This file is too large."
     },
     "admin": {
@@ -23,6 +23,8 @@
             "add_user": "Add User",
             "roles": "Roles",
             "groups": "Groups",
+            "organizations": "Organizations",
+            "add_organization": "Add Organization",
             "back": "Go back",
             "logout": "Logout",
             "organization": "Organization",
@@ -34,14 +36,17 @@
         "add_user": {
             "title": "Add User",
             "email": "Email",
-            "password": "Password"
+            "password": "Password",
+            "organization": "Organization"
         },
         "edit_user": {
             "title": "Edit user",
             "email": "Email",
+            "organization": "Organization",
             "roles": "Roles",
             "role": "Role",
             "login_as": "Login as",
+            "login_as_reason": "Why are you logging in as this user? (optional)",
             "permissions": "User-Level Permissions",
             "permission": "Permission",
             "disable_two_factor": "Disable two factor",
@@ -54,6 +59,34 @@
         "groups": {
             "title": "Groups",
             "empty": "No groups found."
+        },
+        "organization_select": {
+            "title": "Organizations",
+            "empty": "No organizations found.",
+            "no_name": "No name",
+            "create": "Create organization"
+        },
+        "organizations": {
+            "title": "Organizations",
+            "name": "Name",
+            "max_capacity": "Maximum users",
+            "max_capacity_hint": "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+            "delete": "Delete organization",
+            "delete_confirm": "Do you really want to delete this organization?",
+            "group": "Group",
+            "no_group": "This organization has no group.",
+            "users": "Users",
+            "no_users": "No users belong to this organization.",
+            "no_email": "No email"
+        },
+        "add_organization": {
+            "title": "Add Organization",
+            "name": "Name",
+            "name_placeholder": "Example Company",
+            "max_capacity": "Maximum users",
+            "max_capacity_hint": "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+            "create_group": "Create a permission group",
+            "create_group_hint": "Creates a group named after the organization, suffixed with _Group. Every user assigned to the organization becomes a member of it."
         },
         "roles": {
             "title": "Roles",

@@ -94,6 +94,31 @@ describe('Core Features', () => {
         cy.query("password").click().type("password");
         cy.query("password-confirm").click().type("keinpassword");
         cy.query("submit").click();
-        cy.query("login-error").should("contain.text", "The password are not the same!");
+        cy.query("login-error").should("contain.text", "The passwords are not the same!");
+    });
+
+    describe('Signup disabled', () => {
+        before(() => {
+            cy.saveConfigBackup();
+            cy.setConfigSetting('signup_disabled', 'true');
+        });
+
+        after(() => cy.restoreConfigBackup());
+
+        it('answers the signup page and action with 404', () => {
+            cy.request({ url: '/login/signup', failOnStatusCode: false }).its('status').should('equal', 404);
+            cy.request({
+                method: 'POST',
+                url: '/login/signup',
+                form: true,
+                body: { action: 'signup', email: 'disabled@zierhut-it.de', password: 'password' },
+                failOnStatusCode: false,
+            }).its('status').should('equal', 404);
+        });
+
+        it('hides the signup link on the login page', () => {
+            cy.visit('/login');
+            cy.get('a[href$="login/signup"]').should('not.exist');
+        });
     });
 });

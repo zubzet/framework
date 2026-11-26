@@ -66,7 +66,7 @@
 
             // Hide sensitive values
             foreach($rows as &$row) {
-                foreach(["password", "pw", "salt", "hash"] as $key) {
+                foreach(["password", "pw", "salt", "hash", "token", "two_factor_secret"] as $key) {
                     if(!array_key_exists($key, $row)) continue;
                     $row[$key] = str_repeat("*", 8);
                 }

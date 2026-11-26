@@ -1,29 +1,30 @@
 -- Fixtures for account/two-factor*.cy.js. last_two_factor stays NULL, php writes it: see /TwoFactorProbe/ageSession
+-- The secrets are encryptSecret() of JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP and GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ under the e2e encryption_key
 
 INSERT INTO `z_user`(`id`, `email`, `password`, `salt`, `active`, `created`, `verified`, `organizationId`, `two_factor_secret`, `two_factor_confirmed_at`) VALUES
 -- off, with a password: enrollment
 (850, 'twofactor_enroll@cypress.test', '772e7e18b509ee9dbf4a53d415187fa49c68c991873e3282c0025e9e53d4c946125f184c34e04a7fcd5136fcdc04bedc17afd981380ee05ccb7683e7d83ec615', '4401287036553e310907533.22322450', 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, NULL, NULL),
 
 -- on: disabling needs a code
-(851, 'twofactor_active@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP', '2025-01-01 10:00:00'),
+(851, 'twofactor_active@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'zenc:aes-256-gcm:Pn08upYowfnvHvz8pWxetVQQVbUSiYXUa7Uy6Yj2CxreQvZ1c_vUqFWZFD8J23gjDTZn84I2BbWf2XmD', '2025-01-01 10:00:00'),
 
 -- on, with a password: the login challenge
-(852, 'twofactor_login@cypress.test', '772e7e18b509ee9dbf4a53d415187fa49c68c991873e3282c0025e9e53d4c946125f184c34e04a7fcd5136fcdc04bedc17afd981380ee05ccb7683e7d83ec615', '4401287036553e310907533.22322450', 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP', '2025-01-01 10:00:00'),
+(852, 'twofactor_login@cypress.test', '772e7e18b509ee9dbf4a53d415187fa49c68c991873e3282c0025e9e53d4c946125f184c34e04a7fcd5136fcdc04bedc17afd981380ee05ccb7683e7d83ec615', '4401287036553e310907533.22322450', 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'zenc:aes-256-gcm:Pn08upYowfnvHvz8pWxetVQQVbUSiYXUa7Uy6Yj2CxreQvZ1c_vUqFWZFD8J23gjDTZn84I2BbWf2XmD', '2025-01-01 10:00:00'),
 
 -- on: an admin takes it off
-(853, 'twofactor_forced@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP', '2025-01-01 10:00:00'),
+(853, 'twofactor_forced@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'zenc:aes-256-gcm:Pn08upYowfnvHvz8pWxetVQQVbUSiYXUa7Uy6Yj2CxreQvZ1c_vUqFWZFD8J23gjDTZn84I2BbWf2XmD', '2025-01-01 10:00:00'),
 
 -- on: the freshness gate
-(854, 'twofactor_gate@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP', '2025-01-01 10:00:00'),
+(854, 'twofactor_gate@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'zenc:aes-256-gcm:Pn08upYowfnvHvz8pWxetVQQVbUSiYXUa7Uy6Yj2CxreQvZ1c_vUqFWZFD8J23gjDTZn84I2BbWf2XmD', '2025-01-01 10:00:00'),
 
 -- off: the gate has nothing to ask
 (855, 'twofactor_plain@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, NULL, NULL),
 
 -- a secret nobody confirmed
-(856, 'twofactor_pending@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP', NULL),
+(856, 'twofactor_pending@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'zenc:aes-256-gcm:Pn08upYowfnvHvz8pWxetVQQVbUSiYXUa7Uy6Yj2CxreQvZ1c_vUqFWZFD8J23gjDTZn84I2BbWf2XmD', NULL),
 
 -- on, own secret: the try budget, and codes not being universal
-(857, 'twofactor_tries@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ', '2025-01-01 10:00:00');
+(857, 'twofactor_tries@cypress.test', NULL, NULL, 1, '2020-01-01 12:00:00', '2020-01-01 12:00:00', NULL, 'zenc:aes-256-gcm:37IRDEBIcVqmD2OrNLUV8yOmUHo0UVSEUHPsDdMtdRkvh67fCdeOSZYhilG-5fLKt4quVODCjMhBybn3', '2025-01-01 10:00:00');
 
 INSERT INTO `z_logintoken` (`id`, `uuid`, `token`, `userId`, `userId_exec`, `name`, `device`, `reason`, `ip_creation`, `ip_last`, `is_permanent`, `is_apikey`, `expires_at`, `last_used`, `created`, `active`) VALUES
 (850, '00000000-0000-7000-8000-000000000850', '0850a00000000000000000000000000000000000', 850, 850, NULL, 'Cypress Chrome on Linux', NULL, NULL, NULL, 0, 0, NULL, NULL, NOW(), 1),
