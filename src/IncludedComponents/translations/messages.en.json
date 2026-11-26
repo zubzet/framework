@@ -60,6 +60,12 @@
             "title": "Groups",
             "empty": "No groups found."
         },
+        "organization_select": {
+            "title": "Organizations",
+            "empty": "No organizations found.",
+            "no_name": "No name",
+            "create": "Create organization"
+        },
         "roles": {
             "title": "Roles",
             "name": "Name",
