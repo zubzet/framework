@@ -9,7 +9,7 @@
         "error_required": "Please fill in this field",
         "error_unique": "This already exists!",
         "error_exist": "This does not exist!",
-        "error_range": "The number is too large to too small. It must be between [0] and [1].",
+        "error_range": "The number is too large or too small. It must be between [0] and [1].",
         "error_file_to_big": "This file is too large."
     },
     "admin": {

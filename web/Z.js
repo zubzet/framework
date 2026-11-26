@@ -133,7 +133,7 @@ Z = {
     error_filter: "Your input does not have the correct pattern!",
     error_length: "Your input is too long or too short. It should have between [0] and [1] characters.",
     error_required: "Please fill in this field",
-    error_range: "The number is too large to too small. It must be between [0] and [1].",
+    error_range: "The number is too large or too small. It must be between [0] and [1].",
     error_unique: "This already exists!",
     error_exist: "This does not exist!",
     error_in: "This value is not in the allowed list!",
