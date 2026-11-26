@@ -110,7 +110,8 @@
             $newSettings = new SettingsIni($this, "new-settings");
             $newSettings->addProperty("health_endpoint_enabled", "true");
             $newSettings->addProperty("signup_disabled", "false");
-            $newSettings->addProperty("encryption_key", "");
+            // Generated per app, so a key nobody replaced is not shared between apps
+            $newSettings->addProperty("encryption_key", bin2hex(random_bytes(32)));
             $newSettings->addProperty("two_factor_challenge_seconds", "60");
             $newSettings->addProperty("two_factor_freshness_seconds", "90");
             $newSettings->addProperty("two_factor_tries", "3");
