@@ -119,7 +119,7 @@ ZubZet allows you to attach **middleware** and **afterMiddleware** to both route
 
 * **Middleware** → Executed **before** the route runs.  
   Example use cases: `authentication`, `user validation`, `request logging`.
-* **AfterMiddleware** → Executed **after** the route has been processed; its return value is ignored, and it does not run if the action ends the script (`exit`, for example `generateRest()` or `rerouteUrl()`).  
+* **AfterMiddleware** → Executed **after** the route has been processed; its return value is ignored. It also runs when the action ended the request itself, for example with `render()`, `generateRest()`, `rerouteUrl()` or a failed `checkPermission()`; only a blocking middleware or a real `exit` keeps it from running.  
   Example use cases: `response formatting`, `cleanup`, `analytics logging`.
 
 ### Syntax

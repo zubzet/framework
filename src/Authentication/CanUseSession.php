@@ -210,7 +210,7 @@
             $lastTwoFactor = $this->lastTwoFactor();
             if(is_null($lastTwoFactor)) return true;
 
-            $freshness = is_null($freshnessSeconds) ? configNumeric("two_factor_freshness_seconds", 900) : $freshnessSeconds;
+            $freshness = is_null($freshnessSeconds) ? configNumeric("two_factor_freshness_seconds", 90) : $freshnessSeconds;
 
             return strtotime($lastTwoFactor) <= time() - $freshness;
         }
@@ -294,7 +294,7 @@
         }
 
         /**
-         * The address the session was created from, or null when it was not known
+         * The address the session was created from, empty ("" or null) when it was not known
          */
         public function ipCreation(): ?string {
             return $this->getField("ip_creation");

@@ -120,7 +120,83 @@ The following function `action_test` will be executed when requesting the path `
 
 ## Redirecting
 
-`$res->rerouteUrl($url = "", $root = null)` sends a `location:` header (implicit 302) and ends the script, as do `$res->logout()` and the REST helpers. `$root` defaults to the `rootFolder` setting, which is `/` when `rootDirectory` is empty and `/{rootDirectory}/` otherwise. The header is built as `$root . $url` without any slash normalisation, so `$url` has to be written relative to the root folder, without a leading slash: `rerouteUrl("employee/list")`. A leading slash is not removed, so `rerouteUrl("/employee")` yields `//employee` with an empty root directory, which browsers read as a protocol-relative URL pointing at the host `employee`. Calling it without arguments redirects to the root folder; pass `$root = ""` to redirect to an absolute or external URL. `$res->reroute($path, $alias = false, $final = false)` instead dispatches internally to another controller and action without an HTTP redirect, so the browser URL stays (the query string is kept); explicit routes and group middleware apply to the new path, and `$final = true` ends the script afterwards, otherwise the calling action continues when `reroute()` returns (as after `render()` or `json()`). The new `Request` keeps GET, POST, cookies and body but has an empty `store` and `urlParameters`. For `$alias` see [aliases](../advanced-features/aliases-and-virtual-links.md). `Response` has no helpers for HTTP status codes, custom headers or downloads: use PHP's `http_response_code()` and `header()`.
+`$res->rerouteUrl($url = "", $root = null)` sends a `location:` header (implicit 302) and ends the script, as do `$res->logout()` and the REST helpers. `$root` defaults to the `rootFolder` setting, which is `/` when `rootDirectory` is empty and `/{rootDirectory}/` otherwise. The header is built as `$root . $url` without any slash normalisation, so `$url` has to be written relative to the root folder, without a leading slash: `rerouteUrl("employee/list")`. A leading slash is not removed, so `rerouteUrl("/employee")` yields `//employee` with an empty root directory, which browsers read as a protocol-relative URL pointing at the host `employee`. Calling it without arguments redirects to the root folder; pass `$root = ""` to redirect to an absolute or external URL. `$res->reroute($path, $alias = false, $final = false)` instead dispatches internally to another controller and action without an HTTP redirect, so the browser URL stays (the query string is kept); explicit routes and group middleware apply to the new path, and `$final = true` ends the script afterwards, otherwise the calling action continues when `reroute()` returns (as after `render()` or `json()`). The new `Request` keeps GET, POST, cookies, body and `store` but has empty `urlParameters`. For `$alias` see [aliases](../advanced-features/aliases-and-virtual-links.md). `Response` has no helpers for HTTP status codes, custom headers or downloads: use PHP's `http_response_code()` and `header()`.
+
+## Ending a request
+
+A view, a REST reply, a redirect and a failed check each finish the response. Nothing of the action runs after one of these calls:
+
+| Call | Ends the request |
+| ---- | ---------------- |
+| `$res->render()`, `view()` | always |
+| `$res->success()`, `error()`, `formErrors()`, `generateRest()`, `generateRestError()` | always (`generateRest($payload, false)` does not) |
+| `$res->rerouteUrl()`, `$res->logout()` | always |
+| `$res->reroute($path, $alias, true)` | with `$final` set; without it only when the rerouted action ends the request |
+| `$req->checkPermission()`, `requireOrganization()`, `requireFreshTwoFactor()`, `csrfBlockAdditionalMethod()` | when the check fails (not when it is asked to return a boolean) |
+| `$res->stop()`, `$req->stop()`, `stop()` | always |
+
+`$res->json()` and `$res->sendEmail()` do not end the request.
+
+To end a request yourself, call `stop()` instead of `exit` or `die`. It is available as `$res->stop()`, `$req->stop()` and as the global helper `stop()`, all three do the same. What the action printed and the headers it set are the response:
+
+```php
+public function action_export(Request $req, Response $res) {
+    $req->checkPermission("reports.export");
+
+    header("Content-Type: text/csv");
+    echo $this->csv();
+
+    $res->stop();
+}
+```
+
+A real `exit` still works, but it skips the `finally` blocks and afterMiddlewares, and it ends a unit test that calls the action.
+
+An action can hold several of these calls, for example one view per permission, as long as only one of them runs:
+
+```php
+public function action_index(Request $req, Response $res) {
+    if($req->checkPermission("reports.all", true)) {
+        return $res->render("reports/all");
+    }
+
+    return $res->render("reports/own");
+}
+```
+
+The framework does not call `exit` for this. The call throws the internal `ZubZet\Framework\Message\EndOfRequest`, which the framework catches where it dispatched the request. Three things follow:
+
+* `finally` blocks around the call run, and so do the [afterMiddlewares](routing.md#middleware-and-aftermiddleware) of the route.
+* `EndOfRequest` extends `\Error`, so a `catch(\Exception)` around the call does not see it.
+* A `catch(\Throwable)` or `catch(\Error)` does see it, and the action would keep running. Catch `\Exception` in a controller, or pass the end on first:
+
+```php
+try {
+    $res->success(["id" => $this->import($file)]);
+} catch(\ZubZet\Framework\Message\EndOfRequest $end) {
+    throw $end;
+} catch(\Throwable $e) {
+    $res->error($e->getMessage());
+}
+```
+
+### Testing an action
+
+Because the request ends with an exception, a unit test can call an action and read what it answered:
+
+```php
+ob_start();
+try {
+    $controller->action_save($req, $res);
+    $this->fail("The action did not answer.");
+} catch(\ZubZet\Framework\Message\EndOfRequest) {
+    $answer = json_decode(ob_get_contents(), true);
+} finally {
+    ob_end_clean();
+}
+
+$this->assertSame("success", $answer["result"]);
+```
 
 ## See also
 

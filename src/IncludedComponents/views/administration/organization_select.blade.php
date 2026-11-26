@@ -1,11 +1,11 @@
 @extends($layout)
 
 @section("content")
-    <h2>Organizations</h2>
+    <h2><?= e(__("admin.organization_select.title")) ?></h2>
 
     <?php if(empty($opt["organizations"])) { ?>
         <div class="alert alert-dark" role="alert">
-            No organizations found.
+            <?= e(__("admin.organization_select.empty")) ?>
         </div>
     <?php } ?>
     <div class="list-group">
@@ -16,7 +16,7 @@
                 </small>
 
                 <?php if(is_null($organization["name"])) { ?>
-                    <i>No name</i>
+                    <i><?= e(__("admin.organization_select.no_name")) ?></i>
                 <?php } else { ?>
                     <?= e($organization["name"]); ?>
                 <?php } ?>
@@ -25,6 +25,6 @@
     </div>
 
     <?php if($opt["user"]->checkPermission("admin.organizations.create")) { ?>
-        <a data-test="organization-create" href="<?= $opt["root"] . "z/add_organization"; ?>" class="btn btn-primary mt-2">Create organization</a>
+        <a data-test="organization-create" href="<?= $opt["root"] . "z/add_organization"; ?>" class="btn btn-primary mt-2"><?= e(__("admin.organization_select.create")) ?></a>
     <?php } ?>
 @endsection

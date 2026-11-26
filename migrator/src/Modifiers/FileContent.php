@@ -9,8 +9,10 @@
     class FileContent extends BaseModifier {
         use CommandInteraction;
 
-        protected string $fileContent;
-        protected string $filePath;
+        // Both stay empty when an optional file is not found, no change is demanded then
+        protected string $fileContent = "";
+        protected string $filePath = "";
+        private bool $isFound = false;
 
         private bool $isOptional = false;
         public function optional() {
@@ -30,6 +32,7 @@
             $maxDepth = 10;
 
             $setFound = function (string $path): void {
+                $this->isFound = true;
                 $this->filePath = $path;
                 $this->fileContent = file_get_contents($path);
             };
@@ -112,7 +115,7 @@
         }
 
         public function demandChange(string|array $explanation): void {
-            if(!$this->shouldChange) {
+            if(!$this->isFound || !$this->shouldChange) {
                 $this->out->writeln("No changes required for <comment>{$this->searchedFile}</comment>, skipping...");
                 return;
             }

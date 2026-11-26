@@ -74,7 +74,8 @@
 
         /**
          * Gets the IP of a request
-         * @return ?string The IP of the client, client-supplied headers (spoofable) are trusted first. Empty string if none is found
+         * @return ?string The IP of the client, client-supplied headers (spoofable) are trusted first. Of a forwarded chain
+         * ("client, proxy, ...") only the client is returned. A value that is no IP address falls back to REMOTE_ADDR. Empty string if none is found
          */
         public function ip(): ?string {
             $ip = $this->input->SERVER['HTTP_CLIENT_IP']
@@ -87,7 +88,12 @@
                 ?? getenv('HTTP_FORWARDED')
                 ?? getenv('REMOTE_ADDR')
                 ?? null;
-            return $ip;
+
+            // The headers are client-supplied and unbounded, callers store the result in an IP column
+            $ip = trim(explode(",", (string) $ip)[0]);
+            if(false !== filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
+
+            return (string) filter_var($this->input->SERVER['REMOTE_ADDR'] ?? "", FILTER_VALIDATE_IP);
         }
 
         /**
@@ -293,13 +299,13 @@
                 if($this->isCli()) return true;
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             $hasPermission = $includeSuperUser
@@ -309,7 +315,7 @@
             if(!$hasPermission) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             return true;
@@ -324,7 +330,7 @@
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             // byId() skips removed organizations, so their former members are denied
@@ -333,7 +339,7 @@
             if(!$hasOrganization) {
                 if($boolResult) return false;
                 zubzet()->executePath(["error", "403"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             return true;
@@ -360,7 +366,7 @@
             if(!user()->isLoggedIn) {
                 if($boolResult) return false;
                 zubzet()->executePath(["login", "index"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             $session = Session::byToken(user()->getSessionToken());
@@ -368,7 +374,7 @@
             if(is_null($session) || $session->requireRenew($freshnessSeconds)) {
                 if($boolResult) return false;
                 response()->error("Two factor required", ["twoFactorRenew" => true]);
-                exit;
+                throw new EndOfRequest;
             }
 
             return true;
@@ -452,7 +458,7 @@
             if(CSRF::verify(...$additionalMethods)) return;
 
             zubzet()->executePath(["error", "403"]);
-            exit;
+            throw new EndOfRequest;
         }
     }
 ?>

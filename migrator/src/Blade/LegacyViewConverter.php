@@ -48,9 +48,16 @@
          * @throws \RuntimeException when the source is not a convertible legacy view.
          */
         public static function convertFile(string $source): string {
-            return self::isLayout($source)
+            $out = self::isLayout($source)
                 ? self::convertLayout($source)
                 : self::convertView($source);
+
+            // Matches a call of the old essentials or layout closures that the conversion left behind
+            if(preg_match('/layout_essentials_|\$(?:body|head)\s*\(/', $out, $m)) {
+                throw new \RuntimeException("left unconverted: {$m[0]}");
+            }
+
+            return $out;
         }
 
         /** A legacy view -> an @extends child with head/content sections. */

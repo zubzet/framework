@@ -24,6 +24,16 @@
         }
 
         /**
+         * Ends the request here: nothing of the action runs after this call. What was printed and
+         * every header that was set stay as they are, and the afterMiddlewares of the route still run.
+         * Takes the place of `exit` and `die`, see EndOfRequest for how the request ends.
+         * @return never
+         */
+        public function stop(): void {
+            throw new EndOfRequest;
+        }
+
+        /**
          * Returns the project's own views directory (config z_views, relative path with trailing slash), not the framework's IncludedComponents views
          * @return string
          */

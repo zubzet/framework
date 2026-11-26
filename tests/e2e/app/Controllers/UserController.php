@@ -1,6 +1,7 @@
 <?php
 
 use ZubZet\Framework\Authentication\Permission\Role;
+use ZubZet\Framework\Authentication\Permission\Group;
 use ZubZet\Framework\Authentication\Permission\User;
 
 class UserController extends z_controller {
@@ -198,6 +199,30 @@ class UserController extends z_controller {
         $user = User::byId(125);
 
         $this->echoUser($user, false, true);
+    }
+
+    public function action_hasRole(Request $req, Response $res): void {
+        $user = User::byId(125);
+
+        echo(json_encode([
+            "active" => $user->hasRole(Role::byId(101)),
+            "inactiveAssignment" => $user->hasRole(Role::byId(104)),
+            // User 300 holds group 305, which still is no role
+            "group" => User::byId(300)->hasRole(Group::byId(305)),
+            // User 580 holds role 163 only through organization 539
+            "organization" => User::byId(580)->hasRole(Role::byId(163)),
+        ]));
+    }
+
+    public function action_hasGroup(Request $req, Response $res): void {
+        $user = User::byId(300);
+
+        echo(json_encode([
+            "active" => $user->hasGroup(Group::byId(305)),
+            "inactiveAssignment" => $user->hasGroup(Group::byId(308)),
+            // User 580 holds group 165 only through organization 539
+            "organization" => User::byId(580)->hasGroup(Group::byId(165)),
+        ]));
     }
 
     public function action_addRejected(Request $req, Response $res): void {

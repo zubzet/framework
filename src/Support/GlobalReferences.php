@@ -186,6 +186,19 @@
             }
         });
 
+        // Optional: an application that has a stop() of its own keeps it, $res->stop() is always there
+        FunctionConflictResolution::optionalAndThen("stop", function() {
+            /**
+             * Ends the request here, like response()->stop(): nothing of the action runs after
+             * this call, while the afterMiddlewares of the route still do. Takes the place of exit.
+             *
+             * @return never
+             */
+            function stop(): void {
+                response()->stop();
+            }
+        });
+
         FunctionConflictResolution::requireAndThen("logger", function() {
             function logger(?string $name = null): Logger {
                 return LoggerFactory::getOrCreateLogger($name ?? Logger::APP);

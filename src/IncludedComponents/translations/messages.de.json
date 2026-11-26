@@ -23,6 +23,8 @@
             "add_user": "Benutzer anlegen",
             "roles": "Rollen",
             "groups": "Gruppen",
+            "organizations": "Organisationen",
+            "add_organization": "Organisation anlegen",
             "back": "Zurück",
             "logout": "Abmelden",
             "organization": "Organisation",
@@ -34,14 +36,17 @@
         "add_user": {
             "title": "Benutzer anlegen",
             "email": "E-Mail",
-            "password": "Passwort"
+            "password": "Passwort",
+            "organization": "Organisation"
         },
         "edit_user": {
             "title": "Benutzer bearbeiten",
             "email": "E-Mail",
+            "organization": "Organisation",
             "roles": "Rollen",
             "role": "Rolle",
             "login_as": "Anmelden als",
+            "login_as_reason": "Warum melden Sie sich als dieser Benutzer an? (optional)",
             "permissions": "Benutzerspezifische Berechtigungen",
             "permission": "Berechtigung",
             "disable_two_factor": "Zwei-Faktor deaktivieren",
@@ -54,6 +59,34 @@
         "groups": {
             "title": "Gruppen",
             "empty": "Keine Gruppen gefunden."
+        },
+        "organization_select": {
+            "title": "Organisationen",
+            "empty": "Keine Organisationen gefunden.",
+            "no_name": "Kein Name",
+            "create": "Organisation anlegen"
+        },
+        "organizations": {
+            "title": "Organisationen",
+            "name": "Name",
+            "max_capacity": "Maximale Anzahl Benutzer",
+            "max_capacity_hint": "Aktive Mitglieder und offene Einladungen dürfen diese Zahl zusammen nicht überschreiten. Leer lassen für keine Begrenzung.",
+            "delete": "Organisation löschen",
+            "delete_confirm": "Soll diese Organisation wirklich gelöscht werden?",
+            "group": "Gruppe",
+            "no_group": "Diese Organisation hat keine Gruppe.",
+            "users": "Benutzer",
+            "no_users": "Dieser Organisation gehören keine Benutzer an.",
+            "no_email": "Keine E-Mail"
+        },
+        "add_organization": {
+            "title": "Organisation anlegen",
+            "name": "Name",
+            "name_placeholder": "Beispiel GmbH",
+            "max_capacity": "Maximale Anzahl Benutzer",
+            "max_capacity_hint": "Aktive Mitglieder und offene Einladungen dürfen diese Zahl zusammen nicht überschreiten. Leer lassen für keine Begrenzung.",
+            "create_group": "Berechtigungsgruppe anlegen",
+            "create_group_hint": "Legt eine Gruppe mit dem Namen der Organisation und dem Suffix _Group an. Jeder Benutzer, der der Organisation zugewiesen wird, wird Mitglied dieser Gruppe."
         },
         "roles": {
             "title": "Rollen",

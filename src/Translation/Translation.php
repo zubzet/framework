@@ -79,7 +79,8 @@
         public static function locale(?User $user = null): string {
             // User locale
             $userBcp47 = $user?->getField("locale_bcp_47") ?? user()?->fields["locale_bcp_47"] ?? null;
-            if(!is_null($userBcp47)) return $userBcp47;
+            // Only well formed language tags, the catalogues spell them with an underscore too: de, en-US, de_CH, zh-Hans-CN, es-419
+            if(preg_match('/^[a-z]{1,8}(?:[-_][a-z0-9]{1,8})*$/i', $userBcp47 ?? "")) return $userBcp47;
 
             // Available locales from the loaded catalogues
             $available = array_values(array_unique(array_column(self::catalogues(), "locale")));

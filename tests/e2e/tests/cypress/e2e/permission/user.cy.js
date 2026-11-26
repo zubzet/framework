@@ -257,6 +257,18 @@ describe('Permission System - User', () => {
         });
     });
 
+    it('should check if a user has a role', () => {
+        requestJson('/user/hasRole').then((output) => {
+            expect(output).to.deep.equal({"active":true,"inactiveAssignment":false,"group":false,"organization":true});
+        });
+    });
+
+    it('should check if a user has a group', () => {
+        requestJson('/user/hasGroup').then((output) => {
+            expect(output).to.deep.equal({"active":true,"inactiveAssignment":false,"organization":true});
+        });
+    });
+
     it('should check if a user got the right permissions', () => {
         requestJson('/user/getPermissions').then((output) => {
             expect(output).to.deep.equal(

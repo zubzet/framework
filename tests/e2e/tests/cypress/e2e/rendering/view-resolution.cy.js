@@ -23,12 +23,12 @@ describe('View resolution', () => {
     describe('userspace overrides framework', () => {
         // `login` exists in BOTH roots. The app copy carries an explicit
         // data-test="login-source">app< marker; the framework copy does not (and
-        // has the "Don't have a account?" signup link the app copy omits).
+        // has the "Don't have an account?" signup link the app copy omits).
         it('renders the app copy by default (escape hatch off)', () => {
             cy.request('/RenderProbe/overrideAppWins').then((res) => {
                 expect(res.status).to.eq(200);
                 expect(res.body).to.include('data-test="login-source"');  // app copy marker
-                expect(res.body).to.not.include("Don't have a account?"); // framework copy
+                expect(res.body).to.not.include("Don't have an account?"); // framework copy
             });
         });
 
@@ -39,7 +39,7 @@ describe('View resolution', () => {
             cy.request('/FrameworkViewProbe/login').then((res) => {
                 expect(res.status).to.eq(200);
                 expect(res.body).to.not.include('data-test="login-source"'); // not the app copy
-                expect(res.body).to.include("Don't have a account?");        // framework copy
+                expect(res.body).to.include("Don't have an account?");        // framework copy
             });
         });
     });

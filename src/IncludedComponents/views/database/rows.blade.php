@@ -73,7 +73,7 @@
         <nav class="mb-4">
             <ul class="pagination" data-test="pagination">
                 <li class="page-item shadow-sm <?= $opt["page"] <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" data-test="pagination-first" href="<?= $opt["pageLink"] ?>1">
+                    <a class="page-link" data-test="pagination-first" href="<?= "$opt[root]z/database/$opt[pageLink]1" ?>">
                         <i class="fa fa-fw fa-step-backward"></i>
                         <?= e(__("admin.database.first")) ?>
                     </a>

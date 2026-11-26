@@ -245,7 +245,7 @@
         /** @var Request[] */
         public array $dispatched = [];
 
-        public function execute(?array $customUrlParts = null) {
+        protected function dispatch(?array $customUrlParts = null) {
             $this->dispatched[] = request();
         }
     }

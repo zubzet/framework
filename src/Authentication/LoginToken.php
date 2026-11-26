@@ -40,10 +40,12 @@
             return self::METHOD_PLAIN === self::method($stored);
         }
 
-        // The method named by the token's prefix, plain for anything without a known one
+        // The method named by the token's prefix, plain for anything without a known one. The prefix
+        // counts in any casing: the token column compares case-insensitively, so an upper-cased copy
+        // of a stored hash must not pass as a plain token that equals its own stored value
         private static function method(string $token): string {
             foreach(self::METHODS as $method) {
-                if(str_starts_with($token, $method)) return $method;
+                if(str_starts_with(strtolower($token), $method)) return $method;
             }
 
             return self::METHOD_PLAIN;

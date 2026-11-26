@@ -41,7 +41,7 @@ To be able to use all functions, the following permissions are needed:
 - admin.organizations.delete (the `delete` action on an organization)
 - admin.maintenance
 - [admin.database](#database-browser)
-- [admin.su](login-as-another-user.md) (`/z/login_as/{userId}`, also used by the *Login as* button of the edit form)
+- [admin.su](login-as-another-user.md) (`/z/login_as/{userId}`, also used by the *Login as* button of the edit form; for an admin with two factor only after a recent check of their own)
 
 `admin.panel` guards the dashboard at `/z` and nothing else. Every other action checks its own permission from the list above, so a user without `admin.panel` still reaches `/z/roles`, `/z/edit_user` and the rest by their direct URL, as long as they hold the permission of that action. The checks run against the effective user, so while [logged in as another user](login-as-another-user.md) that user needs the permission itself. The sidebar and the dashboard cards (icon only, in the sections Application, Users and Roles, and Other) only show the entries the user may open, except that Edit User is shown for `admin.user.edit` although its list needs `admin.user.list`.
 
@@ -67,7 +67,7 @@ Be advised, each role gives special permissions, some give the user special powe
 After you set a role, you can either add more roles or save the user by clicking ‘submit’ at the bottom of the page. The user should now be able to use their role.
 
 ## Two factor
-An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.list` and `admin.user.edit`.
+An account with [two factor](../core-features/two-factor-authentication.md) shows *Disable two factor* on its page under Edit Users. It turns two factor off after a confirmation, so an owner who lost their authenticator can sign in with the password again and set it up anew. It needs `admin.user.list`, `admin.user.edit` and, for an admin with two factor, a recent check of their own.
 ## Organizations
 Add Organization creates an [organization](../core-features/access-control.md). An optional **Maximum users** caps the active members plus open invitations, empty means unlimited, see [Organization Management](organization-management.md#invitations). Ticking **Create a permission group** also creates a [group](../core-features/permission-system.md) named after the organization (`{name}_Group`) and links it to the organization. Organization names may repeat, group names may not, so the checkbox reports an error when a group of that name already exists.
 
@@ -79,4 +79,4 @@ Both Add User and Edit User carry an Organization select, which ignores the maxi
 ## Database browser
 `/z/database` lists every table of the database with approximate row counts, `/z/database/{table}` shows its rows 20 per page (`/page/{n}`, five page numbers around the current one, a page beyond the last shows no rows), newest first by the last primary key column (the first column without one), and `/z/database/{table}/csv` (the Export button) exports up to 10000 rows. The CSV export does not neutralise spreadsheet formulas. It is a read-only viewer and exporter (no insert, edit, delete, filter or search) and needs the permission `admin.database`.
 
-Only the columns named exactly `password`, `pw`, `salt` or `hash` are shown as `********`, in the table view and in the CSV export. Every other column is shown in clear text, including `z_logintoken.token`, `z_email_verify.token` and `z_password_reset.refId`. Anyone holding `admin.database` can read these, and with them take over sessions or password resets, so grant it only to accounts you would trust with the database itself.
+Only the columns named exactly `password`, `pw`, `salt`, `hash`, `token` or `two_factor_secret` are shown as `********`, in the table view and in the CSV export. Every other column is shown in clear text, including `z_password_reset.refId`. Anyone holding `admin.database` can read these, and with them take over password resets, so grant it only to accounts you would trust with the database itself.

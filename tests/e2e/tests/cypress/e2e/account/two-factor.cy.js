@@ -31,7 +31,7 @@ describe('Two factor', () => {
     const setState = (userId, secret = '', confirmed = 1) =>
         cy.request(`/TwoFactorProbe/setState/${userId}?secret=${secret}&confirmed=${confirmed}`);
 
-    const resetSession = (prefix, tries = 5) =>
+    const resetSession = (prefix, tries = 3) =>
         cy.request(`/TwoFactorProbe/resetSession/${token(prefix)}?tries=${tries}`);
 
     // ---------------------------------------------------------------------
@@ -47,7 +47,7 @@ describe('Two factor', () => {
         it('hands out a secret and a provisioning uri', () => {
             login('0850a');
 
-            post('start-two-factor', {}).then((out) => {
+            post('start-two-factor', { password_current: 'password' }).then((out) => {
                 expect(out.result).to.eq('success');
                 expect(out.secret).to.match(/^[A-Z2-7]{32}$/);
                 expect(out.uri).to.contain('otpauth://totp/');
@@ -59,7 +59,7 @@ describe('Two factor', () => {
         it('stores the secret unconfirmed, so two factor stays off', () => {
             login('0850a');
 
-            post('start-two-factor', {}).then(() => {
+            post('start-two-factor', { password_current: 'password' }).then(() => {
                 userState(850).then((state) => {
                     expect(state.hasSecret).to.be.true;
                     expect(state.confirmedAt).to.be.null;
@@ -71,7 +71,7 @@ describe('Two factor', () => {
         it('turns two factor on once a code confirms the secret', () => {
             login('0850a');
 
-            post('start-two-factor', {}).then((out) => {
+            post('start-two-factor', { password_current: 'password' }).then((out) => {
                 probe(`/TwoFactorProbe/codeForSecret/${out.secret}`).then(({ code }) => {
                     post('confirm-two-factor', { code }).then((confirmed) => {
                         expect(confirmed.result).to.eq('success');
@@ -88,7 +88,7 @@ describe('Two factor', () => {
         it('rejects a wrong code and leaves two factor off', () => {
             login('0850a');
 
-            post('start-two-factor', {}).then(() => {
+            post('start-two-factor', { password_current: 'password' }).then(() => {
                 post('confirm-two-factor', { code: '000000' }).then((out) => {
                     expect(out).to.include({ result: 'error', message: 'Wrong code' });
                 });
@@ -159,20 +159,20 @@ describe('Two factor', () => {
             login('0850a');
             resetSession('0850a', 2);
 
-            post('start-two-factor', {}).then((out) => {
+            post('start-two-factor', { password_current: 'password' }).then((out) => {
                 probe(`/TwoFactorProbe/codeForSecret/${out.secret}`).then(({ code }) => {
                     post('confirm-two-factor', { code });
                 });
             });
 
-            sessionState('0850a').then((state) => expect(state.remainingTries).to.eq(5));
+            sessionState('0850a').then((state) => expect(state.remainingTries).to.eq(3));
         });
 
         it('counts turning it on as a passed check', () => {
             login('0850a');
             cy.request(`/TwoFactorProbe/ageSession/${token('0850a')}`);
 
-            post('start-two-factor', {}).then((out) => {
+            post('start-two-factor', { password_current: 'password' }).then((out) => {
                 probe(`/TwoFactorProbe/codeForSecret/${out.secret}`).then(({ code }) => {
                     post('confirm-two-factor', { code });
                 });
@@ -267,10 +267,10 @@ describe('Two factor', () => {
             login('0857a');
 
             post('disable-two-factor', { code: '000000' });
-            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(4));
+            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(2));
 
             post('disable-two-factor', { code: '000000' });
-            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(3));
+            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(1));
         });
 
         it('signs the session out once the last try is gone', () => {
@@ -292,7 +292,7 @@ describe('Two factor', () => {
 
         it('leaves the budget alone on a correct code', () => {
             login('0857a');
-            resetSession('0857a', 3);
+            resetSession('0857a', 2);
 
             code(857).then((value) => {
                 post('disable-two-factor', { code: value }).then((out) => {
@@ -300,7 +300,7 @@ describe('Two factor', () => {
                 });
             });
 
-            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(3));
+            sessionState('0857a').then((state) => expect(state.remainingTries).to.eq(2));
         });
     });
 
@@ -389,6 +389,7 @@ describe('Two factor', () => {
             cy.intercept('POST', '**/profile/start-two-factor').as('start');
             cy.intercept('POST', '**/profile/confirm-two-factor').as('confirm');
 
+            cy.query('two-factor-password').type('password');
             cy.query('btn-start-two-factor').click();
             cy.wait('@start');
 
@@ -414,6 +415,7 @@ describe('Two factor', () => {
             cy.visit('/z/profile');
             cy.intercept('POST', '**/profile/confirm-two-factor').as('confirm');
 
+            cy.query('two-factor-password').type('password');
             cy.query('btn-start-two-factor').click();
             cy.query('two-factor-setup').should('be.visible');
 

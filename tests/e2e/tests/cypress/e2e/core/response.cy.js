@@ -289,25 +289,8 @@ describe('Response', () => {
         });
     });
 
-    // -----------------------------------------------------------------
-    // Response::reroute() - non-alias branch and $final=true exit.
-    // Alias-mode reroute is covered by the existing
-    // /Advanced/aliases flow (AdvancedController).
-    // -----------------------------------------------------------------
-    describe('reroute()', () => {
-        it('non-alias reroute delegates execution to the new path', () => {
-            cy.request('/Response/rerouteNonAlias').then((res) => {
-                expect(res.body).to.eq('Controller Action');
-            });
-        });
-
-        it('$final=true exits before any post-reroute output runs', () => {
-            cy.request('/Response/rerouteFinal').then((res) => {
-                expect(res.body).to.eq('Controller Action');
-                expect(res.body).to.not.include('AFTER_FINAL_MARKER');
-            });
-        });
-    });
+    // Response::reroute() is unit tested in tests/unit/php/Routing/RequestLifecycleTest.php,
+    // root-directory.cy.js keeps a reroute below a root directory.
 
     // CED (validateCED + doCED) coverage lives in its own spec:
     // tests/cypress/e2e/form/ced.cy.js.

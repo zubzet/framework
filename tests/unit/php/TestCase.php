@@ -7,6 +7,7 @@
     use ZubZet\Framework\Authentication\User;
     use ZubZet\Framework\Core\Constants;
     use ZubZet\Framework\Database\Endpoint;
+    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Message\Request;
     use ZubZet\Framework\Message\Response;
@@ -152,6 +153,52 @@
             $framework->user = $user;
 
             return $user;
+        }
+
+        /**
+         * Makes a logged in user with exactly the given permissions the current
+         * one. The permissions are placed where the user keeps what it has read
+         * from the database, so checking one needs no database. Wildcards work
+         * as they do there ("edit.*" covers "edit.article").
+         *
+         * @param string[] $permissions
+         */
+        protected function loggedInUser(array $permissions = [], int $userId = 1): User {
+            $user = $this->currentUser(loggedIn: true);
+            $user->userId = $userId;
+            $user->execUserId = $userId;
+
+            $cache = new \ReflectionProperty(User::class, "permissionsByUserCache");
+            // Needed before PHP 8.1, deprecated since 8.5
+            if(PHP_VERSION_ID < 80100) $cache->setAccessible(true);
+            $cache->setValue($user, [$userId => $permissions]);
+
+            return $user;
+        }
+
+        /**
+         * Runs an action that has to end the request (a view, a REST reply, a
+         * redirect, a failed check) and returns what it printed. Fails when the
+         * action returns instead.
+         */
+        protected function endedRequest(callable $action): string {
+            ob_start();
+            try {
+                $action();
+            } catch(EndOfRequest) {
+                // That the request ended is what was asked for
+                $this->addToAssertionCount(1);
+                return ob_get_contents();
+            } finally {
+                ob_end_clean();
+            }
+
+            $this->fail("Expected the request to end, but the action returned.");
+        }
+
+        /** The decoded REST reply of an action that ends the request with one. */
+        protected function answerOf(callable $action): array {
+            return json_decode($this->endedRequest($action), true, 512, JSON_THROW_ON_ERROR);
         }
 
         /**

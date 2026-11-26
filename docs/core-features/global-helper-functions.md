@@ -204,6 +204,25 @@ view("adminpanel/dashboard");
 
 ```
 
+### `stop()`
+
+Ends the request at this point, in place of `exit` or `die`. Nothing of the action runs after the call, what was printed so far is the response.
+
+**Syntax:** `stop()`
+
+**Note:** The same as `$res->stop()` and `$req->stop()`. Unlike `exit`, `finally` blocks and the afterMiddlewares of the route still run, and a unit test that calls the action survives it. See [Ending a request](controllers-and-actions.md#ending-a-request). An application that already defines a function named `stop()` keeps its own, the methods are always available.
+
+**Example:**
+
+```php
+header("Content-Type: text/csv");
+echo $csv;
+stop();
+
+```
+
+---
+
 ### `encryptSecret()`
 
 Encrypts a secret with the `encryption_key` setting, for example before storing it in the database. See [Secrets](secrets.md).

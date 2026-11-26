@@ -7,6 +7,7 @@
     use FastRoute\RouteParser\Std;
     use FastRoute\DataGenerator\GroupCountBased as GroupCountBasedDataGenerator;
     use FastRoute\Dispatcher\GroupCountBased as GroupCountBasedDispatcher;
+    use ZubZet\Framework\Message\EndOfRequest;
     use ZubZet\Framework\Message\Input\State;
     use ZubZet\Framework\Console\Application;
     use ZubZet\Framework\Registry\Registry;
@@ -22,6 +23,16 @@
          * First, it tries defined FastRoute routes. If none match, it falls back to ZubZet.
          */
         public function execute(?array $customUrlParts = null) {
+            // The only place a request ends early: reroutes dispatch below this frame,
+            // so a response finished inside a rerouted action also stops the action that rerouted
+            try {
+                return $this->dispatch($customUrlParts);
+            } catch(EndOfRequest) {
+                return null;
+            }
+        }
+
+        protected function dispatch(?array $customUrlParts = null) {
             if(!is_null($customUrlParts)) {
                 request()->urlParts = $customUrlParts;
             }
@@ -29,7 +40,7 @@
             // Before the route files load, so no app code runs for a forged request
             if(!CSRF::verify()) {
                 $this->executePath(["error", "403"]);
-                exit;
+                throw new EndOfRequest;
             }
 
             $dispatcher = $this->getRouteDispatcher();
@@ -182,7 +193,7 @@
                 ->withPath(config("rootFolder") . ltrim(implode("/", $parts), "/"))
                 ->withArgs($parts);
             zubzet()->replaceRequest($newState);
-            $this->execute();
+            $this->dispatch();
         }
 
         /** @var int $maxReroutes Number of reroutes the controller can perform before aborting */
@@ -202,7 +213,8 @@
 
             $this->reroutes++;
             if($this->reroutes > $this->maxReroutes) {
-                die("Error: Too many reroutes. Please contact the webmaster.");
+                echo "Error: Too many reroutes. Please contact the webmaster.";
+                throw new EndOfRequest;
             }
 
             if(isset($parts[0])) {

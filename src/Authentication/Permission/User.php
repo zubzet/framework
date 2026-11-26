@@ -12,6 +12,7 @@ use ZubZet\Framework\Authentication\RetrievalTrait;
 use ZubZet\Framework\Authentication\Totp;
 use ZubZet\Framework\Logger\LogEventType;
 use ZubZet\Framework\Logger\Logger;
+use ZubZet\Framework\Security\Secrets\DecryptionException;
 
 class User extends AuthenticationEntity {
 
@@ -452,6 +453,20 @@ class User extends AuthenticationEntity {
         return $this->getField("groups");
     }
 
+    public function hasRole(Role $role): bool {
+        foreach($this->getRoles() as $userRole) {
+            if($userRole->id() === $role->id()) return true;
+        }
+        return false;
+    }
+
+    public function hasGroup(Group $group): bool {
+        foreach($this->getGroups() as $userGroup) {
+            if($userGroup->id() === $group->id()) return true;
+        }
+        return false;
+    }
+
     /**
      * Get the user's permissions
      *
@@ -542,6 +557,16 @@ class User extends AuthenticationEntity {
     public function verifyTwoFactorCode(string $code): bool {
         $secret = $this->getField("two_factor_secret");
         if(is_null($secret)) return false;
+
+        try {
+            $secret = decryptSecret($secret);
+        } catch(DecryptionException $e) {
+            // A changed encryption_key or a damaged value, the code cannot match
+            logger(Logger::ZUBZET)->warning(LogEventType::WARNING, [
+                "message" => "The two factor secret of user {$this->id()} cannot be decrypted: {$e->getMessage()}",
+            ]);
+            return false;
+        }
 
         // One 30 second step each way, so a clock that drifts a little and a code
         // read just before its window turns still land

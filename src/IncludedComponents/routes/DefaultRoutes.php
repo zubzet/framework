@@ -32,7 +32,7 @@
             Route::post('/disable-two-factor', [ZubZetController::class, 'disableTwoFactor']);
         });
 
-        Route::post('/two-factor/login', [LoginController::class, 'twoFactorLogin']);
+        Route::post('/two-factor/login', [ZubZetController::class, 'twoFactorLogin']);
         Route::post('/two-factor/refresh', [ZubZetController::class, 'refreshTwoFactor']);
     });
 ?>

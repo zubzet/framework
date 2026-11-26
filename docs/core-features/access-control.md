@@ -212,7 +212,7 @@ Verification status is time-aware and can be set or queried at arbitrary points 
 
 ### Two Factor
 
-The account side of [two factor authentication](two-factor-authentication.md). The secret lives in `z_user.two_factor_secret`, and only a confirmed enrollment (`two_factor_confirmed_at`) turns two factor on.
+The account side of [two factor authentication](two-factor-authentication.md). The secret lives in `z_user.two_factor_secret`, encrypted with [`encryptSecret()`](secrets.md), so enrolling needs the `encryption_key` setting, and only a confirmed enrollment (`two_factor_confirmed_at`) turns two factor on.
 
 * Starts an enrollment: stores a fresh secret that does not count yet and returns it as a `ZubZet\Framework\Authentication\Totp`. `getSecret()` and `getProvisioningUri()` are the two shapes an authenticator takes it in. The label is the user's email and the issuer the `pageName`. Starting again replaces the secret and turns an active two factor off until the new one is confirmed, which is why the profile page refuses to start while two factor is on.
 
@@ -249,7 +249,7 @@ The account side of [two factor authentication](two-factor-authentication.md). T
 
 ### Login Tries
 
-Failed logins are counted per account to rate-limit password guessing.
+Failed logins and wrong current passwords on a password change are counted per account to rate-limit password guessing.
 
 * Returns `false` when the user has more failed tries than `maxLoginTriesPerTimespan` within the last `maxLoginTriesTimespan`. The event is logged as `ACCOUNT_LOGIN_RATE_LIMITED`. `maxLoginTriesTimespan` is a relative time string such as `3 minutes`. When it is unset, the window start becomes `1970-01-01`, so every recorded try of the account counts, however old. When `maxLoginTriesPerTimespan` is unset, it is `null` and the comparison only passes for zero tries, so the account is blocked as soon as a single try is recorded in the window.
 
@@ -407,6 +407,13 @@ Permission checks always resolve the **complete permission set**. The permission
 
     ```php
     $user->getGroups(): array
+    ```
+
+* Returns whether the user holds the given role or group, including those inherited from the organization, read from the cached `getRoles()` and `getGroups()`, so a group passed to `hasRole()` is never found.
+
+    ```php
+    $user->hasRole(Role $role): bool
+    $user->hasGroup(Group $group): bool
     ```
 
 * Returns the organization the user belongs to, or `null` if none is assigned.
@@ -732,10 +739,10 @@ The [`Organization`](../api/classes/ZubZet-Framework-Authentication-Organization
     $organization->uuid(): string
     ```
 
-* Returns the organization's name.
+* Returns the organization's name, `null` for an organization that was created without one.
 
     ```php
-    $organization->name(): string
+    $organization->name(): ?string
     ```
 
 * Returns the maximum number of users, or `null` for no limit.
@@ -976,9 +983,9 @@ request then uses the cookie, if there is one. `$req->bearerToken()` returns the
 header, or `null`.
 
 A valid session does not log a deactivated user in. Whichever way the token arrived, a session or an
-api key, the request is anonymous (`$user->isLoggedIn` is `false`) as soon as the user's `active` is
-`0`, for example after [`$user->remove()`](#removing-a-user). The check runs on every request, so it
-takes effect immediately without ending the session.
+api key, the request is anonymous (`$user->isLoggedIn` is `false`) as soon as the user's `active`, or
+that of the admin impersonating them, is `0`, for example after [`$user->remove()`](#removing-a-user).
+The check runs on every request, so it takes effect immediately without ending the session.
 
 ---
 
@@ -1060,13 +1067,13 @@ takes effect immediately without ending the session.
 
 A session remembers when it last passed a [two factor](two-factor-authentication.md) check, in `z_logintoken.last_two_factor`, and how many wrong codes it may still send, in `remaining_two_factor_tries`.
 
-* Returns whether the session has to pass two factor again. `false` for an account without two factor, `true` while the session never passed a check or once the last one is older than `$freshnessSeconds` (defaults to `two_factor_freshness_seconds`, 900). A session whose user is gone always has to. This is what [`$req->requireFreshTwoFactor()`](two-factor-authentication.md#guarding-an-action) asks.
+* Returns whether the session has to pass two factor again. `false` for an account without two factor, `true` while the session never passed a check or once the last one is older than `$freshnessSeconds` (defaults to `two_factor_freshness_seconds`, 90). A session whose user is gone always has to. This is what [`$req->requireFreshTwoFactor()`](two-factor-authentication.md#guarding-an-action) asks.
 
     ```php
     $session->requireRenew(?int $freshnessSeconds = null): bool
     ```
 
-* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (`two_factor_tries` to begin with, 5 by default).
+* Returns when the session last passed a check, or `null` while it never did, and how many wrong codes it may still send (`two_factor_tries` to begin with, 3 by default).
 
     ```php
     $session->lastTwoFactor(): ?string
@@ -1144,7 +1151,7 @@ A session remembers when it last passed a [two factor](two-factor-authentication
     $session->reason(): ?string
     ```
 
-* Returns the address the session was created from, or `null` if none could be determined.
+* Returns the address the session was created from, empty (`""` or `null`) if none could be determined.
 
     ```php
     $session->ipCreation(): ?string

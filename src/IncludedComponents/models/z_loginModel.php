@@ -32,7 +32,12 @@
                     LIMIT 1";
             $hash = LoginToken::hash($token);
 
-            return $this->exec($sql, "s", $hash)->resultToLine();
+            $session = $this->exec($sql, "s", $hash)->resultToLine();
+
+            // The column compares case-insensitively, a token only counts when it matches exactly
+            if(empty($session) || !hash_equals($session["token"], $hash)) return null;
+
+            return $session;
         }
 
         /**
@@ -180,7 +185,7 @@
                 "token" => $token,
                 "ip_creation" => $ip,
                 "device" => $device,
-                "expires_at" => date("Y-m-d H:i:s", time() + configNumeric("two_factor_challenge_seconds", 600)),
+                "expires_at" => date("Y-m-d H:i:s", time() + configNumeric("two_factor_challenge_seconds", 60)),
             ]);
 
             $this->exec($query);
@@ -252,7 +257,7 @@
                 "reason" => $reason,
                 "ip_creation" => request()->ip(),
                 "is_apikey" => (int) $isApiKey,
-                "remaining_two_factor_tries" => configNumeric("two_factor_tries", 5),
+                "remaining_two_factor_tries" => configNumeric("two_factor_tries", 3),
             ];
 
             if($recordTwoFactor) {
@@ -289,7 +294,7 @@
          */
         public function resetTwoFactorTries(Session|APIKey $session): void {
             $query = $this->dbUpdate("z_logintoken");
-            $query->set(["remaining_two_factor_tries" => configNumeric("two_factor_tries", 5)]);
+            $query->set(["remaining_two_factor_tries" => configNumeric("two_factor_tries", 3)]);
             $query->where(["id" => $session->id()]);
 
             $this->exec($query);
@@ -360,6 +365,9 @@
          * @internal Replaced by the User API (@see User::updatePassword()) for external use
          */
         public function updatePassword(User $user, string $password): void {
+            // Hashed first, as a rejected password must not cost the user their sessions
+            $hash = Password::hash($password);
+
             $user->clearSessions();
 
             $sql = "UPDATE `z_user`
@@ -372,7 +380,7 @@
 
             $this->exec(
                 $sql, "ssi",
-                Password::hash($password),
+                $hash,
                 Password::NATIVE,
                 $user->id(),
             );

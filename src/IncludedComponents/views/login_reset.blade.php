@@ -32,7 +32,7 @@
 					<div class="input-group-prepend">
 						<span class="input-group-text"><i class="fa fa-key"></i></span>
 					</div>
-					<input id="input-password-repeat" class="form-control" type="password" placeholder="Confrm Password" minlength="4" required>
+					<input id="input-password-repeat" class="form-control" type="password" placeholder="Confirm Password" minlength="4" required>
 				</div>
                 <div id="no-match-message" style="display: none">Passwords don't match!</div>
 
