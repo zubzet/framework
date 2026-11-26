@@ -36,11 +36,13 @@
         "add_user": {
             "title": "Benutzer anlegen",
             "email": "E-Mail",
-            "password": "Passwort"
+            "password": "Passwort",
+            "organization": "Organisation"
         },
         "edit_user": {
             "title": "Benutzer bearbeiten",
             "email": "E-Mail",
+            "organization": "Organisation",
             "roles": "Rollen",
             "role": "Rolle",
             "login_as": "Anmelden als",

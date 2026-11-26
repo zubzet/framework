@@ -36,11 +36,13 @@
         "add_user": {
             "title": "Add User",
             "email": "Email",
-            "password": "Password"
+            "password": "Password",
+            "organization": "Organization"
         },
         "edit_user": {
             "title": "Edit user",
             "email": "Email",
+            "organization": "Organization",
             "roles": "Roles",
             "role": "Role",
             "login_as": "Login as",

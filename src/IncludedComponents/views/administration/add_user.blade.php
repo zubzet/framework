@@ -31,7 +31,7 @@
         form.createField({
             name: "organization",
             type: "select",
-            text: "Organization",
+            text: <?= json_encode(__("admin.add_user.organization")) ?>,
             food: <?= $opt["organizations"]; ?>,
         });
 

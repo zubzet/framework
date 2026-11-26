@@ -16,7 +16,7 @@
             form.createField({
                 name: "organization",
                 type: "select",
-                text: "Organization",
+                text: <?= json_encode(__("admin.edit_user.organization")) ?>,
                 food: <?= $opt["organizations"]; ?>,
                 value: <?=  json_encode($opt["organizationId"] ?? "", JSON_HEX_TAG | JSON_HEX_AMP); ?>,
             });
