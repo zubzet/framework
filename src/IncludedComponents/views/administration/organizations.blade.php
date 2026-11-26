@@ -8,7 +8,7 @@
             form.createField({
                 name: "name",
                 type: "text",
-                text: "Name",
+                text: <?= json_encode(__("admin.organizations.name")) ?>,
                 required: true,
                 value: <?= json_encode($opt["name"], JSON_HEX_TAG | JSON_HEX_AMP); ?>,
             });
@@ -16,14 +16,14 @@
             form.createField({
                 name: "max_capacity",
                 type: "number",
-                text: "Maximum users",
-                hint: "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+                text: <?= json_encode(__("admin.organizations.max_capacity")) ?>,
+                hint: <?= json_encode(__("admin.organizations.max_capacity_hint")) ?>,
                 value: <?= json_encode($opt["maxCapacity"]); ?>,
             });
 
             <?php if($opt["user"]->checkPermission("admin.organizations.delete")) { ?>
-                form.createActionButton("Delete organization", "btn-danger", function() {
-                    if(!confirm("Do you really want to delete this organization?")) return;
+                form.createActionButton(<?= json_encode(__("admin.organizations.delete")) ?>, "btn-danger", function() {
+                    if(!confirm(<?= json_encode(__("admin.organizations.delete_confirm")) ?>)) return;
 
                     Z.Request.action("delete", {}, function() {
                         window.location.replace("<?= $opt["root"] . "z/organizations/"; ?>");
@@ -33,15 +33,15 @@
         });
     </script>
 
-    <h2>Organizations</h2>
+    <h2><?= e(__("admin.organizations.title")) ?></h2>
 
     <div id="form"></div>
 
-    <h3 class="h5 mt-4">Group</h3>
+    <h3 class="h5 mt-4"><?= e(__("admin.organizations.group")) ?></h3>
 
     <?php if(is_null($opt["group"])) { ?>
         <div class="alert alert-dark" role="alert">
-            This organization has no group.
+            <?= e(__("admin.organizations.no_group")) ?>
         </div>
     <?php } else { ?>
         <div class="list-group">
@@ -52,11 +52,11 @@
         </div>
     <?php } ?>
 
-    <h3 class="h5 mt-4">Users</h3>
+    <h3 class="h5 mt-4"><?= e(__("admin.organizations.users")) ?></h3>
 
     <?php if(empty($opt["users"])) { ?>
         <div class="alert alert-dark" role="alert">
-            No users belong to this organization.
+            <?= e(__("admin.organizations.no_users")) ?>
         </div>
     <?php } ?>
     <div class="list-group">
@@ -67,7 +67,7 @@
                 </small>
 
                 <?php if(is_null($user->getField("email"))) { ?>
-                    <i>No email</i>
+                    <i><?= e(__("admin.organizations.no_email")) ?></i>
                 <?php } else { ?>
                     <?= e($user->getField("email")); ?>
                 <?php } ?>

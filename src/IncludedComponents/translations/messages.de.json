@@ -66,6 +66,19 @@
             "no_name": "Kein Name",
             "create": "Organisation anlegen"
         },
+        "organizations": {
+            "title": "Organisationen",
+            "name": "Name",
+            "max_capacity": "Maximale Anzahl Benutzer",
+            "max_capacity_hint": "Aktive Mitglieder und offene Einladungen dürfen diese Zahl zusammen nicht überschreiten. Leer lassen für keine Begrenzung.",
+            "delete": "Organisation löschen",
+            "delete_confirm": "Soll diese Organisation wirklich gelöscht werden?",
+            "group": "Gruppe",
+            "no_group": "Diese Organisation hat keine Gruppe.",
+            "users": "Benutzer",
+            "no_users": "Dieser Organisation gehören keine Benutzer an.",
+            "no_email": "Keine E-Mail"
+        },
         "roles": {
             "title": "Rollen",
             "name": "Name",

@@ -66,6 +66,19 @@
             "no_name": "No name",
             "create": "Create organization"
         },
+        "organizations": {
+            "title": "Organizations",
+            "name": "Name",
+            "max_capacity": "Maximum users",
+            "max_capacity_hint": "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+            "delete": "Delete organization",
+            "delete_confirm": "Do you really want to delete this organization?",
+            "group": "Group",
+            "no_group": "This organization has no group.",
+            "users": "Users",
+            "no_users": "No users belong to this organization.",
+            "no_email": "No email"
+        },
         "roles": {
             "title": "Roles",
             "name": "Name",
