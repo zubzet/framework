@@ -265,7 +265,7 @@
             }
 
             $req->checkPermission("admin.roles.edit");
-            $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0];
+            $role = $req->getModel("z_general")->getTableWhere("z_role", "*", "id = ? AND is_group = 0", "i", [$roleId])[0] ?? null;
 
             if(!$role) return $res->error("Role not found");
 
