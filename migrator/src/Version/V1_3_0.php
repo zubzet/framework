@@ -109,6 +109,7 @@
             // New settings with their framework defaults, environment variables only override settings that exist in the ini
             $newSettings = new SettingsIni($this, "new-settings");
             $newSettings->addProperty("health_endpoint_enabled", "true");
+            $newSettings->addProperty("signup_disabled", "false");
             $newSettings->addProperty("encryption_key", "");
             $newSettings->addProperty("two_factor_challenge_seconds", "60");
             $newSettings->addProperty("two_factor_freshness_seconds", "90");
