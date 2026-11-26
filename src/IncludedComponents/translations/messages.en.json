@@ -79,6 +79,15 @@
             "no_users": "No users belong to this organization.",
             "no_email": "No email"
         },
+        "add_organization": {
+            "title": "Add Organization",
+            "name": "Name",
+            "name_placeholder": "Example Company",
+            "max_capacity": "Maximum users",
+            "max_capacity_hint": "Active members plus open invitations may not exceed this number. Leave empty for no limit.",
+            "create_group": "Create a permission group",
+            "create_group_hint": "Creates a group named after the organization, suffixed with _Group. Every user assigned to the organization becomes a member of it."
+        },
         "roles": {
             "title": "Roles",
             "name": "Name",
