@@ -35,7 +35,7 @@
 
             form.createActionButton(<?= json_encode(__("admin.edit_user.login_as")) ?>, "btn-secondary", function() {
                 // A reason is optional; cancelling the prompt still logs in
-                var reason = window.prompt("Why are you logging in as this user? (optional)");
+                var reason = window.prompt(<?= json_encode(__("admin.edit_user.login_as_reason")) ?>);
 
                 var url = "<?php echo $opt["root"] . "z/login_as/" . $opt["userId"] ?>";
                 if(reason !== null && reason.trim() !== "") {

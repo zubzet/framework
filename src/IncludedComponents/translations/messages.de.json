@@ -46,6 +46,7 @@
             "roles": "Rollen",
             "role": "Rolle",
             "login_as": "Anmelden als",
+            "login_as_reason": "Warum melden Sie sich als dieser Benutzer an? (optional)",
             "permissions": "Benutzerspezifische Berechtigungen",
             "permission": "Berechtigung",
             "disable_two_factor": "Zwei-Faktor deaktivieren",

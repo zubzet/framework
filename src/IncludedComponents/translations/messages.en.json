@@ -46,6 +46,7 @@
             "roles": "Roles",
             "role": "Role",
             "login_as": "Login as",
+            "login_as_reason": "Why are you logging in as this user? (optional)",
             "permissions": "User-Level Permissions",
             "permission": "Permission",
             "disable_two_factor": "Disable two factor",
