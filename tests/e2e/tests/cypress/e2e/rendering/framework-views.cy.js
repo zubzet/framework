@@ -16,7 +16,7 @@ describe('Framework views - direct render', () => {
                 expect(res.body).to.include('Login');
                 expect(res.body).to.include('Sign in');
                 expect(res.body).to.include('Forgot Password?');
-                expect(res.body).to.include("Don't have a account?");
+                expect(res.body).to.include("Don't have an account?");
                 expect(res.body).to.include('id="username"');
                 expect(res.body).to.include('id="password"');
             });

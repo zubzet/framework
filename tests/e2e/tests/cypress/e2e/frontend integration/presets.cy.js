@@ -94,7 +94,7 @@ describe('Core Features', () => {
         cy.query("password").click().type("password");
         cy.query("password-confirm").click().type("keinpassword");
         cy.query("submit").click();
-        cy.query("login-error").should("contain.text", "The password are not the same!");
+        cy.query("login-error").should("contain.text", "The passwords are not the same!");
     });
 
     describe('Signup disabled', () => {
