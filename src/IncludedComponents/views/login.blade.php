@@ -26,7 +26,9 @@
 
 			<button onclick="login();" class="btn btn-primary">Sign in</button>
 			<a class="link" href="<?php echo $opt["root"]; ?>login/forgot_password">Forgot Password?</a>
-			<a class="link" href="<?php echo $opt["root"]; ?>login/signup">Don't have a account?</a>
+			@if(!configSwitch("signup_disabled", false))
+				<a class="link" href="<?php echo $opt["root"]; ?>login/signup">Don't have a account?</a>
+			@endif
 		</form>
 	</div>
 

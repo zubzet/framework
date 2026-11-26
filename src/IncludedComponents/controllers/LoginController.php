@@ -92,6 +92,8 @@
          * @param Response $res The response object
          */
         public function action_signup($req, $res) {
+            if(configSwitch("signup_disabled", false)) return zubzet()->executePath(["error", "404"]);
+
             if ($req->isAction("signup")) {
                 $formResult = $req->validateForm([
                     (new FormField("email"))
