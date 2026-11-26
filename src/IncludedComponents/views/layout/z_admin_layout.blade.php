@@ -159,13 +159,13 @@
                             <?php if($opt["user"]->checkPermission("admin.organizations.list")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-organizations" href="<?= $opt["root"]; ?>z/organizations">
                                     <i class="fa fa-fw fa-building"></i>
-                                    Organizations
+                                    <?= e(__("admin.nav.organizations")) ?>
                                 </a>
                             <?php } ?>
                             <?php if($opt["user"]->checkPermission("admin.organizations.create")) { ?>
                                 <a class="list-group-item list-group-item-dark list-group-item-action nav-item" data-test="btn-add-organization" href="<?= $opt["root"]; ?>z/add_organization">
                                     <i class="fa fa-fw fa-plus-circle"></i>
-                                    Add Organization
+                                    <?= e(__("admin.nav.add_organization")) ?>
                                 </a>
                             <?php } ?>
                         </div>

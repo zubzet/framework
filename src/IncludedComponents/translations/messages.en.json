@@ -23,6 +23,8 @@
             "add_user": "Add User",
             "roles": "Roles",
             "groups": "Groups",
+            "organizations": "Organizations",
+            "add_organization": "Add Organization",
             "back": "Go back",
             "logout": "Logout",
             "organization": "Organization",
